@@ -1,0 +1,69 @@
+{
+  "slots": [
+    {
+      "time": "17:00",
+      "label": "5:00 PM",
+      "active": true
+    },
+    {
+      "time": "17:30",
+      "label": "5:30 PM",
+      "active": true
+    },
+    {
+      "time": "18:00",
+      "label": "6:00 PM",
+      "active": true
+    },
+    {
+      "time": "18:30",
+      "label": "6:30 PM",
+      "active": true
+    },
+    {
+      "time": "19:00",
+      "label": "7:00 PM",
+      "active": true
+    },
+    {
+      "time": "19:30",
+      "label": "7:30 PM",
+      "active": true
+    },
+    {
+      "time": "20:00",
+      "label": "8:00 PM",
+      "active": true
+    },
+    {
+      "time": "20:30",
+      "label": "8:30 PM",
+      "active": true
+    },
+    {
+      "time": "21:00",
+      "label": "9:00 PM",
+      "active": true
+    },
+    {
+      "time": "21:30",
+      "label": "9:30 PM",
+      "active": true
+    },
+    {
+      "time": "22:00",
+      "label": "10:00 PM",
+      "active": true
+    },
+    {
+      "time": "22:30",
+      "label": "10:30 PM",
+      "active": true
+    },
+    {
+      "time": "23:00",
+      "label": "11:00 Pm",
+      "active": true
+    }
+  ]
+}

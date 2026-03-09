@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #e6f4e9;
+  --color-primary-100: #c0e5c8;
+  --color-primary-200: #99d5a6;
+  --color-primary-300: #73c685;
+  --color-primary-400: #4cb663;
+  --color-primary-500: #26a742;
+  --color-primary-600: #096b17;
+  --color-primary-700: #075713;
+  --color-primary-800: #05430f;
+  --color-primary-900: #032f0b;
+
+  --color-accent-50: #f0faf3;
+  --color-accent-100: #d9f2e2;
+  --color-accent-200: #b3e6c5;
+  --color-accent-300: #8dd9a8;
+  --color-accent-400: #64CB81;
+  --color-accent-500: #4bb86d;
+  --color-accent-600: #3c9557;
+  --color-accent-700: #2d7141;
+  --color-accent-800: #1e4d2c;
+  --color-accent-900: #0f2916;
+
+  --color-beige-50: #fffef5;
+  --color-beige-100: #fffdea;
+  --color-beige-200: #fffcd4;
+  --color-beige-300: #FFFDBD;
+  --color-beige-400: #fffca7;
+  --color-beige-500: #fffb91;
+  --color-beige-600: #e6e083;
+  --color-beige-700: #ccc574;
+  --color-beige-800: #b3aa66;
+  --color-beige-900: #998f57;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-100% / 2));
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.8s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.8s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.8s ease-out;
+}
+
+.animate-scroll {
+  animation: scroll 40s linear infinite;
+  width: max-content;
+}

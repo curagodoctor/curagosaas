@@ -1,0 +1,124 @@
+import { NextResponse } from "next/server";
+import { isAuthenticated } from "@/lib/auth";
+import connectDB from "@/lib/mongodb";
+import ForumPost from "@/models/ForumPost";
+
+// GET - Get single forum post
+export async function GET(request, { params }) {
+  if (!isAuthenticated(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await connectDB();
+
+    const { id } = await params;
+    const post = await ForumPost.findById(id).lean();
+
+    if (!post) {
+      return NextResponse.json(
+        { error: "Forum post not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      post,
+    });
+  } catch (error) {
+    console.error("Error fetching forum post:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch forum post" },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH - Update forum post (reply, change status, toggle visibility)
+export async function PATCH(request, { params }) {
+  if (!isAuthenticated(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await connectDB();
+
+    const { id } = await params;
+    const body = await request.json();
+    const { action, reply, status, isPublic } = body;
+
+    const post = await ForumPost.findById(id);
+
+    if (!post) {
+      return NextResponse.json(
+        { error: "Forum post not found" },
+        { status: 404 }
+      );
+    }
+
+    // Handle different actions
+    if (action === 'reply' && reply) {
+      post.replies.push({
+        message: reply.trim(),
+        repliedBy: 'Dr. Yuvaraj T',
+        repliedAt: new Date(),
+      });
+      post.status = 'replied';
+    }
+
+    if (status) {
+      post.status = status;
+    }
+
+    if (typeof isPublic === 'boolean') {
+      post.isPublic = isPublic;
+    }
+
+    await post.save();
+
+    return NextResponse.json({
+      success: true,
+      message: action === 'reply' ? 'Reply sent successfully' : 'Post updated successfully',
+      post,
+    });
+  } catch (error) {
+    console.error("Error updating forum post:", error);
+    return NextResponse.json(
+      { error: "Failed to update forum post" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE - Delete forum post
+export async function DELETE(request, { params }) {
+  if (!isAuthenticated(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await connectDB();
+
+    const { id } = await params;
+    const post = await ForumPost.findByIdAndDelete(id);
+
+    if (!post) {
+      return NextResponse.json(
+        { error: "Forum post not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Forum post deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting forum post:", error);
+    return NextResponse.json(
+      { error: "Failed to delete forum post" },
+      { status: 500 }
+    );
+  }
+}
