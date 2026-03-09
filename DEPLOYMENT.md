@@ -46,32 +46,32 @@ Go to **Project Settings** → **Environment Variables** and add:
 
 ```bash
 # MongoDB - Get from MongoDB Atlas
-MONGODB_URI=mongodb+srv://YOUR_USER:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/your-database?retryWrites=true&w=majority
+MONGODB_URI=<your-mongodb-connection-string>
 
 # Admin Credentials - Set your own secure password
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD=YourSecurePasswordHere
+ADMIN_PASSWORD=<your-secure-password>
 
 # Session Secret - Generate with: openssl rand -hex 32
-SESSION_SECRET=generate_a_random_32_byte_hex_string
+SESSION_SECRET=<run-openssl-rand-hex-32>
 
 # Razorpay - Get from Razorpay Dashboard
-RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxxxx
-RAZORPAY_KEY_SECRET=your_razorpay_secret_here
-RAZORPAY_PAYMENT_BUTTON_ID=pl_xxxxxxxxxxxxxx
-NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxxxx
+RAZORPAY_KEY_ID=<your-razorpay-key-id>
+RAZORPAY_KEY_SECRET=<your-razorpay-secret>
+RAZORPAY_PAYMENT_BUTTON_ID=<your-payment-button-id>
+NEXT_PUBLIC_RAZORPAY_KEY_ID=<your-razorpay-key-id>
 
 # Google Calendar - Get from Google Cloud Console
-GOOGLE_SERVICE_ACCOUNT_EMAIL=your-service-account@project.iam.gserviceaccount.com
-GOOGLE_CALENDAR_ID=your-calendar@example.com
+GOOGLE_SERVICE_ACCOUNT_EMAIL=<your-service-account-email>
+GOOGLE_CALENDAR_ID=<your-calendar-id>
 
 # Google Private Key (BASE64 encoded - avoids newline issues in Vercel)
 # Generate: cat key.json | base64
-GOOGLE_PRIVATE_KEY_BASE64=your_base64_encoded_private_key_here
+GOOGLE_PRIVATE_KEY_BASE64=<your-base64-encoded-private-key>
 
 # Doctor Info
-DOCTOR_EMAIL=doctor@example.com
-DOCTOR_NAME=Dr. Your Name
+DOCTOR_EMAIL=<your-email>
+DOCTOR_NAME=<your-name>
 
 # Vercel Blob Storage
 # ⚠️ AUTO-GENERATED when you enable Blob storage in Vercel
