@@ -17,6 +17,15 @@ export async function GET(request) {
     const doctor = await getCurrentDoctor(request);
     const doctorId = doctor?._id;
 
+    // Strict tenant isolation: return empty if no doctor found
+    if (!doctorId) {
+      return NextResponse.json({
+        success: true,
+        pages: [],
+        pagination: { total: 0, page: 1, limit: 20, totalPages: 0 },
+      });
+    }
+
     await connectDB();
 
     // Get query parameters
@@ -27,9 +36,8 @@ export async function GET(request) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = (page - 1) * limit;
 
-    // Build query
-    const query = {};
-    if (doctorId) query.doctorId = doctorId;
+    // Build query with required doctorId
+    const query = { doctorId };
     if (status && status !== 'all') {
       query.status = status;
     }

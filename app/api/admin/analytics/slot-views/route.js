@@ -15,6 +15,29 @@ export async function GET(request) {
     const doctor = await getCurrentDoctor(request);
     const doctorId = doctor?._id;
 
+    // Strict tenant isolation: return empty if no doctor found
+    if (!doctorId) {
+      return NextResponse.json({
+        success: true,
+        stats: {
+          totalViews: 0,
+          onlineViews: 0,
+          inClinicViews: 0,
+          converted: 0,
+          conversionRate: 0,
+          uniqueUsers: 0,
+          avgAge: 0,
+        },
+        breakdown: {
+          byPage: [],
+          byDate: [],
+          byGender: [],
+          byReferrer: [],
+        },
+        views: [],
+      });
+    }
+
     await connectDB();
 
     const { searchParams } = new URL(request.url);
@@ -23,9 +46,8 @@ export async function GET(request) {
     const modeFilter = searchParams.get('mode');
     const pageSlug = searchParams.get('pageSlug');
 
-    // Build query
-    let query = {};
-    if (doctorId) query.doctorId = doctorId;
+    // Build query with required doctorId
+    let query = { doctorId };
 
     if (startDate || endDate) {
       query.createdAt = {};

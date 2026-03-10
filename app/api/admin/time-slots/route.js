@@ -15,13 +15,22 @@ export async function GET(request) {
     const doctor = await getCurrentDoctor(request);
     const doctorId = doctor?._id;
 
+    // Strict tenant isolation: return empty if no doctor found
+    if (!doctorId) {
+      return NextResponse.json({
+        success: true,
+        slots: [],
+        availableToCreate: [],
+      });
+    }
+
     const { searchParams } = new URL(request.url);
     const includeAll = searchParams.get("all") === "true";
 
     await connectDB();
 
-    let query = {};
-    if (doctorId) query.doctorId = doctorId;
+    // Build query with required doctorId
+    let query = { doctorId };
     if (!includeAll) query.isActive = true;
 
     const slots = await TimeSlot.find(query).sort({ time: 1 });

@@ -20,6 +20,15 @@ export async function GET(request) {
     const doctor = await getCurrentDoctor(request);
     const doctorId = doctor?._id;
 
+    // Strict tenant isolation: return empty if no doctor found
+    if (!doctorId) {
+      return NextResponse.json({
+        success: true,
+        slots: [],
+        bookings: [],
+      });
+    }
+
     const slots = await getAllSlots(doctorId);
     const bookings = await getAllBookings(doctorId);
 

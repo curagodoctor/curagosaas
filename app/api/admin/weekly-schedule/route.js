@@ -16,22 +16,31 @@ export async function GET(request) {
     const doctor = await getCurrentDoctor(request);
     const doctorId = doctor?._id;
 
+    // Strict tenant isolation: return empty if no doctor found
+    if (!doctorId) {
+      return NextResponse.json({
+        success: true,
+        schedules: [],
+        timeSlots: [],
+        raw: [],
+      });
+    }
+
     const { searchParams } = new URL(request.url);
     const modeId = searchParams.get("modeId");
 
     await connectDB();
 
-    let query = {};
-    if (doctorId) query.doctorId = doctorId;
+    // Build query with required doctorId
+    let query = { doctorId };
     if (modeId) query.modeId = modeId;
 
     const schedules = await WeeklySchedule.find(query)
       .populate('modeId', 'name displayName color')
       .sort({ modeId: 1, dayOfWeek: 1 });
 
-    // Also get all time slots for reference
-    const slotQuery = doctorId ? { doctorId, isActive: true } : { isActive: true };
-    const timeSlots = await TimeSlot.find(slotQuery)
+    // Also get all time slots for reference (doctorId is guaranteed at this point)
+    const timeSlots = await TimeSlot.find({ doctorId, isActive: true })
       .sort({ time: 1 });
 
     // Group schedules by mode

@@ -20,6 +20,14 @@ export async function GET(request) {
     const doctor = await getCurrentDoctor(request);
     const doctorId = doctor?._id;
 
+    // Strict tenant isolation: return empty if no doctor found
+    if (!doctorId) {
+      return NextResponse.json({
+        success: true,
+        overrides: [],
+      });
+    }
+
     const overrides = await getAllDateOverrides(doctorId);
     return NextResponse.json({
       success: true,

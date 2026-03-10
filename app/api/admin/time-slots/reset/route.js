@@ -13,6 +13,14 @@ export async function POST(request) {
     const doctor = await getCurrentDoctor(request);
     const doctorId = doctor?._id;
 
+    // Strict tenant isolation: require doctorId
+    if (!doctorId) {
+      return NextResponse.json(
+        { error: "Doctor not found" },
+        { status: 400 }
+      );
+    }
+
     const result = await resetTimeSlots(doctorId);
 
     return NextResponse.json({

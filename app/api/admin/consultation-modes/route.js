@@ -17,13 +17,21 @@ export async function GET(request) {
     const doctor = await getCurrentDoctor(request);
     const doctorId = doctor?._id;
 
+    // Strict tenant isolation: return empty if no doctor found
+    if (!doctorId) {
+      return NextResponse.json({
+        success: true,
+        modes: [],
+      });
+    }
+
     await connectDB();
 
     // Initialize default modes if none exist for this doctor
     await initializeDefaultModes(doctorId);
 
-    const query = doctorId ? { doctorId } : {};
-    const modes = await ConsultationMode.find(query)
+    // Query with required doctorId
+    const modes = await ConsultationMode.find({ doctorId })
       .sort({ sortOrder: 1, createdAt: 1 });
 
     return NextResponse.json({
