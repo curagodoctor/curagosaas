@@ -1,6 +1,12 @@
 import mongoose from 'mongoose';
 
 const WeeklyScheduleSchema = new mongoose.Schema({
+  doctorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Doctor',
+    required: false, // Optional for backward compatibility
+    index: true,
+  },
   modeId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ConsultationMode',
@@ -24,10 +30,12 @@ const WeeklyScheduleSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Compound unique index: one entry per mode + day combination
-WeeklyScheduleSchema.index({ modeId: 1, dayOfWeek: 1 }, { unique: true });
+// Compound unique index: one entry per doctor + mode + day combination
+WeeklyScheduleSchema.index({ doctorId: 1, modeId: 1, dayOfWeek: 1 }, { unique: true, sparse: true });
+WeeklyScheduleSchema.index({ modeId: 1, dayOfWeek: 1 }); // For backward compat queries
 
 // Index for querying by day
+WeeklyScheduleSchema.index({ doctorId: 1, dayOfWeek: 1, isEnabled: 1 });
 WeeklyScheduleSchema.index({ dayOfWeek: 1, isEnabled: 1 });
 
 // Helper to get day name

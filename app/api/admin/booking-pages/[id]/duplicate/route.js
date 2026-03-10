@@ -2,23 +2,30 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import BookingPage from '@/models/BookingPage';
 import { isAuthenticated } from '@/lib/auth';
+import { getCurrentDoctor } from '@/lib/doctorAuth';
 
 // POST - Duplicate booking page
 export async function POST(request, { params }) {
   try {
-    // Check authentication
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     await connectDB();
 
     // In Next.js 15+, params is a promise and must be awaited
     const { id } = await params;
-    const originalPage = await BookingPage.findById(id);
+
+    const query = { _id: id };
+    if (doctorId) query.doctorId = doctorId;
+
+    const originalPage = await BookingPage.findOne(query);
 
     if (!originalPage) {
       return NextResponse.json(
@@ -31,13 +38,18 @@ export async function POST(request, { params }) {
     let newSlug = `${originalPage.slug}-copy`;
     let counter = 1;
 
-    while (await BookingPage.findOne({ slug: newSlug })) {
+    const slugQuery = { slug: newSlug };
+    if (doctorId) slugQuery.doctorId = doctorId;
+
+    while (await BookingPage.findOne(slugQuery)) {
       newSlug = `${originalPage.slug}-copy-${counter}`;
+      slugQuery.slug = newSlug;
       counter++;
     }
 
     // Create duplicate with new slug and draft status
     const duplicatePage = new BookingPage({
+      doctorId: doctorId || undefined,
       slug: newSlug,
       title: `${originalPage.title} (Copy)`,
       metaDescription: originalPage.metaDescription,

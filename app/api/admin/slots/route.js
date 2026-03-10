@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
+import { getCurrentDoctor } from "@/lib/doctorAuth";
 import {
   getAllSlots,
   updateSlotStatus,
@@ -11,13 +12,16 @@ import {
 
 // GET - Get all slots (admin view)
 export async function GET(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const slots = await getAllSlots();
-    const bookings = await getAllBookings();
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
+    const slots = await getAllSlots(doctorId);
+    const bookings = await getAllBookings(doctorId);
 
     return NextResponse.json({
       success: true,
@@ -43,11 +47,14 @@ function formatTimeLabel(time24) {
 
 // POST - Add new slot
 export async function POST(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     const { time, date, mode } = await request.json();
 
     if (!time) {
@@ -60,7 +67,7 @@ export async function POST(request) {
     // Auto-generate label from time (e.g., "17:00" -> "5:00 PM")
     const label = formatTimeLabel(time);
 
-    const result = await addSlot(time, label, mode);
+    const result = await addSlot(time, label, mode, doctorId);
     return NextResponse.json({
       success: true,
       message: `Slot added successfully${mode ? ` for ${mode}` : ''}`,
@@ -77,11 +84,14 @@ export async function POST(request) {
 
 // PATCH - Update slot status (mode-specific)
 export async function PATCH(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     const { time, active, mode } = await request.json();
 
     if (!time || active === undefined) {
@@ -98,7 +108,7 @@ export async function PATCH(request) {
       );
     }
 
-    const slot = await updateSlotStatus(time, active, mode);
+    const slot = await updateSlotStatus(time, active, mode, doctorId);
     return NextResponse.json({
       success: true,
       message: `Slot status updated for ${mode}`,
@@ -115,11 +125,14 @@ export async function PATCH(request) {
 
 // DELETE - Remove slot
 export async function DELETE(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     // Support both query params and request body
     const { searchParams } = new URL(request.url);
     let time = searchParams.get("time");
@@ -137,7 +150,7 @@ export async function DELETE(request) {
       );
     }
 
-    const result = await removeSlot(time);
+    const result = await removeSlot(time, doctorId);
     return NextResponse.json({
       success: true,
       message: "Slot removed successfully",
@@ -153,11 +166,14 @@ export async function DELETE(request) {
 
 // PUT - Cancel booking to re-enable a booked slot
 export async function PUT(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     const body = await request.json();
     const { date, time, mode, bookingId } = body;
 
@@ -165,9 +181,13 @@ export async function PUT(request) {
     if (bookingId) {
       // New format: cancel by booking ID
       const Booking = (await import("@/models/Booking")).default;
-      await import("@/lib/db");
+      await import("@/lib/mongodb");
 
-      const booking = await Booking.findById(bookingId);
+      // Only find bookings belonging to this doctor
+      const query = { _id: bookingId };
+      if (doctorId) query.doctorId = doctorId;
+
+      const booking = await Booking.findOne(query);
 
       if (!booking) {
         return NextResponse.json(
@@ -176,7 +196,7 @@ export async function PUT(request) {
         );
       }
 
-      const result = await cancelBooking(booking.date, booking.time, booking.mode);
+      const result = await cancelBooking(booking.date, booking.time, doctorId);
 
       if (!result.success) {
         return NextResponse.json(
@@ -199,7 +219,7 @@ export async function PUT(request) {
         );
       }
 
-      const result = await cancelBooking(date, time, mode);
+      const result = await cancelBooking(date, time, doctorId);
 
       if (!result.success) {
         return NextResponse.json(

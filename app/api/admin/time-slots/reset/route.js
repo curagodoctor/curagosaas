@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
+import { getCurrentDoctor } from "@/lib/doctorAuth";
 import { resetTimeSlots } from "@/lib/slotManagerDB";
 
 // POST - Reset all time slots to defaults (6 AM - 10 PM)
 export async function POST(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const result = await resetTimeSlots();
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
+    const result = await resetTimeSlots(doctorId);
 
     return NextResponse.json({
       success: true,

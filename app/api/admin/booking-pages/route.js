@@ -2,23 +2,20 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import BookingPage from '@/models/BookingPage';
 import { isAuthenticated } from '@/lib/auth';
+import { getCurrentDoctor } from '@/lib/doctorAuth';
 
 // GET - List all booking pages
 export async function GET(request) {
   try {
-    // Check authentication
-    const authHeader = request.headers.get("authorization");
-    console.log('Auth header:', authHeader); // Debug log
-
-    if (!isAuthenticated(request)) {
-      console.log('Authentication failed'); // Debug log
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    console.log('Authentication successful'); // Debug log
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
 
     await connectDB();
 
@@ -32,6 +29,7 @@ export async function GET(request) {
 
     // Build query
     const query = {};
+    if (doctorId) query.doctorId = doctorId;
     if (status && status !== 'all') {
       query.status = status;
     }
@@ -75,13 +73,15 @@ export async function GET(request) {
 // POST - Create new booking page
 export async function POST(request) {
   try {
-    // Check authentication
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
+
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
 
     await connectDB();
 
@@ -104,8 +104,10 @@ export async function POST(request) {
       );
     }
 
-    // Check if slug already exists
-    const existingPage = await BookingPage.findOne({ slug: data.slug });
+    // Check if slug already exists for this doctor
+    const existingQuery = { slug: data.slug };
+    if (doctorId) existingQuery.doctorId = doctorId;
+    const existingPage = await BookingPage.findOne(existingQuery);
     if (existingPage) {
       return NextResponse.json(
         { success: false, error: `Slug "${data.slug}" already exists` },
@@ -115,6 +117,7 @@ export async function POST(request) {
 
     // Create page
     const page = new BookingPage({
+      doctorId: doctorId || undefined,
       slug: data.slug,
       title: data.title,
       metaDescription: data.metaDescription || '',

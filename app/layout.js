@@ -1,6 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
 import Script from "next/script";
 import { ModalProvider } from "@/contexts/ModalContext";
 import WyltoChatbot from "@/components/WyltoChatbot";
@@ -135,7 +134,6 @@ export default function RootLayout({ children }) {
         </noscript>
 
         <ModalProvider>
-          <Navbar />
           {children}
         </ModalProvider>
 

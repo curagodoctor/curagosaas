@@ -1,14 +1,18 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
+import connectDB from '@/lib/mongodb';
 import BlogArticle from '@/models/BlogArticle';
 import { isAuthenticated } from '@/lib/auth';
+import { getCurrentDoctor } from '@/lib/doctorAuth';
 
 // GET all blog articles (admin only)
 export async function GET(request) {
   try {
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
 
     await connectDB();
 
@@ -21,6 +25,7 @@ export async function GET(request) {
 
     // Build query
     const query = {};
+    if (doctorId) query.doctorId = doctorId;
     if (status) query.status = status;
     if (category) query.category = category;
 
@@ -55,9 +60,12 @@ export async function GET(request) {
 // POST - Create new blog article (admin only)
 export async function POST(request) {
   try {
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
 
     await connectDB();
 
@@ -79,8 +87,10 @@ export async function POST(request) {
         .replace(/(^-|-$)/g, '');
     }
 
-    // Check if slug already exists
-    const existingArticle = await BlogArticle.findOne({ slug: data.slug });
+    // Check if slug already exists for this doctor
+    const slugQuery = { slug: data.slug };
+    if (doctorId) slugQuery.doctorId = doctorId;
+    const existingArticle = await BlogArticle.findOne(slugQuery);
     if (existingArticle) {
       return NextResponse.json(
         { error: 'An article with this slug already exists' },
@@ -89,7 +99,10 @@ export async function POST(request) {
     }
 
     // Create new article
-    const article = new BlogArticle(data);
+    const article = new BlogArticle({
+      ...data,
+      doctorId: doctorId || undefined,
+    });
     await article.save();
 
     return NextResponse.json({

@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
+import { getCurrentDoctor } from "@/lib/doctorAuth";
 import connectDB from "@/lib/mongodb";
 import SlotView from "@/models/SlotView";
 import Booking from "@/models/Booking";
 
 // GET - Get slot view analytics
 export async function GET(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     await connectDB();
 
     const { searchParams } = new URL(request.url);
@@ -21,6 +25,7 @@ export async function GET(request) {
 
     // Build query
     let query = {};
+    if (doctorId) query.doctorId = doctorId;
 
     if (startDate || endDate) {
       query.createdAt = {};

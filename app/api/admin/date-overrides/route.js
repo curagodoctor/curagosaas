@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
+import { getCurrentDoctor } from "@/lib/doctorAuth";
 import {
   blockDate,
   unblockDate,
@@ -11,12 +12,15 @@ import {
 
 // GET - Get all date overrides
 export async function GET(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const overrides = await getAllDateOverrides();
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
+    const overrides = await getAllDateOverrides(doctorId);
     return NextResponse.json({
       success: true,
       overrides,
@@ -32,11 +36,14 @@ export async function GET(request) {
 
 // POST - Block a date or set date-specific slots
 export async function POST(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     const { action, date, reason, slotOverrides } = await request.json();
 
     if (!action || !date) {
@@ -50,7 +57,7 @@ export async function POST(request) {
 
     switch (action) {
       case "block":
-        result = await blockDate(date, reason);
+        result = await blockDate(date, reason, doctorId);
         return NextResponse.json({
           success: true,
           message: "Date blocked successfully",
@@ -58,7 +65,7 @@ export async function POST(request) {
         });
 
       case "unblock":
-        result = await unblockDate(date);
+        result = await unblockDate(date, doctorId);
         return NextResponse.json({
           success: true,
           message: result ? "Date unblocked successfully" : "Date was not blocked",
@@ -71,7 +78,7 @@ export async function POST(request) {
             { status: 400 }
           );
         }
-        result = await setDateSlotOverrides(date, slotOverrides);
+        result = await setDateSlotOverrides(date, slotOverrides, doctorId);
         return NextResponse.json({
           success: true,
           message: "Date slot overrides set successfully",
@@ -80,7 +87,7 @@ export async function POST(request) {
 
       case "clearSlots":
         // Clear custom slots by deleting the date override
-        result = await clearDateOverride(date);
+        result = await clearDateOverride(date, doctorId);
         return NextResponse.json({
           success: true,
           message: "Date slot overrides cleared successfully",

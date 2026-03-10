@@ -1,10 +1,15 @@
 import mongoose from 'mongoose';
 
 const ConsultationModeSchema = new mongoose.Schema({
+  doctorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Doctor',
+    required: false, // Optional for backward compatibility
+    index: true,
+  },
   name: {
     type: String,
     required: true,
-    unique: true,
     lowercase: true,
     trim: true,
   },
@@ -34,6 +39,8 @@ const ConsultationModeSchema = new mongoose.Schema({
 });
 
 // Index for efficient queries
+ConsultationModeSchema.index({ doctorId: 1, name: 1 }, { unique: true, sparse: true }); // Name unique per doctor
+ConsultationModeSchema.index({ doctorId: 1, isActive: 1, sortOrder: 1 });
 ConsultationModeSchema.index({ isActive: 1, sortOrder: 1 });
 
 const ConsultationMode = mongoose.models.ConsultationMode || mongoose.model('ConsultationMode', ConsultationModeSchema);

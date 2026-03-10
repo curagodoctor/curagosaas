@@ -1,19 +1,27 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
+import connectDB from '@/lib/mongodb';
 import BlogArticle from '@/models/BlogArticle';
 import { isAuthenticated } from '@/lib/auth';
+import { getCurrentDoctor } from '@/lib/doctorAuth';
 
 // GET single blog article by ID (admin only)
 export async function GET(request, { params }) {
   try {
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
 
     await connectDB();
 
     const { id } = await params;
-    const article = await BlogArticle.findById(id);
+
+    const query = { _id: id };
+    if (doctorId) query.doctorId = doctorId;
+
+    const article = await BlogArticle.findOne(query);
 
     if (!article) {
       return NextResponse.json(
@@ -35,21 +43,27 @@ export async function GET(request, { params }) {
 // PATCH - Update blog article by ID (admin only)
 export async function PATCH(request, { params }) {
   try {
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
 
     await connectDB();
 
     const { id } = await params;
     const updates = await request.json();
 
-    // If changing slug, check if it's unique
+    // If changing slug, check if it's unique for this doctor
     if (updates.slug) {
-      const existingArticle = await BlogArticle.findOne({
+      const slugQuery = {
         slug: updates.slug,
         _id: { $ne: id },
-      });
+      };
+      if (doctorId) slugQuery.doctorId = doctorId;
+
+      const existingArticle = await BlogArticle.findOne(slugQuery);
       if (existingArticle) {
         return NextResponse.json(
           { error: 'An article with this slug already exists' },
@@ -58,8 +72,11 @@ export async function PATCH(request, { params }) {
       }
     }
 
-    const article = await BlogArticle.findByIdAndUpdate(
-      id,
+    const query = { _id: id };
+    if (doctorId) query.doctorId = doctorId;
+
+    const article = await BlogArticle.findOneAndUpdate(
+      query,
       { $set: updates },
       { new: true, runValidators: true }
     );
@@ -87,14 +104,21 @@ export async function PATCH(request, { params }) {
 // DELETE - Delete blog article by ID (admin only)
 export async function DELETE(request, { params }) {
   try {
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
 
     await connectDB();
 
     const { id } = await params;
-    const article = await BlogArticle.findByIdAndDelete(id);
+
+    const query = { _id: id };
+    if (doctorId) query.doctorId = doctorId;
+
+    const article = await BlogArticle.findOneAndDelete(query);
 
     if (!article) {
       return NextResponse.json(

@@ -1,10 +1,15 @@
 import mongoose from 'mongoose';
 
 const DateOverrideSchema = new mongoose.Schema({
+  doctorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Doctor',
+    required: false, // Optional for backward compatibility
+    index: true,
+  },
   date: {
     type: String,
     required: true,
-    unique: true,
   },
   type: {
     type: String,
@@ -22,6 +27,8 @@ const DateOverrideSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Note: date field has unique:true which automatically creates an index
+// Indexes
+DateOverrideSchema.index({ doctorId: 1, date: 1 }, { unique: true, sparse: true }); // Date unique per doctor
+DateOverrideSchema.index({ date: 1 }); // For backward compat queries
 
 export default mongoose.models.DateOverride || mongoose.model('DateOverride', DateOverrideSchema);

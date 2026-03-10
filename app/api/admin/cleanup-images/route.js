@@ -90,7 +90,7 @@ async function getAllUploadedFiles() {
 export async function POST(request) {
   try {
     // Check authentication
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }

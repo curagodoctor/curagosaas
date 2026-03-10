@@ -6,7 +6,7 @@ import { isAuthenticated } from '@/lib/auth';
 export async function POST(request) {
   try {
     // Check authentication
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       console.error('❌ Unauthorized upload attempt');
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },

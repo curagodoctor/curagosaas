@@ -1,19 +1,27 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
+import { getCurrentDoctor } from "@/lib/doctorAuth";
 import connectDB from "@/lib/mongodb";
 import ForumPost from "@/models/ForumPost";
 
 // GET - Get single forum post
 export async function GET(request, { params }) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     await connectDB();
 
     const { id } = await params;
-    const post = await ForumPost.findById(id).lean();
+
+    const query = { _id: id };
+    if (doctorId) query.doctorId = doctorId;
+
+    const post = await ForumPost.findOne(query).lean();
 
     if (!post) {
       return NextResponse.json(
@@ -37,18 +45,24 @@ export async function GET(request, { params }) {
 
 // PATCH - Update forum post (reply, change status, toggle visibility)
 export async function PATCH(request, { params }) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     await connectDB();
 
     const { id } = await params;
     const body = await request.json();
     const { action, reply, status, isPublic } = body;
 
-    const post = await ForumPost.findById(id);
+    const query = { _id: id };
+    if (doctorId) query.doctorId = doctorId;
+
+    const post = await ForumPost.findOne(query);
 
     if (!post) {
       return NextResponse.json(
@@ -61,7 +75,7 @@ export async function PATCH(request, { params }) {
     if (action === 'reply' && reply) {
       post.replies.push({
         message: reply.trim(),
-        repliedBy: 'Dr. Yuvaraj T',
+        repliedBy: doctor?.displayName || doctor?.name || 'Doctor',
         repliedAt: new Date(),
       });
       post.status = 'replied';
@@ -93,15 +107,22 @@ export async function PATCH(request, { params }) {
 
 // DELETE - Delete forum post
 export async function DELETE(request, { params }) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     await connectDB();
 
     const { id } = await params;
-    const post = await ForumPost.findByIdAndDelete(id);
+
+    const query = { _id: id };
+    if (doctorId) query.doctorId = doctorId;
+
+    const post = await ForumPost.findOneAndDelete(query);
 
     if (!post) {
       return NextResponse.json(

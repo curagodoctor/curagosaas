@@ -1,22 +1,17 @@
 import { NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
+import { isAuthenticated } from "@/lib/auth";
+import { getCurrentDoctor } from "@/lib/doctorAuth";
 import { getAllSlots } from "@/lib/slotManagerDB";
 
 // GET - Get available time slots for a specific date
 export async function GET(request) {
   try {
-    // Verify admin token
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const token = authHeader.substring(7);
-    const isValid = verifyToken(token);
-
-    if (!isValid) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
 
     const { searchParams } = new URL(request.url);
     const date = searchParams.get("date");
@@ -35,8 +30,8 @@ export async function GET(request) {
       return `${hours12}:${String(minute).padStart(2, '0')} ${period}`;
     };
 
-    // Get all existing slots from the system
-    const existingSlots = await getAllSlots();
+    // Get all existing slots from the system for this doctor
+    const existingSlots = await getAllSlots(doctorId);
     const existingTimes = existingSlots.map(slot => slot.time);
 
     // Generate all possible time slots (full day: 00:00 to 23:30 in 30-min intervals)

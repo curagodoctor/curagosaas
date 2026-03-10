@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
+import { getCurrentDoctor } from "@/lib/doctorAuth";
 import connectDB from "@/lib/mongodb";
 import WeeklySchedule from "@/models/WeeklySchedule";
 import ConsultationMode from "@/models/ConsultationMode";
@@ -7,27 +8,30 @@ import TimeSlot from "@/models/TimeSlot";
 
 // GET - Get weekly schedule (optionally filtered by modeId)
 export async function GET(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     const { searchParams } = new URL(request.url);
     const modeId = searchParams.get("modeId");
 
     await connectDB();
 
     let query = {};
-    if (modeId) {
-      query.modeId = modeId;
-    }
+    if (doctorId) query.doctorId = doctorId;
+    if (modeId) query.modeId = modeId;
 
     const schedules = await WeeklySchedule.find(query)
       .populate('modeId', 'name displayName color')
       .sort({ modeId: 1, dayOfWeek: 1 });
 
     // Also get all time slots for reference
-    const timeSlots = await TimeSlot.find({ isActive: true })
+    const slotQuery = doctorId ? { doctorId, isActive: true } : { isActive: true };
+    const timeSlots = await TimeSlot.find(slotQuery)
       .sort({ time: 1 });
 
     // Group schedules by mode
@@ -63,11 +67,14 @@ export async function GET(request) {
 
 // POST - Update weekly schedule for a specific mode + day
 export async function POST(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     const { modeId, dayOfWeek, isEnabled, enabledSlots } = await request.json();
 
     if (!modeId || dayOfWeek === undefined) {
@@ -86,8 +93,10 @@ export async function POST(request) {
 
     await connectDB();
 
-    // Verify mode exists
-    const mode = await ConsultationMode.findById(modeId);
+    // Verify mode exists and belongs to this doctor
+    const modeQuery = { _id: modeId };
+    if (doctorId) modeQuery.doctorId = doctorId;
+    const mode = await ConsultationMode.findOne(modeQuery);
     if (!mode) {
       return NextResponse.json(
         { error: "Consultation mode not found" },
@@ -97,11 +106,15 @@ export async function POST(request) {
 
     // Update or create schedule entry
     const updateData = {};
+    if (doctorId) updateData.doctorId = doctorId;
     if (isEnabled !== undefined) updateData.isEnabled = isEnabled;
     if (enabledSlots !== undefined) updateData.enabledSlots = enabledSlots;
 
+    const findQuery = { modeId, dayOfWeek };
+    if (doctorId) findQuery.doctorId = doctorId;
+
     const schedule = await WeeklySchedule.findOneAndUpdate(
-      { modeId, dayOfWeek },
+      findQuery,
       updateData,
       { upsert: true, new: true }
     );
@@ -122,11 +135,14 @@ export async function POST(request) {
 
 // PATCH - Bulk update: Toggle a slot for a specific day/mode
 export async function PATCH(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     const { modeId, dayOfWeek, slotTime, enabled } = await request.json();
 
     if (!modeId || dayOfWeek === undefined || !slotTime) {
@@ -138,7 +154,10 @@ export async function PATCH(request) {
 
     await connectDB();
 
-    const schedule = await WeeklySchedule.findOne({ modeId, dayOfWeek });
+    const query = { modeId, dayOfWeek };
+    if (doctorId) query.doctorId = doctorId;
+
+    const schedule = await WeeklySchedule.findOne(query);
     if (!schedule) {
       return NextResponse.json(
         { error: "Schedule not found for this mode and day" },

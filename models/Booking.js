@@ -1,6 +1,12 @@
 import mongoose from 'mongoose';
 
 const BookingSchema = new mongoose.Schema({
+  doctorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Doctor',
+    required: false, // Optional for backward compatibility
+    index: true,
+  },
   name: {
     type: String,
     required: true,
@@ -69,7 +75,9 @@ const BookingSchema = new mongoose.Schema({
 });
 
 // Index for faster queries
+BookingSchema.index({ doctorId: 1, date: 1, time: 1 });
 BookingSchema.index({ date: 1, time: 1 });
+BookingSchema.index({ doctorId: 1, status: 1 });
 BookingSchema.index({ status: 1 });
 BookingSchema.index({ expiryTime: 1 });
 

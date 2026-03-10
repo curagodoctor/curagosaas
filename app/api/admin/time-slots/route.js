@@ -1,25 +1,28 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
+import { getCurrentDoctor } from "@/lib/doctorAuth";
 import connectDB from "@/lib/mongodb";
 import TimeSlot from "@/models/TimeSlot";
 import WeeklySchedule from "@/models/WeeklySchedule";
 
 // GET - List all time slots
 export async function GET(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     const { searchParams } = new URL(request.url);
     const includeAll = searchParams.get("all") === "true";
 
     await connectDB();
 
     let query = {};
-    if (!includeAll) {
-      query.isActive = true;
-    }
+    if (doctorId) query.doctorId = doctorId;
+    if (!includeAll) query.isActive = true;
 
     const slots = await TimeSlot.find(query).sort({ time: 1 });
 
@@ -44,11 +47,14 @@ export async function GET(request) {
 
 // POST - Add a new time slot
 export async function POST(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     const { time, label } = await request.json();
 
     if (!time) {
@@ -60,8 +66,10 @@ export async function POST(request) {
 
     await connectDB();
 
-    // Check if slot already exists
-    const existing = await TimeSlot.findOne({ time });
+    // Check if slot already exists for this doctor
+    const existingQuery = { time };
+    if (doctorId) existingQuery.doctorId = doctorId;
+    const existing = await TimeSlot.findOne(existingQuery);
     if (existing) {
       // If it exists but is inactive, reactivate it
       if (!existing.isActive) {
@@ -82,6 +90,7 @@ export async function POST(request) {
     // Create new slot
     const slotLabel = label || TimeSlot.timeToLabel(time);
     const slot = new TimeSlot({
+      doctorId: doctorId || undefined,
       time,
       label: slotLabel,
       isActive: true,
@@ -105,11 +114,14 @@ export async function POST(request) {
 
 // PATCH - Update time slot (toggle active status)
 export async function PATCH(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     const { time, isActive } = await request.json();
 
     if (!time) {
@@ -121,7 +133,10 @@ export async function PATCH(request) {
 
     await connectDB();
 
-    const slot = await TimeSlot.findOne({ time });
+    const query = { time };
+    if (doctorId) query.doctorId = doctorId;
+
+    const slot = await TimeSlot.findOne(query);
     if (!slot) {
       return NextResponse.json(
         { error: "Time slot not found" },
@@ -151,11 +166,14 @@ export async function PATCH(request) {
 
 // DELETE - Remove a time slot
 export async function DELETE(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     const { searchParams } = new URL(request.url);
     const time = searchParams.get("time");
 
@@ -168,7 +186,10 @@ export async function DELETE(request) {
 
     await connectDB();
 
-    const slot = await TimeSlot.findOne({ time });
+    const query = { time };
+    if (doctorId) query.doctorId = doctorId;
+
+    const slot = await TimeSlot.findOne(query);
     if (!slot) {
       return NextResponse.json(
         { error: "Time slot not found" },
@@ -176,9 +197,11 @@ export async function DELETE(request) {
       );
     }
 
-    // Remove this slot from all weekly schedules
+    // Remove this slot from all weekly schedules for this doctor
+    const scheduleQuery = { enabledSlots: time };
+    if (doctorId) scheduleQuery.doctorId = doctorId;
     await WeeklySchedule.updateMany(
-      { enabledSlots: time },
+      scheduleQuery,
       { $pull: { enabledSlots: time } }
     );
 

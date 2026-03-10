@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAuthenticated } from "@/lib/auth";
+import { getCurrentDoctor } from "@/lib/doctorAuth";
 import connectDB from "@/lib/mongodb";
 import ConsultationMode from "@/models/ConsultationMode";
 import WeeklySchedule from "@/models/WeeklySchedule";
@@ -8,17 +9,21 @@ import { initializeDefaultModes } from "@/lib/slotManagerDB";
 
 // GET - List all consultation modes
 export async function GET(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     await connectDB();
 
-    // Initialize default modes if none exist
-    await initializeDefaultModes();
+    // Initialize default modes if none exist for this doctor
+    await initializeDefaultModes(doctorId);
 
-    const modes = await ConsultationMode.find()
+    const query = doctorId ? { doctorId } : {};
+    const modes = await ConsultationMode.find(query)
       .sort({ sortOrder: 1, createdAt: 1 });
 
     return NextResponse.json({
@@ -36,11 +41,14 @@ export async function GET(request) {
 
 // POST - Create a new consultation mode
 export async function POST(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     const { name, displayName, description, color } = await request.json();
 
     if (!name || !displayName) {
@@ -52,8 +60,10 @@ export async function POST(request) {
 
     await connectDB();
 
-    // Check if mode with same name exists
-    const existing = await ConsultationMode.findOne({ name: name.toLowerCase() });
+    // Check if mode with same name exists for this doctor
+    const existingQuery = { name: name.toLowerCase() };
+    if (doctorId) existingQuery.doctorId = doctorId;
+    const existing = await ConsultationMode.findOne(existingQuery);
     if (existing) {
       return NextResponse.json(
         { error: "A mode with this name already exists" },
@@ -61,11 +71,13 @@ export async function POST(request) {
       );
     }
 
-    // Get the highest sortOrder
-    const lastMode = await ConsultationMode.findOne().sort({ sortOrder: -1 });
+    // Get the highest sortOrder for this doctor
+    const sortQuery = doctorId ? { doctorId } : {};
+    const lastMode = await ConsultationMode.findOne(sortQuery).sort({ sortOrder: -1 });
     const sortOrder = lastMode ? lastMode.sortOrder + 1 : 1;
 
     const mode = new ConsultationMode({
+      doctorId: doctorId || undefined,
       name: name.toLowerCase().replace(/\s+/g, '-'),
       displayName,
       description: description || '',
@@ -78,6 +90,7 @@ export async function POST(request) {
     // Initialize weekly schedule for all days (disabled by default)
     for (let dayOfWeek = 0; dayOfWeek <= 6; dayOfWeek++) {
       await WeeklySchedule.create({
+        doctorId: doctorId || undefined,
         modeId: mode._id,
         dayOfWeek,
         isEnabled: false,
@@ -101,11 +114,14 @@ export async function POST(request) {
 
 // PATCH - Update an existing consultation mode
 export async function PATCH(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     const { id, displayName, description, color, isActive, sortOrder } = await request.json();
 
     if (!id) {
@@ -117,7 +133,10 @@ export async function PATCH(request) {
 
     await connectDB();
 
-    const mode = await ConsultationMode.findById(id);
+    const query = { _id: id };
+    if (doctorId) query.doctorId = doctorId;
+
+    const mode = await ConsultationMode.findOne(query);
     if (!mode) {
       return NextResponse.json(
         { error: "Consultation mode not found" },
@@ -150,11 +169,14 @@ export async function PATCH(request) {
 
 // DELETE - Delete a consultation mode
 export async function DELETE(request) {
-  if (!isAuthenticated(request)) {
+  if (!(await isAuthenticated(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -167,7 +189,10 @@ export async function DELETE(request) {
 
     await connectDB();
 
-    const mode = await ConsultationMode.findById(id);
+    const query = { _id: id };
+    if (doctorId) query.doctorId = doctorId;
+
+    const mode = await ConsultationMode.findOne(query);
     if (!mode) {
       return NextResponse.json(
         { error: "Consultation mode not found" },
@@ -175,8 +200,10 @@ export async function DELETE(request) {
       );
     }
 
-    // Check if there are any bookings with this mode
-    const bookingCount = await Booking.countDocuments({ modeId: id });
+    // Check if there are any bookings with this mode for this doctor
+    const bookingQuery = { modeId: id };
+    if (doctorId) bookingQuery.doctorId = doctorId;
+    const bookingCount = await Booking.countDocuments(bookingQuery);
     if (bookingCount > 0) {
       return NextResponse.json(
         {
@@ -189,10 +216,12 @@ export async function DELETE(request) {
     }
 
     // Delete weekly schedules for this mode
-    await WeeklySchedule.deleteMany({ modeId: id });
+    const scheduleQuery = { modeId: id };
+    if (doctorId) scheduleQuery.doctorId = doctorId;
+    await WeeklySchedule.deleteMany(scheduleQuery);
 
     // Delete the mode
-    await ConsultationMode.findByIdAndDelete(id);
+    await ConsultationMode.findOneAndDelete(query);
 
     return NextResponse.json({
       success: true,

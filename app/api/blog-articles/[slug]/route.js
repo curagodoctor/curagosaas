@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
+import connectDB from '@/lib/mongodb';
 import BlogArticle from '@/models/BlogArticle';
 
 // GET single published blog article by slug (public)

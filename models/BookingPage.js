@@ -39,10 +39,15 @@ const SectionSchema = new mongoose.Schema({
 }, { _id: true });
 
 const BookingPageSchema = new mongoose.Schema({
+  doctorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Doctor',
+    required: false, // Optional for backward compatibility during migration
+    index: true,
+  },
   slug: {
     type: String,
     required: true,
-    unique: true,
     lowercase: true,
     trim: true,
     match: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
@@ -141,7 +146,9 @@ const BookingPageSchema = new mongoose.Schema({
 });
 
 // Indexes for performance
+BookingPageSchema.index({ doctorId: 1, slug: 1 }, { unique: true, sparse: true }); // Slug unique per doctor
 BookingPageSchema.index({ slug: 1, status: 1 });
+BookingPageSchema.index({ doctorId: 1, status: 1, publishedAt: -1 });
 BookingPageSchema.index({ status: 1, publishedAt: -1 });
 BookingPageSchema.index({ createdAt: -1 });
 BookingPageSchema.index({ category: 1, status: 1, displayOrder: 1 });

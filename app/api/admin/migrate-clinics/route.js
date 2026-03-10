@@ -47,7 +47,7 @@ const clinicConfigs = {
 export async function POST(request) {
   try {
     // Check authentication
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
@@ -89,7 +89,7 @@ export async function POST(request) {
 export async function GET(request) {
   try {
     // Check authentication
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }

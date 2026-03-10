@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import BookingPage from '@/models/BookingPage';
 import Booking from '@/models/Booking';
 import { isAuthenticated } from '@/lib/auth';
+import { getCurrentDoctor } from '@/lib/doctorAuth';
 import { unlink } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
@@ -79,19 +80,25 @@ async function deletePageImages(page) {
 // GET - Get single booking page
 export async function GET(request, { params }) {
   try {
-    // Check authentication
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
+
     await connectDB();
 
     // In Next.js 15+, params is a promise and must be awaited
     const { id } = await params;
-    const page = await BookingPage.findById(id);
+
+    const query = { _id: id };
+    if (doctorId) query.doctorId = doctorId;
+
+    const page = await BookingPage.findOne(query);
 
     if (!page) {
       return NextResponse.json(
@@ -116,13 +123,15 @@ export async function GET(request, { params }) {
 // PATCH - Update booking page
 export async function PATCH(request, { params }) {
   try {
-    // Check authentication
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
+
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
 
     await connectDB();
 
@@ -130,12 +139,15 @@ export async function PATCH(request, { params }) {
     const { id } = await params;
     const updates = await request.json();
 
-    // Check if slug is being updated and if it already exists
+    // Check if slug is being updated and if it already exists for this doctor
     if (updates.slug) {
-      const existingPage = await BookingPage.findOne({
+      const slugQuery = {
         slug: updates.slug,
         _id: { $ne: id },
-      });
+      };
+      if (doctorId) slugQuery.doctorId = doctorId;
+
+      const existingPage = await BookingPage.findOne(slugQuery);
 
       if (existingPage) {
         return NextResponse.json(
@@ -155,7 +167,10 @@ export async function PATCH(request, { params }) {
     }
 
     // Find and update page
-    const page = await BookingPage.findById(id);
+    const query = { _id: id };
+    if (doctorId) query.doctorId = doctorId;
+
+    const page = await BookingPage.findOne(query);
 
     if (!page) {
       return NextResponse.json(
@@ -226,13 +241,15 @@ export async function PATCH(request, { params }) {
 // DELETE - Delete/Archive booking page
 export async function DELETE(request, { params }) {
   try {
-    // Check authentication
-    if (!isAuthenticated(request)) {
+    if (!(await isAuthenticated(request))) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
+
+    const doctor = await getCurrentDoctor(request);
+    const doctorId = doctor?._id;
 
     await connectDB();
 
@@ -241,7 +258,10 @@ export async function DELETE(request, { params }) {
     const { searchParams } = new URL(request.url);
     const hardDelete = searchParams.get('hard') === 'true';
 
-    const page = await BookingPage.findById(id);
+    const query = { _id: id };
+    if (doctorId) query.doctorId = doctorId;
+
+    const page = await BookingPage.findOne(query);
 
     if (!page) {
       return NextResponse.json(
@@ -250,10 +270,10 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // Check if page has bookings
-    const bookingCount = await Booking.countDocuments({
-      status: 'confirmed',
-    });
+    // Check if page has bookings for this doctor
+    const bookingQuery = { status: 'confirmed' };
+    if (doctorId) bookingQuery.doctorId = doctorId;
+    const bookingCount = await Booking.countDocuments(bookingQuery);
 
     // If has bookings and not hard delete, archive instead
     if (bookingCount > 0 && !hardDelete) {
@@ -272,7 +292,7 @@ export async function DELETE(request, { params }) {
       // Delete all associated images before deleting the page
       const deletedImagesCount = await deletePageImages(page);
 
-      await BookingPage.findByIdAndDelete(id);
+      await BookingPage.findOneAndDelete(query);
 
       return NextResponse.json({
         success: true,
