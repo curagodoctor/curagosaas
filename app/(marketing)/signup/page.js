@@ -13,6 +13,7 @@ export default function SignupPage() {
     subdomain: '',
     password: '',
     confirmPassword: '',
+    referralCode: '',
     isLicensedProfessional: false,
     acceptTerms: false,
   });
@@ -146,6 +147,7 @@ export default function SignupPage() {
           phone: formData.phone.replace(/\D/g, ''),
           subdomain: formData.subdomain,
           password: formData.password,
+          referralCode: formData.referralCode || undefined,
           isLicensedProfessional: formData.isLicensedProfessional,
         }),
       });
@@ -486,6 +488,30 @@ export default function SignupPage() {
                     {errors.confirmPassword && (
                       <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>
                     )}
+                  </div>
+                </div>
+
+                {/* Referral Code (Optional) */}
+                <div>
+                  <label htmlFor="referralCode" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Referral Code <span className="text-gray-400">(Optional)</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      id="referralCode"
+                      name="referralCode"
+                      value={formData.referralCode}
+                      onChange={handleChange}
+                      placeholder="Enter referral code if you have one"
+                      className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none transition-all uppercase"
+                      style={{ textTransform: 'uppercase' }}
+                    />
                   </div>
                 </div>
 

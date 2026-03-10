@@ -912,28 +912,7 @@ export default function PageBuilderEditor() {
                   >
                     <option value="draft">Draft</option>
                     <option value="published">Published</option>
-                    <option value="archived">Archived</option>
                   </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Consultation Fee (₹)</label>
-                  <input
-                    type="number"
-                    value={pageData.consultationFee}
-                    onChange={(e) => updatePageMeta("consultationFee", Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Booking Fee (₹)</label>
-                  <input
-                    type="number"
-                    value={pageData.bookingFee}
-                    onChange={(e) => updatePageMeta("bookingFee", Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
                 </div>
 
                 <div>
@@ -942,108 +921,10 @@ export default function PageBuilderEditor() {
                     value={pageData.metaDescription}
                     onChange={(e) => updatePageMeta("metaDescription", e.target.value)}
                     rows={3}
+                    placeholder="Brief description for search engines"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
-                </div>
-
-                {/* Navbar & Clinic Card Settings */}
-                <div className="border-t border-gray-200 pt-4 mt-4">
-                  <h3 className="font-semibold text-gray-900 mb-3">Navbar & Clinic Card Settings</h3>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                      <select
-                        value={pageData.category || "other"}
-                        onChange={(e) => updatePageMeta("category", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="myclinic">My Clinic</option>
-                        <option value="gbsi">GBSI</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="showInNavbar"
-                        checked={pageData.showInNavbar || false}
-                        onChange={(e) => updatePageMeta("showInNavbar", e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                      />
-                      <label htmlFor="showInNavbar" className="text-sm font-medium text-gray-700">
-                        Show in Navbar Dropdown
-                      </label>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Display Name (for navbar/cards)</label>
-                      <input
-                        type="text"
-                        value={pageData.displayName || ""}
-                        onChange={(e) => updatePageMeta("displayName", e.target.value)}
-                        placeholder={pageData.title}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Short Description (for clinic card)</label>
-                      <textarea
-                        value={pageData.shortDescription || ""}
-                        onChange={(e) => updatePageMeta("shortDescription", e.target.value)}
-                        rows={2}
-                        maxLength={200}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Display Order</label>
-                      <input
-                        type="number"
-                        value={pageData.displayOrder || 0}
-                        onChange={(e) => updatePageMeta("displayOrder", Number(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Icon Type</label>
-                      <select
-                        value={pageData.iconType || "custom"}
-                        onChange={(e) => updatePageMeta("iconType", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="gallbladder">Gallbladder</option>
-                        <option value="ibs">IBS</option>
-                        <option value="second-opinion">Second Opinion</option>
-                        <option value="online">Online/Video</option>
-                        <option value="liver">Liver</option>
-                        <option value="pancreas">Pancreas</option>
-                        <option value="stomach">Stomach</option>
-                        <option value="custom">Custom/Default</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Color Scheme</label>
-                      <select
-                        value={pageData.colorScheme || "blue"}
-                        onChange={(e) => updatePageMeta("colorScheme", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="green">Green</option>
-                        <option value="blue">Blue</option>
-                        <option value="purple">Purple</option>
-                        <option value="orange">Orange</option>
-                        <option value="red">Red</option>
-                        <option value="teal">Teal</option>
-                        <option value="indigo">Indigo</option>
-                      </select>
-                    </div>
-                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{(pageData.metaDescription || '').length}/160 characters</p>
                 </div>
               </div>
 
