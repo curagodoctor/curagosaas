@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getDoctorFromRequest } from '@/lib/doctorAuth';
+import { getCurrentDoctor } from '@/lib/doctorAuth';
 import connectDB from '@/lib/mongodb';
 import MeetingLink from '@/models/MeetingLink';
 
 // GET - Get all meeting links for the doctor
 export async function GET(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -32,7 +32,7 @@ export async function GET(request) {
 // POST - Create new meeting link
 export async function POST(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -86,7 +86,7 @@ export async function POST(request) {
 // PUT - Update meeting link
 export async function PUT(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -145,7 +145,7 @@ export async function PUT(request) {
 // DELETE - Delete meeting link
 export async function DELETE(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

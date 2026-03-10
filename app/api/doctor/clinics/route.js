@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getDoctorFromRequest } from '@/lib/doctorAuth';
+import { getCurrentDoctor } from '@/lib/doctorAuth';
 import connectDB from '@/lib/mongodb';
 import Clinic from '@/models/Clinic';
 
 // GET - Get all clinics for the doctor
 export async function GET(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -32,7 +32,7 @@ export async function GET(request) {
 // POST - Create new clinic
 export async function POST(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

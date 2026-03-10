@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getDoctorFromRequest } from '@/lib/doctorAuth';
+import { getCurrentDoctor } from '@/lib/doctorAuth';
 import connectDB from '@/lib/mongodb';
 import ConsultationMode from '@/models/ConsultationMode';
 
 // GET - Get all consultation modes for the doctor
 export async function GET(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -32,7 +32,7 @@ export async function GET(request) {
 // POST - Create new consultation mode
 export async function POST(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -93,7 +93,7 @@ export async function POST(request) {
 // PATCH - Update consultation mode
 export async function PATCH(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -138,7 +138,7 @@ export async function PATCH(request) {
 // DELETE - Delete consultation mode
 export async function DELETE(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

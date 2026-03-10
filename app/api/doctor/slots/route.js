@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDoctorFromRequest } from '@/lib/doctorAuth';
+import { getCurrentDoctor } from '@/lib/doctorAuth';
 import connectDB from '@/lib/mongodb';
 import TimeSlot from '@/models/TimeSlot';
 import ConsultationMode from '@/models/ConsultationMode';
@@ -83,7 +83,7 @@ async function initializeDoctorSlots(doctorId) {
 // GET - Get all slots, modes, and schedules for the doctor
 export async function GET(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -122,7 +122,7 @@ export async function GET(request) {
 // POST - Add new time slot
 export async function POST(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -164,7 +164,7 @@ export async function POST(request) {
 // PATCH - Update slot status or toggle slot
 export async function PATCH(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -206,7 +206,7 @@ export async function PATCH(request) {
 // DELETE - Remove time slot
 export async function DELETE(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

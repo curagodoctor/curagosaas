@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getDoctorFromRequest } from '@/lib/doctorAuth';
+import { getCurrentDoctor } from '@/lib/doctorAuth';
 import connectDB from '@/lib/mongodb';
 import Booking from '@/models/Booking';
 
 // GET - Get all bookings for the doctor
 export async function GET(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -86,7 +86,7 @@ export async function GET(request) {
 // PATCH - Update booking status (cancel booking)
 export async function PATCH(request) {
   try {
-    const doctor = await getDoctorFromRequest(request);
+    const doctor = await getCurrentDoctor(request);
     if (!doctor) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
