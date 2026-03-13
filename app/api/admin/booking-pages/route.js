@@ -1,30 +1,19 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import BookingPage from '@/models/BookingPage';
-import { isAuthenticated } from '@/lib/auth';
 import { getCurrentDoctor } from '@/lib/doctorAuth';
 
 // GET - List all booking pages
 export async function GET(request) {
   try {
-    if (!(await isAuthenticated(request))) {
+    const doctor = await getCurrentDoctor(request);
+    if (!doctor) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
-
-    const doctor = await getCurrentDoctor(request);
-    const doctorId = doctor?._id;
-
-    // Strict tenant isolation: return empty if no doctor found
-    if (!doctorId) {
-      return NextResponse.json({
-        success: true,
-        pages: [],
-        pagination: { total: 0, page: 1, limit: 20, totalPages: 0 },
-      });
-    }
+    const doctorId = doctor._id;
 
     await connectDB();
 
@@ -81,15 +70,14 @@ export async function GET(request) {
 // POST - Create new booking page
 export async function POST(request) {
   try {
-    if (!(await isAuthenticated(request))) {
+    const doctor = await getCurrentDoctor(request);
+    if (!doctor) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
-
-    const doctor = await getCurrentDoctor(request);
-    const doctorId = doctor?._id;
+    const doctorId = doctor._id;
 
     await connectDB();
 

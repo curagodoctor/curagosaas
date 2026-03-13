@@ -127,11 +127,9 @@ const blogArticleSchema = new mongoose.Schema({
       {
         question: {
           type: String,
-          required: true,
         },
         answer: {
           type: String,
-          required: true,
         },
       }
     ],
@@ -178,6 +176,7 @@ const blogArticleSchema = new mongoose.Schema({
   category: {
     type: String,
     enum: ['Gallstones', 'Pancreatitis', 'Liver Disease', 'IBS', 'GERD', 'Other'],
+    set: (v) => v === '' ? undefined : v,  // Convert empty string to undefined
   },
 
 }, {

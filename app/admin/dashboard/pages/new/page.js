@@ -61,10 +61,8 @@ export default function NewBookingPageForm() {
 
       const response = await fetch("/api/admin/booking-pages", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({
           ...formData,
           metaKeywords: keywords,
@@ -102,8 +100,8 @@ export default function NewBookingPageForm() {
             </svg>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Create New Booking Page</h1>
-            <p className="text-gray-600 mt-1">Set up the basic details for your page</p>
+            <h1 className="text-3xl font-bold text-gray-900">Create New Website</h1>
+            <p className="text-gray-600 mt-1">Set up the basic details for your clinic website</p>
           </div>
         </div>
       </div>

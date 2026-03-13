@@ -19,7 +19,6 @@ export default function BlogArticlesPage() {
 
   const fetchArticles = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
       const params = new URLSearchParams({
         page: pagination.page,
         limit: 10,
@@ -29,11 +28,11 @@ export default function BlogArticlesPage() {
       if (filterCategory !== 'all') params.append('category', filterCategory);
 
       const response = await fetch(`/api/admin/blog-articles?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       if (response.status === 401) {
-        window.location.href = '/admin';
+        window.location.href = '/login';
         return;
       }
 
@@ -61,10 +60,9 @@ export default function BlogArticlesPage() {
     if (!confirmed) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/blog-articles/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       if (response.ok) {

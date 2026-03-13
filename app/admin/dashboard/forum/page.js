@@ -36,12 +36,11 @@ export default function ForumPage() {
 
   const fetchPosts = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch('/api/admin/forum', {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       if (response.status === 401) {
-        window.location.href = '/admin';
+        window.location.href = '/login';
         return;
       }
       const data = await response.json();
@@ -136,13 +135,10 @@ export default function ForumPage() {
 
     setReplying(true);
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/forum/${selectedPost._id}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           action: 'reply',
           reply: replyText,
@@ -181,13 +177,10 @@ export default function ForumPage() {
 
   const handleStatusChange = async (postId, newStatus) => {
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/forum/${postId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ status: newStatus }),
       });
 
@@ -206,13 +199,10 @@ export default function ForumPage() {
 
   const handleVisibilityToggle = async (postId, isPublic) => {
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/forum/${postId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ isPublic }),
       });
 
@@ -241,10 +231,9 @@ export default function ForumPage() {
     if (!confirmed) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/forum/${postId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       const data = await response.json();

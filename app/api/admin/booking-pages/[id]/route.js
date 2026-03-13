@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import BookingPage from '@/models/BookingPage';
 import Booking from '@/models/Booking';
-import { isAuthenticated } from '@/lib/auth';
 import { getCurrentDoctor } from '@/lib/doctorAuth';
 import { unlink } from 'fs/promises';
 import { existsSync } from 'fs';
@@ -80,15 +79,14 @@ async function deletePageImages(page) {
 // GET - Get single booking page
 export async function GET(request, { params }) {
   try {
-    if (!(await isAuthenticated(request))) {
+    const doctor = await getCurrentDoctor(request);
+    if (!doctor) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
-
-    const doctor = await getCurrentDoctor(request);
-    const doctorId = doctor?._id;
+    const doctorId = doctor._id;
 
     await connectDB();
 
@@ -123,15 +121,14 @@ export async function GET(request, { params }) {
 // PATCH - Update booking page
 export async function PATCH(request, { params }) {
   try {
-    if (!(await isAuthenticated(request))) {
+    const doctor = await getCurrentDoctor(request);
+    if (!doctor) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
-
-    const doctor = await getCurrentDoctor(request);
-    const doctorId = doctor?._id;
+    const doctorId = doctor._id;
 
     await connectDB();
 
@@ -241,15 +238,14 @@ export async function PATCH(request, { params }) {
 // DELETE - Delete/Archive booking page
 export async function DELETE(request, { params }) {
   try {
-    if (!(await isAuthenticated(request))) {
+    const doctor = await getCurrentDoctor(request);
+    if (!doctor) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
-
-    const doctor = await getCurrentDoctor(request);
-    const doctorId = doctor?._id;
+    const doctorId = doctor._id;
 
     await connectDB();
 

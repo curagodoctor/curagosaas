@@ -16,7 +16,6 @@ export default function AnalyticsPage() {
   const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('adminToken');
 
       const params = new URLSearchParams();
       if (filterMode !== 'all') params.append('mode', filterMode);
@@ -25,7 +24,7 @@ export default function AnalyticsPage() {
       if (dateRange.endDate) params.append('endDate', dateRange.endDate);
 
       const response = await fetch(`/api/admin/analytics/slot-views?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       const data = await response.json();

@@ -105,6 +105,20 @@ export async function POST(request) {
       );
     }
 
+    // Filter out empty FAQ entries
+    if (data.faqSection?.faqs) {
+      data.faqSection.faqs = data.faqSection.faqs.filter(
+        faq => faq.question?.trim() || faq.answer?.trim()
+      );
+    }
+
+    // Filter out empty audit steps
+    if (data.surgicalAuditSection?.auditSteps) {
+      data.surgicalAuditSection.auditSteps = data.surgicalAuditSection.auditSteps.filter(
+        step => step.step?.trim() || step.description?.trim()
+      );
+    }
+
     // Create new article
     const article = new BlogArticle({
       ...data,

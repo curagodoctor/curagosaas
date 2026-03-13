@@ -40,12 +40,11 @@ export default function WeeklySchedulePage() {
 
   const fetchModes = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch("/api/admin/consultation-modes", {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       if (response.status === 401) {
-        window.location.href = '/admin';
+        window.location.href = '/login';
         return;
       }
       const data = await response.json();
@@ -65,12 +64,11 @@ export default function WeeklySchedulePage() {
 
   const fetchTimeSlots = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch("/api/admin/time-slots?all=true", {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       if (response.status === 401) {
-        window.location.href = '/admin';
+        window.location.href = '/login';
         return;
       }
       const data = await response.json();
@@ -88,12 +86,11 @@ export default function WeeklySchedulePage() {
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/weekly-schedule?modeId=${selectedMode._id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       if (response.status === 401) {
-        window.location.href = '/admin';
+        window.location.href = '/login';
         return;
       }
       const data = await response.json();
@@ -122,13 +119,10 @@ export default function WeeklySchedulePage() {
     setIsSaving(true);
 
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch("/api/admin/weekly-schedule", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({
           modeId: selectedMode._id,
           dayOfWeek,
@@ -161,13 +155,10 @@ export default function WeeklySchedulePage() {
     setIsSaving(true);
 
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch("/api/admin/weekly-schedule", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({
           modeId: selectedMode._id,
           dayOfWeek,
@@ -203,13 +194,10 @@ export default function WeeklySchedulePage() {
     if (!newSlotTime) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch("/api/admin/time-slots", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify({ time: newSlotTime }),
       });
 
@@ -233,10 +221,9 @@ export default function WeeklySchedulePage() {
     if (!confirm(`Delete this time slot? It will be removed from all schedules.`)) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/time-slots?time=${encodeURIComponent(time)}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -264,10 +251,9 @@ export default function WeeklySchedulePage() {
 
     setIsResetting(true);
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch("/api/admin/time-slots/reset", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       const data = await response.json();

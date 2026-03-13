@@ -26,12 +26,11 @@ export default function BookingsPage() {
 
   const fetchBookings = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch('/api/admin/slots', {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       if (response.status === 401) {
-        window.location.href = '/admin';
+        window.location.href = '/login';
         return;
       }
       const data = await response.json();
@@ -137,13 +136,10 @@ export default function BookingsPage() {
     }
 
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch('/api/admin/slots', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ bookingId }),
       });
 

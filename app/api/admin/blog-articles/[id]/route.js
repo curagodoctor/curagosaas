@@ -72,6 +72,20 @@ export async function PATCH(request, { params }) {
       }
     }
 
+    // Filter out empty FAQ entries
+    if (updates.faqSection?.faqs) {
+      updates.faqSection.faqs = updates.faqSection.faqs.filter(
+        faq => faq.question?.trim() || faq.answer?.trim()
+      );
+    }
+
+    // Filter out empty audit steps
+    if (updates.surgicalAuditSection?.auditSteps) {
+      updates.surgicalAuditSection.auditSteps = updates.surgicalAuditSection.auditSteps.filter(
+        step => step.step?.trim() || step.description?.trim()
+      );
+    }
+
     const query = { _id: id };
     if (doctorId) query.doctorId = doctorId;
 

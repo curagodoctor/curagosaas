@@ -371,9 +371,7 @@ export default function PageBuilderEditor() {
       try {
         setLoading(true);
         const response = await fetch(`/api/admin/booking-pages/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
-          },
+          credentials: 'include',
         });
 
         if (!response.ok) {
@@ -406,10 +404,8 @@ export default function PageBuilderEditor() {
 
       const response = await fetch(`/api/admin/booking-pages/${id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
         body: JSON.stringify(dataToSave),
       });
 

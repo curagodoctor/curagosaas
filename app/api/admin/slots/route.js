@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth";
 import { getCurrentDoctor } from "@/lib/doctorAuth";
 import {
   getAllSlots,
@@ -12,22 +11,12 @@ import {
 
 // GET - Get all slots (admin view)
 export async function GET(request) {
-  if (!(await isAuthenticated(request))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const doctor = await getCurrentDoctor(request);
-    const doctorId = doctor?._id;
-
-    // Strict tenant isolation: return empty if no doctor found
-    if (!doctorId) {
-      return NextResponse.json({
-        success: true,
-        slots: [],
-        bookings: [],
-      });
+    if (!doctor) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const doctorId = doctor._id;
 
     const slots = await getAllSlots(doctorId);
     const bookings = await getAllBookings(doctorId);
@@ -56,13 +45,12 @@ function formatTimeLabel(time24) {
 
 // POST - Add new slot
 export async function POST(request) {
-  if (!(await isAuthenticated(request))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const doctor = await getCurrentDoctor(request);
-    const doctorId = doctor?._id;
+    if (!doctor) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const doctorId = doctor._id;
 
     const { time, date, mode } = await request.json();
 
@@ -93,13 +81,12 @@ export async function POST(request) {
 
 // PATCH - Update slot status (mode-specific)
 export async function PATCH(request) {
-  if (!(await isAuthenticated(request))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const doctor = await getCurrentDoctor(request);
-    const doctorId = doctor?._id;
+    if (!doctor) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const doctorId = doctor._id;
 
     const { time, active, mode } = await request.json();
 
@@ -134,13 +121,12 @@ export async function PATCH(request) {
 
 // DELETE - Remove slot
 export async function DELETE(request) {
-  if (!(await isAuthenticated(request))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const doctor = await getCurrentDoctor(request);
-    const doctorId = doctor?._id;
+    if (!doctor) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const doctorId = doctor._id;
 
     // Support both query params and request body
     const { searchParams } = new URL(request.url);

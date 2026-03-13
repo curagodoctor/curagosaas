@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth";
 import { getCurrentDoctor } from "@/lib/doctorAuth";
 import connectDB from "@/lib/mongodb";
 import ConsultationMode from "@/models/ConsultationMode";
@@ -9,21 +8,12 @@ import { initializeDefaultModes } from "@/lib/slotManagerDB";
 
 // GET - List all consultation modes
 export async function GET(request) {
-  if (!(await isAuthenticated(request))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const doctor = await getCurrentDoctor(request);
-    const doctorId = doctor?._id;
-
-    // Strict tenant isolation: return empty if no doctor found
-    if (!doctorId) {
-      return NextResponse.json({
-        success: true,
-        modes: [],
-      });
+    if (!doctor) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const doctorId = doctor._id;
 
     await connectDB();
 
@@ -49,13 +39,12 @@ export async function GET(request) {
 
 // POST - Create a new consultation mode
 export async function POST(request) {
-  if (!(await isAuthenticated(request))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const doctor = await getCurrentDoctor(request);
-    const doctorId = doctor?._id;
+    if (!doctor) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const doctorId = doctor._id;
 
     const { name, displayName, description, color } = await request.json();
 
@@ -122,13 +111,12 @@ export async function POST(request) {
 
 // PATCH - Update an existing consultation mode
 export async function PATCH(request) {
-  if (!(await isAuthenticated(request))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const doctor = await getCurrentDoctor(request);
-    const doctorId = doctor?._id;
+    if (!doctor) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const doctorId = doctor._id;
 
     const { id, displayName, description, color, isActive, sortOrder } = await request.json();
 
@@ -177,13 +165,12 @@ export async function PATCH(request) {
 
 // DELETE - Delete a consultation mode
 export async function DELETE(request) {
-  if (!(await isAuthenticated(request))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const doctor = await getCurrentDoctor(request);
-    const doctorId = doctor?._id;
+    if (!doctor) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const doctorId = doctor._id;
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

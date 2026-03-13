@@ -63,9 +63,8 @@ export default function BlogArticleEditorPage() {
 
   const fetchArticle = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/admin/blog-articles/${params.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
 
       const data = await response.json();
@@ -156,16 +155,13 @@ export default function BlogArticleEditorPage() {
     setUploading(true);
 
     try {
-      const token = localStorage.getItem('adminToken');
       const formDataToSend = new FormData();
       formDataToSend.append('file', file);
       formDataToSend.append('folder', 'blog-articles');
 
       const response = await fetch('/api/admin/upload-image', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include',
         body: formDataToSend,
       });
 
@@ -197,7 +193,6 @@ export default function BlogArticleEditorPage() {
     setSaving(true);
 
     try {
-      const token = localStorage.getItem('adminToken');
       const url = isNew
         ? '/api/admin/blog-articles'
         : `/api/admin/blog-articles/${params.id}`;
@@ -205,10 +200,8 @@ export default function BlogArticleEditorPage() {
 
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(formData),
       });
 

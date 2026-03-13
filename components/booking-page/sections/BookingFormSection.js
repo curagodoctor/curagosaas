@@ -16,7 +16,7 @@ export default function BookingFormSection({
   customSubtitle,
   consultationFee = 1000,
   bookingFee = 150,
-  paymentMode = 'payment',
+  paymentMode = 'no_payment',  // OTP-based booking (no Razorpay)
   razorpayButtonId = 'pl_S32iD93nAACoNH',
   trackingContext = { pageName: "Booking", pageSlug: "booking" },
 }) {
@@ -667,8 +667,11 @@ export default function BookingFormSection({
                     >
                       <div className="flex items-center gap-2">
                         <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: mode.color }}
+                          className="w-3 h-3 rounded-full border-2"
+                          style={{
+                            backgroundColor: formData.modeId === mode._id ? 'white' : mode.color,
+                            borderColor: formData.modeId === mode._id ? 'white' : mode.color,
+                          }}
                         ></div>
                         <span>{mode.displayName}</span>
                       </div>

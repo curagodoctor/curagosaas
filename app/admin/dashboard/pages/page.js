@@ -9,48 +9,83 @@ export default function WebsiteBuilderPage() {
   const [website, setWebsite] = useState(null);
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        // Fetch doctor info
-        const meRes = await fetch('/api/auth/me');
-        if (meRes.ok) {
-          const meData = await meRes.json();
-          setDoctor(meData.doctor);
-        }
-
-        // Fetch website (the single "home" page)
-        const response = await fetch('/api/admin/booking-pages?limit=1');
-        if (!response.ok) {
-          throw new Error("Failed to fetch website");
-        }
-
-        const data = await response.json();
-        if (data.pages && data.pages.length > 0) {
-          setWebsite(data.pages[0]);
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+      // Fetch doctor info
+      const meRes = await fetch('/api/auth/me');
+      if (meRes.ok) {
+        const meData = await meRes.json();
+        setDoctor(meData.doctor);
       }
-    };
 
+      // Fetch website (the single "home" page)
+      const response = await fetch('/api/admin/booking-pages?limit=1');
+      if (!response.ok) {
+        throw new Error("Failed to fetch website");
+      }
+
+      const data = await response.json();
+      if (data.pages && data.pages.length > 0) {
+        setWebsite(data.pages[0]);
+      } else {
+        setWebsite(null);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, []);
 
   const handleEditWebsite = () => {
-    if (website) {
+    if (website && website._id) {
       router.push(`/admin/dashboard/pages/${website._id}`);
+    }
+  };
+
+  const handlePublishWebsite = async () => {
+    if (!website || !website._id) return;
+
+    try {
+      setPublishing(true);
+      const response = await fetch(`/api/admin/booking-pages/${website._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'published',
+          publishedAt: new Date().toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to publish website');
+      }
+
+      // Refresh data
+      await fetchData();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setPublishing(false);
     }
   };
 
   const handleCreateWebsite = async () => {
     try {
+      setCreating(true);
+      setError(null);
+
       const response = await fetch('/api/admin/booking-pages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -105,9 +140,13 @@ export default function WebsiteBuilderPage() {
       }
 
       const data = await response.json();
-      router.push(`/admin/dashboard/pages/${data.page._id}`);
+      if (data.page && data.page._id) {
+        router.push(`/admin/dashboard/pages/${data.page._id}`);
+      }
     } catch (err) {
       setError(err.message);
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -115,7 +154,7 @@ export default function WebsiteBuilderPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="animate-spin text-4xl text-[#096b17] mb-4">&#9696;</div>
+          <div className="w-12 h-12 border-4 border-[#096b17] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading your website...</p>
         </div>
       </div>
@@ -135,8 +174,16 @@ export default function WebsiteBuilderPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
-          {error}
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6 flex items-center justify-between">
+          <span>{error}</span>
+          <button
+            onClick={() => setError(null)}
+            className="text-red-600 hover:text-red-800 cursor-pointer"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       )}
 
@@ -151,7 +198,7 @@ export default function WebsiteBuilderPage() {
                 href={websiteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-white/90 hover:text-white flex items-center gap-2 text-sm transition-colors"
+                className="text-white/90 hover:text-white flex items-center gap-2 text-sm transition-colors cursor-pointer"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -210,18 +257,41 @@ export default function WebsiteBuilderPage() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={handleEditWebsite}
-                  className="flex-1 bg-[#096b17] hover:bg-[#075110] text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 bg-[#096b17] hover:bg-[#075110] text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                   Edit Website
                 </button>
+
+                {website.status !== 'published' && (
+                  <button
+                    onClick={handlePublishWebsite}
+                    disabled={publishing}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+                  >
+                    {publishing ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Publishing...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Publish Website
+                      </>
+                    )}
+                  </button>
+                )}
+
                 <a
                   href={websiteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -230,6 +300,13 @@ export default function WebsiteBuilderPage() {
                   Preview Live Site
                 </a>
               </div>
+
+              {/* Last Updated */}
+              {website.updatedAt && (
+                <p className="text-xs text-gray-500 mt-4 text-center">
+                  Last updated: {new Date(website.updatedAt).toLocaleString()}
+                </p>
+              )}
             </>
           ) : (
             <div className="text-center py-8">
@@ -244,12 +321,22 @@ export default function WebsiteBuilderPage() {
               </p>
               <button
                 onClick={handleCreateWebsite}
-                className="bg-[#096b17] hover:bg-[#075110] text-white font-semibold py-3 px-8 rounded-xl transition-colors inline-flex items-center gap-2"
+                disabled={creating}
+                className="bg-[#096b17] hover:bg-[#075110] disabled:bg-[#096b17]/60 text-white font-semibold py-3 px-8 rounded-xl transition-colors inline-flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Create My Website
+                {creating ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Creating Website...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Create My Website
+                  </>
+                )}
               </button>
             </div>
           )}
