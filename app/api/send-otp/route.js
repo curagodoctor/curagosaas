@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import OTP from "@/models/OTP";
+import Doctor from "@/models/Doctor";
 import {
   validatePhone,
   validateEmail,
@@ -10,6 +11,27 @@ import {
 
 const WYLTO_API_KEY = process.env.WYLTO_OTP_API_KEY;
 const WYLTO_API_URL = "https://server.wylto.com/api/v1/wa/send?sync=true";
+
+// Extract subdomain from request
+function getSubdomainFromRequest(request) {
+  const host = request.headers.get('host') || '';
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'curago.in';
+
+  // Handle localhost
+  if (host.includes('localhost')) {
+    return null;
+  }
+
+  // Extract subdomain from host (e.g., "raghavendra.curago.in" -> "raghavendra")
+  if (host.endsWith(rootDomain)) {
+    const subdomain = host.replace(`.${rootDomain}`, '').split(':')[0];
+    if (subdomain && subdomain !== 'www' && subdomain !== rootDomain) {
+      return subdomain;
+    }
+  }
+
+  return null;
+}
 
 export async function POST(request) {
   try {
@@ -63,6 +85,24 @@ export async function POST(request) {
 
     await connectDB();
 
+    // Get doctorId from subdomain
+    let doctorId = null;
+    const subdomain = getSubdomainFromRequest(request);
+    if (subdomain) {
+      const doctor = await Doctor.findOne({ subdomain, isActive: true });
+      if (doctor) {
+        doctorId = doctor._id.toString();
+      }
+    }
+
+    // Fallback: get first active doctor if no subdomain
+    if (!doctorId) {
+      const doctor = await Doctor.findOne({ isActive: true, isEmailVerified: true });
+      if (doctor) {
+        doctorId = doctor._id.toString();
+      }
+    }
+
     // Generate and store OTP
     const bookingData = {
       name: name.trim(),
@@ -76,6 +116,7 @@ export async function POST(request) {
       time,
       pageSlug,
       pageName,
+      doctorId,  // Include doctorId in booking data
     };
 
     const { otp, expiresAt, id } = await OTP.createOTP(phone, bookingData);

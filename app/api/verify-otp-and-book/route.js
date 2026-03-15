@@ -47,10 +47,14 @@ export async function POST(request) {
 
     const bookingData = result.bookingData;
 
+    // Get doctorId from bookingData (set during send-otp from subdomain)
+    const doctorId = bookingData.doctorId || null;
+
     // Check if slot is still available (exclusive booking - checks all modes)
     const slotBooked = await isSlotBooked(
       bookingData.date,
-      bookingData.time
+      bookingData.time,
+      doctorId
     );
 
     if (slotBooked) {
@@ -89,6 +93,7 @@ export async function POST(request) {
 
     // Create booking in database
     const booking = new Booking({
+      doctorId: doctorId || undefined,
       name: bookingData.name,
       age: bookingData.age,
       gender: bookingData.gender,
