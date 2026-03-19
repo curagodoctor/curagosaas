@@ -5,6 +5,8 @@ import {
   getReservationById,
 } from "@/lib/slotManagerDB";
 import { createCalendarEvent } from "@/lib/googleCalendar";
+import connectDB from "@/lib/mongodb";
+import Doctor from "@/models/Doctor";
 
 // Verify Razorpay payment signature
 function verifyRazorpaySignature(paymentId, signature) {
@@ -93,6 +95,8 @@ export async function POST(request) {
       }
     }
 
+    await connectDB();
+
     // Get reservation details
     const reservation = await getReservationById(reservationId);
 
@@ -101,6 +105,19 @@ export async function POST(request) {
         { error: "Reservation not found" },
         { status: 404 }
       );
+    }
+
+    // Fetch doctor info for webhook
+    let doctorInfo = { phone: '', name: '', subdomain: '' };
+    if (reservation.doctorId) {
+      const doctor = await Doctor.findById(reservation.doctorId);
+      if (doctor) {
+        doctorInfo = {
+          phone: doctor.whatsappNumber || doctor.phone || '',
+          name: doctor.displayName || doctor.name || '',
+          subdomain: doctor.subdomain || '',
+        };
+      }
     }
 
     // Check if reservation has expired
@@ -151,7 +168,7 @@ export async function POST(request) {
 
     // Send to webhook
     try {
-      const webhookResponse = await fetch("https://server.wylto.com/webhook/HXfOyPxtr7nv35jSYf", {
+      const webhookResponse = await fetch("https://server.wylto.com/webhook/CMTvOkb2eV0fi8SCxd", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -172,6 +189,10 @@ export async function POST(request) {
           bookingTime: new Date().toISOString(),
           paymentVerified: true,
           status: "confirmed",
+          // Doctor info for routing
+          doctorPhone: doctorInfo.phone,
+          doctorName: doctorInfo.name,
+          doctorSubdomain: doctorInfo.subdomain,
         }),
       });
 

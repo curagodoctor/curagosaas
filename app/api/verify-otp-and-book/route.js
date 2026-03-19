@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import OTP from "@/models/OTP";
 import Booking from "@/models/Booking";
+import Doctor from "@/models/Doctor";
 import { isSlotBooked } from "@/lib/slotManagerDB";
 import { createCalendarEvent } from "@/lib/googleCalendar";
 import { validatePhone } from "@/lib/validation";
@@ -49,6 +50,19 @@ export async function POST(request) {
 
     // Get doctorId from bookingData (set during send-otp from subdomain)
     const doctorId = bookingData.doctorId || null;
+
+    // Fetch doctor info for webhook
+    let doctorInfo = { phone: '', name: '', subdomain: '' };
+    if (doctorId) {
+      const doctor = await Doctor.findById(doctorId);
+      if (doctor) {
+        doctorInfo = {
+          phone: doctor.whatsappNumber || doctor.phone || '',
+          name: doctor.displayName || doctor.name || '',
+          subdomain: doctor.subdomain || '',
+        };
+      }
+    }
 
     // Check if slot is still available (exclusive booking - checks all modes)
     const slotBooked = await isSlotBooked(
@@ -118,7 +132,7 @@ export async function POST(request) {
         ? bookingData.whatsapp
         : `+91${bookingData.whatsapp.replace(/^91/, '')}`;
 
-      const webhookResponse = await fetch("https://server.wylto.com/webhook/HXfOyPxtr7nv35jSYf", {
+      const webhookResponse = await fetch("https://server.wylto.com/webhook/CMTvOkb2eV0fi8SCxd", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -139,6 +153,10 @@ export async function POST(request) {
           status: "confirmed",
           pageSlug: bookingData.pageSlug,
           pageName: bookingData.pageName,
+          // Doctor info for routing
+          doctorPhone: doctorInfo.phone,
+          doctorName: doctorInfo.name,
+          doctorSubdomain: doctorInfo.subdomain,
         }),
       });
 

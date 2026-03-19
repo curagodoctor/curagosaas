@@ -1,6 +1,27 @@
 import { NextResponse } from "next/server";
 import { addBooking, isSlotBooked } from "@/lib/slotManager";
 import { createCalendarEvent } from "@/lib/googleCalendar";
+import connectDB from "@/lib/mongodb";
+import Doctor from "@/models/Doctor";
+
+// Extract subdomain from request
+function getSubdomainFromRequest(request) {
+  const host = request.headers.get('host') || '';
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'curago.in';
+
+  if (host.includes('localhost')) {
+    return null;
+  }
+
+  if (host.endsWith(rootDomain)) {
+    const subdomain = host.replace(`.${rootDomain}`, '').split(':')[0];
+    if (subdomain && subdomain !== 'www' && subdomain !== rootDomain) {
+      return subdomain;
+    }
+  }
+
+  return null;
+}
 
 export async function POST(request) {
   try {
@@ -21,6 +42,21 @@ export async function POST(request) {
         { error: "This time slot is already booked" },
         { status: 409 }
       );
+    }
+
+    // Fetch doctor info for webhook (from subdomain)
+    await connectDB();
+    let doctorInfo = { phone: '', name: '', subdomain: '' };
+    const subdomain = getSubdomainFromRequest(request);
+    if (subdomain) {
+      const doctor = await Doctor.findOne({ subdomain, isActive: true });
+      if (doctor) {
+        doctorInfo = {
+          phone: doctor.whatsappNumber || doctor.phone || '',
+          name: doctor.displayName || doctor.name || '',
+          subdomain: doctor.subdomain || '',
+        };
+      }
     }
 
     // Create calendar event
@@ -52,7 +88,7 @@ export async function POST(request) {
 
     // Send to webhook (existing implementation)
     try {
-      await fetch("https://server.wylto.com/webhook/XLuJDKiLWjA5j49Y8S", {
+      await fetch("https://server.wylto.com/webhook/CMTvOkb2eV0fi8SCxd", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -67,6 +103,10 @@ export async function POST(request) {
           calendarLink: calendarEvent.htmlLink,
           eventId: calendarEvent.eventId,
           bookingTime: new Date().toISOString(),
+          // Doctor info for routing
+          doctorPhone: doctorInfo.phone,
+          doctorName: doctorInfo.name,
+          doctorSubdomain: doctorInfo.subdomain,
         }),
       });
     } catch (webhookError) {
