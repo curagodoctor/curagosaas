@@ -12,12 +12,12 @@ export default function PlatformAdminPage() {
       try {
         const response = await fetch('/api/platform/auth/me');
         if (response.ok) {
-          router.replace('/platform-admin/dashboard');
+          router.replace('/dashboard');
         } else {
-          router.replace('/platform-admin/login');
+          router.replace('/login');
         }
       } catch (error) {
-        router.replace('/platform-admin/login');
+        router.replace('/login');
       }
     };
 

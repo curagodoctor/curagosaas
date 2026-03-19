@@ -17,7 +17,7 @@ export default function PlatformAdminLoginPage() {
       try {
         const response = await fetch('/api/platform/auth/me');
         if (response.ok) {
-          router.replace('/platform-admin/dashboard');
+          router.replace('/dashboard');
           return;
         }
       } catch (error) {
@@ -49,7 +49,7 @@ export default function PlatformAdminLoginPage() {
         return;
       }
 
-      router.push('/platform-admin/dashboard');
+      router.push('/dashboard');
     } catch (error) {
       setError('An error occurred. Please try again.');
       setLoading(false);
