@@ -32,9 +32,9 @@ export default function DoctorProfileConfig({ config, onChange, slug }) {
         </label>
         <input
           type="text"
-          value={config.title || "About Dr. Yuvaraj T"}
+          value={config.title || ""}
           onChange={(e) => handleChange("title", e.target.value)}
-          placeholder="About Dr. Yuvaraj T"
+          placeholder="e.g., About Dr. Smith"
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
       </div>
