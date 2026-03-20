@@ -8,6 +8,8 @@ import {
   getModeByName,
 } from "@/lib/slotManagerDB";
 import { format, addDays, startOfDay } from "date-fns";
+import connectDB from "@/lib/mongodb";
+import Doctor from "@/models/Doctor";
 
 // GET - Get available slots for users
 export async function GET(request) {
@@ -19,6 +21,8 @@ export async function GET(request) {
     const date = searchParams.get("date");
     const modeId = searchParams.get("modeId");
     const modeName = searchParams.get("mode"); // For backward compatibility
+    let doctorId = searchParams.get("doctorId");
+    const subdomain = searchParams.get("subdomain");
 
     if (!date) {
       return NextResponse.json(
@@ -27,17 +31,26 @@ export async function GET(request) {
       );
     }
 
+    // Resolve doctorId from subdomain if needed
+    if (!doctorId && subdomain) {
+      await connectDB();
+      const doctor = await Doctor.findOne({ subdomain: subdomain.toLowerCase() }).select('_id');
+      if (doctor) {
+        doctorId = doctor._id.toString();
+      }
+    }
+
     // Get mode - either by ID or by name (for backward compatibility)
     let mode = null;
     if (modeId) {
-      mode = await getModeById(modeId);
+      mode = await getModeById(modeId, doctorId);
     } else if (modeName) {
-      mode = await getModeByName(modeName);
+      mode = await getModeByName(modeName, doctorId);
     }
 
     if (!mode) {
-      // If no mode specified, get first available mode
-      const modes = await getActiveConsultationModes();
+      // If no mode specified, get first available mode for this doctor
+      const modes = await getActiveConsultationModes(doctorId);
       if (modes.length > 0) {
         mode = modes[0];
       } else {
@@ -51,7 +64,7 @@ export async function GET(request) {
     }
 
     // Get effective slots for this date and mode (using WeeklySchedule)
-    const effectiveSlots = await getEffectiveSlotsForDate(date, mode._id);
+    const effectiveSlots = await getEffectiveSlotsForDate(date, mode._id, doctorId);
 
     // Get current time in IST (UTC + 5:30)
     const now = new Date();
@@ -82,10 +95,10 @@ export async function GET(request) {
       return true;
     });
 
-    // Check which slots are already booked (EXCLUSIVE - checks all modes)
+    // Check which slots are already booked (EXCLUSIVE - checks all modes for this doctor)
     const availableSlots = await Promise.all(
       filteredSlots.map(async (slot) => {
-        const booked = await isSlotBooked(date, slot.time);
+        const booked = await isSlotBooked(date, slot.time, doctorId);
         return {
           time: slot.time,
           label: slot.label,

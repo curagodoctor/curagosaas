@@ -62,10 +62,11 @@ export async function generateMetadata({ params }) {
 
 // Section renderer
 function renderSection(section, doctor, index) {
+  // Spread the config directly so section components receive their props
   const props = {
     key: section._id || index,
-    config: section.config,
-    doctor,
+    ...section.config, // Spread config fields as individual props
+    doctor, // Pass doctor object for components that need it
   };
 
   switch (section.type) {
@@ -90,7 +91,7 @@ function renderSection(section, doctor, index) {
     case 'cta_button':
       return <CTAButtonSection {...props} />;
     case 'booking_form':
-      return <BookingFormSection {...props} slug={doctor.subdomain} />;
+      return <BookingFormSection {...props} doctorId={doctor._id.toString()} subdomain={doctor.subdomain} />;
     case 'clinic_info':
       return <ClinicInfoSection {...props} />;
     case 'professional_fees':

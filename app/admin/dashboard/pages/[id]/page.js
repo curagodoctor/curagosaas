@@ -603,8 +603,8 @@ export default function PageBuilderEditor() {
             <h1 className="font-bold text-sm sm:text-lg truncate">{pageData.title || "Untitled Page"}</h1>
             <p className="text-xs sm:text-sm text-gray-500 truncate hidden sm:block">
               {doctorData?.subdomain
-                ? `${doctorData.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'curago.in'}/${pageData.slug}`
-                : `/${pageData.slug}`
+                ? `${doctorData.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'curago.in'}`
+                : `curago.in`
               }
             </p>
           </div>
@@ -657,8 +657,8 @@ export default function PageBuilderEditor() {
           {/* Preview Button - Opens doctor's subdomain */}
           <a
             href={doctorData?.subdomain
-              ? `https://${doctorData.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'curago.in'}/${pageData.slug}`
-              : `/${pageData.slug}`
+              ? `https://${doctorData.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'curago.in'}/`
+              : `/`
             }
             target="_blank"
             rel="noopener noreferrer"

@@ -19,6 +19,8 @@ export default function BookingFormSection({
   paymentMode = 'no_payment',  // OTP-based booking (no Razorpay)
   razorpayButtonId = 'pl_S32iD93nAACoNH',
   trackingContext = { pageName: "Booking", pageSlug: "booking" },
+  doctorId, // Required: Doctor's ID for fetching their consultation modes
+  subdomain, // Doctor's subdomain for API calls
 }) {
   const router = useRouter();
   const { showAlert } = useModal();
@@ -156,7 +158,12 @@ export default function BookingFormSection({
   const fetchConsultationModes = async () => {
     setIsLoadingModes(true);
     try {
-      const response = await fetch('/api/consultation-modes');
+      // Pass doctorId or subdomain to fetch only this doctor's consultation modes
+      const params = new URLSearchParams();
+      if (doctorId) params.append('doctorId', doctorId);
+      else if (subdomain) params.append('subdomain', subdomain);
+
+      const response = await fetch(`/api/consultation-modes?${params.toString()}`);
       const data = await response.json();
       if (data.success && data.modes.length > 0) {
         setConsultationModes(data.modes);
@@ -176,9 +183,12 @@ export default function BookingFormSection({
 
   const fetchDates = async () => {
     try {
-      const response = await fetch(
-        `/api/available-slots?date=${new Date().toISOString().split("T")[0]}`
-      );
+      const params = new URLSearchParams();
+      params.append('date', new Date().toISOString().split("T")[0]);
+      if (doctorId) params.append('doctorId', doctorId);
+      else if (subdomain) params.append('subdomain', subdomain);
+
+      const response = await fetch(`/api/available-slots?${params.toString()}`);
       const data = await response.json();
       if (data.success) {
         setDates(data.dates);
@@ -196,9 +206,13 @@ export default function BookingFormSection({
 
     setIsLoadingSlots(true);
     try {
-      const response = await fetch(
-        `/api/available-slots?date=${selectedDate}&modeId=${formData.modeId}`
-      );
+      const params = new URLSearchParams();
+      params.append('date', selectedDate);
+      params.append('modeId', formData.modeId);
+      if (doctorId) params.append('doctorId', doctorId);
+      else if (subdomain) params.append('subdomain', subdomain);
+
+      const response = await fetch(`/api/available-slots?${params.toString()}`);
       const data = await response.json();
       if (data.success) {
         setAvailableSlots(data.slots);
