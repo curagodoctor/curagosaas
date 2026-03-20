@@ -14,34 +14,23 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Default metadata - will be overridden by page-specific or layout-specific metadata
 export const metadata = {
-  title: "Dr. Yuvaraj T | Surgical Gastroenterologist Mumbai - Online & Offline Consult",
-  description: "Consult Dr. Yuvaraj T, expert Surgical Gastroenterologist in Mumbai. Specialized in GI surgery, hernia repair, gallbladder surgery, colonoscopy, endoscopy & gut-brain disorders. Book online or in-clinic consultation at SRV Hospital, Chembur.",
+  title: {
+    default: "CuraGo - Digital Practice Platform for Doctors",
+    template: "%s | CuraGo",
+  },
+  description: "Build your medical practice online with CuraGo. Professional website, booking system, and growth tools for doctors.",
   keywords: [
-    "surgical gastroenterologist Mumbai",
-    "gastroenterologist near me",
-    "GI surgeon Mumbai",
-    "Dr Yuvaraj T",
-    "hernia surgery Mumbai",
-    "gallbladder surgery",
-    "colonoscopy Mumbai",
-    "endoscopy specialist",
-    "laparoscopic surgery Mumbai",
-    "gut health specialist",
-    "IBS treatment Mumbai",
-    "digestive disorders",
-    "gastro doctor Chembur",
-    "SRV Hospital gastroenterologist",
-    "online gastro consultation",
-    "stomach specialist Mumbai",
-    "piles treatment Mumbai",
-    "fissure treatment",
-    "gastric problems doctor"
+    "doctor website",
+    "medical practice",
+    "clinic booking",
+    "healthcare platform",
   ],
-  authors: [{ name: "Dr. Yuvaraj T" }],
-  creator: "Dr. Yuvaraj T",
+  authors: [{ name: "CuraGo" }],
+  creator: "CuraGo",
   publisher: "CuraGo",
-  metadataBase: new URL("https://dryuvaraj.curago.in"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://curago.in"),
   icons: {
     icon: [
       { url: '/favicon.ico' },
@@ -52,16 +41,15 @@ export const metadata = {
     ],
   },
   openGraph: {
-    title: "Dr. Yuvaraj T | Surgical Gastroenterologist - Online & Offline Consult",
-    description: "Expert Surgical Gastroenterologist in Mumbai. Specialized in GI surgery, hernia, gallbladder, colonoscopy & gut-brain disorders. Book your consultation today.",
-    url: "https://dryuvaraj.curago.in",
-    siteName: "Dr. Yuvaraj T - Surgical Gastroenterologist",
+    title: "CuraGo - Digital Practice Platform for Doctors",
+    description: "Build your medical practice online with CuraGo. Professional website, booking system, and growth tools for doctors.",
+    siteName: "CuraGo",
     images: [
       {
-        url: "/logo.png",
-        width: 512,
-        height: 512,
-        alt: "Dr. Yuvaraj T - Surgical Gastroenterologist",
+        url: "/og-preview.jpg",
+        width: 1200,
+        height: 630,
+        alt: "CuraGo - Build Your Digital Clinic",
       },
     ],
     locale: "en_IN",
@@ -69,9 +57,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Dr. Yuvaraj T | Surgical Gastroenterologist Mumbai",
-    description: "Expert Surgical Gastroenterologist. Book online or in-clinic consultation for GI surgery, hernia, gallbladder & digestive disorders.",
-    images: ["/logo.png"],
+    title: "CuraGo - Digital Practice Platform for Doctors",
+    description: "Build your medical practice online with CuraGo.",
+    images: ["/og-preview.jpg"],
   },
   robots: {
     index: true,
