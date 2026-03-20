@@ -359,6 +359,10 @@ export default function PageBuilderEditor() {
     showInNavbar: false,
   });
 
+  // Doctor data for preview URL
+  const [doctorData, setDoctorData] = useState(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
   // UI state
   const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
   const [showSectionPalette] = useState(true);
@@ -380,6 +384,9 @@ export default function PageBuilderEditor() {
 
         const data = await response.json();
         setPageData(data.page);
+        if (data.doctor) {
+          setDoctorData(data.doctor);
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -389,6 +396,24 @@ export default function PageBuilderEditor() {
 
     if (id) fetchPage();
   }, [id]);
+
+  // Track unsaved changes - warn before leaving with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // Mark changes as unsaved when page data changes
+  const updatePageDataWithTracking = (updater) => {
+    setPageData(updater);
+    setHasUnsavedChanges(true);
+  };
 
   // Save page
   const savePage = async (publishNow = false) => {
@@ -415,6 +440,7 @@ export default function PageBuilderEditor() {
 
       const data = await response.json();
       setPageData(data.page);
+      setHasUnsavedChanges(false);
       setSaveStatus(publishNow ? "Published!" : "Saved!");
       setTimeout(() => setSaveStatus(""), 2000);
     } catch (err) {
@@ -442,6 +468,7 @@ export default function PageBuilderEditor() {
       ...prev,
       sections: [...prev.sections, newSection],
     }));
+    setHasUnsavedChanges(true);
 
     // Select the new section
     setSelectedSectionIndex(pageData.sections.length);
@@ -460,6 +487,7 @@ export default function PageBuilderEditor() {
     });
 
     setPageData((prev) => ({ ...prev, sections: newSections }));
+    setHasUnsavedChanges(true);
     setSelectedSectionIndex(index - 1);
   };
 
@@ -476,6 +504,7 @@ export default function PageBuilderEditor() {
     });
 
     setPageData((prev) => ({ ...prev, sections: newSections }));
+    setHasUnsavedChanges(true);
     setSelectedSectionIndex(index + 1);
   };
 
@@ -499,6 +528,7 @@ export default function PageBuilderEditor() {
     });
 
     setPageData((prev) => ({ ...prev, sections: newSections }));
+    setHasUnsavedChanges(true);
     setSelectedSectionIndex(null);
   };
 
@@ -507,6 +537,7 @@ export default function PageBuilderEditor() {
     const newSections = [...pageData.sections];
     newSections[index].visible = !newSections[index].visible;
     setPageData((prev) => ({ ...prev, sections: newSections }));
+    setHasUnsavedChanges(true);
   };
 
   // Update section config
@@ -514,11 +545,13 @@ export default function PageBuilderEditor() {
     const newSections = [...pageData.sections];
     newSections[index].config = { ...newSections[index].config, ...newConfig };
     setPageData((prev) => ({ ...prev, sections: newSections }));
+    setHasUnsavedChanges(true);
   };
 
   // Update page metadata
   const updatePageMeta = (field, value) => {
     setPageData((prev) => ({ ...prev, [field]: value }));
+    setHasUnsavedChanges(true);
   };
 
   if (loading) {
@@ -568,7 +601,12 @@ export default function PageBuilderEditor() {
 
           <div className="min-w-0 flex-1">
             <h1 className="font-bold text-sm sm:text-lg truncate">{pageData.title || "Untitled Page"}</h1>
-            <p className="text-xs sm:text-sm text-gray-500 truncate hidden sm:block">/myclinic/{pageData.slug}</p>
+            <p className="text-xs sm:text-sm text-gray-500 truncate hidden sm:block">
+              {doctorData?.subdomain
+                ? `${doctorData.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'curago.in'}/${pageData.slug}`
+                : `/${pageData.slug}`
+              }
+            </p>
           </div>
 
           <div className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${
@@ -583,12 +621,21 @@ export default function PageBuilderEditor() {
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {saveStatus && <span className="text-sm text-green-600 font-medium hidden md:block">{saveStatus}</span>}
 
+          {hasUnsavedChanges && !saveStatus && (
+            <span className="text-xs text-orange-600 font-medium hidden md:block">Unsaved changes</span>
+          )}
+
+          {/* Save Changes Button - Primary when there are unsaved changes */}
           <button
             onClick={() => savePage(false)}
             disabled={saving}
-            className="px-2 sm:px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors font-medium text-xs sm:text-sm"
+            className={`px-2 sm:px-4 py-2 rounded-lg disabled:opacity-50 transition-colors font-medium text-xs sm:text-sm ${
+              hasUnsavedChanges
+                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                : "border border-gray-300 hover:bg-gray-50"
+            }`}
           >
-            <span className="hidden sm:inline">{saving ? "Saving..." : "Save Draft"}</span>
+            <span className="hidden sm:inline">{saving ? "Saving..." : "Save Changes"}</span>
             <span className="sm:hidden">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
@@ -596,25 +643,29 @@ export default function PageBuilderEditor() {
             </span>
           </button>
 
+          {/* Publish Button - Only for draft/archived pages */}
           {pageData.status !== "published" && (
             <button
               onClick={() => savePage(true)}
               disabled={saving}
-              className="px-2 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 transition-colors font-medium text-xs sm:text-sm hidden sm:block"
+              className="px-2 sm:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50 transition-colors font-medium text-xs sm:text-sm hidden sm:block"
             >
               Publish
             </button>
           )}
 
+          {/* Preview Button - Opens doctor's subdomain */}
           <a
-            href={`/myclinic/${pageData.slug}`}
+            href={doctorData?.subdomain
+              ? `https://${doctorData.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'curago.in'}/${pageData.slug}`
+              : `/${pageData.slug}`
+            }
             target="_blank"
             rel="noopener noreferrer"
-            className="px-2 sm:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium text-xs sm:text-sm flex items-center gap-1 sm:gap-2"
+            className="px-2 sm:px-4 py-2 border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors font-medium text-xs sm:text-sm flex items-center gap-1 sm:gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
             <span className="hidden sm:inline">Preview</span>
           </a>

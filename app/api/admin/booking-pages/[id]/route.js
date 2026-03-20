@@ -108,6 +108,10 @@ export async function GET(request, { params }) {
     return NextResponse.json({
       success: true,
       page,
+      doctor: {
+        subdomain: doctor.subdomain,
+        displayName: doctor.displayName || doctor.name,
+      }
     });
   } catch (error) {
     console.error('Error fetching booking page:', error);

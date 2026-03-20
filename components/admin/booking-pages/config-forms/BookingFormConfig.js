@@ -1,6 +1,15 @@
 "use client";
 
+import { useEffect } from "react";
+
 export default function BookingFormConfig({ config, onChange, slug }) {
+  // Force no_payment mode (payment coming soon)
+  useEffect(() => {
+    if (config.paymentMode !== 'no_payment') {
+      onChange({ ...config, paymentMode: 'no_payment' });
+    }
+  }, []);
+
   const handleChange = (field, value) => {
     onChange({ ...config, [field]: value });
   };
@@ -15,41 +24,45 @@ export default function BookingFormConfig({ config, onChange, slug }) {
       {/* Payment Mode Toggle */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Payment Mode
+          Booking Confirmation Mode
         </label>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="paymentMode"
-              value="payment"
-              checked={config.paymentMode !== 'no_payment'}
-              onChange={() => handleChange("paymentMode", "payment")}
-              className="w-4 h-4 text-blue-600"
-            />
-            <span className="text-sm text-gray-700">Payment Required</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
+        <div className="space-y-2">
+          {/* OTP Only - Active */}
+          <label className="flex items-center gap-2 p-3 border border-green-200 bg-green-50 rounded-lg cursor-pointer">
             <input
               type="radio"
               name="paymentMode"
               value="no_payment"
-              checked={config.paymentMode === 'no_payment'}
-              onChange={() => handleChange("paymentMode", "no_payment")}
-              className="w-4 h-4 text-blue-600"
+              checked={true}
+              readOnly
+              className="w-4 h-4 text-green-600"
             />
-            <span className="text-sm text-gray-700">No Payment (OTP Only)</span>
+            <div className="flex-1">
+              <span className="text-sm font-medium text-gray-900">OTP Verification Only</span>
+              <p className="text-xs text-gray-500">Users verify via OTP to confirm booking without payment</p>
+            </div>
+            <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">Active</span>
           </label>
+
+          {/* Payment Required - Coming Soon */}
+          <div className="flex items-center gap-2 p-3 border border-gray-200 bg-gray-50 rounded-lg opacity-60 cursor-not-allowed">
+            <input
+              type="radio"
+              name="paymentMode"
+              value="payment"
+              disabled
+              className="w-4 h-4 text-gray-400"
+            />
+            <div className="flex-1">
+              <span className="text-sm font-medium text-gray-500">Payment Required</span>
+              <p className="text-xs text-gray-400">Users must pay to confirm their booking slot</p>
+            </div>
+            <span className="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-700 rounded">Coming Soon</span>
+          </div>
         </div>
-        <p className="text-xs text-gray-500 mt-1">
-          {config.paymentMode === 'no_payment'
-            ? "Users will verify via OTP to confirm booking without payment"
-            : "Users must pay to confirm their booking slot"
-          }
-        </p>
       </div>
 
-      {/* Booking Fee - Only show if payment mode */}
+      {/* Payment settings commented out - Coming Soon
       {config.paymentMode !== 'no_payment' && (
         <>
           <div>
@@ -86,6 +99,7 @@ export default function BookingFormConfig({ config, onChange, slug }) {
           </div>
         </>
       )}
+      */}
 
       {/* Consultation Fee */}
       <div>
