@@ -20,6 +20,7 @@ import ProfessionalFeesSection from '@/components/booking-page/sections/Professi
 import FooterSection from '@/components/booking-page/sections/FooterSection';
 import WhatsAppStickyButton from '@/components/booking-page/sections/WhatsAppStickyButton';
 import BookNowStickyButton from '@/components/booking-page/sections/BookNowStickyButton';
+import FAQChatbot from '@/components/FAQChatbot';
 
 // Generate metadata
 export async function generateMetadata({ params }) {
@@ -98,6 +99,12 @@ function renderSection(section, doctor, index) {
       return <ProfessionalFeesSection {...props} />;
     case 'footer':
       return <FooterSection {...props} />;
+    case 'faq_chatbot':
+      return <FAQChatbot {...props} />;
+    case 'whatsapp_sticky':
+      return <WhatsAppStickyButton {...props} />;
+    case 'book_now_sticky':
+      return <BookNowStickyButton {...props} />;
     default:
       return null;
   }

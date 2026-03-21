@@ -91,6 +91,17 @@ const DoctorSchema = new mongoose.Schema({
     type: Date,
     select: false
   },
+
+  // Password Reset
+  passwordResetToken: {
+    type: String,
+    select: false
+  },
+  passwordResetExpiry: {
+    type: Date,
+    select: false
+  },
+
   isActive: {
     type: Boolean,
     default: true
@@ -177,6 +188,29 @@ DoctorSchema.methods.verifyEmailOTP = function(otp) {
     return false;
   }
   return this.emailVerificationOTP === otp;
+};
+
+// Generate password reset token
+DoctorSchema.methods.generatePasswordResetToken = function() {
+  // Generate a secure random token
+  const crypto = require('crypto');
+  const token = crypto.randomBytes(32).toString('hex');
+  this.passwordResetToken = crypto.createHash('sha256').update(token).digest('hex');
+  this.passwordResetExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+  return token; // Return unhashed token to send via email
+};
+
+// Verify password reset token
+DoctorSchema.statics.verifyPasswordResetToken = async function(token) {
+  const crypto = require('crypto');
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  const doctor = await this.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpiry: { $gt: new Date() }
+  }).select('+passwordResetToken +passwordResetExpiry');
+
+  return doctor;
 };
 
 // Static method to find by subdomain

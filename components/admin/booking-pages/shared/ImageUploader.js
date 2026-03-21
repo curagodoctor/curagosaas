@@ -10,6 +10,7 @@ export default function ImageUploader({
   maxSize = 5 * 1024 * 1024, // 5MB
   acceptedFormats = ["image/jpeg", "image/png", "image/webp"],
   showPreview = true,
+  compact = false, // Compact mode for inline/smaller upload areas
 }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
@@ -132,7 +133,9 @@ export default function ImageUploader({
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+          className={`border-2 border-dashed rounded-lg text-center transition-colors ${
+            compact ? "p-3" : "p-6"
+          } ${
             dragActive
               ? "border-blue-500 bg-blue-50"
               : "border-gray-300 hover:border-gray-400"
@@ -149,9 +152,26 @@ export default function ImageUploader({
           />
 
           {uploading ? (
-            <div className="space-y-2">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
+            <div className={compact ? "flex items-center justify-center gap-2" : "space-y-2"}>
+              <div className={`animate-spin rounded-full border-b-2 border-blue-600 ${compact ? "h-5 w-5" : "h-10 w-10 mx-auto"}`}></div>
               <p className="text-sm text-gray-600">Uploading...</p>
+            </div>
+          ) : compact ? (
+            <div className="flex items-center justify-center gap-2">
+              <svg
+                className="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <span className="text-sm text-blue-600 font-medium">Upload Image</span>
             </div>
           ) : (
             <div className="space-y-2">
@@ -186,61 +206,96 @@ export default function ImageUploader({
       {/* Preview */}
       {value && showPreview && (
         <div className="relative">
-          <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-            <img
-              src={value}
-              alt="Preview"
-              className="w-full h-full object-contain"
-              onLoad={() => {
-                console.log('✅ Image loaded successfully:', value);
-                setError(null);
-              }}
-              onError={(e) => {
-                const errorMsg = `Failed to load image: ${value}`;
-                console.error('❌ Image load error:', errorMsg);
-                setError(errorMsg);
-                e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect fill='%23ddd' width='400' height='300'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' font-size='14'%3EImage failed to load%3C/text%3E%3C/svg%3E";
-              }}
-            />
-          </div>
-
-          {/* Image URL */}
-          <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600 font-mono break-all">
-            {value}
-          </div>
-
-          {/* Remove Button */}
-          <button
-            type="button"
-            onClick={handleRemove}
-            className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg shadow-lg transition-colors"
-            title="Remove image"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
+          {compact ? (
+            <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+              <img
+                src={value}
+                alt="Preview"
+                className="w-10 h-10 object-cover rounded"
+                onLoad={() => setError(null)}
+                onError={(e) => {
+                  setError(`Failed to load image`);
+                  e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect fill='%23ddd' width='40' height='40'/%3E%3C/svg%3E";
+                }}
               />
-            </svg>
-          </button>
+              <span className="flex-1 text-xs text-gray-600 truncate">{value.split('/').pop()}</span>
+              <button
+                type="button"
+                onClick={handleRemove}
+                className="p-1 hover:bg-red-100 text-red-600 rounded"
+                title="Remove"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={acceptedFormats.join(",")}
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+            </div>
+          ) : (
+            <>
+              <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
+                <img
+                  src={value}
+                  alt="Preview"
+                  className="w-full h-full object-contain"
+                  onLoad={() => {
+                    console.log('Image loaded successfully:', value);
+                    setError(null);
+                  }}
+                  onError={(e) => {
+                    const errorMsg = `Failed to load image: ${value}`;
+                    console.error('Image load error:', errorMsg);
+                    setError(errorMsg);
+                    e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect fill='%23ddd' width='400' height='300'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' font-size='14'%3EImage failed to load%3C/text%3E%3C/svg%3E";
+                  }}
+                />
+              </div>
 
-          {/* Change Button */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="mt-2 w-full py-2 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-          >
-            Change Image
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={acceptedFormats.join(",")}
-            onChange={handleFileSelect}
-            className="hidden"
-          />
+              {/* Image URL */}
+              <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600 font-mono break-all">
+                {value}
+              </div>
+
+              {/* Remove Button */}
+              <button
+                type="button"
+                onClick={handleRemove}
+                className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg shadow-lg transition-colors"
+                title="Remove image"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+
+              {/* Change Button */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-2 w-full py-2 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+              >
+                Change Image
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={acceptedFormats.join(",")}
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+            </>
+          )}
         </div>
       )}
 

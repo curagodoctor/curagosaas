@@ -60,17 +60,21 @@ const SECTION_TYPES = [
   },
   {
     type: "benefits_list",
-    name: "Benefits List",
+    name: "Benefits/Features List",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
-    description: "Grid of features/benefits",
+    description: "Showcase your key features, benefits, or USPs",
     defaultConfig: {
       title: "Why Choose Us",
-      subtitle: "",
-      items: [],
+      subtitle: "What sets us apart",
+      items: [
+        { icon: "✓", title: "Experienced Professional", description: "Years of expertise in providing quality healthcare services" },
+        { icon: "⚡", title: "Modern Facilities", description: "State-of-the-art equipment and comfortable environment" },
+        { icon: "🏆", title: "Patient-Centric Care", description: "Personalized treatment plans tailored to your needs" },
+      ],
     },
   },
   {
@@ -941,13 +945,21 @@ export default function PageBuilderEditor() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Slug</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Slug
+                    <span className="ml-1 text-xs text-gray-400 font-normal">(URL identifier)</span>
+                  </label>
                   <input
                     type="text"
                     value={pageData.slug}
                     onChange={(e) => updatePageMeta("slug", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., home, services, about"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    A slug is a URL-friendly name for your page. For example, if your slug is "services",
+                    your page can be accessed at yourname.curago.in/services. Use lowercase letters, numbers, and hyphens only.
+                  </p>
                 </div>
 
                 <div>

@@ -16,6 +16,7 @@ export default function SignupPage() {
     referralCode: '',
     isLicensedProfessional: false,
     acceptTerms: false,
+    acceptVerification: false,
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -122,6 +123,10 @@ export default function SignupPage() {
 
     if (!formData.acceptTerms) {
       newErrors.acceptTerms = 'You must accept the terms and conditions';
+    }
+
+    if (!formData.acceptVerification) {
+      newErrors.acceptVerification = 'You must acknowledge the verification process';
     }
 
     setErrors(newErrors);
@@ -555,6 +560,22 @@ export default function SignupPage() {
                   </label>
                   {errors.acceptTerms && (
                     <p className="text-sm text-red-500 ml-8">{errors.acceptTerms}</p>
+                  )}
+
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      name="acceptVerification"
+                      checked={formData.acceptVerification}
+                      onChange={handleChange}
+                      className="mt-0.5 w-5 h-5 text-[#096b17] border-gray-300 rounded focus:ring-[#096b17]"
+                    />
+                    <span className="text-sm text-gray-700 group-hover:text-gray-900">
+                      I understand that my profile/website is subjected to an <strong>internal verification</strong> process *
+                    </span>
+                  </label>
+                  {errors.acceptVerification && (
+                    <p className="text-sm text-red-500 ml-8">{errors.acceptVerification}</p>
                   )}
                 </div>
 
