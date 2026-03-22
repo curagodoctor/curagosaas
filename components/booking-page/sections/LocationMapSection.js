@@ -1,65 +1,169 @@
 "use client";
 
+import { useState } from "react";
 import { trackButtonClick } from "@/lib/tracking";
 
 export default function LocationMapSection({
   sectionId,
-  title = "Visit Our Clinic",
-  address = "SRV Hospital, Tilak Nagar, Chembur, Mumbai",
-  mapUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3771.7127635984716!2d72.89472647501823!3d19.05964598211234!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c92e8fffffff%3A0x79c1c5c7e3e3e3e3!2sSRV%20Hospital!5e0!3m2!1sen!2sin!4v1737700000000!5m2!1sen!2sin",
+  title = "", // Will auto-generate based on count if empty
+  // Support for multiple locations (new format)
+  locations = [],
+  // Legacy single location props (backward compatibility)
+  address = "",
+  mapUrl = "",
   showDirectionsButton = true,
   trackingContext = { pageSlug: "page" },
 }) {
+  const [activeTab, setActiveTab] = useState(0);
+
+  // Build locations array - support both new and legacy formats
+  let locationList = locations;
+
+  // If no locations array but legacy props exist, create single location
+  if ((!locationList || locationList.length === 0) && (address || mapUrl)) {
+    locationList = [{
+      name: "Main Location",
+      address: address,
+      mapUrl: mapUrl,
+    }];
+  }
+
+  // If still no locations, don't render section
+  if (!locationList || locationList.length === 0) {
+    return null;
+  }
+
+  // Auto-generate title based on count if not provided
+  const displayTitle = title || (locationList.length === 1 ? "Our Location" : "Our Locations");
+
+  const activeLocation = locationList[activeTab] || locationList[0];
+
   return (
-    <section id={sectionId} className="container mx-auto px-4 md:px-6 py-12 md:py-16 lg:py-20 bg-beige-50">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8 lg:mb-12">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary-600 mb-4 lg:mb-6">
-            {title}
-          </h2>
-          <p className="text-base md:text-lg lg:text-xl text-primary-700 mb-4 lg:mb-6">
-            📍 {address}
-          </p>
-          {showDirectionsButton && (
-            <a
-              href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackButtonClick("View on Google Maps", `${trackingContext.pageSlug}_clinic_location_section`)}
-              className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
-            >
-              View on Google Maps
-            </a>
+    <section id={sectionId} className="bg-beige-50 py-12 md:py-16 lg:py-20">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="max-w-5xl mx-auto">
+          {/* Section Title */}
+          <div className="text-center mb-8 lg:mb-12">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary-600 mb-4">
+              {displayTitle}
+            </h2>
+          </div>
+
+          {/* Location Tabs - Only show if multiple locations */}
+          {locationList.length > 1 && (
+            <div className="flex flex-wrap justify-center gap-2 mb-6">
+              {locationList.map((location, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveTab(index)}
+                  className={`px-4 py-2 rounded-full font-medium text-sm transition-all ${
+                    activeTab === index
+                      ? "bg-primary-600 text-white shadow-md"
+                      : "bg-white text-primary-700 hover:bg-primary-50 border border-primary-200"
+                  }`}
+                >
+                  {location.name || `Location ${index + 1}`}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Active Location Details */}
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+            {/* Location Info Header */}
+            <div className="p-6 md:p-8 border-b border-gray-100">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <h3 className="text-xl md:text-2xl font-bold text-primary-800 mb-2">
+                    {activeLocation.name || "Our Location"}
+                  </h3>
+                  <p className="text-primary-700 flex items-start gap-2">
+                    <span className="flex-shrink-0 mt-1">📍</span>
+                    <span>{activeLocation.address}</span>
+                  </p>
+                </div>
+                {showDirectionsButton && activeLocation.address && (
+                  <a
+                    href={`https://maps.google.com/?q=${encodeURIComponent(activeLocation.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => trackButtonClick(`Get Directions - ${activeLocation.name}`, `${trackingContext.pageSlug}_location_map_section`)}
+                    className="inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Get Directions
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Map Embed */}
+            {activeLocation.mapUrl ? (
+              <div className="aspect-video md:aspect-[16/9] lg:aspect-[21/9]">
+                <iframe
+                  src={activeLocation.mapUrl}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, minHeight: "350px" }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="w-full h-full"
+                ></iframe>
+              </div>
+            ) : (
+              <div className="aspect-video md:aspect-[16/9] bg-gray-100 flex items-center justify-center">
+                <div className="text-center text-gray-500 p-8">
+                  <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <p className="text-sm mb-2">Map not configured</p>
+                  <p className="text-xs text-gray-400">Add a Google Maps embed URL in settings</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* All Locations Summary - Show if multiple locations */}
+          {locationList.length > 1 && (
+            <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {locationList.map((location, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveTab(index)}
+                  className={`p-4 rounded-xl text-left transition-all ${
+                    activeTab === index
+                      ? "bg-primary-100 border-2 border-primary-500"
+                      : "bg-white border-2 border-transparent hover:border-primary-200 shadow-sm hover:shadow-md"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
+                      activeTab === index ? "bg-primary-600 text-white" : "bg-primary-100 text-primary-600"
+                    }`}>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-primary-900 text-sm">
+                        {location.name || `Location ${index + 1}`}
+                      </h4>
+                      <p className="text-xs text-primary-700 mt-1 line-clamp-2">
+                        {location.address}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
           )}
         </div>
-
-        {/* Map Embed */}
-        {mapUrl && (
-          <div className="rounded-2xl overflow-hidden shadow-2xl">
-            <iframe
-              src={mapUrl}
-              width="100%"
-              height="450"
-              style={{ border: 0 }}
-              allowFullScreen=""
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              className="w-full"
-            ></iframe>
-          </div>
-        )}
-
-        {!mapUrl && (
-          <div className="rounded-2xl overflow-hidden shadow-2xl bg-gray-100 flex items-center justify-center" style={{ height: '450px' }}>
-            <div className="text-center text-gray-500">
-              <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <p className="text-sm">Map not configured</p>
-            </div>
-          </div>
-        )}
       </div>
     </section>
   );

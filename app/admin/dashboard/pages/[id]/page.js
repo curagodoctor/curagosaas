@@ -186,9 +186,8 @@ const SECTION_TYPES = [
     ),
     description: "Google Maps embed",
     defaultConfig: {
-      title: "Visit Our Clinic",
-      address: "",
-      mapUrl: "",
+      title: "Our Locations",
+      locations: [], // Array of locations - new format
       showDirectionsButton: true,
     },
   },
@@ -280,9 +279,8 @@ const SECTION_TYPES = [
     ),
     description: "Clinic location and consultation info",
     defaultConfig: {
-      title: "Find Us",
-      address: "",
-      locationLink: "",
+      title: "Our Clinic Locations",
+      clinics: [], // Array of clinics - new format
       showConsultationInfo: true,
     },
   },

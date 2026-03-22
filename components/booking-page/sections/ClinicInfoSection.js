@@ -4,7 +4,7 @@ import { trackButtonClick } from "@/lib/tracking";
 
 export default function ClinicInfoSection({
   sectionId,
-  title = "Our Clinic Locations",
+  title = "", // Will auto-generate based on count if empty
   // Support for multiple clinics (new format)
   clinics = [],
   // Legacy single clinic props (backward compatibility)
@@ -34,12 +34,15 @@ export default function ClinicInfoSection({
     return null;
   }
 
+  // Auto-generate title based on count if not provided
+  const displayTitle = title || (clinicList.length === 1 ? "Our Clinic" : "Our Clinic Locations");
+
   return (
     <section id={sectionId} className="bg-white py-8 md:py-12">
       <div className="container mx-auto px-4 md:px-6">
         {/* Section Title */}
         <h2 className="text-xl md:text-2xl font-bold text-primary-600 mb-6 text-center">
-          {title}
+          {displayTitle}
         </h2>
 
         {/* Clinics Grid */}
