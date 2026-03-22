@@ -12,6 +12,7 @@ const SectionSchema = new mongoose.Schema({
       'doctor_profile',
       'testimonials',
       'faqs',
+      'faq_chatbot',
       'location_map',
       'disease_icons_scroll',
       'custom_text',
