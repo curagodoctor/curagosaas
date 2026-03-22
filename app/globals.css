@@ -41,6 +41,32 @@
    Each theme overrides primary and accent colors
    ============================================ */
 
+/* Default Theme: Forest Green (applied to :root and when data-theme="forest") */
+:root,
+[data-theme="forest"] {
+  --color-primary-50: #e6f4e9;
+  --color-primary-100: #c0e5c8;
+  --color-primary-200: #99d5a6;
+  --color-primary-300: #73c685;
+  --color-primary-400: #4cb663;
+  --color-primary-500: #26a742;
+  --color-primary-600: #096b17;
+  --color-primary-700: #075713;
+  --color-primary-800: #05430f;
+  --color-primary-900: #032f0b;
+
+  --color-accent-50: #f0faf3;
+  --color-accent-100: #d9f2e2;
+  --color-accent-200: #b3e6c5;
+  --color-accent-300: #8dd9a8;
+  --color-accent-400: #64cb81;
+  --color-accent-500: #4bb86d;
+  --color-accent-600: #3c9557;
+  --color-accent-700: #2d7141;
+  --color-accent-800: #1e4d2c;
+  --color-accent-900: #0f2916;
+}
+
 /* Theme: Ocean Blue - Calming blue for trust and professionalism */
 [data-theme="ocean"] {
   --color-primary-50: #eff6ff;
