@@ -3,6 +3,7 @@
 import { trackButtonClick } from "@/lib/tracking";
 
 export default function ClinicInfoSection({
+  sectionId,
   title = "Find Us in Mumbai",
   address = "SRV Hospital, Tilak Nagar, Chembur.",
   locationLink = "https://maps.google.com/?q=SRV+Hospital+Tilak+Nagar+Chembur",
@@ -12,7 +13,7 @@ export default function ClinicInfoSection({
   trackingContext = { pageSlug: "page" },
 }) {
   return (
-    <section className="bg-white pt-4">
+    <section id={sectionId} className="bg-white pt-4">
       <div className="container mx-auto px-3 md:px-4">
         <div className="text-center">
           <h2 className="text-base md:text-lg font-bold text-primary-600 mb-2">

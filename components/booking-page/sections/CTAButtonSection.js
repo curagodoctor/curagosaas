@@ -3,6 +3,7 @@
 import { trackButtonClick } from "@/lib/tracking";
 
 export default function CTAButtonSection({
+  sectionId,
   title,
   subtitle,
   buttonText = "Book Now",
@@ -49,7 +50,7 @@ export default function CTAButtonSection({
   };
 
   return (
-    <section className={`container mx-auto px-4 md:px-6 py-12 md:py-16 lg:py-20 ${bgClass}`}>
+    <section id={sectionId} className={`container mx-auto px-4 md:px-6 py-12 md:py-16 lg:py-20 ${bgClass}`}>
       <div className={`max-w-4xl mx-auto flex flex-col ${alignmentClass}`}>
         {/* Title */}
         {title && (

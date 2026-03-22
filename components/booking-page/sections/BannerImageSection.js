@@ -3,6 +3,7 @@
 import Image from "next/image";
 
 export default function BannerImageSection({
+  sectionId,
   imageUrl,
   title,
   subtitle,
@@ -18,7 +19,7 @@ export default function BannerImageSection({
   }[alignment] || "text-center items-center";
 
   return (
-    <section className="relative w-full h-[300px] md:h-[400px] lg:h-[500px] overflow-hidden">
+    <section id={sectionId} className="relative w-full h-[300px] md:h-[400px] lg:h-[500px] overflow-hidden">
       <Image
         src={imageUrl}
         alt={title || "Banner"}

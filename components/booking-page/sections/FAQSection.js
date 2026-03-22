@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 export default function FAQSection({
+  sectionId,
   title = "Frequently Asked Questions",
   subtitle,
   faqs = [],
@@ -31,7 +32,7 @@ export default function FAQSection({
   const isOpen = (index) => openIndexes.includes(index);
 
   return (
-    <section className="container mx-auto px-4 md:px-6 py-12 md:py-16 lg:py-20 bg-white">
+    <section id={sectionId} className="container mx-auto px-4 md:px-6 py-12 md:py-16 lg:py-20 bg-white">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10 md:mb-16">

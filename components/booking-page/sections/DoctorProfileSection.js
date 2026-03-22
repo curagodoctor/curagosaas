@@ -3,6 +3,7 @@
 import Image from "next/image";
 
 export default function DoctorProfileSection({
+  sectionId,
   title = "About Dr. Yuvaraj T",
   content,
   imageUrl = "/doctor-profile.jpg",
@@ -14,7 +15,7 @@ export default function DoctorProfileSection({
   const isLeftLayout = layout === "left";
 
   return (
-    <section className="container mx-auto px-4 md:px-6 py-12 md:py-16 lg:py-20 bg-beige-50">
+    <section id={sectionId} className="container mx-auto px-4 md:px-6 py-12 md:py-16 lg:py-20 bg-beige-50">
       <div className="max-w-6xl mx-auto">
         <div className={`grid grid-cols-1 ${imageUrl ? 'lg:grid-cols-2' : ''} gap-8 lg:gap-12 items-center ${!isLeftLayout ? "lg:grid-flow-dense" : ""}`}>
           {/* Image */}

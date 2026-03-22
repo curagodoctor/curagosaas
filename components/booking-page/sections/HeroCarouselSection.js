@@ -5,6 +5,7 @@ import Image from "next/image";
 import { trackButtonClick } from "@/lib/tracking";
 
 export default function HeroCarouselSection({
+  sectionId,
   images = [],
   autoPlaySpeed = 3000,
   showIndicators = true,
@@ -41,7 +42,7 @@ export default function HeroCarouselSection({
   const displayImages = validImages;
 
   return (
-    <section className="relative w-full overflow-hidden bg-gray-100">
+    <section id={sectionId} className="relative w-full overflow-hidden bg-gray-100">
       <div className="relative w-full pt-20 md:pt-24">
         <div className="relative w-full overflow-hidden">
           {/* Carousel Images */}

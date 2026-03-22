@@ -3,6 +3,7 @@
 import Image from "next/image";
 
 export default function DiseaseIconsScrollSection({
+  sectionId,
   icons = [],
   speed = "medium",
 }) {
@@ -28,7 +29,7 @@ export default function DiseaseIconsScrollSection({
   }[speed] || "animate-scroll";
 
   return (
-    <section className="bg-white overflow-hidden py-0 lg:py-2">
+    <section id={sectionId} className="bg-white overflow-hidden py-0 lg:py-2">
       <div className="relative">
         <div className={`flex ${speedClass} items-center`}>
           {/* First set */}

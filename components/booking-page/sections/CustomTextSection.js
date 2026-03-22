@@ -1,6 +1,7 @@
 "use client";
 
 export default function CustomTextSection({
+  sectionId,
   title,
   content,
   alignment = "left", // left, center, right
@@ -159,7 +160,7 @@ export default function CustomTextSection({
   };
 
   return (
-    <section className={`container mx-auto px-4 md:px-6 ${paddingClass} ${bgClass}`}>
+    <section id={sectionId} className={`container mx-auto px-4 md:px-6 ${paddingClass} ${bgClass}`}>
       <div className={`${maxWidthClass} mx-auto ${alignmentClass}`}>
         {title && (
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary-600 mb-6 lg:mb-8">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 export default function TestimonialsSection({
+  sectionId,
   title = "What Our Patients Say",
   subtitle,
   testimonials = [],
@@ -79,7 +80,7 @@ export default function TestimonialsSection({
   );
 
   return (
-    <section className="container mx-auto px-4 md:px-6 py-12 md:py-16 lg:py-20 bg-beige-50">
+    <section id={sectionId} className="container mx-auto px-4 md:px-6 py-12 md:py-16 lg:py-20 bg-beige-50">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10 md:mb-16">

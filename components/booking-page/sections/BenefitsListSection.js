@@ -1,6 +1,7 @@
 "use client";
 
 export default function BenefitsListSection({
+  sectionId,
   title = "Why Choose Us",
   subtitle,
   items = [],
@@ -8,7 +9,7 @@ export default function BenefitsListSection({
   if (!items || items.length === 0) return null;
 
   return (
-    <section className="container mx-auto px-4 md:px-6 py-12 md:py-16 lg:py-20 bg-white">
+    <section id={sectionId} className="container mx-auto px-4 md:px-6 py-12 md:py-16 lg:py-20 bg-white">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10 md:mb-16">

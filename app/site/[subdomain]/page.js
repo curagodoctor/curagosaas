@@ -2,8 +2,10 @@ import { notFound } from 'next/navigation';
 import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 import BookingPage from '@/models/BookingPage';
+import { resolveThemeId } from '@/lib/themes';
 
 // Import section components (reuse existing booking page sections)
+import HeaderSection from '@/components/booking-page/sections/HeaderSection';
 import HeroCarouselSection from '@/components/booking-page/sections/HeroCarouselSection';
 import BannerImageSection from '@/components/booking-page/sections/BannerImageSection';
 import BenefitsListSection from '@/components/booking-page/sections/BenefitsListSection';
@@ -61,16 +63,20 @@ export async function generateMetadata({ params }) {
   }
 }
 
-// Section renderer
-function renderSection(section, doctor, index) {
+// Section renderer - pass pageSections for header auto-nav
+function renderSection(section, doctor, index, allSections = []) {
   // Spread the config directly so section components receive their props
   const props = {
     key: section._id || index,
+    sectionId: section.type, // Use section type as anchor ID for smooth scrolling
     ...section.config, // Spread config fields as individual props
     doctor, // Pass doctor object for components that need it
   };
 
   switch (section.type) {
+    case 'header':
+      // Pass all sections to header for auto-generated navigation
+      return <HeaderSection {...props} pageSections={allSections} />;
     case 'hero_carousel':
       return <HeroCarouselSection {...props} />;
     case 'banner_image':
@@ -202,12 +208,15 @@ export default async function SubdomainSitePage({ params }) {
   // Convert doctor to plain object for client components
   const doctorData = JSON.parse(JSON.stringify(doctor));
 
+  // Get the theme for this booking page
+  const themeId = resolveThemeId(bookingPage);
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" data-theme={themeId}>
       {/* Render regular sections */}
       {regularSections
         .sort((a, b) => (a.order || 0) - (b.order || 0))
-        .map((section, index) => renderSection(section, doctorData, index))}
+        .map((section, index) => renderSection(section, doctorData, index, regularSections))}
 
       {/* Render sticky buttons */}
       {stickyButtons.map((section, index) => {

@@ -3,6 +3,7 @@
 import { trackButtonClick } from "@/lib/tracking";
 
 export default function LocationMapSection({
+  sectionId,
   title = "Visit Our Clinic",
   address = "SRV Hospital, Tilak Nagar, Chembur, Mumbai",
   mapUrl = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3771.7127635984716!2d72.89472647501823!3d19.05964598211234!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c92e8fffffff%3A0x79c1c5c7e3e3e3e3!2sSRV%20Hospital!5e0!3m2!1sen!2sin!4v1737700000000!5m2!1sen!2sin",
@@ -10,7 +11,7 @@ export default function LocationMapSection({
   trackingContext = { pageSlug: "page" },
 }) {
   return (
-    <section className="container mx-auto px-4 md:px-6 py-12 md:py-16 lg:py-20 bg-beige-50">
+    <section id={sectionId} className="container mx-auto px-4 md:px-6 py-12 md:py-16 lg:py-20 bg-beige-50">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8 lg:mb-12">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary-600 mb-4 lg:mb-6">

@@ -1,6 +1,7 @@
 "use client";
 
 export default function ProfessionalFeesSection({
+  sectionId,
   title = "Professional Consultation Fees",
   subtitle = "",
   fees = [
@@ -34,7 +35,7 @@ export default function ProfessionalFeesSection({
   };
 
   return (
-    <section className={`${bgClass} py-12 md:py-16 lg:py-20`}>
+    <section id={sectionId} className={`${bgClass} py-12 md:py-16 lg:py-20`}>
       <div className="container mx-auto px-4 md:px-6">
         <div className="max-w-3xl mx-auto">
           <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10 lg:p-12 border-2 border-primary-200">

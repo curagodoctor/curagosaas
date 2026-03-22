@@ -12,6 +12,7 @@ import {
 import { useModal } from "@/contexts/ModalContext";
 
 export default function BookingFormSection({
+  sectionId,
   customTitle,
   customSubtitle,
   consultationFee = 1000,
@@ -513,7 +514,7 @@ export default function BookingFormSection({
   };
 
   return (
-    <section id="booking" className="container mx-auto px-4 md:px-6 py-4 md:py-12 lg:py-16">
+    <section id={sectionId || "booking_form"} className="container mx-auto px-4 md:px-6 py-4 md:py-12 lg:py-16">
       <div className="max-w-4xl lg:max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-3 md:mb-6">
