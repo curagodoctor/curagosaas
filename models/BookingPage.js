@@ -5,6 +5,7 @@ const SectionSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: [
+      'header',
       'hero_carousel',
       'banner_image',
       'benefits_list',

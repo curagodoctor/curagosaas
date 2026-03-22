@@ -531,19 +531,36 @@ export default function PageBuilderEditor() {
     const newSection = {
       _id: `temp_${Date.now()}`,
       type: sectionType,
-      order: pageData.sections.length,
+      order: 0,
       visible: true,
       config: { ...sectionDef.defaultConfig },
     };
 
-    setPageData((prev) => ({
-      ...prev,
-      sections: [...prev.sections, newSection],
-    }));
+    // Header should always be first (it's the navbar)
+    if (sectionType === 'header') {
+      setPageData((prev) => {
+        // Shift all existing sections' order by 1
+        const updatedSections = prev.sections.map((s) => ({
+          ...s,
+          order: s.order + 1,
+        }));
+        newSection.order = 0;
+        return {
+          ...prev,
+          sections: [newSection, ...updatedSections],
+        };
+      });
+      setSelectedSectionIndex(0);
+    } else {
+      // Add other sections at the end
+      newSection.order = pageData.sections.length;
+      setPageData((prev) => ({
+        ...prev,
+        sections: [...prev.sections, newSection],
+      }));
+      setSelectedSectionIndex(pageData.sections.length);
+    }
     setHasUnsavedChanges(true);
-
-    // Select the new section
-    setSelectedSectionIndex(pageData.sections.length);
   };
 
   // Move section up
