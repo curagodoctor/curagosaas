@@ -95,6 +95,11 @@ const BookingPageSchema = new mongoose.Schema({
     enum: ['green', 'blue', 'purple', 'orange', 'red', 'teal', 'indigo'],
     default: 'blue',
   },
+  theme: {
+    type: String,
+    enum: ['forest', 'ocean', 'sunset', 'royal', 'teal', 'coral'],
+    default: 'forest',
+  },
   showInNavbar: {
     type: Boolean,
     default: false,
