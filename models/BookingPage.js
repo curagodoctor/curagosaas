@@ -93,7 +93,7 @@ const BookingPageSchema = new mongoose.Schema({
   colorScheme: {
     type: String,
     enum: ['green', 'blue', 'purple', 'orange', 'red', 'teal', 'indigo'],
-    default: 'blue',
+    default: 'green', // Changed from 'blue' - use 'theme' field instead
   },
   theme: {
     type: String,

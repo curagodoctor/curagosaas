@@ -122,6 +122,7 @@ export async function POST(request) {
       sections: data.sections || [],
       consultationFee: data.consultationFee || 1000,
       bookingFee: data.bookingFee || 150,
+      theme: data.theme || 'forest', // Default to forest green theme
       createdBy: 'admin',
     });
 
