@@ -223,6 +223,20 @@ export default function DashboardLayout({ children }) {
           </Link>
 
           <Link
+            href="/admin/dashboard/gmb"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+              isActive('/admin/dashboard/gmb') || isActivePrefix('/admin/dashboard/gmb/')
+                ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+            </svg>
+            <span>Google Business</span>
+          </Link>
+
+          <Link
             href="/admin/dashboard/blog-articles"
             className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
               isActive('/admin/dashboard/blog-articles') || isActivePrefix('/admin/dashboard/blog-articles/')
