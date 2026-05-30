@@ -14,8 +14,16 @@
 import mongoose from 'mongoose';
 
 // ============ CONFIGURATION ============
-const SOURCE_DB_URI = 'mongodb+srv://team_db_user:bdMtiXdSVeH8yQg1@cluster0.fym93fu.mongodb.net/yuvaraj-booking?retryWrites=true&w=majority&appName=Cluster0';
-const DEST_DB_URI = 'mongodb+srv://curagodoctor_db_user:l3ZgEtdKgkB3sNKC@cluster0.xuweomv.mongodb.net/curago-saas?retryWrites=true&w=majority&appName=Cluster0';
+// Set these environment variables before running:
+//   SOURCE_DB_URI - MongoDB URI for the source (yuvaraj-booking) database
+//   DEST_DB_URI   - MongoDB URI for the destination (curago-saas) database
+const SOURCE_DB_URI = process.env.SOURCE_DB_URI;
+const DEST_DB_URI = process.env.DEST_DB_URI;
+
+if (!SOURCE_DB_URI || !DEST_DB_URI) {
+  console.error('ERROR: Set SOURCE_DB_URI and DEST_DB_URI environment variables before running.');
+  process.exit(1);
+}
 // =======================================
 
 async function migrate() {
