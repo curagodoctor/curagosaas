@@ -13,7 +13,7 @@ export default function SignupPage() {
     subdomain: '',
     password: '',
     confirmPassword: '',
-    referralCode: '',
+    referenceCode: '',
     isLicensedProfessional: false,
     acceptTerms: false,
     acceptVerification: false,
@@ -22,6 +22,7 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [subdomainStatus, setSubdomainStatus] = useState(null);
   const [subdomainMessage, setSubdomainMessage] = useState('');
+  const [showContactPopup, setShowContactPopup] = useState(false);
 
   // Debounced subdomain check
   const checkSubdomain = useCallback(async (subdomain) => {
@@ -152,7 +153,7 @@ export default function SignupPage() {
           phone: formData.phone.replace(/\D/g, ''),
           subdomain: formData.subdomain,
           password: formData.password,
-          referralCode: formData.referralCode || undefined,
+          referenceCode: formData.referenceCode,
           isLicensedProfessional: formData.isLicensedProfessional,
         }),
       });
@@ -160,7 +161,11 @@ export default function SignupPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Something went wrong');
+        if (data.error === 'INVALID_REFERENCE_CODE') {
+          setShowContactPopup(true);
+          return;
+        }
+        throw new Error(data.message || data.error || 'Something went wrong');
       }
 
       router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`);
@@ -232,8 +237,8 @@ export default function SignupPage() {
                   </svg>
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-1">Online Booking System</h4>
-                  <p className="text-white/80 text-sm">Patients can book appointments 24/7</p>
+                  <h4 className="font-semibold mb-1">Professional Clinic Website</h4>
+                  <p className="text-white/80 text-sm">Beautiful, mobile-friendly website for your practice</p>
                 </div>
               </div>
 
@@ -441,6 +446,33 @@ export default function SignupPage() {
                   {errors.subdomain && <p className="mt-1 text-sm text-red-500">{errors.subdomain}</p>}
                 </div>
 
+                {/* Reference Code */}
+                <div>
+                  <label htmlFor="referenceCode" className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Reference Code
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      id="referenceCode"
+                      name="referenceCode"
+                      value={formData.referenceCode}
+                      onChange={handleChange}
+                      placeholder="Enter your platform reference code"
+                      className={`w-full pl-12 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none transition-all uppercase ${
+                        errors.referenceCode ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      style={{ textTransform: 'uppercase' }}
+                    />
+                  </div>
+                  {errors.referenceCode && <p className="mt-1 text-sm text-red-500">{errors.referenceCode}</p>}
+                </div>
+
                 {/* Password & Confirm - Side by side */}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
@@ -493,30 +525,6 @@ export default function SignupPage() {
                     {errors.confirmPassword && (
                       <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>
                     )}
-                  </div>
-                </div>
-
-                {/* Referral Code (Optional) */}
-                <div>
-                  <label htmlFor="referralCode" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Referral Code <span className="text-gray-400">(Optional)</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-                      </svg>
-                    </div>
-                    <input
-                      type="text"
-                      id="referralCode"
-                      name="referralCode"
-                      value={formData.referralCode}
-                      onChange={handleChange}
-                      placeholder="Enter referral code if you have one"
-                      className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none transition-all uppercase"
-                      style={{ textTransform: 'uppercase' }}
-                    />
                   </div>
                 </div>
 
@@ -630,6 +638,61 @@ export default function SignupPage() {
           </div>
         </div>
       </div>
+
+      {/* Contact Us Popup - shown when reference code is invalid */}
+      {showContactPopup && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8">
+            <div className="text-center mb-4">
+              <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Invalid Reference Code</h3>
+            </div>
+            <p className="text-gray-600 text-center mb-6">
+              The reference code you entered is invalid or expired. Please reach out to us to get a valid code.
+            </p>
+            <div className="space-y-3 mb-6">
+              <a
+                href="tel:+919876543210"
+                className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-[#096b17] hover:bg-[#096b17]/5 transition-colors"
+              >
+                <div className="w-10 h-10 bg-[#096b17]/10 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-[#096b17]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Call Us</p>
+                  <p className="font-medium text-gray-900">+91 98765 43210</p>
+                </div>
+              </a>
+              <a
+                href="mailto:support@curago.in"
+                className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-[#096b17] hover:bg-[#096b17]/5 transition-colors"
+              >
+                <div className="w-10 h-10 bg-[#096b17]/10 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-[#096b17]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Email Us</p>
+                  <p className="font-medium text-gray-900">support@curago.in</p>
+                </div>
+              </a>
+            </div>
+            <button
+              onClick={() => setShowContactPopup(false)}
+              className="w-full bg-[#096b17] hover:bg-[#075110] text-white py-3 rounded-xl font-medium transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

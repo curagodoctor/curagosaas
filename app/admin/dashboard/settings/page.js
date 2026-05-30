@@ -19,6 +19,7 @@ export default function SettingsPage() {
     licenseNumber: '',
     timezone: 'Asia/Kolkata',
   });
+  const [domainInfo, setDomainInfo] = useState({ subdomain: '', customDomain: null });
 
   useEffect(() => {
     fetchSettings();
@@ -46,6 +47,10 @@ export default function SettingsPage() {
           phone: data.doctor.phone || '',
           licenseNumber: data.doctor.licenseNumber || '',
           timezone: data.doctor.timezone || 'Asia/Kolkata',
+        });
+        setDomainInfo({
+          subdomain: data.doctor.subdomain || '',
+          customDomain: data.doctor.customDomain || null,
         });
       }
       setLoading(false);
@@ -106,6 +111,7 @@ export default function SettingsPage() {
     { id: 'profile', label: 'Profile' },
     { id: 'contact', label: 'Contact & WhatsApp' },
     { id: 'practice', label: 'Practice Info' },
+    { id: 'domain', label: 'Domain & DNS' },
   ];
 
   return (
@@ -309,8 +315,122 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Save Button */}
-          <div className="mt-8 pt-6 border-t flex justify-end">
+          {/* Domain & DNS Tab */}
+          {activeTab === 'domain' && (
+            <div className="space-y-6">
+              {/* Current Website URL */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h3 className="font-medium text-green-800 mb-1">Your Live Website</h3>
+                {domainInfo.subdomain ? (
+                  <a
+                    href={`https://${domainInfo.subdomain}.curago.in`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#096b17] font-mono hover:underline flex items-center gap-1"
+                  >
+                    {domainInfo.subdomain}.curago.in
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                ) : (
+                  <p className="text-gray-500 text-sm">No subdomain configured</p>
+                )}
+              </div>
+
+              {/* Custom Domain Instructions */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Connect Your Custom Domain</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  To use your own domain (e.g., www.drabcclinic.com), follow these steps:
+                </p>
+
+                <div className="space-y-4">
+                  {/* Step 1 */}
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="w-6 h-6 bg-[#096b17] text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                      <h4 className="font-medium text-gray-900">Add a CNAME record</h4>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Go to your domain registrar (GoDaddy, Namecheap, Google Domains, etc.) and add the following DNS record:
+                    </p>
+                    <div className="bg-gray-50 rounded-lg p-4 font-mono text-sm space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Type:</span>
+                        <span className="font-semibold text-gray-900">CNAME</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Name/Host:</span>
+                        <span className="font-semibold text-gray-900">www</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Value/Points to:</span>
+                        <span className="font-semibold text-gray-900">cname.vercel-dns.com</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">TTL:</span>
+                        <span className="font-semibold text-gray-900">3600 (or Auto)</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText('cname.vercel-dns.com');
+                        showAlert({ title: 'Copied', message: 'CNAME value copied to clipboard', type: 'success' });
+                      }}
+                      className="mt-2 text-sm text-[#096b17] hover:underline flex items-center gap-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Copy CNAME value
+                    </button>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="w-6 h-6 bg-[#096b17] text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                      <h4 className="font-medium text-gray-900">Contact us</h4>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      After adding the DNS record, contact us at{' '}
+                      <a href="mailto:support@curago.in" className="text-[#096b17] hover:underline font-medium">
+                        support@curago.in
+                      </a>{' '}
+                      with your domain name so we can configure it on our end.
+                      DNS changes can take up to 24-48 hours to propagate.
+                    </p>
+                  </div>
+
+                  {/* Step 3 - Status */}
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="w-6 h-6 bg-[#096b17] text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                      <h4 className="font-medium text-gray-900">Domain Status</h4>
+                    </div>
+                    {domainInfo.customDomain ? (
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                        <span className="text-sm text-green-700">
+                          Custom domain connected: <strong>{domainInfo.customDomain}</strong>
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
+                        <span className="text-sm text-gray-500">No custom domain connected yet</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Save Button (hidden on domain tab since it's read-only) */}
+          <div className={`mt-8 pt-6 border-t flex justify-end ${activeTab === 'domain' ? 'hidden' : ''}`}>
             <button
               type="submit"
               disabled={saving}

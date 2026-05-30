@@ -69,6 +69,8 @@ export default function DashboardLayout({ children }) {
   const isActive = (path) => pathname === path;
   const isActivePrefix = (path) => pathname?.startsWith(path);
 
+  const SHOW_CONSULTATION_FEATURES = false;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
@@ -152,33 +154,37 @@ export default function DashboardLayout({ children }) {
             <span>Dashboard</span>
           </Link>
 
-          <Link
-            href="/admin/dashboard/bookings"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
-              isActive('/admin/dashboard/bookings')
-                ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
-                : 'text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            <span>Bookings</span>
-          </Link>
+          {SHOW_CONSULTATION_FEATURES && (
+            <Link
+              href="/admin/dashboard/bookings"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+                isActive('/admin/dashboard/bookings')
+                  ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <span>Bookings</span>
+            </Link>
+          )}
 
-          <Link
-            href="/admin/dashboard/slots"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
-              isActive('/admin/dashboard/slots')
-                ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
-                : 'text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>Slots</span>
-          </Link>
+          {SHOW_CONSULTATION_FEATURES && (
+            <Link
+              href="/admin/dashboard/slots"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+                isActive('/admin/dashboard/slots')
+                  ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Slots</span>
+            </Link>
+          )}
 
           <Link
             href="/admin/dashboard/pages"
@@ -194,19 +200,21 @@ export default function DashboardLayout({ children }) {
             <span>Website Builder</span>
           </Link>
 
-          <Link
-            href="/admin/dashboard/modes"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
-              isActive('/admin/dashboard/modes')
-                ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
-                : 'text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            <span>Consultation Modes</span>
-          </Link>
+          {SHOW_CONSULTATION_FEATURES && (
+            <Link
+              href="/admin/dashboard/modes"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+                isActive('/admin/dashboard/modes')
+                  ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span>Consultation Modes</span>
+            </Link>
+          )}
 
           <Link
             href="/admin/dashboard/analytics"
@@ -222,19 +230,21 @@ export default function DashboardLayout({ children }) {
             <span>Analytics</span>
           </Link>
 
-          <Link
-            href="/admin/dashboard/gmb"
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
-              isActive('/admin/dashboard/gmb') || isActivePrefix('/admin/dashboard/gmb/')
-                ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
-                : 'text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-            </svg>
-            <span>Google Business</span>
-          </Link>
+          {SHOW_CONSULTATION_FEATURES && (
+            <Link
+              href="/admin/dashboard/gmb"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+                isActive('/admin/dashboard/gmb') || isActivePrefix('/admin/dashboard/gmb/')
+                  ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+              </svg>
+              <span>Google Business</span>
+            </Link>
+          )}
 
           <Link
             href="/admin/dashboard/blog-articles"

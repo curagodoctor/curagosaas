@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
+import ReferenceCode from '@/models/ReferenceCode';
 import { sendVerificationEmail } from '@/lib/email';
 import { checkSubdomainAvailability, isValidSubdomain } from '@/lib/doctorAuth';
 
@@ -14,7 +15,7 @@ export async function POST(request) {
       password,
       subdomain,
       isLicensedProfessional,
-      referralCode,
+      referenceCode,
     } = body;
 
     // Validate required fields
@@ -68,6 +69,22 @@ export async function POST(request) {
 
     await connectDB();
 
+    // Validate reference code (required)
+    if (!referenceCode) {
+      return NextResponse.json(
+        { error: 'INVALID_REFERENCE_CODE', message: 'A valid reference code is required to sign up.' },
+        { status: 400 }
+      );
+    }
+
+    const refCodeResult = await ReferenceCode.validateCode(referenceCode);
+    if (!refCodeResult.valid) {
+      return NextResponse.json(
+        { error: 'INVALID_REFERENCE_CODE', message: refCodeResult.reason },
+        { status: 400 }
+      );
+    }
+
     // Check if email already exists
     const existingEmail = await Doctor.findOne({ email: email.toLowerCase() });
     if (existingEmail) {
@@ -86,15 +103,6 @@ export async function POST(request) {
       );
     }
 
-    // Find referrer if referral code provided
-    let referredBy = null;
-    if (referralCode) {
-      const referrer = await Doctor.findOne({ myReferralCode: referralCode.toUpperCase() });
-      if (referrer) {
-        referredBy = referrer._id;
-      }
-    }
-
     // Create doctor (password will be hashed by pre-save hook)
     const doctor = new Doctor({
       name,
@@ -105,8 +113,7 @@ export async function POST(request) {
       displayName: name, // Default display name to name
       whatsappNumber: phone, // Default WhatsApp to phone
       isLicensedProfessional,
-      referralCode: referralCode || undefined,
-      referredBy,
+      platformReferenceCode: referenceCode.toUpperCase(),
       isEmailVerified: false,
       isActive: true,
     });
@@ -116,6 +123,12 @@ export async function POST(request) {
 
     // Save doctor
     await doctor.save();
+
+    // Track reference code usage
+    await ReferenceCode.findByIdAndUpdate(refCodeResult.refCode._id, {
+      $inc: { usedCount: 1 },
+      $push: { usedBy: { doctorId: doctor._id, usedAt: new Date() } },
+    });
 
     // Send verification email
     const emailResult = await sendVerificationEmail(email, otp, name);

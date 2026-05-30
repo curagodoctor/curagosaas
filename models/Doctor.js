@@ -121,6 +121,14 @@ const DoctorSchema = new mongoose.Schema({
     default: 'Asia/Kolkata'
   },
 
+  // Platform Reference Code (used during signup)
+  platformReferenceCode: {
+    type: String,
+    trim: true,
+    uppercase: true,
+    default: null,
+  },
+
   // Referral
   referralCode: {
     type: String,

@@ -20,35 +20,37 @@ export async function GET(request) {
     const state = searchParams.get('state'); // Contains doctorId
     const error = searchParams.get('error');
 
+    const baseUrl = getBaseUrl(request);
+
     // Handle OAuth errors
     if (error) {
       const errorDescription = searchParams.get('error_description') || 'Authorization failed';
-      return redirectWithError(errorDescription);
+      return redirectWithError(errorDescription, baseUrl);
     }
 
     if (!code || !state) {
-      return redirectWithError('Invalid callback parameters');
+      return redirectWithError('Invalid callback parameters', baseUrl);
     }
 
     // Verify doctor exists
     await connectDB();
     const doctor = await Doctor.findById(state);
     if (!doctor) {
-      return redirectWithError('Invalid session. Please try again.');
+      return redirectWithError('Invalid session. Please try again.', baseUrl);
     }
 
     // Exchange code for tokens
     const tokens = await exchangeCodeForTokens(code);
 
     if (!tokens.refreshToken) {
-      return redirectWithError('Failed to get refresh token. Please try again.');
+      return redirectWithError('Failed to get refresh token. Please try again.', baseUrl);
     }
 
     // Get GMB accounts
     const accounts = await getAccounts(tokens.accessToken);
 
     if (!accounts || accounts.length === 0) {
-      return redirectWithError('No Google My Business accounts found. Please ensure you have access to a GMB account.');
+      return redirectWithError('No Google My Business accounts found. Please ensure you have access to a GMB account.', baseUrl);
     }
 
     // Get all locations from all accounts
@@ -78,14 +80,14 @@ export async function GET(request) {
     }
 
     if (allLocations.length === 0) {
-      return redirectWithError('No business locations found in your GMB account.');
+      return redirectWithError('No business locations found in your GMB account.', baseUrl);
     }
 
     // If only one location, connect directly
     if (allLocations.length === 1) {
       await createConnection(doctor, tokens, allLocations[0]);
       return NextResponse.redirect(
-        new URL(`/admin/dashboard/gmb?connected=true&business=${encodeURIComponent(allLocations[0].businessName)}`, process.env.NEXT_PUBLIC_APP_URL)
+        new URL(`/admin/dashboard/gmb?connected=true&business=${encodeURIComponent(allLocations[0].businessName)}`, baseUrl)
       );
     }
 
@@ -102,12 +104,12 @@ export async function GET(request) {
     cleanupPendingConnections();
 
     return NextResponse.redirect(
-      new URL(`/admin/dashboard/gmb/select-locations?pending=${pendingId}`, process.env.NEXT_PUBLIC_APP_URL)
+      new URL(`/admin/dashboard/gmb/select-locations?pending=${pendingId}`, baseUrl)
     );
 
   } catch (error) {
     console.error('[GMB Callback] Error:', error);
-    return redirectWithError(error.message || 'Failed to connect GMB account');
+    return redirectWithError(error.message || 'Failed to connect GMB account', getBaseUrl(request));
   }
 }
 
@@ -196,8 +198,21 @@ function formatAddress(address) {
 /**
  * Redirect with error message
  */
-function redirectWithError(message) {
+function redirectWithError(message, baseUrl) {
   return NextResponse.redirect(
-    new URL(`/doctor/dashboard/gmb?error=${encodeURIComponent(message)}`, process.env.NEXT_PUBLIC_APP_URL)
+    new URL(`/admin/dashboard/gmb?error=${encodeURIComponent(message)}`, baseUrl)
   );
+}
+
+/**
+ * Get base URL - use request origin for localhost, otherwise use APP_URL
+ */
+function getBaseUrl(request) {
+  if (request) {
+    const url = new URL(request.url);
+    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+      return url.origin;
+    }
+  }
+  return process.env.NEXT_PUBLIC_APP_URL;
 }

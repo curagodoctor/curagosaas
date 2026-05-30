@@ -24,6 +24,7 @@ export async function GET(request) {
         timezone: doctor.timezone,
         profileImage: doctor.profileImage,
         subdomain: doctor.subdomain,
+        customDomain: doctor.customDomain,
         email: doctor.email,
       }
     });
