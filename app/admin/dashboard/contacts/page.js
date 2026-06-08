@@ -17,6 +17,8 @@ export default function ContactsPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [quota, setQuota] = useState(null);
+  const [workflows, setWorkflows] = useState([]);
+  const [activeExecutions, setActiveExecutions] = useState({});
 
   const [formData, setFormData] = useState({
     name: '', phone: '', email: '', status: 'new', notes: '', googleReviewLink: '',
@@ -63,9 +65,56 @@ export default function ContactsPage() {
     }
   };
 
+  const fetchWorkflows = async () => {
+    try {
+      const res = await fetch('/api/doctor/workflows', { credentials: 'include' });
+      const data = await res.json();
+      if (data.success) setWorkflows(data.workflows);
+    } catch (error) {
+      console.error('Error fetching workflows:', error);
+    }
+  };
+
+  const fetchExecutions = async () => {
+    try {
+      const res = await fetch('/api/doctor/workflows/executions?status=active&limit=100', { credentials: 'include' });
+      const data = await res.json();
+      if (data.success) {
+        const map = {};
+        data.executions.forEach(e => { map[e.contactId?._id || e.contactId] = e; });
+        setActiveExecutions(map);
+      }
+    } catch (error) {
+      console.error('Error fetching executions:', error);
+    }
+  };
+
+  const handleStartWorkflow = async (contactId, workflowId) => {
+    try {
+      const res = await fetch('/api/doctor/workflows/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ contactId, workflowId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        await showAlert({ title: 'Workflow Started', message: data.immediateMessageSent ? 'Workflow started and first message sent!' : 'Workflow started!', type: 'success' });
+        fetchContacts(pagination.page);
+        fetchExecutions();
+      } else {
+        await showAlert({ title: 'Error', message: data.error, type: 'error' });
+      }
+    } catch (error) {
+      await showAlert({ title: 'Error', message: 'Failed to start workflow', type: 'error' });
+    }
+  };
+
   useEffect(() => {
     fetchStatuses();
     fetchQuota();
+    fetchWorkflows();
+    fetchExecutions();
   }, []);
 
   useEffect(() => {
@@ -364,6 +413,26 @@ export default function ContactsPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
+                          {activeExecutions[contact._id] ? (
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full" title="Workflow running">
+                              Running
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                const defaultWf = workflows.find(w => w.isDefault) || workflows[0];
+                                if (defaultWf) handleStartWorkflow(contact._id, defaultWf._id);
+                              }}
+                              className="p-1.5 text-gray-400 hover:text-[#096b17] transition-colors"
+                              title="Start Workflow"
+                              disabled={workflows.length === 0}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -385,6 +454,19 @@ export default function ContactsPage() {
                   <div className="flex gap-2 mt-3">
                     <button onClick={() => handleEdit(contact)} className="text-xs text-[#096b17] hover:underline">Edit</button>
                     <button onClick={() => handleDelete(contact)} className="text-xs text-red-500 hover:underline">Delete</button>
+                    {activeExecutions[contact._id] ? (
+                      <span className="text-xs text-blue-600">Workflow Running</span>
+                    ) : workflows.length > 0 && (
+                      <button
+                        onClick={() => {
+                          const defaultWf = workflows.find(w => w.isDefault) || workflows[0];
+                          if (defaultWf) handleStartWorkflow(contact._id, defaultWf._id);
+                        }}
+                        className="text-xs text-[#096b17] hover:underline"
+                      >
+                        Start Workflow
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
