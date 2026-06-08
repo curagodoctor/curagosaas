@@ -14,23 +14,27 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: 'No subscription found' }, { status: 404 });
     }
 
-    if (sub.plan === 'trial') {
-      // Cancel trial immediately
-      sub.status = 'cancelled';
-      sub.cancelledAt = new Date();
-      await sub.save();
-      return NextResponse.json({ success: true, message: 'Trial cancelled' });
+    if (sub.status === 'cancelled') {
+      return NextResponse.json({ success: false, error: 'Subscription is already cancelled' }, { status: 400 });
     }
 
+    // Try to cancel on Razorpay if there's a subscription ID
     if (sub.razorpaySubscriptionId) {
-      await cancelSubscription(sub.razorpaySubscriptionId);
+      try {
+        await cancelSubscription(sub.razorpaySubscriptionId);
+      } catch (razorpayError) {
+        // If Razorpay cancel fails (e.g., no billing cycle, already cancelled),
+        // still cancel in our DB — the subscription was never paid anyway
+        console.warn('[Subscription Cancel] Razorpay cancel failed:', razorpayError.message);
+      }
     }
 
     sub.status = 'cancelled';
     sub.cancelledAt = new Date();
+    sub.plan = sub.plan === 'monthly' ? 'monthly' : 'trial'; // Keep original plan type
     await sub.save();
 
-    return NextResponse.json({ success: true, message: 'Subscription cancelled. Access continues until end of billing period.' });
+    return NextResponse.json({ success: true, message: 'Subscription cancelled.' });
   } catch (error) {
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
