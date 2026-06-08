@@ -24,6 +24,7 @@ export async function GET(request) {
         currentPeriodStart: subscription.currentPeriodStart,
         currentPeriodEnd: subscription.currentPeriodEnd,
         amount: subscription.amount,
+        cancelledAt: subscription.cancelledAt,
         razorpaySubscriptionId: subscription.razorpaySubscriptionId,
       },
     });

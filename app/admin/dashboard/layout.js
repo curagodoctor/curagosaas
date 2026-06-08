@@ -182,6 +182,20 @@ export default function DashboardLayout({ children }) {
             <span>Workflows</span>
           </Link>
 
+          <Link
+            href="/admin/dashboard/ai-generate"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+              isActive('/admin/dashboard/ai-generate')
+                ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span>AI Generate</span>
+          </Link>
+
           {SHOW_CONSULTATION_FEATURES && (
             <Link
               href="/admin/dashboard/bookings"

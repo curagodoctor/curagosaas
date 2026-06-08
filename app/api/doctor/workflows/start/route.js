@@ -156,7 +156,7 @@ export async function POST(request) {
     if (error.code === 11000) {
       return NextResponse.json({ success: false, error: 'Contact already has an active workflow' }, { status: 400 });
     }
-    console.error('[Workflow Start]', error);
-    return NextResponse.json({ success: false, error: 'Failed to start workflow' }, { status: 500 });
+    console.error('[Workflow Start]', error.message, error.stack);
+    return NextResponse.json({ success: false, error: error.message || 'Failed to start workflow' }, { status: 500 });
   }
 }

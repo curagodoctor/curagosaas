@@ -60,11 +60,8 @@ WorkflowExecutionSchema.index({ status: 1, nextRunAt: 1 }); // For cron processi
 WorkflowExecutionSchema.index({ doctorId: 1, contactId: 1 });
 WorkflowExecutionSchema.index({ doctorId: 1, status: 1 });
 
-// Prevent duplicate active workflows per contact per doctor
-WorkflowExecutionSchema.index(
-  { doctorId: 1, contactId: 1 },
-  { unique: true, partialFilterExpression: { status: 'active' } }
-);
+// Note: duplicate active workflow prevention handled in application code
+// (partial filter indexes require MongoDB 3.2+ and may not work on all Atlas tiers)
 
 // Static: find executions ready to process
 WorkflowExecutionSchema.statics.findReadyToProcess = function() {

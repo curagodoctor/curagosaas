@@ -15,27 +15,23 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: 'Already have an active subscription' }, { status: 400 });
     }
 
-    // Create Razorpay subscription
+    // Create Razorpay subscription (this only creates the checkout link, NOT the payment)
     const result = await createSubscription(doctor.email, doctor.displayName || doctor.name);
 
-    // Update subscription record
+    // Save the Razorpay subscription ID but keep status as pending
+    // Actual activation happens via webhook when payment is confirmed
     if (existing) {
       existing.razorpaySubscriptionId = result.subscriptionId;
-      existing.plan = 'monthly';
-      existing.status = 'active';
-      const now = new Date();
-      existing.currentPeriodStart = now;
-      existing.currentPeriodEnd = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+      // Don't change plan/status yet — wait for webhook confirmation
       await existing.save();
     } else {
-      const now = new Date();
       await Subscription.create({
         doctorId: doctor._id,
-        plan: 'monthly',
+        plan: 'trial', // Keep as trial until payment confirmed
         status: 'active',
         razorpaySubscriptionId: result.subscriptionId,
-        currentPeriodStart: now,
-        currentPeriodEnd: new Date(now.getFullYear(), now.getMonth() + 1, now.getDate()),
+        trialStartDate: new Date(),
+        trialEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         amount: 1000,
       });
     }

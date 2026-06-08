@@ -77,7 +77,12 @@ SubscriptionSchema.statics.getOrCreateTrial = async function(doctorId) {
 // Static: check if a doctor has an active subscription
 SubscriptionSchema.statics.isActive = async function(doctorId) {
   const sub = await this.findOne({ doctorId });
-  if (!sub) return true; // No subscription record = hasn't started trial yet, allow access
+
+  // No subscription record = new user, auto-create trial
+  if (!sub) {
+    await this.getOrCreateTrial(doctorId);
+    return true;
+  }
 
   const now = new Date();
 
@@ -86,8 +91,8 @@ SubscriptionSchema.statics.isActive = async function(doctorId) {
     return true;
   }
 
-  // Valid trial
-  if (sub.plan === 'trial' && sub.status === 'active' && sub.trialEndDate > now) {
+  // Valid trial (not cancelled/expired and within date range)
+  if (sub.plan === 'trial' && sub.status === 'active' && sub.trialEndDate && sub.trialEndDate > now) {
     return true;
   }
 

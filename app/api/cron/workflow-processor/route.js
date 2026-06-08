@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import WorkflowExecution from '@/models/WorkflowExecution';
 import Clinic from '@/models/Clinic';
 import MessageQuota from '@/models/MessageQuota';
+import Subscription from '@/models/Subscription';
 import { sendMessage, resolveVariables } from '@/lib/messaging';
 
 export async function GET(request) {
@@ -35,6 +36,16 @@ export async function GET(request) {
         if (!workflow || !contact || !doctor) {
           execution.status = 'failed';
           execution.logs.push({ stepIndex: execution.currentStepIndex, channel: 'unknown', status: 'failed', sentAt: new Date(), error: 'Missing data' });
+          await execution.save();
+          failed++;
+          continue;
+        }
+
+        // Check subscription is still active
+        const isSubscribed = await Subscription.isActive(doctor._id);
+        if (!isSubscribed) {
+          execution.status = 'paused';
+          execution.logs.push({ stepIndex: execution.currentStepIndex, channel: 'unknown', status: 'skipped', sentAt: new Date(), error: 'Subscription expired' });
           await execution.save();
           failed++;
           continue;

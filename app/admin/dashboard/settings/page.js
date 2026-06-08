@@ -22,6 +22,9 @@ export default function SettingsPage() {
   const [domainInfo, setDomainInfo] = useState({ subdomain: '', customDomain: null });
   const [subscription, setSubscription] = useState(null);
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
+  const [seoUsers, setSeoUsers] = useState([]);
+  const [seoForm, setSeoForm] = useState({ name: '', email: '', password: '' });
+  const [savingSeo, setSavingSeo] = useState(false);
 
   const fetchSubscription = async () => {
     try {
@@ -34,7 +37,7 @@ export default function SettingsPage() {
   };
 
   const handleCancelSubscription = async () => {
-    const confirmed = await showAlert({
+    await showAlert({
       title: 'Cancel Subscription',
       message: 'Are you sure you want to cancel? Your access will continue until the end of the current billing period.',
       type: 'warning',
@@ -49,7 +52,7 @@ export default function SettingsPage() {
       const data = await res.json();
       if (data.success) {
         await showAlert({ title: 'Cancelled', message: 'Your subscription has been cancelled.', type: 'success' });
-        fetchSubscription();
+        await fetchSubscription();
       } else {
         await showAlert({ title: 'Error', message: data.error || 'Failed to cancel', type: 'error' });
       }
@@ -61,8 +64,19 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
+    const fetchSeoUsers = async () => {
+      try {
+        const res = await fetch('/api/doctor/seo-users', { credentials: 'include' });
+        const data = await res.json();
+        if (data.success) setSeoUsers(data.users);
+      } catch (error) {
+        console.error('Error fetching SEO users:', error);
+      }
+    };
+
     fetchSettings();
     fetchSubscription();
+    fetchSeoUsers();
   }, []);
 
   const fetchSettings = async () => {
@@ -153,6 +167,7 @@ export default function SettingsPage() {
     { id: 'practice', label: 'Practice Info' },
     { id: 'domain', label: 'Domain & DNS' },
     { id: 'subscription', label: 'Subscription' },
+    { id: 'seo', label: 'SEO Team' },
   ];
 
   return (
@@ -516,6 +531,15 @@ export default function SettingsPage() {
                     )}
                   </div>
 
+                  {/* Cancelled notice */}
+                  {subscription.status === 'cancelled' && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                      <p className="text-sm text-orange-800">
+                        Your subscription was cancelled on {new Date(subscription.cancelledAt || Date.now()).toLocaleDateString()}. Subscribe again to access messaging and workflow features.
+                      </p>
+                    </div>
+                  )}
+
                   {/* Actions */}
                   <div className="flex gap-3">
                     {subscription.plan === 'trial' && subscription.isActive && (
@@ -573,8 +597,112 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {/* SEO Team Tab */}
+          {activeTab === 'seo' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">SEO Team Access</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Create accounts for your SEO team. They can only access Website Builder and Blog Articles.
+                </p>
+              </div>
+
+              {/* Add SEO User Form */}
+              <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+                <h4 className="font-medium text-gray-900">Add SEO User</h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <input
+                    type="text"
+                    placeholder="Name"
+                    value={seoForm.name}
+                    onChange={e => setSeoForm(prev => ({ ...prev, name: e.target.value }))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={seoForm.email}
+                    onChange={e => setSeoForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
+                  />
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    value={seoForm.password}
+                    onChange={e => setSeoForm(prev => ({ ...prev, password: e.target.value }))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
+                  />
+                </div>
+                <button
+                  type="button"
+                  disabled={savingSeo || !seoForm.name || !seoForm.email || !seoForm.password}
+                  onClick={async () => {
+                    setSavingSeo(true);
+                    try {
+                      const res = await fetch('/api/doctor/seo-users', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify(seoForm),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        setSeoUsers(prev => [...prev, data.user]);
+                        setSeoForm({ name: '', email: '', password: '' });
+                        await showAlert({ title: 'Success', message: 'SEO user created. They can login at /seo/login', type: 'success' });
+                      } else {
+                        await showAlert({ title: 'Error', message: data.error, type: 'error' });
+                      }
+                    } catch (error) {
+                      await showAlert({ title: 'Error', message: 'Failed to create SEO user', type: 'error' });
+                    } finally {
+                      setSavingSeo(false);
+                    }
+                  }}
+                  className="px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50"
+                >
+                  {savingSeo ? 'Creating...' : 'Add User'}
+                </button>
+              </div>
+
+              {/* SEO Users List */}
+              {seoUsers.length > 0 ? (
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left px-4 py-2 font-medium text-gray-500">Name</th>
+                        <th className="text-left px-4 py-2 font-medium text-gray-500">Email</th>
+                        <th className="text-left px-4 py-2 font-medium text-gray-500">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {seoUsers.map(user => (
+                        <tr key={user._id}>
+                          <td className="px-4 py-3">{user.name}</td>
+                          <td className="px-4 py-3 text-gray-600">{user.email}</td>
+                          <td className="px-4 py-3">
+                            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">Active</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No SEO team members added yet.</p>
+              )}
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  SEO users login at <strong>/seo/login</strong> and can only access the Website Builder and Blog Articles sections of your dashboard.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Save Button (hidden on read-only tabs) */}
-          <div className={`mt-8 pt-6 border-t flex justify-end ${activeTab === 'domain' || activeTab === 'subscription' ? 'hidden' : ''}`}>
+          <div className={`mt-8 pt-6 border-t flex justify-end ${activeTab === 'domain' || activeTab === 'subscription' || activeTab === 'seo' ? 'hidden' : ''}`}>
             <button
               type="submit"
               disabled={saving}
