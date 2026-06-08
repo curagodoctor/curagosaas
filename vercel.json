@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/workflow-processor",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/review-requests",
+      "schedule": "0 9 * * *"
+    }
+  ]
+}

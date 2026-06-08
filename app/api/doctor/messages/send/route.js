@@ -4,6 +4,7 @@ import Contact from '@/models/Contact';
 import MessageTemplate from '@/models/MessageTemplate';
 import MessageQuota from '@/models/MessageQuota';
 import Clinic from '@/models/Clinic';
+import Subscription from '@/models/Subscription';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
 import { sendBulkMessages } from '@/lib/messaging';
 
@@ -11,6 +12,16 @@ export async function POST(request) {
   try {
     const doctor = await requireDoctorAuth(request);
     await connectDB();
+
+    // Check subscription is active
+    const isSubscribed = await Subscription.isActive(doctor._id);
+    if (!isSubscribed) {
+      return NextResponse.json({
+        success: false,
+        error: 'SUBSCRIPTION_EXPIRED',
+        message: 'Your trial has expired. Please subscribe to continue sending messages.',
+      }, { status: 403 });
+    }
 
     const { contactIds, templateId, channel } = await request.json();
 

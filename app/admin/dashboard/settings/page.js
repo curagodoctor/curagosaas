@@ -20,9 +20,49 @@ export default function SettingsPage() {
     timezone: 'Asia/Kolkata',
   });
   const [domainInfo, setDomainInfo] = useState({ subdomain: '', customDomain: null });
+  const [subscription, setSubscription] = useState(null);
+  const [cancellingSubscription, setCancellingSubscription] = useState(false);
+
+  const fetchSubscription = async () => {
+    try {
+      const res = await fetch('/api/doctor/subscription', { credentials: 'include' });
+      const data = await res.json();
+      if (data.success) setSubscription(data.subscription);
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    const confirmed = await showAlert({
+      title: 'Cancel Subscription',
+      message: 'Are you sure you want to cancel? Your access will continue until the end of the current billing period.',
+      type: 'warning',
+    });
+
+    setCancellingSubscription(true);
+    try {
+      const res = await fetch('/api/doctor/subscription/cancel', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        await showAlert({ title: 'Cancelled', message: 'Your subscription has been cancelled.', type: 'success' });
+        fetchSubscription();
+      } else {
+        await showAlert({ title: 'Error', message: data.error || 'Failed to cancel', type: 'error' });
+      }
+    } catch (error) {
+      await showAlert({ title: 'Error', message: 'Failed to cancel subscription', type: 'error' });
+    } finally {
+      setCancellingSubscription(false);
+    }
+  };
 
   useEffect(() => {
     fetchSettings();
+    fetchSubscription();
   }, []);
 
   const fetchSettings = async () => {
@@ -112,6 +152,7 @@ export default function SettingsPage() {
     { id: 'contact', label: 'Contact & WhatsApp' },
     { id: 'practice', label: 'Practice Info' },
     { id: 'domain', label: 'Domain & DNS' },
+    { id: 'subscription', label: 'Subscription' },
   ];
 
   return (
@@ -429,8 +470,111 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Save Button (hidden on domain tab since it's read-only) */}
-          <div className={`mt-8 pt-6 border-t flex justify-end ${activeTab === 'domain' ? 'hidden' : ''}`}>
+          {/* Subscription Tab */}
+          {activeTab === 'subscription' && (
+            <div className="space-y-6">
+              {subscription ? (
+                <>
+                  <div className={`border rounded-lg p-4 ${subscription.isActive ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${subscription.isActive ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                      <h3 className={`font-medium ${subscription.isActive ? 'text-green-800' : 'text-red-800'}`}>
+                        {subscription.plan === 'trial' ? 'Free Trial' : 'Monthly Subscription'} — {subscription.isActive ? 'Active' : 'Expired'}
+                      </h3>
+                    </div>
+                    <p className={`text-sm ${subscription.isActive ? 'text-green-700' : 'text-red-700'}`}>
+                      {subscription.isActive
+                        ? `${subscription.daysRemaining} days remaining`
+                        : 'Your subscription has expired. Subscribe to continue using messaging features.'}
+                    </p>
+                  </div>
+
+                  <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Plan</span>
+                      <span className="font-medium text-gray-900 capitalize">{subscription.plan}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Status</span>
+                      <span className="font-medium text-gray-900 capitalize">{subscription.status}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Amount</span>
+                      <span className="font-medium text-gray-900">&#x20B9;{subscription.amount}/month</span>
+                    </div>
+                    {subscription.plan === 'trial' && subscription.trialEndDate && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Trial Ends</span>
+                        <span className="font-medium text-gray-900">{new Date(subscription.trialEndDate).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                    {subscription.currentPeriodEnd && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Current Period Ends</span>
+                        <span className="font-medium text-gray-900">{new Date(subscription.currentPeriodEnd).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3">
+                    {subscription.plan === 'trial' && subscription.isActive && (
+                      <a
+                        href="/api/doctor/subscription/create"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          try {
+                            const res = await fetch('/api/doctor/subscription/create', { method: 'POST', credentials: 'include' });
+                            const data = await res.json();
+                            if (data.shortUrl) window.open(data.shortUrl, '_blank');
+                            else await showAlert({ title: 'Error', message: data.error, type: 'error' });
+                          } catch (err) {
+                            await showAlert({ title: 'Error', message: 'Failed to create subscription', type: 'error' });
+                          }
+                        }}
+                        className="px-4 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] transition-colors"
+                      >
+                        Upgrade to Monthly (&#x20B9;{subscription.amount}/mo)
+                      </a>
+                    )}
+                    {subscription.plan === 'monthly' && subscription.status === 'active' && (
+                      <button
+                        onClick={handleCancelSubscription}
+                        disabled={cancellingSubscription}
+                        className="px-4 py-2.5 border border-red-300 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50"
+                      >
+                        {cancellingSubscription ? 'Cancelling...' : 'Cancel Subscription'}
+                      </button>
+                    )}
+                    {!subscription.isActive && (
+                      <a
+                        href="/api/doctor/subscription/create"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          try {
+                            const res = await fetch('/api/doctor/subscription/create', { method: 'POST', credentials: 'include' });
+                            const data = await res.json();
+                            if (data.shortUrl) window.open(data.shortUrl, '_blank');
+                            else await showAlert({ title: 'Error', message: data.error, type: 'error' });
+                          } catch (err) {
+                            await showAlert({ title: 'Error', message: 'Failed to create subscription', type: 'error' });
+                          }
+                        }}
+                        className="px-4 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] transition-colors"
+                      >
+                        Subscribe Now (&#x20B9;{subscription.amount}/mo)
+                      </a>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p className="text-gray-500">Loading subscription info...</p>
+              )}
+            </div>
+          )}
+
+          {/* Save Button (hidden on read-only tabs) */}
+          <div className={`mt-8 pt-6 border-t flex justify-end ${activeTab === 'domain' || activeTab === 'subscription' ? 'hidden' : ''}`}>
             <button
               type="submit"
               disabled={saving}

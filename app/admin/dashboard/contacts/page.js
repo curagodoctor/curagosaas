@@ -19,6 +19,7 @@ export default function ContactsPage() {
   const [quota, setQuota] = useState(null);
   const [workflows, setWorkflows] = useState([]);
   const [activeExecutions, setActiveExecutions] = useState({});
+  const [subscription, setSubscription] = useState(null);
 
   const [formData, setFormData] = useState({
     name: '', phone: '', email: '', status: 'new', notes: '', googleReviewLink: '',
@@ -90,6 +91,30 @@ export default function ContactsPage() {
   };
 
   const handleStartWorkflow = async (contactId, workflowId) => {
+    // Check quota before starting
+    if (quota) {
+      const smsExhausted = quota.sms.remaining <= 0;
+      const emailExhausted = quota.email.remaining <= 0;
+      if (smsExhausted && emailExhausted) {
+        await showAlert({
+          title: 'Quota Exceeded',
+          message: `Your monthly message quota is exhausted.\n\nSMS: ${quota.sms.used}/${quota.sms.limit} used\nEmail: ${quota.email.used}/${quota.email.limit} used\n\nQuota resets on ${new Date(quota.periodEnd).toLocaleDateString()}.`,
+          type: 'error',
+        });
+        return;
+      }
+    }
+
+    // Check subscription
+    if (subscription && !subscription.isActive) {
+      await showAlert({
+        title: 'Subscription Expired',
+        message: 'Your trial has expired. Please subscribe from Settings to continue using workflows.',
+        type: 'error',
+      });
+      return;
+    }
+
     try {
       const res = await fetch('/api/doctor/workflows/start', {
         method: 'POST',
@@ -102,6 +127,8 @@ export default function ContactsPage() {
         await showAlert({ title: 'Workflow Started', message: data.immediateMessageSent ? 'Workflow started and first message sent!' : 'Workflow started!', type: 'success' });
         fetchContacts(pagination.page);
         fetchExecutions();
+      } else if (data.error === 'SUBSCRIPTION_EXPIRED') {
+        await showAlert({ title: 'Subscription Expired', message: data.message, type: 'error' });
       } else {
         await showAlert({ title: 'Error', message: data.error, type: 'error' });
       }
@@ -111,10 +138,21 @@ export default function ContactsPage() {
   };
 
   useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const res = await fetch('/api/doctor/subscription', { credentials: 'include' });
+        const data = await res.json();
+        if (data.success) setSubscription(data.subscription);
+      } catch (error) {
+        console.error('Error fetching subscription:', error);
+      }
+    };
+
     fetchStatuses();
     fetchQuota();
     fetchWorkflows();
     fetchExecutions();
+    fetchSubscription();
   }, []);
 
   useEffect(() => {
@@ -299,6 +337,23 @@ export default function ContactsPage() {
           </button>
         </div>
       </div>
+
+      {/* Subscription Expired Banner */}
+      {subscription && !subscription.isActive && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <p className="text-sm text-red-800">
+              Your trial has expired. Subscribe to continue sending messages and using workflows.
+            </p>
+          </div>
+          <a href="/admin/dashboard/settings" className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 flex-shrink-0">
+            Subscribe Now
+          </a>
+        </div>
+      )}
 
       {/* Quota Warning */}
       {quota && (quota.sms.used / quota.sms.limit > 0.8 || quota.email.used / quota.email.limit > 0.8) && (

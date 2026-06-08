@@ -5,6 +5,7 @@ import WorkflowExecution from '@/models/WorkflowExecution';
 import Contact from '@/models/Contact';
 import Clinic from '@/models/Clinic';
 import MessageQuota from '@/models/MessageQuota';
+import Subscription from '@/models/Subscription';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
 import { sendMessage, resolveVariables } from '@/lib/messaging';
 
@@ -12,6 +13,16 @@ export async function POST(request) {
   try {
     const doctor = await requireDoctorAuth(request);
     await connectDB();
+
+    // Check subscription is active
+    const isSubscribed = await Subscription.isActive(doctor._id);
+    if (!isSubscribed) {
+      return NextResponse.json({
+        success: false,
+        error: 'SUBSCRIPTION_EXPIRED',
+        message: 'Your trial has expired. Please subscribe to continue using workflows.',
+      }, { status: 403 });
+    }
 
     const { contactId, workflowId } = await request.json();
 

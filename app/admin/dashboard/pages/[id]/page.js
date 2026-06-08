@@ -255,6 +255,8 @@ const SECTION_TYPES = [
     name: "Booking Form",
     navName: "Book Now",
     navGroup: null, // Top-level
+    disabled: true,
+    disabledReason: "Available with Done For You setup",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -289,6 +291,8 @@ const SECTION_TYPES = [
     name: "Professional Fees",
     navName: "Fees",
     navGroup: "Info", // Group: Info
+    disabled: true,
+    disabledReason: "Available with Done For You setup",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -363,6 +367,8 @@ const SECTION_TYPES = [
     name: "Book Now Sticky Button",
     navName: null,
     navGroup: "hidden", // Exclude from nav
+    disabled: true,
+    disabledReason: "Available with Done For You setup",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -383,6 +389,8 @@ const SECTION_TYPES = [
     name: "FAQ Chatbot",
     navName: null,
     navGroup: "hidden", // Exclude from nav
+    disabled: true,
+    disabledReason: "Available with AI-Powered setup",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -816,17 +824,30 @@ export default function PageBuilderEditor() {
                 <button
                   key={section.type}
                   onClick={() => {
+                    if (section.disabled) return;
                     addSection(section.type);
                     setIsMobilePaletteOpen(false);
                   }}
-                  className="w-full text-left p-3 rounded-lg hover:bg-blue-50 transition-colors border border-gray-200 hover:border-blue-300"
+                  disabled={section.disabled}
+                  className={`w-full text-left p-3 rounded-lg transition-colors border ${
+                    section.disabled
+                      ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50'
+                      : 'hover:bg-blue-50 border-gray-200 hover:border-blue-300'
+                  }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="text-blue-600 flex-shrink-0 mt-0.5">{section.icon}</div>
+                    <div className={`flex-shrink-0 mt-0.5 ${section.disabled ? 'text-gray-400' : 'text-blue-600'}`}>{section.icon}</div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm text-gray-900">{section.name}</div>
-                      <div className="text-xs text-gray-600 mt-0.5">{section.description}</div>
+                      <div className={`font-semibold text-sm ${section.disabled ? 'text-gray-400' : 'text-gray-900'}`}>{section.name}</div>
+                      <div className={`text-xs mt-0.5 ${section.disabled ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {section.disabled ? section.disabledReason : section.description}
+                      </div>
                     </div>
+                    {section.disabled && (
+                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    )}
                   </div>
                 </button>
               ))}
