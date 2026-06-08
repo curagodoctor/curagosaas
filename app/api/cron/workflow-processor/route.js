@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import WorkflowExecution from '@/models/WorkflowExecution';
+import MessageTemplate from '@/models/MessageTemplate';
 import Clinic from '@/models/Clinic';
 import MessageQuota from '@/models/MessageQuota';
 import Subscription from '@/models/Subscription';
@@ -66,8 +67,6 @@ export async function GET(request) {
         await execution.populate('workflowId');
         const step = execution.workflowId.steps.sort((a, b) => a.stepOrder - b.stepOrder)[execution.currentStepIndex];
 
-        // Need to populate the templateId
-        const MessageTemplate = (await import('@/models/MessageTemplate')).default;
         const template = await MessageTemplate.findById(step.templateId);
 
         if (!template) {

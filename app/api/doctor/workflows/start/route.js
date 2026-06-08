@@ -4,6 +4,7 @@ import Workflow from '@/models/Workflow';
 import WorkflowExecution from '@/models/WorkflowExecution';
 import Contact from '@/models/Contact';
 import Clinic from '@/models/Clinic';
+import MessageTemplate from '@/models/MessageTemplate';
 import MessageQuota from '@/models/MessageQuota';
 import Subscription from '@/models/Subscription';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
