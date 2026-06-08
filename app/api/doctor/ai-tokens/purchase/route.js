@@ -36,7 +36,7 @@ export async function POST(request) {
       body: JSON.stringify({
         amount: selectedPack.amount * 100, // paise
         currency: 'INR',
-        receipt: `ai_tokens_${doctor._id}_${Date.now()}`,
+        receipt: `aitk_${Date.now()}`,
         notes: {
           type: 'ai_token_purchase',
           doctorId: doctor._id.toString(),
