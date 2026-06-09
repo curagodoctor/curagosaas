@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import WorkflowExecution from '@/models/WorkflowExecution';
+import Workflow from '@/models/Workflow';
+import Contact from '@/models/Contact';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
 
 export async function GET(request) {
