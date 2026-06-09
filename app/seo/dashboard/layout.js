@@ -137,9 +137,9 @@ export default function SEODashboardLayout({ children }) {
         {/* Navigation */}
         <nav className="p-4">
           <Link
-            href="/admin/dashboard/pages"
+            href="/seo/dashboard/pages"
             className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
-              isActivePrefix('/admin/dashboard/pages')
+              isActive('/seo/dashboard/pages') || isActivePrefix('/seo/dashboard/pages/')
                 ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
                 : 'text-gray-700 hover:bg-gray-50'
             }`}
@@ -151,9 +151,9 @@ export default function SEODashboardLayout({ children }) {
           </Link>
 
           <Link
-            href="/admin/dashboard/blog-articles"
+            href="/seo/dashboard/blog-articles"
             className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
-              isActivePrefix('/admin/dashboard/blog-articles')
+              isActive('/seo/dashboard/blog-articles') || isActivePrefix('/seo/dashboard/blog-articles/')
                 ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
                 : 'text-gray-700 hover:bg-gray-50'
             }`}

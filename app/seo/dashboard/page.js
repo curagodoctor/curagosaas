@@ -59,7 +59,7 @@ export default function SEODashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Edit Website Card */}
         <Link
-          href="/admin/dashboard/pages"
+          href="/seo/dashboard/pages"
           className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:border-[#096b17] hover:shadow-md transition-all group"
         >
           <div className="flex items-center gap-4 mb-4">
@@ -83,7 +83,7 @@ export default function SEODashboardPage() {
 
         {/* Blog Articles Card */}
         <Link
-          href="/admin/dashboard/blog-articles"
+          href="/seo/dashboard/blog-articles"
           className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:border-[#096b17] hover:shadow-md transition-all group"
         >
           <div className="flex items-center gap-4 mb-4">

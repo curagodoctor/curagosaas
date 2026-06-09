@@ -513,20 +513,34 @@ export default function AIGeneratePage() {
             <p className="text-sm text-gray-500 mb-6">Review the AI-generated sections for your website.</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {(Array.isArray(generatedSections) ? generatedSections : []).map((section, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 hover:border-[#096b17] transition-colors">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-lg bg-[#096b17]/10 flex items-center justify-center">
-                      <span className="text-sm font-semibold text-[#096b17]">{index + 1}</span>
+              {(Array.isArray(generatedSections) ? generatedSections : []).map((section, index) => {
+                const SECTION_LABELS = {
+                  header: 'Header / Navigation', hero_carousel: 'Hero Carousel', banner_image: 'Banner Image',
+                  benefits_list: 'Benefits & Services', doctor_profile: 'Doctor Profile', testimonials: 'Patient Testimonials',
+                  faqs: 'FAQs', faq_chatbot: 'FAQ Chatbot', location_map: 'Location & Contact',
+                  disease_icons_scroll: 'Services Icons', custom_text: 'About / Content', cta_button: 'Call to Action',
+                  booking_form: 'Booking Form', clinic_info: 'Clinic Information', professional_fees: 'Professional Fees',
+                  footer: 'Footer', whatsapp_sticky: 'WhatsApp Button', book_now_sticky: 'Book Now Button',
+                };
+                const label = SECTION_LABELS[section.type] || section.type?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || `Section ${index + 1}`;
+                const config = section.config || {};
+                const preview = config.title || config.content || config.companyName || config.name || config.address || '';
+                const previewText = typeof preview === 'string' ? preview.substring(0, 120) : '';
+
+                return (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 hover:border-[#096b17] transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-8 h-8 rounded-lg bg-[#096b17]/10 flex items-center justify-center">
+                        <span className="text-sm font-semibold text-[#096b17]">{index + 1}</span>
+                      </div>
+                      <h3 className="font-medium text-gray-900">{label}</h3>
                     </div>
-                    <h3 className="font-medium text-gray-900">{section.title || section.type || `Section ${index + 1}`}</h3>
+                    {previewText && (
+                      <p className="text-sm text-gray-600 line-clamp-2">{previewText}</p>
+                    )}
                   </div>
-                  {section.subtitle && <p className="text-sm text-gray-500 mb-2">{section.subtitle}</p>}
-                  {section.content && (
-                    <p className="text-sm text-gray-600 line-clamp-3">{typeof section.content === 'string' ? section.content : JSON.stringify(section.content)}</p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {applying ? (
