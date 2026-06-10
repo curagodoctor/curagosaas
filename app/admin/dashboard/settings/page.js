@@ -20,6 +20,10 @@ export default function SettingsPage() {
     timezone: 'Asia/Kolkata',
   });
   const [domainInfo, setDomainInfo] = useState({ subdomain: '', customDomain: null });
+  const [domainInput, setDomainInput] = useState('');
+  const [domainStatus, setDomainStatus] = useState(null);
+  const [domainLoading, setDomainLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [subscription, setSubscription] = useState(null);
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
   const [seoUsers, setSeoUsers] = useState([]);
@@ -378,12 +382,8 @@ export default function SettingsPage() {
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <h3 className="font-medium text-green-800 mb-1">Your Live Website</h3>
                 {domainInfo.subdomain ? (
-                  <a
-                    href={`https://${domainInfo.subdomain}.curago.in`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#096b17] font-mono hover:underline flex items-center gap-1"
-                  >
+                  <a href={`https://${domainInfo.subdomain}.curago.in`} target="_blank" rel="noopener noreferrer"
+                    className="text-[#096b17] font-mono hover:underline flex items-center gap-1">
                     {domainInfo.subdomain}.curago.in
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -394,93 +394,179 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              {/* Custom Domain Instructions */}
+              {/* Connect Custom Domain */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Connect Your Custom Domain</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  To use your own domain (e.g., www.drabcclinic.com), follow these steps:
-                </p>
 
-                <div className="space-y-4">
-                  {/* Step 1 */}
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="w-6 h-6 bg-[#096b17] text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
-                      <h4 className="font-medium text-gray-900">Add a CNAME record</h4>
+                {!domainInfo.customDomain ? (
+                  <>
+                    {/* Step 1: Enter domain */}
+                    <div className="border border-gray-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-6 h-6 bg-[#096b17] text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                        <h4 className="font-medium text-gray-900">Enter your domain</h4>
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={domainInput}
+                          onChange={e => setDomainInput(e.target.value)}
+                          placeholder="www.yourclinic.com"
+                          className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none text-sm"
+                        />
+                        <button
+                          type="button"
+                          disabled={domainLoading || !domainInput.trim()}
+                          onClick={async () => {
+                            setDomainLoading(true);
+                            try {
+                              const res = await fetch('/api/doctor/domain', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({ domain: domainInput }),
+                              });
+                              const data = await res.json();
+                              if (data.success) {
+                                setDomainInfo(prev => ({ ...prev, customDomain: data.domain }));
+                                setDomainStatus(data);
+                                await showAlert({ title: 'Domain Added', message: 'Now add the DNS records shown below at your domain registrar.', type: 'success' });
+                              } else {
+                                await showAlert({ title: 'Error', message: data.error, type: 'error' });
+                              }
+                            } catch (err) {
+                              await showAlert({ title: 'Error', message: 'Failed to add domain', type: 'error' });
+                            } finally {
+                              setDomainLoading(false);
+                            }
+                          }}
+                          className="px-4 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50"
+                        >
+                          {domainLoading ? 'Adding...' : 'Add Domain'}
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">Enter with www (e.g., www.clinic.com) or without (e.g., clinic.com)</p>
                     </div>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Go to your domain registrar (GoDaddy, Namecheap, Google Domains, etc.) and add the following DNS record:
-                    </p>
-                    <div className="bg-gray-50 rounded-lg p-4 font-mono text-sm space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Type:</span>
-                        <span className="font-semibold text-gray-900">CNAME</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Name/Host:</span>
-                        <span className="font-semibold text-gray-900">www</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Value/Points to:</span>
-                        <span className="font-semibold text-gray-900">cname.vercel-dns.com</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">TTL:</span>
-                        <span className="font-semibold text-gray-900">3600 (or Auto)</span>
+                  </>
+                ) : (
+                  <>
+                    {/* Domain is set — show DNS records + status */}
+                    <div className="border border-[#096b17] rounded-lg p-4 mb-4 bg-[#096b17]/5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#096b17]"></span>
+                          <span className="font-medium text-gray-900">{domainInfo.customDomain}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setDomainLoading(true);
+                            try {
+                              const res = await fetch('/api/doctor/domain', { method: 'DELETE', credentials: 'include' });
+                              const data = await res.json();
+                              if (data.success) {
+                                setDomainInfo(prev => ({ ...prev, customDomain: null }));
+                                setDomainStatus(null);
+                                setDomainInput('');
+                              }
+                            } catch (err) { /* ignore */ }
+                            finally { setDomainLoading(false); }
+                          }}
+                          className="text-xs text-red-500 hover:underline"
+                        >
+                          Remove
+                        </button>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText('cname.vercel-dns.com');
-                        showAlert({ title: 'Copied', message: 'CNAME value copied to clipboard', type: 'success' });
-                      }}
-                      className="mt-2 text-sm text-[#096b17] hover:underline flex items-center gap-1"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                      </svg>
-                      Copy CNAME value
-                    </button>
-                  </div>
 
-                  {/* Step 2 */}
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="w-6 h-6 bg-[#096b17] text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
-                      <h4 className="font-medium text-gray-900">Contact us</h4>
+                    {/* Step 2: DNS Records */}
+                    <div className="border border-gray-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-6 h-6 bg-[#096b17] text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                        <h4 className="font-medium text-gray-900">Add DNS records at your registrar</h4>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Go to your domain registrar (GoDaddy, Namecheap, etc.) and add this record:
+                      </p>
+                      <div className="bg-gray-50 rounded-lg p-4 font-mono text-sm space-y-2">
+                        {domainInfo.customDomain.split('.').length > 2 ? (
+                          <>
+                            <div className="flex justify-between"><span className="text-gray-500">Type:</span><span className="font-semibold">CNAME</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Name/Host:</span><span className="font-semibold">{domainInfo.customDomain.split('.')[0]}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Value:</span><span className="font-semibold">cname.vercel-dns.com</span></div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex justify-between"><span className="text-gray-500">Type:</span><span className="font-semibold">A</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Name/Host:</span><span className="font-semibold">@</span></div>
+                            <div className="flex justify-between"><span className="text-gray-500">Value:</span><span className="font-semibold">76.76.21.21</span></div>
+                          </>
+                        )}
+                        <div className="flex justify-between"><span className="text-gray-500">TTL:</span><span className="font-semibold">3600 (or Auto)</span></div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const val = domainInfo.customDomain.split('.').length > 2 ? 'cname.vercel-dns.com' : '76.76.21.21';
+                          navigator.clipboard.writeText(val);
+                          showAlert({ title: 'Copied', message: 'Value copied to clipboard', type: 'success' });
+                        }}
+                        className="mt-2 text-sm text-[#096b17] hover:underline flex items-center gap-1"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy value
+                      </button>
                     </div>
-                    <p className="text-sm text-gray-600">
-                      After adding the DNS record, contact us at{' '}
-                      <a href="mailto:support@curago.in" className="text-[#096b17] hover:underline font-medium">
-                        support@curago.in
-                      </a>{' '}
-                      with your domain name so we can configure it on our end.
-                      DNS changes can take up to 24-48 hours to propagate.
-                    </p>
-                  </div>
 
-                  {/* Step 3 - Status */}
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="w-6 h-6 bg-[#096b17] text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
-                      <h4 className="font-medium text-gray-900">Domain Status</h4>
+                    {/* Step 3: Verify */}
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-6 h-6 bg-[#096b17] text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                        <h4 className="font-medium text-gray-900">Verify DNS</h4>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        After adding the DNS record, click below to check if it&apos;s propagated. This can take up to 24-48 hours.
+                      </p>
+                      <button
+                        type="button"
+                        disabled={verifying}
+                        onClick={async () => {
+                          setVerifying(true);
+                          try {
+                            const res = await fetch('/api/doctor/domain/verify', { method: 'POST', credentials: 'include' });
+                            const data = await res.json();
+                            setDomainStatus(data);
+                            if (data.verified || data.configured) {
+                              await showAlert({ title: 'Domain Verified!', message: `${domainInfo.customDomain} is now connected and live!`, type: 'success' });
+                            } else {
+                              await showAlert({ title: 'Not Ready Yet', message: 'DNS has not propagated yet. Please wait and try again later.', type: 'warning' });
+                            }
+                          } catch (err) {
+                            await showAlert({ title: 'Error', message: 'Verification check failed', type: 'error' });
+                          } finally {
+                            setVerifying(false);
+                          }
+                        }}
+                        className="px-4 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50"
+                      >
+                        {verifying ? 'Checking...' : 'Check DNS Status'}
+                      </button>
+
+                      {domainStatus && (
+                        <div className={`mt-3 flex items-center gap-2 ${domainStatus.verified || domainStatus.configured ? 'text-green-700' : 'text-yellow-700'}`}>
+                          <span className={`w-2.5 h-2.5 rounded-full ${domainStatus.verified || domainStatus.configured ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
+                          <span className="text-sm">
+                            {domainStatus.verified || domainStatus.configured
+                              ? 'Domain verified and connected!'
+                              : 'DNS not propagated yet. Try again in a few hours.'}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    {domainInfo.customDomain ? (
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
-                        <span className="text-sm text-green-700">
-                          Custom domain connected: <strong>{domainInfo.customDomain}</strong>
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
-                        <span className="text-sm text-gray-500">No custom domain connected yet</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
             </div>
           )}
