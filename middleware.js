@@ -39,7 +39,22 @@ function extractSubdomain(hostname) {
   return null;
 }
 
-export function middleware(request) {
+/**
+ * Check if hostname is a custom domain (not curago.in or its subdomains)
+ * Custom domains are resolved by looking up the doctor via API at runtime
+ */
+function isCustomDomain(hostname) {
+  const host = hostname.split(':')[0];
+
+  if (host === 'localhost' || host === '127.0.0.1') return false;
+  if (host.endsWith('.vercel.app')) return false;
+  if (host === ROOT_DOMAIN || host.endsWith(`.${ROOT_DOMAIN}`)) return false;
+
+  // Any other domain is a custom domain
+  return true;
+}
+
+export async function middleware(request) {
   const hostname = request.headers.get('host') || '';
   const pathname = request.nextUrl.pathname;
 
@@ -53,7 +68,35 @@ export function middleware(request) {
     return NextResponse.next();
   }
 
-  // Extract subdomain
+  // Check for custom domain first (e.g., doc.tripputech.com)
+  if (isCustomDomain(hostname)) {
+    const host = hostname.split(':')[0];
+
+    // Look up which doctor owns this custom domain via internal API
+    try {
+      const lookupUrl = new URL('/api/public/domain-lookup', request.url);
+      lookupUrl.searchParams.set('domain', host);
+      const lookupRes = await fetch(lookupUrl.toString());
+
+      if (lookupRes.ok) {
+        const data = await lookupRes.json();
+        if (data.subdomain) {
+          const newUrl = new URL(`/site/${data.subdomain}${pathname}`, request.url);
+          const response = NextResponse.rewrite(newUrl);
+          response.headers.set('x-subdomain', data.subdomain);
+          response.headers.set('x-custom-domain', host);
+          return response;
+        }
+      }
+    } catch (error) {
+      console.error('[Middleware] Custom domain lookup failed:', error.message);
+    }
+
+    // Custom domain not found — show main site
+    return NextResponse.next();
+  }
+
+  // Extract subdomain from curago.in
   const subdomain = extractSubdomain(hostname);
 
   // If we have a subdomain, rewrite to the site route
