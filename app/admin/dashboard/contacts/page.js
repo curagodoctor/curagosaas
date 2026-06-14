@@ -20,6 +20,9 @@ export default function ContactsPage() {
   const [workflows, setWorkflows] = useState([]);
   const [activeExecutions, setActiveExecutions] = useState({});
   const [subscription, setSubscription] = useState(null);
+  const [startingAll, setStartingAll] = useState(false);
+  const [showNewStatus, setShowNewStatus] = useState(false);
+  const [newStatus, setNewStatus] = useState({ label: '', color: '#6B7280' });
 
   const [formData, setFormData] = useState({
     name: '', phone: '', email: '', status: 'new', notes: '', googleReviewLink: '',
@@ -82,7 +85,11 @@ export default function ContactsPage() {
       const data = await res.json();
       if (data.success) {
         const map = {};
-        data.executions.forEach(e => { map[e.contactId?._id || e.contactId] = e; });
+        data.executions.forEach(e => {
+          // contactId can be a populated object {_id, name} or a plain string
+          const cId = typeof e.contactId === 'object' ? e.contactId?._id?.toString() : e.contactId?.toString();
+          if (cId) map[cId] = e;
+        });
         setActiveExecutions(map);
       }
     } catch (error) {
@@ -154,6 +161,62 @@ export default function ContactsPage() {
     fetchExecutions();
     fetchSubscription();
   }, []);
+
+  const handleStartAllWorkflows = async () => {
+    if (subscription && !subscription.isActive) {
+      await showAlert({ title: 'Subscription Expired', message: 'Please subscribe from Settings to use workflows.', type: 'error' });
+      return;
+    }
+
+    const defaultWf = workflows.find(w => w.isDefault) || workflows[0];
+    if (!defaultWf) {
+      await showAlert({ title: 'Error', message: 'No workflow found. Create one in Workflows first.', type: 'error' });
+      return;
+    }
+
+    // Filter contacts that don't already have an active workflow
+    const eligibleContacts = contacts.filter(c => !activeExecutions[c._id?.toString()]);
+    if (eligibleContacts.length === 0) {
+      await showAlert({ title: 'No Eligible Contacts', message: 'All contacts on this page already have active workflows.', type: 'warning' });
+      return;
+    }
+
+    const confirmed = await showConfirm({
+      title: 'Start Workflow for All',
+      message: `This will start the "${defaultWf.name}" workflow for ${eligibleContacts.length} contacts. Day 0 messages will be sent immediately. Continue?`,
+      type: 'warning',
+    });
+    if (!confirmed) return;
+
+    setStartingAll(true);
+    let started = 0;
+    let failed = 0;
+
+    for (const contact of eligibleContacts) {
+      try {
+        const res = await fetch('/api/doctor/workflows/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ contactId: contact._id, workflowId: defaultWf._id }),
+        });
+        const data = await res.json();
+        if (data.success) started++;
+        else failed++;
+      } catch {
+        failed++;
+      }
+    }
+
+    setStartingAll(false);
+    await showAlert({
+      title: 'Workflows Started',
+      message: `Started: ${started}, Failed: ${failed} out of ${eligibleContacts.length} contacts.`,
+      type: started > 0 ? 'success' : 'error',
+    });
+    fetchContacts(pagination.page);
+    fetchExecutions();
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -335,6 +398,19 @@ export default function ContactsPage() {
             </svg>
             Add Contact
           </button>
+          {workflows.length > 0 && (
+            <button
+              onClick={handleStartAllWorkflows}
+              disabled={startingAll || contacts.length === 0}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {startingAll ? 'Starting...' : 'Start All Workflows'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -468,25 +544,25 @@ export default function ContactsPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
-                          {activeExecutions[contact._id] ? (
-                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full" title="Workflow running">
-                              Running
+                          {activeExecutions[contact._id?.toString()] ? (
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full" title={activeExecutions[contact._id?.toString()]?.workflowId?.name || 'Workflow running'}>
+                              {activeExecutions[contact._id?.toString()]?.workflowId?.name || 'Running'}
                             </span>
                           ) : (
-                            <button
-                              onClick={() => {
-                                const defaultWf = workflows.find(w => w.isDefault) || workflows[0];
-                                if (defaultWf) handleStartWorkflow(contact._id, defaultWf._id);
+                            <select
+                              onChange={(e) => {
+                                if (e.target.value) handleStartWorkflow(contact._id, e.target.value);
+                                e.target.value = '';
                               }}
-                              className="p-1.5 text-gray-400 hover:text-[#096b17] transition-colors"
-                              title="Start Workflow"
+                              className="text-xs border border-gray-300 rounded px-1.5 py-1 text-gray-600 bg-white cursor-pointer focus:ring-1 focus:ring-[#096b17]"
+                              defaultValue=""
                               disabled={workflows.length === 0}
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            </button>
+                              <option value="" disabled>Start...</option>
+                              {workflows.filter(w => w.isActive).map(w => (
+                                <option key={w._id} value={w._id}>{w.name}</option>
+                              ))}
+                            </select>
                           )}
                         </div>
                       </td>
@@ -509,18 +585,22 @@ export default function ContactsPage() {
                   <div className="flex gap-2 mt-3">
                     <button onClick={() => handleEdit(contact)} className="text-xs text-[#096b17] hover:underline">Edit</button>
                     <button onClick={() => handleDelete(contact)} className="text-xs text-red-500 hover:underline">Delete</button>
-                    {activeExecutions[contact._id] ? (
-                      <span className="text-xs text-blue-600">Workflow Running</span>
+                    {activeExecutions[contact._id?.toString()] ? (
+                      <span className="text-xs text-blue-600">{activeExecutions[contact._id?.toString()]?.workflowId?.name || 'Running'}</span>
                     ) : workflows.length > 0 && (
-                      <button
-                        onClick={() => {
-                          const defaultWf = workflows.find(w => w.isDefault) || workflows[0];
-                          if (defaultWf) handleStartWorkflow(contact._id, defaultWf._id);
+                      <select
+                        onChange={(e) => {
+                          if (e.target.value) handleStartWorkflow(contact._id, e.target.value);
+                          e.target.value = '';
                         }}
-                        className="text-xs text-[#096b17] hover:underline"
+                        className="text-xs border border-gray-300 rounded px-1.5 py-1 text-gray-600 bg-white"
+                        defaultValue=""
                       >
-                        Start Workflow
-                      </button>
+                        <option value="" disabled>Start Workflow...</option>
+                        {workflows.filter(w => w.isActive).map(w => (
+                          <option key={w._id} value={w._id}>{w.name}</option>
+                        ))}
+                      </select>
                     )}
                   </div>
                 </div>
@@ -598,16 +678,75 @@ export default function ContactsPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={e => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none bg-white"
-                >
-                  {statuses.map(s => (
-                    <option key={s._id} value={s.name}>{s.label}</option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewStatus(!showNewStatus)}
+                    className="text-xs text-[#096b17] hover:underline"
+                  >
+                    {showNewStatus ? 'Cancel' : '+ New Status'}
+                  </button>
+                </div>
+                {showNewStatus ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newStatus.label}
+                      onChange={e => setNewStatus(prev => ({ ...prev, label: e.target.value }))}
+                      placeholder="Status name"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
+                    />
+                    <input
+                      type="color"
+                      value={newStatus.color}
+                      onChange={e => setNewStatus(prev => ({ ...prev, color: e.target.value }))}
+                      className="w-10 h-10 border border-gray-300 rounded-lg cursor-pointer flex-shrink-0"
+                    />
+                    <button
+                      type="button"
+                      disabled={!newStatus.label.trim()}
+                      onClick={async () => {
+                        try {
+                          const res = await fetch('/api/doctor/contacts/statuses', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({
+                              name: newStatus.label.toLowerCase().replace(/\s+/g, '-'),
+                              label: newStatus.label,
+                              color: newStatus.color,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setStatuses(prev => [...prev, data.status]);
+                            setFormData(prev => ({ ...prev, status: data.status.name }));
+                            setNewStatus({ label: '', color: '#6B7280' });
+                            setShowNewStatus(false);
+                          } else {
+                            await showAlert({ title: 'Error', message: data.error, type: 'error' });
+                          }
+                        } catch {
+                          await showAlert({ title: 'Error', message: 'Failed to create status', type: 'error' });
+                        }
+                      }}
+                      className="px-3 py-2 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50 flex-shrink-0"
+                    >
+                      Add
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={formData.status}
+                    onChange={e => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none bg-white"
+                  >
+                    {statuses.map(s => (
+                      <option key={s._id} value={s.name}>{s.label}</option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Google Review Link</label>

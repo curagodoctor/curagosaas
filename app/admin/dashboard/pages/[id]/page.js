@@ -252,11 +252,9 @@ const SECTION_TYPES = [
   },
   {
     type: "booking_form",
-    name: "Booking Form",
+    name: "Booking System",
     navName: "Book Now",
     navGroup: null, // Top-level
-    disabled: true,
-    disabledReason: "Available with Done For You setup",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -291,8 +289,6 @@ const SECTION_TYPES = [
     name: "Professional Fees",
     navName: "Fees",
     navGroup: "Info", // Group: Info
-    disabled: true,
-    disabledReason: "Available with Done For You setup",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -367,8 +363,6 @@ const SECTION_TYPES = [
     name: "Book Now Sticky Button",
     navName: null,
     navGroup: "hidden", // Exclude from nav
-    disabled: true,
-    disabledReason: "Available with Done For You setup",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -389,8 +383,6 @@ const SECTION_TYPES = [
     name: "FAQ Chatbot",
     navName: null,
     navGroup: "hidden", // Exclude from nav
-    disabled: true,
-    disabledReason: "Available with AI-Powered setup",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -536,12 +528,20 @@ export default function PageBuilderEditor() {
     const sectionDef = SECTION_TYPES.find((s) => s.type === sectionType);
     if (!sectionDef) return;
 
+    const config = { ...sectionDef.defaultConfig };
+
+    // Pre-fill doctor's phone for WhatsApp sticky button
+    if (sectionType === 'whatsapp_sticky' && doctorData) {
+      config.phoneNumber = doctorData.whatsappNumber || doctorData.phone || '';
+      config.message = `Hi Dr. ${doctorData.displayName || doctorData.name}, I need help with my booking.`;
+    }
+
     const newSection = {
       _id: `temp_${Date.now()}`,
       type: sectionType,
       order: 0,
       visible: true,
-      config: { ...sectionDef.defaultConfig },
+      config,
     };
 
     // Header should always be first (it's the navbar)

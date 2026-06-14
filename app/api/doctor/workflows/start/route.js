@@ -55,10 +55,11 @@ export async function POST(request) {
 
     const firstStep = workflow.steps.sort((a, b) => a.stepOrder - b.stepOrder)[0];
 
-    // Calculate nextRunAt for the first step
+    // Calculate nextRunAt for the first step (days + hours from now)
     const now = new Date();
     const nextRunAt = new Date(now);
-    nextRunAt.setDate(nextRunAt.getDate() + firstStep.delayDays);
+    nextRunAt.setDate(nextRunAt.getDate() + (firstStep.delayDays || 0));
+    nextRunAt.setHours(nextRunAt.getHours() + (firstStep.delayHours || 0));
 
     // Create execution
     const execution = await WorkflowExecution.create({
@@ -87,7 +88,7 @@ export async function POST(request) {
           const variables = {
             name: contact.name || '',
             phone: contact.phone || '',
-            reviewLink: contact.googleReviewLink || '',
+            reviewLink: workflow.googleReviewLink || contact.googleReviewLink || '',
             clinicName: clinic?.name || doctor.displayName || doctor.name,
             doctorName: doctor.displayName || doctor.name,
           };
@@ -118,13 +119,14 @@ export async function POST(request) {
             error: result.error || undefined,
           });
 
-          // Advance to next step
+          // Advance to next step — delay is from workflow start date
           const sortedSteps = workflow.steps.sort((a, b) => a.stepOrder - b.stepOrder);
           if (sortedSteps.length > 1) {
             execution.currentStepIndex = 1;
             const nextStep = sortedSteps[1];
-            const nextRun = new Date();
-            nextRun.setDate(nextRun.getDate() + nextStep.delayDays);
+            const nextRun = new Date(execution.startedAt);
+            nextRun.setDate(nextRun.getDate() + (nextStep.delayDays || 0));
+            nextRun.setHours(nextRun.getHours() + (nextStep.delayHours || 0));
             execution.nextRunAt = nextRun;
           } else {
             execution.status = 'completed';
@@ -137,8 +139,7 @@ export async function POST(request) {
       }
     }
 
-    // Update contact status to 'review-sent'
-    await Contact.findByIdAndUpdate(contact._id, { status: 'review-sent' });
+    // Don't change contact status — keep the user-assigned status as-is
 
     return NextResponse.json({
       success: true,

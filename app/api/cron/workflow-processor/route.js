@@ -93,7 +93,7 @@ export async function GET(request) {
             const variables = {
               name: contact.name || '',
               phone: contact.phone || '',
-              reviewLink: contact.googleReviewLink || '',
+              reviewLink: workflow.googleReviewLink || contact.googleReviewLink || '',
               clinicName: clinic?.name || doctor.displayName || doctor.name,
               doctorName: doctor.displayName || doctor.name,
             };
@@ -130,8 +130,9 @@ export async function GET(request) {
         if (nextStepIndex < sortedSteps.length) {
           execution.currentStepIndex = nextStepIndex;
           const nextStep = sortedSteps[nextStepIndex];
-          const nextRun = new Date();
-          nextRun.setDate(nextRun.getDate() + nextStep.delayDays);
+          const nextRun = new Date(execution.startedAt);
+          nextRun.setDate(nextRun.getDate() + (nextStep.delayDays || 0));
+          nextRun.setHours(nextRun.getHours() + (nextStep.delayHours || 0));
           execution.nextRunAt = nextRun;
         } else {
           execution.status = 'completed';

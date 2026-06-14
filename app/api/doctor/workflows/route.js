@@ -26,7 +26,7 @@ export async function GET(request) {
       const emailTemplate = templates.find(t => t.channel === 'email');
 
       if (smsTemplate && emailTemplate) {
-        await Workflow.createDefaultForDoctor(doctor._id, smsTemplate._id, emailTemplate._id);
+        await Workflow.createDefaultsForDoctor(doctor._id, smsTemplate._id, emailTemplate._id);
         workflows = await Workflow.find({ doctorId: doctor._id })
           .populate('steps.templateId', 'name channel body')
           .sort({ isDefault: -1, createdAt: -1 })

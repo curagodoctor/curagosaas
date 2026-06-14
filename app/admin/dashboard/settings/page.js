@@ -381,7 +381,18 @@ export default function SettingsPage() {
               {/* Current Website URL */}
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <h3 className="font-medium text-green-800 mb-1">Your Live Website</h3>
-                {domainInfo.subdomain ? (
+                {domainInfo.customDomain ? (
+                  <div className="space-y-1">
+                    <a href={`https://${domainInfo.customDomain}`} target="_blank" rel="noopener noreferrer"
+                      className="text-[#096b17] font-mono hover:underline flex items-center gap-1 text-lg">
+                      {domainInfo.customDomain}
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                    <p className="text-xs text-green-600">Also available at {domainInfo.subdomain}.curago.in</p>
+                  </div>
+                ) : domainInfo.subdomain ? (
                   <a href={`https://${domainInfo.subdomain}.curago.in`} target="_blank" rel="noopener noreferrer"
                     className="text-[#096b17] font-mono hover:underline flex items-center gap-1">
                     {domainInfo.subdomain}.curago.in
@@ -574,112 +585,43 @@ export default function SettingsPage() {
           {/* Subscription Tab */}
           {activeTab === 'subscription' && (
             <div className="space-y-6">
-              {subscription ? (
-                <>
-                  <div className={`border rounded-lg p-4 ${subscription.isActive ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`w-2.5 h-2.5 rounded-full ${subscription.isActive ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                      <h3 className={`font-medium ${subscription.isActive ? 'text-green-800' : 'text-red-800'}`}>
-                        {subscription.plan === 'trial' ? 'Free Trial' : 'Monthly Subscription'} — {subscription.isActive ? 'Active' : 'Expired'}
-                      </h3>
-                    </div>
-                    <p className={`text-sm ${subscription.isActive ? 'text-green-700' : 'text-red-700'}`}>
-                      {subscription.isActive
-                        ? `${subscription.daysRemaining} days remaining`
-                        : 'Your subscription has expired. Subscribe to continue using messaging features.'}
-                    </p>
-                  </div>
+              {/* Active Plan */}
+              <div className="border border-green-200 bg-green-50 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                  <h3 className="font-medium text-green-800">Free Plan — Active</h3>
+                </div>
+                <p className="text-sm text-green-700">Free for life. All features included.</p>
+              </div>
 
-                  <div className="border border-gray-200 rounded-lg p-4 space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Plan</span>
-                      <span className="font-medium text-gray-900 capitalize">{subscription.plan}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Status</span>
-                      <span className="font-medium text-gray-900 capitalize">{subscription.status}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Amount</span>
-                      <span className="font-medium text-gray-900">&#x20B9;{subscription.amount}/month</span>
-                    </div>
-                    {subscription.plan === 'trial' && subscription.trialEndDate && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Trial Ends</span>
-                        <span className="font-medium text-gray-900">{new Date(subscription.trialEndDate).toLocaleDateString()}</span>
-                      </div>
-                    )}
-                    {subscription.currentPeriodEnd && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Current Period Ends</span>
-                        <span className="font-medium text-gray-900">{new Date(subscription.currentPeriodEnd).toLocaleDateString()}</span>
-                      </div>
-                    )}
-                  </div>
+              <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Plan</span>
+                  <span className="font-medium text-gray-900">Free</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Status</span>
+                  <span className="font-medium text-green-600">Active</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Amount</span>
+                  <span className="font-medium text-gray-900">Free for life</span>
+                </div>
+              </div>
 
-                  {/* Cancelled notice */}
-                  {subscription.status === 'cancelled' && (
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                      <p className="text-sm text-orange-800">
-                        Your subscription was cancelled on {new Date(subscription.cancelledAt || Date.now()).toLocaleDateString()}. Subscribe again to access messaging and workflow features.
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex gap-3">
-                    {subscription.plan === 'trial' && subscription.isActive && (
-                      <a
-                        href="/api/doctor/subscription/create"
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          try {
-                            const res = await fetch('/api/doctor/subscription/create', { method: 'POST', credentials: 'include' });
-                            const data = await res.json();
-                            if (data.shortUrl) window.open(data.shortUrl, '_blank');
-                            else await showAlert({ title: 'Error', message: data.error, type: 'error' });
-                          } catch (err) {
-                            await showAlert({ title: 'Error', message: 'Failed to create subscription', type: 'error' });
-                          }
-                        }}
-                        className="px-4 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] transition-colors"
-                      >
-                        Upgrade to Monthly (&#x20B9;{subscription.amount}/mo)
-                      </a>
-                    )}
-                    {subscription.plan === 'monthly' && subscription.status === 'active' && (
-                      <button
-                        onClick={handleCancelSubscription}
-                        disabled={cancellingSubscription}
-                        className="px-4 py-2.5 border border-red-300 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50"
-                      >
-                        {cancellingSubscription ? 'Cancelling...' : 'Cancel Subscription'}
-                      </button>
-                    )}
-                    {!subscription.isActive && (
-                      <a
-                        href="/api/doctor/subscription/create"
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          try {
-                            const res = await fetch('/api/doctor/subscription/create', { method: 'POST', credentials: 'include' });
-                            const data = await res.json();
-                            if (data.shortUrl) window.open(data.shortUrl, '_blank');
-                            else await showAlert({ title: 'Error', message: data.error, type: 'error' });
-                          } catch (err) {
-                            await showAlert({ title: 'Error', message: 'Failed to create subscription', type: 'error' });
-                          }
-                        }}
-                        className="px-4 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] transition-colors"
-                      >
-                        Subscribe Now (&#x20B9;{subscription.amount}/mo)
-                      </a>
-                    )}
+              {/* Coming Soon - Premium Plans */}
+              <div className="opacity-60">
+                <h3 className="text-sm font-medium text-gray-500 mb-3">Premium Plans</h3>
+                <div className="border border-gray-200 rounded-lg p-5 text-center">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
                   </div>
-                </>
-              ) : (
-                <p className="text-gray-500">Loading subscription info...</p>
-              )}
+                  <p className="text-gray-400 font-medium mb-1">Coming Soon</p>
+                  <p className="text-xs text-gray-400">Premium plans with higher quotas and priority support will be available soon.</p>
+                </div>
+              </div>
             </div>
           )}
 

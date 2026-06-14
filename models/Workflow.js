@@ -7,10 +7,15 @@ const WorkflowStepSchema = new mongoose.Schema({
   },
   delayDays: {
     type: Number,
-    required: true,
     default: 0,
     min: 0,
     max: 30,
+  },
+  delayHours: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 23,
   },
   channel: {
     type: String,
@@ -46,6 +51,10 @@ const WorkflowSchema = new mongoose.Schema({
     trim: true,
     maxlength: 500,
   },
+  googleReviewLink: {
+    type: String,
+    trim: true,
+  },
   steps: {
     type: [WorkflowStepSchema],
     default: [],
@@ -66,8 +75,82 @@ const WorkflowSchema = new mongoose.Schema({
 WorkflowSchema.index({ doctorId: 1, isActive: 1 });
 WorkflowSchema.index({ doctorId: 1, isDefault: 1 });
 
-// Static: create default review workflow for a doctor
+// Static: create all predefined workflows for a doctor
+WorkflowSchema.statics.createDefaultsForDoctor = async function(doctorId, smsTemplateId, emailTemplateId) {
+  const existing = await this.countDocuments({ doctorId });
+  if (existing > 0) return;
+
+  const workflows = [
+    {
+      doctorId,
+      name: 'Review Request Workflow',
+      description: 'Day 0 SMS → Day 3 SMS → Day 5 Email. Best for collecting Google Reviews after a visit.',
+      isDefault: true,
+      isActive: true,
+      steps: [
+        { stepOrder: 0, delayDays: 0, channel: 'sms', templateId: smsTemplateId, description: 'Initial review request via SMS' },
+        { stepOrder: 1, delayDays: 3, channel: 'sms', templateId: smsTemplateId, description: 'Follow-up SMS reminder' },
+        { stepOrder: 2, delayDays: 5, channel: 'email', templateId: emailTemplateId, description: 'Final email reminder' },
+      ],
+    },
+    {
+      doctorId,
+      name: 'Quick Follow-up',
+      description: 'Day 0 SMS → Day 1 Email. Short 2-step follow-up for quick engagement.',
+      isDefault: false,
+      isActive: true,
+      steps: [
+        { stepOrder: 0, delayDays: 0, channel: 'sms', templateId: smsTemplateId, description: 'Immediate SMS' },
+        { stepOrder: 1, delayDays: 1, channel: 'email', templateId: emailTemplateId, description: 'Next day email follow-up' },
+      ],
+    },
+    {
+      doctorId,
+      name: 'Gentle Reminder',
+      description: 'Day 1 SMS → Day 7 Email. Spaced out reminders for less urgent follow-ups.',
+      isDefault: false,
+      isActive: true,
+      steps: [
+        { stepOrder: 0, delayDays: 1, channel: 'sms', templateId: smsTemplateId, description: 'SMS after 1 day' },
+        { stepOrder: 1, delayDays: 7, channel: 'email', templateId: emailTemplateId, description: 'Email after 1 week' },
+      ],
+    },
+    {
+      doctorId,
+      name: 'Email Only Campaign',
+      description: 'Day 0 → Day 3 → Day 7 via Email. For contacts who prefer email communication.',
+      isDefault: false,
+      isActive: true,
+      steps: [
+        { stepOrder: 0, delayDays: 0, channel: 'email', templateId: emailTemplateId, description: 'Initial email' },
+        { stepOrder: 1, delayDays: 3, channel: 'email', templateId: emailTemplateId, description: 'Follow-up email' },
+        { stepOrder: 2, delayDays: 7, channel: 'email', templateId: emailTemplateId, description: 'Final email reminder' },
+      ],
+    },
+    {
+      doctorId,
+      name: 'SMS Blitz',
+      description: 'Day 0 → Day 2 → Day 4 via SMS. Aggressive SMS-only campaign for quick results.',
+      isDefault: false,
+      isActive: true,
+      steps: [
+        { stepOrder: 0, delayDays: 0, channel: 'sms', templateId: smsTemplateId, description: 'Immediate SMS' },
+        { stepOrder: 1, delayDays: 2, channel: 'sms', templateId: smsTemplateId, description: 'SMS on Day 2' },
+        { stepOrder: 2, delayDays: 4, channel: 'sms', templateId: smsTemplateId, description: 'Final SMS on Day 4' },
+      ],
+    },
+  ];
+
+  return this.insertMany(workflows);
+};
+
+// Legacy alias
 WorkflowSchema.statics.createDefaultForDoctor = async function(doctorId, smsTemplateId, emailTemplateId) {
+  return this.createDefaultsForDoctor(doctorId, smsTemplateId, emailTemplateId);
+};
+
+// Keep old static for backward compat - unused but safe
+WorkflowSchema.statics._createSingleDefault = async function(doctorId, smsTemplateId, emailTemplateId) {
   const existing = await this.findOne({ doctorId, isDefault: true });
   if (existing) return existing;
 

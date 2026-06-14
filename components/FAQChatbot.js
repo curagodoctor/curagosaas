@@ -259,6 +259,8 @@ export default function FAQChatbot({
   categories,
   // Legacy config prop support
   config = {},
+  // Doctor info (passed from site page)
+  doctor,
   // Page visibility control
   showOnPages = ["all"],
   currentPage = "home"
@@ -571,7 +573,7 @@ export default function FAQChatbot({
           {/* Footer */}
           <div className="px-4 py-2 bg-gray-50 border-t border-gray-200">
             <p className="text-xs text-gray-400 text-center">
-              Need more help? <a href="https://wa.me/917021227203" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Chat on WhatsApp</a>
+              Need more help? <a href={`https://wa.me/${doctor?.whatsappNumber ? '91' + doctor.whatsappNumber : doctor?.phone ? '91' + doctor.phone : ''}`} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">Chat on WhatsApp</a>
             </p>
           </div>
         </div>

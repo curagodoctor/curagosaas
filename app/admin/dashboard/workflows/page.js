@@ -12,7 +12,7 @@ export default function WorkflowsPage() {
   const [activeTab, setActiveTab] = useState('workflows');
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState(null);
-  const [formData, setFormData] = useState({ name: '', description: '', steps: [] });
+  const [formData, setFormData] = useState({ name: '', description: '', googleReviewLink: '', steps: [] });
 
   const fetchWorkflows = async () => {
     try {
@@ -52,7 +52,7 @@ export default function WorkflowsPage() {
   const handleAddStep = () => {
     setFormData(prev => ({
       ...prev,
-      steps: [...prev.steps, { stepOrder: prev.steps.length, delayDays: prev.steps.length === 0 ? 0 : 3, channel: 'sms', templateId: templates[0]?._id || '' }],
+      steps: [...prev.steps, { stepOrder: prev.steps.length, delayDays: prev.steps.length === 0 ? 0 : 3, delayHours: 0, channel: 'sms', templateId: templates[0]?._id || '' }],
     }));
   };
 
@@ -105,9 +105,11 @@ export default function WorkflowsPage() {
     setFormData({
       name: workflow.name,
       description: workflow.description || '',
+      googleReviewLink: workflow.googleReviewLink || '',
       steps: workflow.steps.map(s => ({
         stepOrder: s.stepOrder,
-        delayDays: s.delayDays,
+        delayDays: s.delayDays || 0,
+        delayHours: s.delayHours || 0,
         channel: s.channel,
         templateId: s.templateId?._id || s.templateId,
         description: s.description || '',
@@ -145,7 +147,7 @@ export default function WorkflowsPage() {
         <button
           onClick={() => {
             setEditingWorkflow(null);
-            setFormData({ name: '', description: '', steps: [] });
+            setFormData({ name: '', description: '', googleReviewLink: '', steps: [] });
             setShowEditModal(true);
           }}
           className="inline-flex items-center gap-2 px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] transition-colors"
@@ -208,7 +210,7 @@ export default function WorkflowsPage() {
                           {i > 0 && (
                             <div className="flex items-center gap-1">
                               <div className="w-8 h-px bg-gray-300"></div>
-                              <span className="text-xs text-gray-400 whitespace-nowrap">Day {step.delayDays}</span>
+                              <span className="text-xs text-gray-400 whitespace-nowrap">{step.delayDays || 0}d {step.delayHours ? `${step.delayHours}h` : ''}</span>
                               <div className="w-8 h-px bg-gray-300"></div>
                             </div>
                           )}
@@ -286,6 +288,16 @@ export default function WorkflowsPage() {
                   placeholder="Brief description"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Google Review Link</label>
+                <input
+                  type="url"
+                  value={formData.googleReviewLink}
+                  onChange={e => setFormData(prev => ({ ...prev, googleReviewLink: e.target.value }))}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
+                  placeholder="https://g.page/r/... (used as {{reviewLink}} in templates)"
+                />
+              </div>
 
               {/* Steps */}
               <div>
@@ -300,15 +312,26 @@ export default function WorkflowsPage() {
                         <span className="text-xs font-medium text-gray-500">Step {i + 1}</span>
                         <button onClick={() => handleRemoveStep(i)} className="text-xs text-red-500 hover:underline">Remove</button>
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-4 gap-2">
                         <div>
-                          <label className="text-xs text-gray-500">Delay (days)</label>
+                          <label className="text-xs text-gray-500">Days</label>
                           <input
                             type="number"
                             min="0"
                             max="30"
                             value={step.delayDays}
                             onChange={e => handleStepChange(i, 'delayDays', parseInt(e.target.value) || 0)}
+                            className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500">Hours</label>
+                          <input
+                            type="number"
+                            min="0"
+                            max="23"
+                            value={step.delayHours || 0}
+                            onChange={e => handleStepChange(i, 'delayHours', parseInt(e.target.value) || 0)}
                             className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
                           />
                         </div>

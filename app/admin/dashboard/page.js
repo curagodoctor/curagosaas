@@ -89,7 +89,9 @@ export default function DashboardPage() {
   const completedSteps = onboardingSteps.filter(s => s.completed).length;
   const progressPercent = onboardingSteps.length > 0 ? (completedSteps / onboardingSteps.length) * 100 : 0;
 
-  const liveWebsiteUrl = doctor?.subdomain ? `https://${doctor.subdomain}.curago.in` : null;
+  const liveWebsiteUrl = doctor?.customDomain
+    ? `https://${doctor.customDomain}`
+    : doctor?.subdomain ? `https://${doctor.subdomain}.curago.in` : null;
 
   if (loading) {
     return (
@@ -191,35 +193,55 @@ export default function DashboardPage() {
         <p className="text-sm text-gray-500 mb-6">Choose how you want to build your clinic website</p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Done For You */}
+          {/* DIY - First */}
           <div className="border-2 border-[#096b17] rounded-xl p-5 relative">
             <span className="absolute -top-3 left-4 bg-[#096b17] text-white text-xs font-medium px-3 py-1 rounded-full">
-              Recommended
+              Start Here
             </span>
             <div className="w-10 h-10 rounded-lg bg-[#096b17]/10 flex items-center justify-center mb-3">
               <svg className="w-5 h-5 text-[#096b17]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
+            <h3 className="font-semibold text-gray-900 mb-1">Do It Yourself</h3>
+            <p className="text-2xl font-bold text-[#096b17] mb-2">Free</p>
+            <p className="text-sm text-gray-600 mb-4">
+              Use our drag-and-drop Website Builder to create your clinic website yourself.
+            </p>
+            <Link
+              href="/admin/dashboard/pages"
+              className="block w-full text-center bg-[#096b17] text-white py-2.5 rounded-lg font-medium hover:bg-[#075110] transition-colors"
+            >
+              Open Website Builder
+            </Link>
+          </div>
+
+          {/* Done For You */}
+          <div className="border border-gray-200 rounded-xl p-5">
+            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-3">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
             <h3 className="font-semibold text-gray-900 mb-1">Done For You</h3>
-            <p className="text-2xl font-bold text-[#096b17] mb-2">
+            <p className="text-2xl font-bold text-gray-900 mb-2">
               &#x20B9;2,000 <span className="text-xs font-normal text-gray-500">incl. GST</span>
             </p>
             <ul className="text-sm text-gray-600 space-y-1.5 mb-4">
               <li className="flex items-start gap-2">
-                <svg className="w-4 h-4 text-[#096b17] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 1-time full website setup
               </li>
               <li className="flex items-start gap-2">
-                <svg className="w-4 h-4 text-[#096b17] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 Includes 2 free changes
               </li>
               <li className="flex items-start gap-2">
-                <svg className="w-4 h-4 text-[#096b17] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 3-5 working days turnaround
@@ -228,30 +250,10 @@ export default function DashboardPage() {
             <p className="text-xs text-gray-400 mb-3">Terms and conditions apply</p>
             <a
               href="mailto:support@curago.in?subject=Done For You Website Setup"
-              className="block w-full text-center bg-[#096b17] text-white py-2.5 rounded-lg font-medium hover:bg-[#075110] transition-colors"
+              className="block w-full text-center bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
               Reach Out to Us
             </a>
-          </div>
-
-          {/* DIY */}
-          <div className="border border-gray-200 rounded-xl p-5">
-            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-3">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Do It Yourself</h3>
-            <p className="text-2xl font-bold text-gray-900 mb-2">Free</p>
-            <p className="text-sm text-gray-600 mb-4">
-              Use our drag-and-drop Website Builder to create your clinic website yourself.
-            </p>
-            <Link
-              href="/admin/dashboard/pages"
-              className="block w-full text-center bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            >
-              Open Website Builder
-            </Link>
           </div>
 
           {/* AI-Powered */}
