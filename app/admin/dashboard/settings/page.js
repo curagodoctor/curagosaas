@@ -29,6 +29,9 @@ export default function SettingsPage() {
   const [seoUsers, setSeoUsers] = useState([]);
   const [seoForm, setSeoForm] = useState({ name: '', email: '', password: '' });
   const [savingSeo, setSavingSeo] = useState(false);
+  const [clinicManagers, setClinicManagers] = useState([]);
+  const [cmForm, setCmForm] = useState({ name: '', email: '', password: '' });
+  const [savingCm, setSavingCm] = useState(false);
 
   const fetchSubscription = async () => {
     try {
@@ -80,7 +83,18 @@ export default function SettingsPage() {
 
     fetchSettings();
     fetchSubscription();
+    const fetchClinicManagers = async () => {
+      try {
+        const res = await fetch('/api/doctor/clinic-managers', { credentials: 'include' });
+        const data = await res.json();
+        if (data.success) setClinicManagers(data.users);
+      } catch (error) {
+        console.error('Error fetching clinic managers:', error);
+      }
+    };
+
     fetchSeoUsers();
+    fetchClinicManagers();
   }, []);
 
   const fetchSettings = async () => {
@@ -172,6 +186,7 @@ export default function SettingsPage() {
     { id: 'domain', label: 'Domain & DNS' },
     { id: 'subscription', label: 'Subscription' },
     { id: 'seo', label: 'SEO Team' },
+    { id: 'clinic-manager', label: 'Clinic Manager' },
   ];
 
   return (
@@ -729,8 +744,90 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {/* Clinic Manager Tab */}
+          {activeTab === 'clinic-manager' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Clinic Manager Access</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Create accounts for your clinic managers. They can only access Contacts and Workflows.
+                </p>
+              </div>
+
+              <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+                <h4 className="font-medium text-gray-900">Add Clinic Manager</h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <input type="text" placeholder="Name" value={cmForm.name}
+                    onChange={e => setCmForm(prev => ({ ...prev, name: e.target.value }))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none" />
+                  <input type="email" placeholder="Email" value={cmForm.email}
+                    onChange={e => setCmForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none" />
+                  <input type="password" placeholder="Password" value={cmForm.password}
+                    onChange={e => setCmForm(prev => ({ ...prev, password: e.target.value }))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none" />
+                </div>
+                <button type="button" disabled={savingCm || !cmForm.name || !cmForm.email || !cmForm.password}
+                  onClick={async () => {
+                    setSavingCm(true);
+                    try {
+                      const res = await fetch('/api/doctor/clinic-managers', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include', body: JSON.stringify(cmForm),
+                      });
+                      const data = await res.json();
+                      if (data.success) {
+                        setClinicManagers(prev => [...prev, data.user]);
+                        setCmForm({ name: '', email: '', password: '' });
+                        await showAlert({ title: 'Success', message: 'Clinic Manager created. They can login at /clinic-manager/login', type: 'success' });
+                      } else {
+                        await showAlert({ title: 'Error', message: data.error, type: 'error' });
+                      }
+                    } catch { await showAlert({ title: 'Error', message: 'Failed to create', type: 'error' }); }
+                    finally { setSavingCm(false); }
+                  }}
+                  className="px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50">
+                  {savingCm ? 'Creating...' : 'Add Manager'}
+                </button>
+              </div>
+
+              {clinicManagers.length > 0 ? (
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left px-4 py-2 font-medium text-gray-500">Name</th>
+                        <th className="text-left px-4 py-2 font-medium text-gray-500">Email</th>
+                        <th className="text-left px-4 py-2 font-medium text-gray-500">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {clinicManagers.map(user => (
+                        <tr key={user._id}>
+                          <td className="px-4 py-3">{user.name}</td>
+                          <td className="px-4 py-3 text-gray-600">{user.email}</td>
+                          <td className="px-4 py-3">
+                            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">Active</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No clinic managers added yet.</p>
+              )}
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  Clinic managers login at <strong>/clinic-manager/login</strong> and can only access the Contacts and Workflows sections.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Save Button (hidden on read-only tabs) */}
-          <div className={`mt-8 pt-6 border-t flex justify-end ${activeTab === 'domain' || activeTab === 'subscription' || activeTab === 'seo' ? 'hidden' : ''}`}>
+          <div className={`mt-8 pt-6 border-t flex justify-end ${activeTab === 'domain' || activeTab === 'subscription' || activeTab === 'seo' || activeTab === 'clinic-manager' ? 'hidden' : ''}`}>
             <button
               type="submit"
               disabled={saving}

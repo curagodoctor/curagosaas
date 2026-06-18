@@ -322,19 +322,24 @@ export default function BlogArticleEditorPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category
                 </label>
-                <select
+                <input
+                  type="text"
                   value={formData.category}
                   onChange={(e) => handleChange('category', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Select Category</option>
-                  <option value="Gallstones">Gallstones</option>
-                  <option value="Pancreatitis">Pancreatitis</option>
-                  <option value="Liver Disease">Liver Disease</option>
-                  <option value="IBS">IBS</option>
-                  <option value="GERD">GERD</option>
-                  <option value="Other">Other</option>
-                </select>
+                  placeholder="Type a category (e.g., Cardiology, General Health)"
+                  list="category-suggestions"
+                />
+                <datalist id="category-suggestions">
+                  <option value="General Health" />
+                  <option value="Cardiology" />
+                  <option value="Dermatology" />
+                  <option value="Orthopedics" />
+                  <option value="Gastroenterology" />
+                  <option value="Pediatrics" />
+                  <option value="Wellness" />
+                  <option value="Nutrition" />
+                </datalist>
               </div>
 
               <div>

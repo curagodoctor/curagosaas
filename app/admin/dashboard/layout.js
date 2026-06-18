@@ -210,37 +210,33 @@ export default function DashboardLayout({ children }) {
             <span>AI Generate</span>
           </Link>
 
-          {SHOW_CONSULTATION_FEATURES && (
-            <Link
-              href="/admin/dashboard/bookings"
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
-                isActive('/admin/dashboard/bookings')
-                  ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
-                  : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              <span>Bookings</span>
-            </Link>
-          )}
+          <Link
+            href="/admin/dashboard/bookings"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+              isActive('/admin/dashboard/bookings')
+                ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <span>Bookings</span>
+          </Link>
 
-          {SHOW_CONSULTATION_FEATURES && (
-            <Link
-              href="/admin/dashboard/slots"
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
-                isActive('/admin/dashboard/slots')
-                  ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
-                  : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>Slots</span>
-            </Link>
-          )}
+          <Link
+            href="/admin/dashboard/slots"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+              isActive('/admin/dashboard/slots')
+                ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Slot Manager</span>
+          </Link>
 
           <Link
             href="/admin/dashboard/pages"
@@ -256,21 +252,19 @@ export default function DashboardLayout({ children }) {
             <span>Website Builder</span>
           </Link>
 
-          {SHOW_CONSULTATION_FEATURES && (
-            <Link
-              href="/admin/dashboard/modes"
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
-                isActive('/admin/dashboard/modes')
-                  ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
-                  : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              <span>Consultation Modes</span>
-            </Link>
-          )}
+          <Link
+            href="/admin/dashboard/modes"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+              isActive('/admin/dashboard/modes')
+                ? 'bg-[#096b17]/10 text-[#096b17] font-medium'
+                : 'text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <span>Clinic Manager</span>
+          </Link>
 
           <Link
             href="/admin/dashboard/analytics"
