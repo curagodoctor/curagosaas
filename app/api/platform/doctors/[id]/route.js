@@ -4,6 +4,31 @@ import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 import Booking from '@/models/Booking';
 import BookingPage from '@/models/BookingPage';
+import Contact from '@/models/Contact';
+import ContactStatus from '@/models/ContactStatus';
+import Workflow from '@/models/Workflow';
+import WorkflowExecution from '@/models/WorkflowExecution';
+import MessageTemplate from '@/models/MessageTemplate';
+import MessageLog from '@/models/MessageLog';
+import MessageQuota from '@/models/MessageQuota';
+import TimeSlot from '@/models/TimeSlot';
+import WeeklySchedule from '@/models/WeeklySchedule';
+import DateOverride from '@/models/DateOverride';
+import ConsultationMode from '@/models/ConsultationMode';
+import MeetingLink from '@/models/MeetingLink';
+import Subscription from '@/models/Subscription';
+import AIToken from '@/models/AIToken';
+import ReviewRequest from '@/models/ReviewRequest';
+import ReviewRequestTemplate from '@/models/ReviewRequestTemplate';
+import GmbConnection from '@/models/GmbConnection';
+import GmbPost from '@/models/GmbPost';
+import GmbReview from '@/models/GmbReview';
+import GmbInsight from '@/models/GmbInsight';
+import GmbFaq from '@/models/GmbFaq';
+import Clinic from '@/models/Clinic';
+import ClinicManager from '@/models/ClinicManager';
+import SEOUser from '@/models/SEOUser';
+import BlogArticle from '@/models/BlogArticle';
 
 // GET - Get single doctor with full details
 export async function GET(request, { params }) {
@@ -138,6 +163,93 @@ export async function PATCH(request, { params }) {
 
     return NextResponse.json(
       { error: 'Failed to update doctor' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE - Remove doctor and all related data
+export async function DELETE(request, { params }) {
+  try {
+    const { authenticated } = await requirePlatformAdmin();
+    if (!authenticated) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    await connectDB();
+
+    const doctor = await Doctor.findById(id);
+    if (!doctor) {
+      return NextResponse.json({ error: 'Doctor not found' }, { status: 404 });
+    }
+
+    const doctorName = doctor.name;
+    const doctorEmail = doctor.email;
+
+    // Delete all related data in parallel
+    const results = await Promise.allSettled([
+      Booking.deleteMany({ doctorId: id }),
+      BookingPage.deleteMany({ doctorId: id }),
+      Contact.deleteMany({ doctorId: id }),
+      ContactStatus.deleteMany({ doctorId: id }),
+      Workflow.deleteMany({ doctorId: id }),
+      WorkflowExecution.deleteMany({ doctorId: id }),
+      MessageTemplate.deleteMany({ doctorId: id }),
+      MessageLog.deleteMany({ doctorId: id }),
+      MessageQuota.deleteMany({ doctorId: id }),
+      TimeSlot.deleteMany({ doctorId: id }),
+      WeeklySchedule.deleteMany({ doctorId: id }),
+      DateOverride.deleteMany({ doctorId: id }),
+      ConsultationMode.deleteMany({ doctorId: id }),
+      MeetingLink.deleteMany({ doctorId: id }),
+      Subscription.deleteMany({ doctorId: id }),
+      AIToken.deleteMany({ doctorId: id }),
+      ReviewRequest.deleteMany({ doctorId: id }),
+      ReviewRequestTemplate.deleteMany({ doctorId: id }),
+      GmbConnection.deleteMany({ doctorId: id }),
+      GmbPost.deleteMany({ doctorId: id }),
+      GmbReview.deleteMany({ doctorId: id }),
+      GmbInsight.deleteMany({ doctorId: id }),
+      GmbFaq.deleteMany({ doctorId: id }),
+      Clinic.deleteMany({ doctorId: id }),
+      ClinicManager.deleteMany({ doctorId: id }),
+      SEOUser.deleteMany({ doctorId: id }),
+      BlogArticle.deleteMany({ doctorId: id }),
+    ]);
+
+    // Count deleted records
+    const deleted = {};
+    const modelNames = [
+      'bookings', 'bookingPages', 'contacts', 'contactStatuses',
+      'workflows', 'workflowExecutions', 'messageTemplates', 'messageLogs',
+      'messageQuotas', 'timeSlots', 'weeklySchedules', 'dateOverrides',
+      'consultationModes', 'meetingLinks', 'subscriptions', 'aiTokens',
+      'reviewRequests', 'reviewRequestTemplates', 'gmbConnections', 'gmbPosts',
+      'gmbReviews', 'gmbInsights', 'gmbFaqs', 'clinics', 'clinicManagers',
+      'seoUsers', 'blogArticles'
+    ];
+
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled') {
+        deleted[modelNames[i]] = result.value.deletedCount || 0;
+      }
+    });
+
+    // Delete the doctor record itself
+    await Doctor.findByIdAndDelete(id);
+
+    return NextResponse.json({
+      success: true,
+      message: `Doctor "${doctorName}" (${doctorEmail}) and all related data deleted`,
+      deleted
+    });
+
+  } catch (error) {
+    console.error('Delete doctor error:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete doctor' },
       { status: 500 }
     );
   }
