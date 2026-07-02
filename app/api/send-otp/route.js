@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import OTP from "@/models/OTP";
 import Doctor from "@/models/Doctor";
+import { sendSMS } from "@/lib/twilio";
 import {
   validatePhone,
   validateEmail,
@@ -161,6 +162,17 @@ export async function POST(request) {
     } catch (wyltoError) {
       console.error("Error sending OTP via Wylto:", wyltoError);
       // Don't fail the request - OTP is stored
+    }
+
+    // Also send OTP via SMS (Twilio) as backup
+    try {
+      await sendSMS(
+        phone,
+        `Your CuraGo booking OTP is: ${otp}. Valid for 5 minutes. Do not share this code with anyone.`
+      );
+    } catch (smsError) {
+      console.error("Error sending OTP via SMS:", smsError);
+      // Don't fail - WhatsApp OTP is primary
     }
 
     return NextResponse.json({

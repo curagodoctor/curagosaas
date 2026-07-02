@@ -6,6 +6,8 @@ import Doctor from "@/models/Doctor";
 import { isSlotBooked } from "@/lib/slotManagerDB";
 import { createCalendarEvent } from "@/lib/googleCalendar";
 import { validatePhone } from "@/lib/validation";
+import { sendBookingConfirmationToPatient, sendBookingNotificationToDoctor } from "@/lib/email";
+import { sendSMS } from "@/lib/twilio";
 
 export async function POST(request) {
   try {
@@ -168,6 +170,62 @@ export async function POST(request) {
     } catch (webhookError) {
       console.error("Webhook error:", webhookError);
       // Don't fail booking if webhook fails
+    }
+
+    // Send booking confirmation to patient (email + SMS)
+    try {
+      await sendBookingConfirmationToPatient({
+        email: bookingData.email,
+        patientName: bookingData.name,
+        doctorName: doctorInfo.name,
+        date: bookingData.date,
+        time: bookingData.time,
+        mode: bookingData.modeOfContact,
+        meetLink: calendarEvent.meetLink || null,
+        calendarEventUrl: calendarEvent.htmlLink || null,
+      });
+    } catch (emailErr) {
+      console.error("Patient confirmation email error:", emailErr);
+    }
+
+    try {
+      await sendSMS(
+        bookingData.whatsapp,
+        `Hi ${bookingData.name}, your appointment with ${doctorInfo.name} is confirmed for ${bookingData.date} at ${bookingData.time} (${bookingData.modeOfContact}).${calendarEvent.meetLink ? ` Meet link: ${calendarEvent.meetLink}` : ''} - CuraGo`
+      );
+    } catch (smsErr) {
+      console.error("Patient confirmation SMS error:", smsErr);
+    }
+
+    // Send booking notification to doctor (email + SMS)
+    if (doctorId) {
+      const doctor = await Doctor.findById(doctorId);
+      if (doctor) {
+        try {
+          await sendBookingNotificationToDoctor({
+            email: doctor.email,
+            doctorName: doctorInfo.name,
+            patientName: bookingData.name,
+            patientPhone: bookingData.whatsapp,
+            patientEmail: bookingData.email,
+            date: bookingData.date,
+            time: bookingData.time,
+            mode: bookingData.modeOfContact,
+            calendarEventUrl: calendarEvent.htmlLink || null,
+          });
+        } catch (emailErr) {
+          console.error("Doctor notification email error:", emailErr);
+        }
+
+        try {
+          await sendSMS(
+            doctor.whatsappNumber || doctor.phone,
+            `New booking: ${bookingData.name} (+91${bookingData.whatsapp}) booked for ${bookingData.date} at ${bookingData.time} (${bookingData.modeOfContact}). - CuraGo`
+          );
+        } catch (smsErr) {
+          console.error("Doctor notification SMS error:", smsErr);
+        }
+      }
     }
 
     return NextResponse.json({

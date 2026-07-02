@@ -261,7 +261,7 @@ export default function BookingFormSection({
         setOtpCountdown(300); // 5 minutes countdown
         await showAlert({
           title: "OTP Sent",
-          message: "A 6-digit OTP has been sent to your WhatsApp. Please enter it below to confirm your booking.",
+          message: "A 6-digit OTP has been sent to your WhatsApp and SMS. Please enter it below to confirm your booking.",
           type: "success"
         });
       } else {
@@ -320,7 +320,7 @@ export default function BookingFormSection({
 
         await showAlert({
           title: "Booking Confirmed!",
-          message: `Your appointment has been booked for ${data.booking.date} at ${data.booking.time}. You will receive confirmation on WhatsApp.`,
+          message: `Your appointment has been booked for ${data.booking.date} at ${data.booking.time}. Confirmation sent to your email and SMS.`,
           type: "success"
         });
       } else {
@@ -878,7 +878,7 @@ export default function BookingFormSection({
                   </div>
                 )}
                 <p className="text-sm text-green-600">
-                  You will receive a confirmation message on WhatsApp shortly.
+                  A confirmation has been sent to your email and SMS.
                 </p>
               </div>
             ) : showOTP ? (
@@ -886,10 +886,10 @@ export default function BookingFormSection({
               <div className="space-y-4">
                 <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 text-center">
                   <p className="text-sm font-semibold text-primary-900 mb-2">
-                    Verify Your WhatsApp Number
+                    Verify Your Phone Number
                   </p>
                   <p className="text-xs text-primary-600 mb-4">
-                    An OTP has been sent to +91 {formData.whatsapp}
+                    An OTP has been sent via SMS &amp; WhatsApp to +91 {formData.whatsapp}
                   </p>
 
                   {/* OTP Input */}
@@ -1026,7 +1026,7 @@ export default function BookingFormSection({
                         <p className="flex items-start gap-2">
                           <span className="text-primary-600 mt-1 flex-shrink-0">•</span>
                           <span>
-                            You will receive an <strong>OTP on WhatsApp</strong> to verify your number and confirm the booking.
+                            You will receive an <strong>OTP via SMS &amp; WhatsApp</strong> to verify your number and confirm the booking.
                           </span>
                         </p>
                         <p className="flex items-start gap-2">
