@@ -69,20 +69,16 @@ export async function POST(request) {
 
     await connectDB();
 
-    // Validate reference code (required)
-    if (!referenceCode) {
-      return NextResponse.json(
-        { error: 'INVALID_REFERENCE_CODE', message: 'A valid reference code is required to sign up.' },
-        { status: 400 }
-      );
-    }
-
-    const refCodeResult = await ReferenceCode.validateCode(referenceCode);
-    if (!refCodeResult.valid) {
-      return NextResponse.json(
-        { error: 'INVALID_REFERENCE_CODE', message: refCodeResult.reason },
-        { status: 400 }
-      );
+    // Validate reference code (optional - if provided, validate it)
+    let refCodeResult = null;
+    if (referenceCode) {
+      refCodeResult = await ReferenceCode.validateCode(referenceCode);
+      if (!refCodeResult.valid) {
+        return NextResponse.json(
+          { error: 'INVALID_REFERENCE_CODE', message: refCodeResult.reason },
+          { status: 400 }
+        );
+      }
     }
 
     // Check if email already exists
@@ -113,7 +109,7 @@ export async function POST(request) {
       displayName: name, // Default display name to name
       whatsappNumber: phone, // Default WhatsApp to phone
       isLicensedProfessional,
-      platformReferenceCode: referenceCode.toUpperCase(),
+      platformReferenceCode: referenceCode ? referenceCode.toUpperCase() : null,
       isEmailVerified: false,
       isActive: true,
     });
@@ -124,11 +120,13 @@ export async function POST(request) {
     // Save doctor
     await doctor.save();
 
-    // Track reference code usage
-    await ReferenceCode.findByIdAndUpdate(refCodeResult.refCode._id, {
-      $inc: { usedCount: 1 },
-      $push: { usedBy: { doctorId: doctor._id, usedAt: new Date() } },
-    });
+    // Track reference code usage (only if a code was provided)
+    if (refCodeResult && refCodeResult.refCode) {
+      await ReferenceCode.findByIdAndUpdate(refCodeResult.refCode._id, {
+        $inc: { usedCount: 1 },
+        $push: { usedBy: { doctorId: doctor._id, usedAt: new Date() } },
+      });
+    }
 
     // Send verification email
     const emailResult = await sendVerificationEmail(email, otp, name);
