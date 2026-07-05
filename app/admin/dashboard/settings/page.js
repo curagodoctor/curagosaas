@@ -26,6 +26,9 @@ export default function SettingsPage() {
   const [verifying, setVerifying] = useState(false);
   const [subscription, setSubscription] = useState(null);
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
+  const [creatingSubscription, setCreatingSubscription] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [redeemingPromo, setRedeemingPromo] = useState(false);
   const [seoUsers, setSeoUsers] = useState([]);
   const [seoForm, setSeoForm] = useState({ name: '', email: '', password: '' });
   const [savingSeo, setSavingSeo] = useState(false);
@@ -600,43 +603,201 @@ export default function SettingsPage() {
           {/* Subscription Tab */}
           {activeTab === 'subscription' && (
             <div className="space-y-6">
-              {/* Active Plan */}
-              <div className="border border-green-200 bg-green-50 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
-                  <h3 className="font-medium text-green-800">Free Plan — Active</h3>
+              {/* Current Plan Status */}
+              {subscription?.plan === 'premium' ? (
+                <div className="border border-purple-200 bg-purple-50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                    <h3 className="font-medium text-purple-800">Premium Plan — Active</h3>
+                  </div>
+                  <p className="text-sm text-purple-700">
+                    All features unlocked permanently.
+                    {subscription.promoCode && ` Activated with code: ${subscription.promoCode}`}
+                  </p>
                 </div>
-                <p className="text-sm text-green-700">Free for life. All features included.</p>
-              </div>
+              ) : subscription?.plan === 'monthly' && subscription?.status === 'active' ? (
+                <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                    <h3 className="font-medium text-blue-800">Monthly Plan — Active</h3>
+                  </div>
+                  <p className="text-sm text-blue-700">
+                    All premium features unlocked. Renews automatically.
+                  </p>
+                </div>
+              ) : (
+                <div className="border border-green-200 bg-green-50 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                    <h3 className="font-medium text-green-800">Free Plan — Active</h3>
+                  </div>
+                  <p className="text-sm text-green-700">
+                    {subscription?.plan === 'trial' && subscription?.daysRemaining > 0
+                      ? `Trial: ${subscription.daysRemaining} days remaining`
+                      : 'Website builder and basic features included.'}
+                  </p>
+                </div>
+              )}
 
+              {/* Plan Details */}
               <div className="border border-gray-200 rounded-lg p-4 space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Plan</span>
-                  <span className="font-medium text-gray-900">Free</span>
+                  <span className="font-medium text-gray-900 capitalize">{subscription?.plan || 'Free'}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Status</span>
-                  <span className="font-medium text-green-600">Active</span>
+                  <span className={`font-medium ${subscription?.isActive ? 'text-green-600' : 'text-red-600'}`}>
+                    {subscription?.isActive ? 'Active' : 'Inactive'}
+                  </span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Amount</span>
-                  <span className="font-medium text-gray-900">Free for life</span>
-                </div>
+                {subscription?.plan === 'monthly' && subscription?.currentPeriodEnd && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Next Renewal</span>
+                    <span className="font-medium text-gray-900">
+                      {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
+                {subscription?.plan === 'premium' && subscription?.premiumUnlockedAt && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Unlocked On</span>
+                    <span className="font-medium text-gray-900">
+                      {new Date(subscription.premiumUnlockedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                )}
               </div>
 
-              {/* Coming Soon - Premium Plans */}
-              <div className="opacity-60">
-                <h3 className="text-sm font-medium text-gray-500 mb-3">Premium Plans</h3>
-                <div className="border border-gray-200 rounded-lg p-5 text-center">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
+              {/* Upgrade Section — only show if not already premium */}
+              {subscription?.plan !== 'premium' && subscription?.plan !== 'monthly' && (
+                <>
+                  {/* Razorpay Subscription */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Upgrade to Premium</h3>
+                    <div className="border border-gray-200 rounded-lg p-5">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 bg-[#096b17]/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <svg className="w-6 h-6 text-[#096b17]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900 mb-1">Monthly Subscription — ₹1,000/month</h4>
+                          <ul className="text-sm text-gray-600 space-y-1 mb-4">
+                            <li>Automated Workflows &amp; Campaigns</li>
+                            <li>Review Automation</li>
+                            <li>Higher SMS &amp; Email Quotas</li>
+                            <li>Priority Support</li>
+                          </ul>
+                          <button
+                            type="button"
+                            disabled={creatingSubscription}
+                            onClick={async () => {
+                              setCreatingSubscription(true);
+                              try {
+                                const res = await fetch('/api/doctor/subscription/create', {
+                                  method: 'POST',
+                                  credentials: 'include',
+                                });
+                                const data = await res.json();
+                                if (data.success && data.shortUrl) {
+                                  window.open(data.shortUrl, '_blank');
+                                  await showAlert({
+                                    title: 'Subscription Created',
+                                    message: 'Complete the payment on the Razorpay page. Your plan will be upgraded automatically after payment.',
+                                    type: 'success',
+                                  });
+                                } else {
+                                  await showAlert({ title: 'Error', message: data.error || 'Failed to create subscription', type: 'error' });
+                                }
+                              } catch (error) {
+                                await showAlert({ title: 'Error', message: 'Failed to create subscription', type: 'error' });
+                              } finally {
+                                setCreatingSubscription(false);
+                              }
+                            }}
+                            className="px-6 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50 transition-colors"
+                          >
+                            {creatingSubscription ? 'Creating...' : 'Subscribe with Razorpay'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-gray-400 font-medium mb-1">Coming Soon</p>
-                  <p className="text-xs text-gray-400">Premium plans with higher quotas and priority support will be available soon.</p>
+
+                  {/* Promo Code */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Have a Promo Code?</h3>
+                    <div className="border border-gray-200 rounded-lg p-5">
+                      <p className="text-sm text-gray-600 mb-4">
+                        Enter a promo code to unlock all premium features and get 50 free SMS credits.
+                      </p>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={promoCode}
+                          onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                          placeholder="Enter promo code"
+                          className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none text-sm uppercase"
+                          style={{ textTransform: 'uppercase' }}
+                        />
+                        <button
+                          type="button"
+                          disabled={redeemingPromo || !promoCode.trim()}
+                          onClick={async () => {
+                            setRedeemingPromo(true);
+                            try {
+                              const res = await fetch('/api/doctor/promo-code/redeem', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({ code: promoCode }),
+                              });
+                              const data = await res.json();
+                              if (data.success) {
+                                await showAlert({
+                                  title: 'Premium Unlocked!',
+                                  message: data.message,
+                                  type: 'success',
+                                });
+                                setPromoCode('');
+                                await fetchSubscription();
+                              } else {
+                                await showAlert({ title: 'Invalid Code', message: data.error, type: 'error' });
+                              }
+                            } catch (error) {
+                              await showAlert({ title: 'Error', message: 'Failed to redeem promo code', type: 'error' });
+                            } finally {
+                              setRedeemingPromo(false);
+                            }
+                          }}
+                          className="px-6 py-2.5 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                        >
+                          {redeemingPromo ? 'Redeeming...' : 'Redeem'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Cancel Subscription — only for monthly paid */}
+              {subscription?.plan === 'monthly' && subscription?.status === 'active' && (
+                <div className="border border-red-100 rounded-lg p-4">
+                  <button
+                    type="button"
+                    disabled={cancellingSubscription}
+                    onClick={handleCancelSubscription}
+                    className="text-sm text-red-600 hover:text-red-800 font-medium"
+                  >
+                    {cancellingSubscription ? 'Cancelling...' : 'Cancel Subscription'}
+                  </button>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Access continues until the end of your current billing period.
+                  </p>
                 </div>
-              </div>
+              )}
             </div>
           )}
 

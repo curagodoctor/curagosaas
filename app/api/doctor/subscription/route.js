@@ -26,6 +26,8 @@ export async function GET(request) {
         amount: subscription.amount,
         cancelledAt: subscription.cancelledAt,
         razorpaySubscriptionId: subscription.razorpaySubscriptionId,
+        promoCode: subscription.promoCode,
+        premiumUnlockedAt: subscription.premiumUnlockedAt,
       },
     });
   } catch (error) {

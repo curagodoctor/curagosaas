@@ -9,7 +9,7 @@ const SubscriptionSchema = new mongoose.Schema({
   },
   plan: {
     type: String,
-    enum: ['trial', 'monthly'],
+    enum: ['trial', 'monthly', 'premium'],
     default: 'trial',
   },
   status: {
@@ -45,6 +45,15 @@ const SubscriptionSchema = new mongoose.Schema({
   amount: {
     type: Number,
     default: 1000, // ₹1,000/month
+  },
+  // Promo code unlock
+  promoCode: {
+    type: String,
+    default: null,
+  },
+  premiumUnlockedAt: {
+    type: Date,
+    default: null,
   },
 }, {
   timestamps: true,
@@ -85,6 +94,11 @@ SubscriptionSchema.statics.isActive = async function(doctorId) {
   }
 
   const now = new Date();
+
+  // Premium plan (promo code unlocked) - always active
+  if (sub.plan === 'premium' && sub.status === 'active') {
+    return true;
+  }
 
   // Active paid subscription
   if (sub.plan === 'monthly' && sub.status === 'active') {
