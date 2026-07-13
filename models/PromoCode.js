@@ -25,6 +25,12 @@ const PromoCodeSchema = new mongoose.Schema({
     type: Number,
     default: 50,
   },
+  // Offline price paid for this code (₹). For record-keeping only, e.g. the
+  // ZEROTOPRACTICE starter code is sold for ₹500. null = free / promotional.
+  priceInINR: {
+    type: Number,
+    default: null,
+  },
   // Limits
   maxUses: {
     type: Number,

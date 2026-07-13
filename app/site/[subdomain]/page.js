@@ -210,15 +210,18 @@ export default async function SubdomainSitePage({ params }) {
       {/* Render sticky buttons */}
       {stickyButtons.map((section, index) => {
         if (section.type === 'whatsapp_sticky') {
-          // Use doctor's WhatsApp number if not set in config
-          const config = {
-            ...section.config,
-            phoneNumber: section.config?.phoneNumber || (doctorData.whatsappNumber ? `91${doctorData.whatsappNumber}` : ''),
-          };
-          return <WhatsAppStickyButton key={`sticky-${index}`} config={config} />;
+          // Fall back to the doctor's own WhatsApp number when the section
+          // hasn't been given one. The component normalizes the number.
+          return (
+            <WhatsAppStickyButton
+              key={`sticky-${index}`}
+              {...section.config}
+              phoneNumber={section.config?.phoneNumber || doctorData.whatsappNumber || ''}
+            />
+          );
         }
         if (section.type === 'book_now_sticky') {
-          return <BookNowStickyButton key={`sticky-${index}`} config={section.config} />;
+          return <BookNowStickyButton key={`sticky-${index}`} {...section.config} />;
         }
         return null;
       })}
@@ -226,11 +229,9 @@ export default async function SubdomainSitePage({ params }) {
       {/* Default WhatsApp button if doctor has WhatsApp but no sticky button configured */}
       {doctorData.whatsappNumber && !stickyButtons.some(s => s.type === 'whatsapp_sticky') && (
         <WhatsAppStickyButton
-          config={{
-            phoneNumber: `91${doctorData.whatsappNumber}`,
-            message: `Hi ${doctorData.displayName || doctorData.name}, I would like to book an appointment.`,
-            position: 'bottom-right',
-          }}
+          phoneNumber={doctorData.whatsappNumber}
+          message={`Hi ${doctorData.displayName || doctorData.name}, I would like to book an appointment.`}
+          position="bottom-right"
         />
       )}
     </div>

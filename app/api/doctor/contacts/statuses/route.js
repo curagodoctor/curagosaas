@@ -2,11 +2,15 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import ContactStatus from '@/models/ContactStatus';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
+import { requireFeatureOr403, FEATURES } from '@/lib/entitlements';
 
 export async function GET(request) {
   try {
     const doctor = await requireDoctorAuth(request);
     await connectDB();
+
+    const locked = await requireFeatureOr403(doctor._id, FEATURES.CONTACTS);
+    if (locked) return locked;
 
     let statuses = await ContactStatus.getActiveStatuses(doctor._id);
 
@@ -30,6 +34,9 @@ export async function POST(request) {
   try {
     const doctor = await requireDoctorAuth(request);
     await connectDB();
+
+    const locked = await requireFeatureOr403(doctor._id, FEATURES.CONTACTS);
+    if (locked) return locked;
 
     const { name, label, color } = await request.json();
 

@@ -3,11 +3,15 @@ import connectDB from '@/lib/mongodb';
 import Contact from '@/models/Contact';
 import ContactStatus from '@/models/ContactStatus';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
+import { requireFeatureOr403, FEATURES } from '@/lib/entitlements';
 
 export async function POST(request) {
   try {
     const doctor = await requireDoctorAuth(request);
     await connectDB();
+
+    const locked = await requireFeatureOr403(doctor._id, FEATURES.CONTACTS);
+    if (locked) return locked;
 
     const formData = await request.formData();
     const file = formData.get('file');

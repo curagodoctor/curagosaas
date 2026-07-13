@@ -8,12 +8,16 @@ import MessageTemplate from '@/models/MessageTemplate';
 import MessageQuota from '@/models/MessageQuota';
 import Subscription from '@/models/Subscription';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
+import { requireFeatureOr403, FEATURES } from '@/lib/entitlements';
 import { sendMessage, resolveVariables } from '@/lib/messaging';
 
 export async function POST(request) {
   try {
     const doctor = await requireDoctorAuth(request);
     await connectDB();
+
+    const locked = await requireFeatureOr403(doctor._id, FEATURES.WORKFLOWS);
+    if (locked) return locked;
 
     // Check subscription is active
     const isSubscribed = await Subscription.isActive(doctor._id);

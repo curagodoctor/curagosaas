@@ -2,8 +2,17 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useModal } from '@/contexts/ModalContext';
+import FeatureGate from '@/components/FeatureGate';
 
 export default function ContactsPage() {
+  return (
+    <FeatureGate feature="contacts" title="Contacts">
+      <ContactsPageInner />
+    </FeatureGate>
+  );
+}
+
+function ContactsPageInner() {
   const { showAlert, showConfirm } = useModal();
   const [contacts, setContacts] = useState([]);
   const [statuses, setStatuses] = useState([]);

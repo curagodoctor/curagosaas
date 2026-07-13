@@ -25,13 +25,13 @@ export default function WhatsAppStickyButtonConfig({ config, onChange, slug }) {
         </label>
         <input
           type="tel"
-          value={config.phoneNumber || "917021227203"}
+          value={config.phoneNumber || ""}
           onChange={(e) => handleChange("phoneNumber", e.target.value)}
-          placeholder="917021227203"
+          placeholder="9876543210"
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />
         <p className="text-xs text-gray-500 mt-1">
-          Enter with country code (e.g., 917021227203 for India). No + or spaces needed.
+          Your 10-digit number (country code added automatically). Leave blank to use your clinic&apos;s WhatsApp number from Settings.
         </p>
       </div>
 
@@ -40,9 +40,9 @@ export default function WhatsAppStickyButtonConfig({ config, onChange, slug }) {
           Default Message
         </label>
         <textarea
-          value={config.message || "Hi, I need help with my booking on CuraGo."}
+          value={config.message || "Hi, I need help with my booking."}
           onChange={(e) => handleChange("message", e.target.value)}
-          placeholder="Hi, I need help with my booking on CuraGo."
+          placeholder="Hi, I need help with my booking."
           rows={3}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
         />

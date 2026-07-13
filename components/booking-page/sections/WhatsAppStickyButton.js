@@ -1,17 +1,23 @@
 "use client";
 
 import { trackWhatsAppClick } from "@/lib/tracking";
+import { normalizeWhatsAppNumber } from "@/lib/phone";
 
 export default function WhatsAppStickyButton({
-  phoneNumber = "917021227203",
-  message = "Hi, I need help with my booking on CuraGo.",
+  phoneNumber = "",
+  message = "Hi, I need help with my booking.",
   tooltipText = "Chat with us",
   position = "bottom-right", // bottom-right, bottom-left, top-right, top-left
   backgroundColor = "#25D366",
   trackingContext = { pageSlug: "page" },
 }) {
-  // Format phone number (remove any spaces, dashes, etc.)
-  const formattedPhone = phoneNumber.replace(/\D/g, "");
+  // Format phone number (strip formatting + add country code if missing)
+  const formattedPhone = normalizeWhatsAppNumber(phoneNumber);
+
+  // Don't render a broken button if no number is configured
+  if (!formattedPhone) {
+    return null;
+  }
 
   // Encode message for URL
   const encodedMessage = encodeURIComponent(message);

@@ -3,11 +3,15 @@ import connectDB from '@/lib/mongodb';
 import Contact from '@/models/Contact';
 import ContactStatus from '@/models/ContactStatus';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
+import { requireFeatureOr403, FEATURES } from '@/lib/entitlements';
 
 export async function GET(request) {
   try {
     const doctor = await requireDoctorAuth(request);
     await connectDB();
+
+    const locked = await requireFeatureOr403(doctor._id, FEATURES.CONTACTS);
+    if (locked) return locked;
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -66,6 +70,9 @@ export async function POST(request) {
   try {
     const doctor = await requireDoctorAuth(request);
     await connectDB();
+
+    const locked = await requireFeatureOr403(doctor._id, FEATURES.CONTACTS);
+    if (locked) return locked;
 
     const body = await request.json();
     const { name, phone, email, status, tags, notes, googleReviewLink } = body;

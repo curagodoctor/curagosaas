@@ -2,11 +2,15 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Workflow from '@/models/Workflow';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
+import { requireFeatureOr403, FEATURES } from '@/lib/entitlements';
 
 export async function PATCH(request, { params }) {
   try {
     const doctor = await requireDoctorAuth(request);
     await connectDB();
+
+    const locked = await requireFeatureOr403(doctor._id, FEATURES.WORKFLOWS);
+    if (locked) return locked;
 
     const { id } = await params;
     const body = await request.json();
@@ -38,6 +42,9 @@ export async function DELETE(request, { params }) {
   try {
     const doctor = await requireDoctorAuth(request);
     await connectDB();
+
+    const locked = await requireFeatureOr403(doctor._id, FEATURES.WORKFLOWS);
+    if (locked) return locked;
 
     const { id } = await params;
 

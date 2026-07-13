@@ -11,6 +11,7 @@ export default function DashboardLayout({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [doctor, setDoctor] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [premiumLocked, setPremiumLocked] = useState(false);
 
   useEffect(() => {
     // Check auth via API (uses httpOnly cookie)
@@ -32,6 +33,22 @@ export default function DashboardLayout({ children }) {
     };
     checkAuth();
   }, [router]);
+
+  // Load entitlements to show lock badges on premium modules (Contacts/Workflows)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    (async () => {
+      try {
+        const res = await fetch('/api/doctor/entitlements');
+        const data = await res.json();
+        if (data.success && data.entitlements) {
+          setPremiumLocked(!data.entitlements.features?.contacts);
+        }
+      } catch {
+        // Non-blocking: if this fails, just don't show the badge.
+      }
+    })();
+  }, [isAuthenticated]);
 
   // Close sidebar when route changes on mobile
   useEffect(() => {
@@ -166,6 +183,7 @@ export default function DashboardLayout({ children }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
             <span>Contacts</span>
+            {premiumLocked && <LockBadge />}
           </Link>
 
           <Link
@@ -180,6 +198,7 @@ export default function DashboardLayout({ children }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             <span>Workflows</span>
+            {premiumLocked && <LockBadge />}
           </Link>
 
           <Link
@@ -347,5 +366,20 @@ export default function DashboardLayout({ children }) {
         </div>
       </main>
     </div>
+  );
+}
+
+// Small lock icon shown next to premium modules when the doctor is on the free tier.
+function LockBadge() {
+  return (
+    <svg
+      className="w-3.5 h-3.5 ml-auto text-gray-400 flex-shrink-0"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-label="Premium feature"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
   );
 }

@@ -2,8 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useModal } from '@/contexts/ModalContext';
+import FeatureGate from '@/components/FeatureGate';
 
 export default function WorkflowsPage() {
+  return (
+    <FeatureGate feature="workflows" title="Workflows">
+      <WorkflowsPageInner />
+    </FeatureGate>
+  );
+}
+
+function WorkflowsPageInner() {
   const { showAlert } = useModal();
   const [workflows, setWorkflows] = useState([]);
   const [executions, setExecutions] = useState([]);

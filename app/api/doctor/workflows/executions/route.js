@@ -4,11 +4,15 @@ import WorkflowExecution from '@/models/WorkflowExecution';
 import Workflow from '@/models/Workflow';
 import Contact from '@/models/Contact';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
+import { requireFeatureOr403, FEATURES } from '@/lib/entitlements';
 
 export async function GET(request) {
   try {
     const doctor = await requireDoctorAuth(request);
     await connectDB();
+
+    const locked = await requireFeatureOr403(doctor._id, FEATURES.WORKFLOWS);
+    if (locked) return locked;
 
     const { searchParams } = new URL(request.url);
     const contactId = searchParams.get('contactId');
