@@ -43,7 +43,7 @@ export default function HeroCarouselSection({
 
   return (
     <section id={sectionId} className="relative w-full overflow-hidden bg-gray-100">
-      <div className="relative w-full pt-20 md:pt-24">
+      <div className="relative w-full">
         <div className="relative w-full overflow-hidden">
           {/* Carousel Images */}
           <div className="relative w-full h-[150px] sm:h-[250px] md:h-[350px] lg:h-[500px] xl:h-[600px]">

@@ -200,8 +200,18 @@ export default async function SubdomainSitePage({ params }) {
   // Get the theme for this booking page
   const themeId = resolveThemeId(bookingPage);
 
+  // A fixed/sticky header overlaps the top of the page. Reserve space for it at
+  // the very top so the first section (hero/banner) isn't hidden behind the
+  // navbar — regardless of where the header sits in the section order.
+  const hasStickyHeader = regularSections.some(
+    (s) => s.type === 'header' && s.config?.sticky !== false
+  );
+
   return (
     <div className="min-h-screen" data-theme={themeId}>
+      {/* Reserve space for the fixed header so the hero isn't clipped by it */}
+      {hasStickyHeader && <div className="h-16 md:h-20" />}
+
       {/* Render regular sections */}
       {regularSections
         .sort((a, b) => (a.order || 0) - (b.order || 0))

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { trackButtonClick } from "@/lib/tracking";
+import { toMapEmbedUrl } from "@/lib/mapEmbed";
 
 export default function LocationMapSection({
   sectionId,
@@ -37,6 +38,10 @@ export default function LocationMapSection({
   const displayTitle = title || (locationList.length === 1 ? "Our Location" : "Our Locations");
 
   const activeLocation = locationList[activeTab] || locationList[0];
+
+  // Normalize whatever was pasted (share link, place URL, iframe snippet, or
+  // nothing) into a URL that actually embeds; falls back to the address.
+  const embedUrl = toMapEmbedUrl(activeLocation.mapUrl, activeLocation.address);
 
   return (
     <section id={sectionId} className="bg-beige-50 py-12 md:py-16 lg:py-20">
@@ -101,10 +106,10 @@ export default function LocationMapSection({
             </div>
 
             {/* Map Embed */}
-            {activeLocation.mapUrl ? (
+            {embedUrl ? (
               <div className="aspect-video md:aspect-[16/9] lg:aspect-[21/9]">
                 <iframe
-                  src={activeLocation.mapUrl}
+                  src={embedUrl}
                   width="100%"
                   height="100%"
                   style={{ border: 0, minHeight: "350px" }}

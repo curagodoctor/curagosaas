@@ -426,9 +426,6 @@ export default function HeaderSection({
           )}
         </div>
       </header>
-
-      {/* Spacer for sticky header - must be outside header element */}
-      {sticky && <div className="h-16 md:h-20" />}
     </>
   );
 }
