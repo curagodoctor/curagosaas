@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongodb";
 import OTP from "@/models/OTP";
 import Booking from "@/models/Booking";
 import Doctor from "@/models/Doctor";
+import ConsultationMode from "@/models/ConsultationMode";
 import { isSlotBooked } from "@/lib/slotManagerDB";
 import { createCalendarEvent } from "@/lib/googleCalendar";
 import { validatePhone } from "@/lib/validation";
@@ -51,7 +52,20 @@ export async function POST(request) {
     const bookingData = result.bookingData;
 
     // Get doctorId from bookingData (set during send-otp from subdomain)
-    const doctorId = bookingData.doctorId || null;
+    let doctorId = bookingData.doctorId || null;
+
+    // Fallback: if the doctorId wasn't captured during OTP creation, derive it
+    // from the selected consultation mode. Without this the booking is saved
+    // with no doctorId and the doctor's name is blank in the confirmation
+    // SMS/email/webhook.
+    if (!doctorId && bookingData.modeId) {
+      try {
+        const mode = await ConsultationMode.findById(bookingData.modeId).select('doctorId');
+        if (mode?.doctorId) doctorId = mode.doctorId.toString();
+      } catch (modeErr) {
+        console.error('Failed to resolve doctorId from modeId:', modeErr.message);
+      }
+    }
 
     // Fetch doctor info for webhook
     let doctorInfo = { phone: '', name: '', subdomain: '' };
