@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import Doctor from './Doctor.js';
 
 const SubscriptionSchema = new mongoose.Schema({
   doctorId: {
@@ -67,15 +68,19 @@ SubscriptionSchema.statics.getOrCreateTrial = async function(doctorId) {
   let sub = await this.findOne({ doctorId });
 
   if (!sub) {
-    const now = new Date();
-    const trialEnd = new Date(now);
-    trialEnd.setDate(trialEnd.getDate() + 30); // 30-day trial
+    // Date the trial from the doctor's signup date (not "now"), so a trial
+    // isn't silently restarted the first time an existing doctor loads the
+    // dashboard. Falls back to now if the doctor/createdAt can't be read.
+    const doctor = await Doctor.findById(doctorId).select('createdAt');
+    const start = doctor?.createdAt ? new Date(doctor.createdAt) : new Date();
+    const trialEnd = new Date(start);
+    trialEnd.setDate(trialEnd.getDate() + 30); // 30-day trial from signup
 
     sub = await this.create({
       doctorId,
       plan: 'trial',
       status: 'active',
-      trialStartDate: now,
+      trialStartDate: start,
       trialEndDate: trialEnd,
     });
   }
