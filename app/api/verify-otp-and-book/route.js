@@ -67,15 +67,16 @@ export async function POST(request) {
       }
     }
 
-    // Fetch doctor info for webhook
+    // Fetch doctor info (for webhook routing + doctor notification below)
     let doctorInfo = { phone: '', name: '', subdomain: '' };
+    let doctorDoc = null;
     if (doctorId) {
-      const doctor = await Doctor.findById(doctorId);
-      if (doctor) {
+      doctorDoc = await Doctor.findById(doctorId);
+      if (doctorDoc) {
         doctorInfo = {
-          phone: doctor.whatsappNumber || doctor.phone || '',
-          name: doctor.displayName || doctor.name || '',
-          subdomain: doctor.subdomain || '',
+          phone: doctorDoc.whatsappNumber || doctorDoc.phone || '',
+          name: doctorDoc.displayName || doctorDoc.name || '',
+          subdomain: doctorDoc.subdomain || '',
         };
       }
     }
@@ -211,13 +212,12 @@ export async function POST(request) {
       console.error("Patient confirmation SMS error:", smsErr);
     }
 
-    // Send booking notification to doctor (email + SMS)
-    if (doctorId) {
-      const doctor = await Doctor.findById(doctorId);
-      if (doctor) {
+    // Send booking notification to the doctor (email + SMS)
+    if (doctorDoc) {
+      if (doctorDoc.email) {
         try {
           await sendBookingNotificationToDoctor({
-            email: doctor.email,
+            email: doctorDoc.email,
             doctorName: doctorInfo.name,
             patientName: bookingData.name,
             patientPhone: bookingData.whatsapp,
@@ -230,10 +230,13 @@ export async function POST(request) {
         } catch (emailErr) {
           console.error("Doctor notification email error:", emailErr);
         }
+      }
 
+      const doctorPhone = doctorDoc.whatsappNumber || doctorDoc.phone;
+      if (doctorPhone) {
         try {
           await sendSMS(
-            doctor.whatsappNumber || doctor.phone,
+            doctorPhone,
             `New booking: ${bookingData.name} (+91${bookingData.whatsapp}) booked for ${bookingData.date} at ${bookingData.time} (${bookingData.modeOfContact}). - CuraGo`
           );
         } catch (smsErr) {

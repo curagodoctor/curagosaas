@@ -40,9 +40,19 @@ export async function GET(request) {
       .select('_id name displayName description color sortOrder')
       .sort({ sortOrder: 1, createdAt: 1 });
 
+    // TEMP: Online booking is disabled for now — resume in future.
+    // Hide any "online" consultation mode from the public booking form so
+    // patients can only book in-clinic. To re-enable, set this flag to true.
+    const ONLINE_BOOKING_ENABLED = false;
+    const isOnlineMode = (m) =>
+      /online/i.test(m.name || '') || /online/i.test(m.displayName || '');
+    const visibleModes = ONLINE_BOOKING_ENABLED
+      ? modes
+      : modes.filter((m) => !isOnlineMode(m));
+
     return NextResponse.json({
       success: true,
-      modes,
+      modes: visibleModes,
     });
   } catch (error) {
     console.error("Error fetching consultation modes:", error);

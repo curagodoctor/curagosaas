@@ -167,12 +167,19 @@ export default function BookingFormSection({
       const response = await fetch(`/api/consultation-modes?${params.toString()}`);
       const data = await response.json();
       if (data.success && data.modes.length > 0) {
-        setConsultationModes(data.modes);
+        // TEMP: Online booking is disabled for now — resume in future.
+        // Hide any "online" mode so only in-clinic booking is offered. To
+        // re-enable, remove this filter (and the flag in /api/consultation-modes).
+        const modes = data.modes.filter(
+          (m) => !/online/i.test(m.name || '') && !/online/i.test(m.displayName || '')
+        );
+        if (modes.length === 0) return;
+        setConsultationModes(modes);
         // Auto-select first mode
         setFormData(prev => ({
           ...prev,
-          modeOfContact: data.modes[0].name,
-          modeId: data.modes[0]._id,
+          modeOfContact: modes[0].name,
+          modeId: modes[0]._id,
         }));
       }
     } catch (error) {
