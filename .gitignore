@@ -38,3 +38,10 @@ Thumbs.db
 
 # Testing
 coverage/
+
+# Practice OS reference app (design reference only — not part of the build)
+curago-practice-os/
+
+# Generated Practice OS sample spreadsheets
+practice-os-missions.xlsx
+practice-os-sample.xlsx
