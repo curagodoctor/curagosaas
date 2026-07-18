@@ -78,8 +78,14 @@ export async function POST(request) {
 
     // If Day 0 (no delay), send immediately
     let immediateResult = null;
-    if (firstStep.delayDays === 0 && firstStep.templateId) {
-      const template = firstStep.templateId;
+    if (firstStep.delayDays === 0) {
+      // firstStep.templateId is the populated template doc; if it's null the
+      // ref is orphaned, so fall back to a template of the same channel.
+      let template = firstStep.templateId;
+      if (!template) {
+        template = await MessageTemplate.findOne({ doctorId: doctor._id, channel: firstStep.channel });
+      }
+      if (template) {
       const clinic = await Clinic.findOne({ doctorId: doctor._id, isActive: true }).sort({ isPrimary: -1 }).lean();
 
       const channel = firstStep.channel;
@@ -140,6 +146,7 @@ export async function POST(request) {
           await execution.save();
           immediateResult = result;
         }
+      }
       }
     }
 

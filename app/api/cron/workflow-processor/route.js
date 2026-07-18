@@ -67,7 +67,11 @@ export async function GET(request) {
         await execution.populate('workflowId');
         const step = execution.workflowId.steps.sort((a, b) => a.stepOrder - b.stepOrder)[execution.currentStepIndex];
 
-        const template = await MessageTemplate.findById(step.templateId);
+        let template = await MessageTemplate.findById(step.templateId);
+        if (!template) {
+          // Orphaned template ref — fall back to a template of the same channel.
+          template = await MessageTemplate.findOne({ doctorId: doctor._id, channel: step.channel });
+        }
 
         if (!template) {
           execution.logs.push({ stepIndex: execution.currentStepIndex, channel: step.channel, status: 'failed', sentAt: new Date(), error: 'Template not found' });

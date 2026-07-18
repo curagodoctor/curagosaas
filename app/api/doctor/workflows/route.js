@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Workflow from '@/models/Workflow';
 import MessageTemplate from '@/models/MessageTemplate';
+import Doctor from '@/models/Doctor';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
 import { requireFeatureOr403, FEATURES } from '@/lib/entitlements';
 
@@ -18,8 +19,9 @@ export async function GET(request) {
       .sort({ isDefault: -1, createdAt: -1 })
       .lean();
 
-    // Auto-create default workflow if none exist
-    if (workflows.length === 0) {
+    // Seed default workflows ONLY the first time (never re-seed after the
+    // doctor has deleted them). workflowsInitialized guards against regeneration.
+    if (workflows.length === 0 && !doctor.workflowsInitialized) {
       let templates = await MessageTemplate.find({ doctorId: doctor._id }).lean();
       if (templates.length === 0) {
         await MessageTemplate.createDefaultsForDoctor(doctor._id);
@@ -36,6 +38,12 @@ export async function GET(request) {
           .sort({ isDefault: -1, createdAt: -1 })
           .lean();
       }
+    }
+
+    // Mark the doctor as initialized once they have (or have had) workflows, so
+    // deleting all of them later won't trigger a re-seed.
+    if (!doctor.workflowsInitialized && workflows.length > 0) {
+      await Doctor.updateOne({ _id: doctor._id }, { $set: { workflowsInitialized: true } });
     }
 
     return NextResponse.json({ success: true, workflows });

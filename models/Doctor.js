@@ -120,6 +120,12 @@ const DoctorSchema = new mongoose.Schema({
     type: String,
     default: 'Asia/Kolkata'
   },
+  // Set once default workflows have been seeded, so deleting all workflows
+  // doesn't cause them to regenerate on the next dashboard load.
+  workflowsInitialized: {
+    type: Boolean,
+    default: false
+  },
 
   // Platform Reference Code (used during signup)
   platformReferenceCode: {

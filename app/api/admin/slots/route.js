@@ -161,13 +161,12 @@ export async function DELETE(request) {
 
 // PUT - Cancel booking to re-enable a booked slot
 export async function PUT(request) {
-  if (!(await isAuthenticated(request))) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const doctor = await getCurrentDoctor(request);
-    const doctorId = doctor?._id;
+    if (!doctor) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const doctorId = doctor._id;
 
     const body = await request.json();
     const { date, time, mode, bookingId } = body;
