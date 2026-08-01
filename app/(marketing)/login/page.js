@@ -62,7 +62,9 @@ function LoginPageInner() {
         }
         throw new Error(data.error || 'Something went wrong');
       }
-      router.push('/admin/dashboard');
+      // Land on the unified workspace (matches Google sign-in), not straight into
+      // the website-builder admin. Practice-OS entrants go into that product.
+      router.push(entry === 'practice-os' ? '/app/practice-os' : '/app');
     } catch (error) {
       setErrors({ submit: error.message });
     } finally {
