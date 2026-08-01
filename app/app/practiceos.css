@@ -1,0 +1,72 @@
+/* Practice OS design tokens — ported from CLAUDE.md §2. */
+.pos-root {
+  --green: #096B17;      /* IDENTITY — brand, completion */
+  --orange: #F26A1B;     /* ACTION — the one thing to do */
+  --paper: #F7F9F5;
+  --card: #FFFFFF;
+  --ink: #101A13;
+  --muted: #5E6B5F;
+  --rule: #DDE4D9;
+  --rule-soft: #EDF1EB;
+  --orange-soft: rgba(242, 106, 27, 0.08);
+  --green-soft: rgba(9, 107, 23, 0.08);
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), -apple-system, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+}
+
+/* Serif is for NUMERALS ONLY — the emotional content of the product. */
+.pos-num {
+  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.03em;
+}
+
+/* Mono for eyebrows, labels, chips, tabular data. */
+.pos-label {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+/* The one orange action button. */
+.pos-action {
+  background: var(--orange);
+  color: #fff;
+  border-radius: 9px;
+  font-weight: 600;
+  padding: 12px 22px;
+  transition: filter 0.15s ease;
+}
+.pos-action:hover { filter: brightness(0.95); }
+.pos-action:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Secondary = a quiet text link, never a second button. */
+.pos-link { color: var(--muted); font-weight: 500; }
+.pos-link:hover { color: var(--ink); }
+
+.pos-card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+}
+
+.pos-meter { height: 6px; border-radius: 999px; background: var(--rule-soft); overflow: hidden; }
+.pos-meter > span { display: block; height: 100%; border-radius: 999px; background: var(--green); }
+
+.pos-focusable:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+/* Pointer cursor on every clickable element */
+.pos-action:not(:disabled),
+.pos-link,
+button:not(:disabled),
+summary,
+label:has(input[type="checkbox"]),
+label:has(input[type="radio"]),
+[role="button"] {
+  cursor: pointer;
+}

@@ -23,6 +23,7 @@ export async function GET(request, { params }) {
 // Fields an admin may edit on a mission.
 const EDITABLE = [
   'weekNumber', 'dayNumber', 'missionNumber', 'category', 'purpose', 'missionText',
+  'subSteps', 'scoreComponent', 'estimatedMinutes', 'lecture', 'lectureVideoUrl',
   'education', 'buttons', 'aiContext', 'evidence', 'reflection', 'reward',
   'kpiFields', 'completionRules', 'unlockDelayDays', 'isActive', 'status',
 ];

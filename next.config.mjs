@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // CV parsers use Node internals — keep them external, not bundled.
+  serverExternalPackages: ['pdf-parse', 'mammoth'],
   images: {
     remotePatterns: [
       {

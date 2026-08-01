@@ -1,4 +1,6 @@
 // Marketing pages layout with CuraGo platform SEO metadata
+import WaitlistEnhancer from './_waitlist-enhancer';
+import RazorpayButtons from './_razorpay-buttons';
 
 export const metadata = {
   title: "CuraGo - Build Your Medical Practice Online | Website, Booking & Growth for Doctors",
@@ -82,5 +84,11 @@ export const viewport = {
 };
 
 export default function MarketingLayout({ children }) {
-  return children;
+  return (
+    <>
+      {children}
+      <WaitlistEnhancer />
+      <RazorpayButtons />
+    </>
+  );
 }

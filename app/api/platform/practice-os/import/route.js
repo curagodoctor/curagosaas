@@ -6,7 +6,7 @@ import Module from '@/models/practice-os/Module';
 import Mission from '@/models/practice-os/Mission';
 import {
   buildHeaderMap, slugify, parseEvidence, parseKpiFields,
-  buildEducation, buildButtons, toInt,
+  buildEducation, buildButtons, toInt, parseScoreComponent, parseSubSteps,
 } from '@/lib/practice-os/import-helpers';
 
 export const runtime = 'nodejs';
@@ -129,6 +129,9 @@ export async function POST(request) {
           category: c('category'),
           purpose: c('purpose'),
           missionText: r.missionText,
+          subSteps: parseSubSteps(c('sub steps')),
+          scoreComponent: parseScoreComponent(c('score component')),
+          estimatedMinutes: toInt(c('estimated minutes'), 35),
           education: buildEducation({
             videoUrl: c('video url'), pdfUrl: c('pdf url'), externalLink: c('external link'),
           }),
@@ -139,7 +142,7 @@ export async function POST(request) {
           aiContext: { systemPrompt: c('gpt prompt'), model: '' },
           evidence: parseEvidence(c('evidence required')),
           reward: {
-            points: toInt(c('reward points'), 10),
+            points: toInt(c('points'), toInt(c('reward points'), 10)),
             badge: '',
             message: c('celebration message'),
           },

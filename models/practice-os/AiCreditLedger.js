@@ -10,6 +10,9 @@ import mongoose from 'mongoose';
 const UsageSchema = new mongoose.Schema({
   missionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Mission' },
   prompt: { type: String, trim: true },
+  promptTokens: { type: Number, default: 0 },
+  completionTokens: { type: Number, default: 0 },
+  totalTokens: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
 }, { _id: false });
 
@@ -25,6 +28,10 @@ const AiCreditLedgerSchema = new mongoose.Schema({
   // Date (midnight) the balance was last reset to dailyLimit.
   lastResetDate: { type: Date },
   usage: { type: [UsageSchema], default: [] },
+  // Cumulative token usage across the doctor's lifetime (cost tracking).
+  lifetimePromptTokens: { type: Number, default: 0 },
+  lifetimeCompletionTokens: { type: Number, default: 0 },
+  lifetimeTokens: { type: Number, default: 0 },
 }, { timestamps: true });
 
 // Reset the daily balance if we've crossed into a new day (server-local date).

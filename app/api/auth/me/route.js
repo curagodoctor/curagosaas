@@ -34,6 +34,10 @@ export async function GET(request) {
         myReferralCode: doctor.myReferralCode,
         createdAt: doctor.createdAt,
         lastLoginAt: doctor.lastLoginAt,
+        // Product access flags for the shared /app shell
+        authProvider: doctor.authProvider,
+        practiceOsActive: doctor.practiceOsActive,
+        websiteBuilderActive: doctor.websiteBuilderActive,
       },
     });
   } catch (error) {

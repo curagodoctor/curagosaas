@@ -17,24 +17,21 @@ const DoctorSchema = new mongoose.Schema({
     trim: true,
     match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email']
   },
+  // Optional: not present for Google/Practice-OS-only accounts (collected later)
   phone: {
     type: String,
-    required: [true, 'Phone number is required'],
-    unique: true,
     trim: true
   },
+  // Optional: absent for Google (passwordless) accounts
   password: {
     type: String,
-    required: [true, 'Password is required'],
     minlength: [6, 'Password must be at least 6 characters'],
     select: false // Don't include in queries by default
   },
 
-  // Subdomain
+  // Subdomain — optional; assigned only when the doctor activates Website Builder
   subdomain: {
     type: String,
-    required: [true, 'Subdomain is required'],
-    unique: true,
     lowercase: true,
     trim: true,
     match: [/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Subdomain can only contain lowercase letters, numbers, and hyphens'],
@@ -127,6 +124,27 @@ const DoctorSchema = new mongoose.Schema({
     default: false
   },
 
+  // Auth provider + Google identity
+  authProvider: {
+    type: String,
+    enum: ['password', 'google'],
+    default: 'password'
+  },
+  googleId: {
+    type: String
+    // sparse unique index declared below
+  },
+
+  // Product access flags (which products this account has entered/purchased)
+  websiteBuilderActive: {
+    type: Boolean,
+    default: false
+  },
+  practiceOsActive: {
+    type: Boolean,
+    default: false
+  },
+
   // Platform Reference Code (used during signup)
   platformReferenceCode: {
     type: String,
@@ -163,6 +181,12 @@ const DoctorSchema = new mongoose.Schema({
 // Compound index (unique fields already have indexes via unique: true)
 DoctorSchema.index({ isEmailVerified: 1, isActive: 1 });
 
+// subdomain/phone/googleId are optional now, so their uniqueness must be sparse
+// (multiple accounts can exist without a subdomain or phone).
+DoctorSchema.index({ subdomain: 1 }, { unique: true, sparse: true });
+DoctorSchema.index({ phone: 1 }, { unique: true, sparse: true });
+DoctorSchema.index({ googleId: 1 }, { unique: true, sparse: true });
+
 // Hash password before saving
 DoctorSchema.pre('save', async function() {
   if (!this.isModified('password')) return;
@@ -174,9 +198,12 @@ DoctorSchema.pre('save', async function() {
 // Generate referral code before saving (if not set)
 DoctorSchema.pre('save', function() {
   if (!this.myReferralCode) {
-    // Generate a unique referral code based on subdomain + random chars
+    // Base the referral code on subdomain/name/email (subdomain may be absent
+    // for Google / Practice-OS-only accounts).
     const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase();
-    this.myReferralCode = `${this.subdomain.toUpperCase().slice(0, 4)}${randomChars}`;
+    const base = (this.subdomain || this.name || this.email || 'CURA')
+      .toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4) || 'CURA';
+    this.myReferralCode = `${base}${randomChars}`;
   }
 });
 

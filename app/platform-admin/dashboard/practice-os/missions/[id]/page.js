@@ -133,7 +133,35 @@ export default function MissionEditorPage() {
       <Section title="Content">
         <div><label className={LABEL}>Category</label><input className={INPUT} value={m.category} onChange={(e) => set({ category: e.target.value })} /></div>
         <div className="mt-4"><label className={LABEL}>Purpose</label><textarea rows={2} className={INPUT} value={m.purpose} onChange={(e) => set({ purpose: e.target.value })} /></div>
-        <div className="mt-4"><label className={LABEL}>Mission</label><textarea rows={3} className={INPUT} value={m.missionText} onChange={(e) => set({ missionText: e.target.value })} /></div>
+        <div className="mt-4"><label className={LABEL}>Task (the day&apos;s objective)</label><textarea rows={3} className={INPUT} value={m.missionText} onChange={(e) => set({ missionText: e.target.value })} /></div>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div>
+            <label className={LABEL}>Visibility Score component</label>
+            <select className={INPUT} value={m.scoreComponent || 'none'} onChange={(e) => set({ scoreComponent: e.target.value })}>
+              <option value="none">None</option>
+              <option value="gbp">Google Business Profile</option>
+              <option value="reviews">Reviews</option>
+              <option value="website">Website</option>
+              <option value="systems">Systems</option>
+              <option value="social">Social presence</option>
+            </select>
+          </div>
+          <div><label className={LABEL}>Estimated minutes</label><input type="number" className={INPUT} value={m.estimatedMinutes ?? 35} onChange={(e) => set({ estimatedMinutes: Number(e.target.value) })} /></div>
+        </div>
+        <div className="mt-4">
+          <label className={LABEL}>Sub-steps (one per line)</label>
+          <textarea rows={3} className={INPUT} value={(m.subSteps || []).join('\n')} onChange={(e) => set({ subSteps: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) })} />
+        </div>
+      </Section>
+
+      {/* Lecture */}
+      <Section title="Lecture">
+        <label className={LABEL}>Lecture text (short, 3–5 min read — optional)</label>
+        <textarea rows={3} className={INPUT} value={m.lecture || ''} onChange={(e) => set({ lecture: e.target.value })} />
+        <div className="mt-4">
+          <label className={LABEL}>Lecture video</label>
+          <VideoUpload value={m.lectureVideoUrl || ''} onChange={(url) => set({ lectureVideoUrl: url })} />
+        </div>
       </Section>
 
       {/* Education */}
@@ -143,12 +171,17 @@ export default function MissionEditorPage() {
           onChange={(education) => set({ education })}
           empty={{ type: 'link', label: '', url: '' }}
           render={(item, upd) => (
-            <div className="grid grid-cols-12 gap-2">
+            <div className="grid grid-cols-12 gap-2 items-start">
               <select className={`${INPUT} col-span-3`} value={item.type} onChange={(e) => upd({ type: e.target.value })}>
                 {['video', 'pdf', 'link', 'checklist', 'template'].map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
-              <input className={`${INPUT} col-span-4`} placeholder="Label" value={item.label} onChange={(e) => upd({ label: e.target.value })} />
-              <input className={`${INPUT} col-span-5`} placeholder="URL" value={item.url} onChange={(e) => upd({ url: e.target.value })} />
+              <input className={`${INPUT} col-span-3`} placeholder="Label" value={item.label} onChange={(e) => upd({ label: e.target.value })} />
+              <div className="col-span-6">
+                <input className={INPUT} placeholder="URL" value={item.url} onChange={(e) => upd({ url: e.target.value })} />
+                {item.type === 'video' && (
+                  <div className="mt-2"><VideoUpload value={item.url} onChange={(url) => upd({ url })} compact /></div>
+                )}
+              </div>
             </div>
           )}
         />
@@ -283,6 +316,92 @@ function ArrayEditor({ items = [], onChange, empty, render }) {
         </div>
       ))}
       <button onClick={add} className="text-sm text-blue-600 hover:underline">+ Add</button>
+    </div>
+  );
+}
+
+// Upload a lecture video straight to GCS via a signed URL, or paste a URL
+// (e.g. a YouTube unlisted link). Sets the resulting URL via onChange.
+function VideoUpload({ value, onChange, compact }) {
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState('');
+  const [localPreview, setLocalPreview] = useState('');
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('video/')) { setError('Please choose a video file.'); return; }
+    setError(''); setUploading(true); setProgress(0);
+    try {
+      // 1) Ask the server for a signed upload URL.
+      const signRes = await fetch('/api/platform/practice-os/upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, contentType: file.type, size: file.size }),
+      });
+      const signed = await signRes.json();
+      if (!signed.success) { setError(signed.error || 'Could not start upload.'); setUploading(false); return; }
+
+      // 2) PUT the file directly to GCS with progress.
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', signed.uploadUrl);
+        xhr.setRequestHeader('Content-Type', file.type);
+        xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) setProgress(Math.round((ev.loaded / ev.total) * 100)); };
+        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload failed (${xhr.status})`)));
+        xhr.onerror = () => reject(new Error('Upload failed'));
+        xhr.send(file);
+      });
+
+      // The bucket is private — store a gs:// reference; playback uses signed URLs.
+      setLocalPreview(URL.createObjectURL(file));
+      onChange(signed.gsUri);
+    } catch (err) {
+      setError(err.message || 'Upload failed.');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  // Preview: local object URL if just uploaded, a signed URL for a stored gs:// ref, else the raw URL.
+  async function openPreview() {
+    setError('');
+    if (localPreview) { window.open(localPreview, '_blank'); return; }
+    if (value?.startsWith('gs://')) {
+      try {
+        const res = await fetch(`/api/platform/practice-os/sign-read?ref=${encodeURIComponent(value)}`);
+        const data = await res.json();
+        if (data.success) window.open(data.url, '_blank');
+        else setError(data.error || 'Preview failed.');
+      } catch { setError('Preview failed.'); }
+      return;
+    }
+    if (value) window.open(value, '_blank');
+  }
+
+  const isGcs = value?.startsWith('gs://');
+
+  return (
+    <div>
+      {!compact && (
+        <input className={INPUT} placeholder="Paste a video URL (e.g. YouTube unlisted) or upload below" value={value || ''} onChange={(e) => { setLocalPreview(''); onChange(e.target.value); }} />
+      )}
+      <div className={`flex items-center gap-3 ${compact ? '' : 'mt-2'}`}>
+        <label className="text-sm text-blue-600 hover:underline cursor-pointer">
+          {uploading ? `Uploading… ${progress}%` : (value ? 'Replace video' : 'Upload video to cloud')}
+          <input type="file" accept="video/*" className="hidden" onChange={handleFile} disabled={uploading} />
+        </label>
+        {isGcs && !uploading && <span className="text-xs text-green-600">cloud video ✓</span>}
+        {value && !uploading && (
+          <>
+            <button type="button" onClick={openPreview} className="text-sm text-gray-500 hover:underline">preview</button>
+            <button type="button" onClick={() => { setLocalPreview(''); onChange(''); }} className="text-sm text-gray-400 hover:text-red-500">clear</button>
+          </>
+        )}
+      </div>
+      {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
     </div>
   );
 }

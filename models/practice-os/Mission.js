@@ -55,10 +55,23 @@ const MissionSchema = new mongoose.Schema({
   // Global ordering within the framework (drives sequential unlock).
   missionNumber: { type: Number, required: true },
 
-  // Core content
+  // Core content (a "Day / Task" in the user-facing copy — see CLAUDE.md)
   category: { type: String, trim: true, default: '' },
   purpose: { type: String, trim: true, default: '' },
   missionText: { type: String, trim: true, default: '' },
+  // Short lecture shown before the task (3–5 min): text and/or a video URL.
+  lecture: { type: String, trim: true, default: '' },
+  lectureVideoUrl: { type: String, trim: true, default: '' },
+  // The sub-steps ticked off during the Focus session.
+  subSteps: { type: [String], default: [] },
+  // Estimated minutes (30–45). Shown as a chip; compared to actual on completion.
+  estimatedMinutes: { type: Number, default: 35 },
+  // Which Visibility Score component this day builds, and how many points it adds.
+  scoreComponent: {
+    type: String,
+    enum: ['gbp', 'reviews', 'website', 'systems', 'social', 'none'],
+    default: 'none',
+  },
 
   // Education resources + dynamic action buttons
   education: { type: [ResourceSchema], default: [] },

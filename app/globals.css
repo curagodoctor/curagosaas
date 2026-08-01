@@ -272,3 +272,10 @@ body {
   animation: scroll 40s linear infinite;
   width: max-content;
 }
+
+/* Pointer cursor on interactive elements app-wide */
+button:not(:disabled),
+summary,
+[role="button"] {
+  cursor: pointer;
+}

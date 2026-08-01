@@ -32,11 +32,27 @@ const UserMissionProgressSchema = new mongoose.Schema({
   unlockedAt: { type: Date },
   startedAt: { type: Date },
   completedAt: { type: Date },
-  // Whether the mission was completed on its unlock day.
-  onTime: { type: Boolean, default: false },
+  // Actual minutes spent (Focus session timer; may exceed estimate — never penalised).
+  actualMinutes: { type: Number, default: 0 },
+  // "Your record" — the doctor's logbook for this day (his, not a submission).
+  record: {
+    screenshots: { type: [String], default: [] }, // Blob URLs
+    links: { type: [String], default: [] },
+    notes: { type: String, default: '' },
+  },
+  // Optional reflection captured at completion (§5).
+  reflection: {
+    confidence: { type: Number, default: 0 },   // 1–5
+    learning: { type: String, default: '' },
+    challenge: { type: String, default: '' },
+  },
+  // "When tomorrow?" commitment captured at completion.
+  nextCommitment: {
+    window: { type: String, enum: ['morning', 'afternoon', 'evening', 'night', ''], default: '' },
+    exactTime: { type: String, default: '' }, // "19:30"
+  },
   // Admin manual-unlock override flag.
   manuallyUnlocked: { type: Boolean, default: false },
-  reflection: { type: mongoose.Schema.Types.Mixed, default: {} },
 }, { timestamps: true });
 
 UserMissionProgressSchema.index({ doctorId: 1, missionId: 1 }, { unique: true });

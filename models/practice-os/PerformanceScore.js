@@ -24,6 +24,9 @@ const PerformanceScoreSchema = new mongoose.Schema({
   delayedDays: { type: Number, default: 0 },
 
   lastActivityDate: { type: Date },
+  // Once-a-day scoring guards (daily login +2, AI-used +2).
+  lastLoginScoredDate: { type: Date },
+  lastAiScoredDate: { type: Date },
 }, { timestamps: true });
 
 export default mongoose.models.PerformanceScore
