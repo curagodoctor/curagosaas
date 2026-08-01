@@ -235,7 +235,7 @@ const BODY = `
       <!-- book -->
       <div class="prod">
         <span class="ptag">The book</span>
-        <h3>Zero to Practice</h3>
+        <h3>The Book</h3>
         <p class="pd">The complete handbook — ten chapters, from your Google profile and website to reviews, content, ads and the NMC rules.</p>
         <div class="price"><b>₹499</b><e>one-time · instant download</e></div>
         <ul class="inc">
