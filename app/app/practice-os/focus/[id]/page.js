@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SCORE_LABELS } from '../../_score';
+import { LeaderboardPrompt } from '../../_username';
 
 const WINDOWS = [
   { id: 'morning', label: 'Morning', hint: '6–12' },
@@ -130,7 +131,7 @@ export default function FocusSession() {
           />
 
           <div className="flex items-center gap-5">
-            <button onClick={finish} disabled={saving} className="pos-action pos-focusable">{saving ? 'Saving…' : "I've finished this"}</button>
+            <button onClick={finish} disabled={saving} className="pos-action pos-focusable" style={{ background: 'var(--green)' }}>{saving ? 'Saving…' : 'Finish task'}</button>
             <Link href="/app/practice-os" className="pos-link text-sm">Leave for now</Link>
           </div>
           </div>
@@ -186,6 +187,9 @@ export default function FocusSession() {
           <div><p className="pos-label">Estimated</p><p className="pos-num text-xl text-[var(--ink)]">{est}m</p></div>
           <div><p className="pos-label">Actual</p><p className="pos-num text-xl text-[var(--ink)]">{actual}m</p></div>
         </div>
+
+        {/* Prompt to join the leaderboard (only until they've picked a name) */}
+        <LeaderboardPrompt />
 
         {/* Tomorrow revealed before the commitment is asked */}
         {tomorrow ? (

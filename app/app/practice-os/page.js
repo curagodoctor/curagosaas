@@ -38,7 +38,7 @@ export default function DayView() {
   }
   if (!state) return null;
 
-  const { today, days, enrollment, score, performance, aiCredits, upcomingAchievement, allComplete, daysAway } = state;
+  const { today, days, enrollment, score, performance, aiCredits, upcomingAchievement, summary, allComplete, daysAway } = state;
 
   return (
     <div className="w-full px-4 sm:px-8 lg:px-12 py-6">
@@ -76,7 +76,7 @@ export default function DayView() {
 
         {/* Right — passive context rail */}
         <div className="min-w-0">
-          <ContextRail score={score} performance={performance} aiCredits={aiCredits} upcomingAchievement={upcomingAchievement} enrollment={enrollment} days={days} />
+          <ContextRail score={score} performance={performance} aiCredits={aiCredits} upcomingAchievement={upcomingAchievement} summary={summary} enrollment={enrollment} days={days} />
         </div>
       </div>
     </div>
@@ -99,7 +99,10 @@ function TopBar() {
         <Link href="/app/practice-os/score" className="pos-link">Your progress</Link>
         <Link href="/app/practice-os/journey" className="pos-link">Journey</Link>
         <Link href="/app/practice-os/report" className="pos-link">Report</Link>
+        <Link href="/app/practice-os/leaderboard" className="pos-link">Leaderboard</Link>
         <Link href="/app/practice-os/record" className="pos-link">Your record</Link>
+        <Link href="/app/practice-os/profile" className="pos-link">My profile</Link>
+        <Link href="/admin/dashboard" className="pos-link" style={{ color: 'var(--green)' }}>Website builder →</Link>
         <button onClick={logout} className="pos-link" style={{ color: 'var(--muted)' }}>Sign out</button>
       </div>
     </div>
@@ -132,7 +135,7 @@ function TaskCard({ day }) {
   );
 }
 
-function LockedDay({ day, nextUnlockAt, now, devBypass, onUnlocked }) {
+function LockedDay({ day, nextUnlockAt, now, onUnlocked }) {
   const remaining = nextUnlockAt ? Math.max(0, new Date(nextUnlockAt).getTime() - now) : 0;
   const h = Math.floor(remaining / 3.6e6);
   const m = Math.floor((remaining % 3.6e6) / 6e4);
@@ -160,20 +163,21 @@ function LockedDay({ day, nextUnlockAt, now, devBypass, onUnlocked }) {
         </p>
       </div>
 
-      {devBypass && (
+      <div className="mt-5">
         <button
           onClick={async () => {
             await fetch(`/api/practice-os/day/${day._id}`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'dev-unlock' }),
+              body: JSON.stringify({ action: 'continue-now' }),
             });
             onUnlocked?.();
           }}
-          className="mt-4 text-sm font-medium text-[var(--muted)] underline underline-offset-4 hover:text-[var(--ink)]"
+          className="pos-action pos-focusable"
         >
-          Dev: open this task now →
+          I&apos;m ready — start this task now
         </button>
-      )}
+        <p className="text-[12px] text-[var(--muted)] mt-2">Or wait for the timer above — the task stays right here either way.</p>
+      </div>
     </div>
   );
 }

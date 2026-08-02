@@ -145,6 +145,10 @@ const DoctorSchema = new mongoose.Schema({
     default: false
   },
 
+  // Anonymous display name for the Practice OS leaderboard (opt-in, unique).
+  username: { type: String, trim: true, default: '' },
+  usernameLower: { type: String, trim: true, lowercase: true, sparse: true, unique: true },
+
   // Platform Reference Code (used during signup)
   platformReferenceCode: {
     type: String,

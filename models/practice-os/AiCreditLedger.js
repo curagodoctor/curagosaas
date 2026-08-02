@@ -1,5 +1,9 @@
 import mongoose from 'mongoose';
 
+// Daily credit allowance — configurable via env, default 30.
+const DAILY_LIMIT = parseInt(process.env.PRACTICE_OS_AI_DAILY_CREDITS, 10) > 0
+  ? parseInt(process.env.PRACTICE_OS_AI_DAILY_CREDITS, 10) : 30;
+
 /**
  * Practice OS — AiCreditLedger
  *
@@ -23,8 +27,8 @@ const AiCreditLedgerSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
-  dailyLimit: { type: Number, default: 10 },
-  dailyBalance: { type: Number, default: 10 },
+  dailyLimit: { type: Number, default: DAILY_LIMIT },
+  dailyBalance: { type: Number, default: DAILY_LIMIT },
   // Date (midnight) the balance was last reset to dailyLimit.
   lastResetDate: { type: Date },
   usage: { type: [UsageSchema], default: [] },
@@ -35,18 +39,26 @@ const AiCreditLedgerSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Reset the daily balance if we've crossed into a new day (server-local date).
+// Also keeps dailyLimit in sync with the configured allowance.
 AiCreditLedgerSchema.statics.getOrCreateForToday = async function (doctorId) {
+  const today = startOfDay(new Date());
   let ledger = await this.findOne({ doctorId });
   if (!ledger) {
-    ledger = await this.create({ doctorId, lastResetDate: startOfDay(new Date()) });
-    return ledger;
+    return this.create({ doctorId, dailyLimit: DAILY_LIMIT, dailyBalance: DAILY_LIMIT, lastResetDate: today });
   }
-  const today = startOfDay(new Date());
+  let dirty = false;
   if (!ledger.lastResetDate || ledger.lastResetDate < today) {
-    ledger.dailyBalance = ledger.dailyLimit;
+    ledger.dailyLimit = DAILY_LIMIT;
+    ledger.dailyBalance = DAILY_LIMIT;
     ledger.lastResetDate = today;
-    await ledger.save();
+    dirty = true;
+  } else if (ledger.dailyLimit !== DAILY_LIMIT) {
+    // Allowance changed mid-day — apply the difference to today's balance too.
+    ledger.dailyBalance = Math.max(0, ledger.dailyBalance + (DAILY_LIMIT - ledger.dailyLimit));
+    ledger.dailyLimit = DAILY_LIMIT;
+    dirty = true;
   }
+  if (dirty) await ledger.save();
   return ledger;
 };
 

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { SCORE_WEIGHTS, SCORE_LABELS } from './_score';
 
 // Week themes (CLAUDE.md §3 curriculum).
@@ -63,7 +64,7 @@ export function Spine({ days }) {
 }
 
 /** Right column — passive information only, never actionable. */
-export function ContextRail({ score, performance, aiCredits, upcomingAchievement, enrollment, days }) {
+export function ContextRail({ score, performance, aiCredits, upcomingAchievement, summary, enrollment, days }) {
   const total = score?.total || 0;
   const completed = enrollment?.daysCompleted || 0;
   const totalDays = enrollment?.totalDays || days.length || 30;
@@ -75,6 +76,15 @@ export function ContextRail({ score, performance, aiCredits, upcomingAchievement
 
   return (
     <div className="space-y-4 sticky top-6">
+      {/* How CuraGo sees you — AI summary from the profile */}
+      {summary && (
+        <div className="pos-card p-5">
+          <p className="pos-label mb-2">How CuraGo sees you</p>
+          <p className="text-[13px] text-[var(--ink)] leading-relaxed">{summary}</p>
+          <Link href="/app/practice-os/profile" className="pos-link text-[12px] inline-block mt-2">Edit profile →</Link>
+        </div>
+      )}
+
       {/* Visibility Score */}
       <div className="pos-card p-5">
         <p className="pos-label mb-2">Visibility Score</p>
@@ -123,10 +133,12 @@ export function ContextRail({ score, performance, aiCredits, upcomingAchievement
         </div>
       )}
 
-      {/* Completed */}
+      {/* Completed — with progress bar */}
       <div className="pos-card p-5">
         <p className="pos-label mb-1">Completed</p>
-        <p className="text-[var(--ink)]"><span className="pos-num text-xl">{completed}</span> of {totalDays} days finished</p>
+        <p className="text-[var(--ink)] mb-2"><span className="pos-num text-xl">{completed}</span> of {totalDays} days finished</p>
+        <div className="pos-meter"><span style={{ width: `${totalDays ? Math.round((completed / totalDays) * 100) : 0}%` }} /></div>
+        <p className="text-[11px] text-[var(--muted)] mt-1.5">{totalDays ? Math.round((completed / totalDays) * 100) : 0}% of the programme</p>
       </div>
 
       {/* This week */}

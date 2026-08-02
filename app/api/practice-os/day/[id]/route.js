@@ -64,9 +64,9 @@ export async function POST(request, { params }) {
       return NextResponse.json({ success: true });
     }
 
-    // Local-dev only: clear the 24h unlock clock so the next day opens now.
-    if (body.action === 'dev-unlock') {
-      if (!isDevPaymentBypass()) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
+    // Soft lock: the doctor may choose to open the next task before the timer
+    // ends. Clears the unlock clock so the current day becomes available now.
+    if (body.action === 'continue-now' || body.action === 'dev-unlock') {
       const enr = await getOrCreateEnrollment(doctor._id);
       enr.nextUnlockAt = null;
       await enr.save();

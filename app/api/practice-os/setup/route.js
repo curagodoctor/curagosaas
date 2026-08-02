@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor } from '@/lib/practice-os/access';
-import PracticeOsEnrollment from '@/models/practice-os/PracticeOsEnrollment';
 import { getOrCreateEnrollment } from '@/lib/practice-os/engine';
+import { generateDoctorSummary } from '@/lib/practice-os/profile';
 
 /**
  * POST /api/practice-os/setup — Day-0 setup steps.
- * body.step: 'credentials' | 'intent' | 'complete'
+ * body.step: 'credentials' | 'intent' | 'summary' | 'complete'
  */
 export async function POST(request) {
   try {
@@ -14,14 +14,18 @@ export async function POST(request) {
     await connectDB();
     const body = await request.json();
     const enr = await getOrCreateEnrollment(doctor._id);
+    let summary;
 
     if (body.step === 'credentials') {
-      // Store raw file url + confirmed extracted fields (never invented; the UI
-      // only sends what the doctor confirmed). CV is personal data — DPDP.
-      enr.credentials = {
-        rawFileUrl: body.rawFileUrl || enr.credentials?.rawFileUrl || '',
-        extracted: Array.isArray(body.extracted) ? body.extracted : (enr.credentials?.extracted || []),
-      };
+      // Merge (never wipe cvText / summary). The UI only sends confirmed fields.
+      enr.credentials = enr.credentials || {};
+      if (body.rawFileUrl) enr.credentials.rawFileUrl = body.rawFileUrl;
+      if (Array.isArray(body.extracted)) enr.credentials.extracted = body.extracted;
+    } else if (body.step === 'summary') {
+      // Generate the AI summary from the confirmed profile and store it.
+      summary = await generateDoctorSummary(doctor._id);
+      enr.credentials = enr.credentials || {};
+      enr.credentials.summary = summary;
     } else if (body.step === 'intent') {
       enr.intent = {
         whyPractice: body.whyPractice || '',
@@ -41,7 +45,7 @@ export async function POST(request) {
     }
 
     await enr.save();
-    return NextResponse.json({ success: true, setupComplete: enr.setupComplete, status: enr.status });
+    return NextResponse.json({ success: true, setupComplete: enr.setupComplete, status: enr.status, summary });
   } catch (error) {
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });

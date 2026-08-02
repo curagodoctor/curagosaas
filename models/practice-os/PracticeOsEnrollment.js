@@ -59,6 +59,8 @@ const PracticeOsEnrollmentSchema = new mongoose.Schema({
     rawFileUrl: { type: String, default: '' },
     extracted: { type: [ExtractedFieldSchema], default: [] },
     cvText: { type: String, default: '' },
+    // AI-generated professional summary of the doctor (shown in the UI).
+    summary: { type: String, default: '' },
   },
 
   // Booked leave (pre-declared absence — not a missed day).
