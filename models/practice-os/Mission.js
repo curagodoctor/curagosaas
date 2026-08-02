@@ -55,10 +55,21 @@ const MissionSchema = new mongoose.Schema({
   // Global ordering within the framework (drives sequential unlock).
   missionNumber: { type: Number, required: true },
 
+  // Stable authoring identifier from the import sheet (Mission_ID, e.g. "GBP-D1-M1").
+  // Preferred upsert key when present.
+  code: { type: String, trim: true, default: '', index: true },
+
   // Core content (a "Day / Task" in the user-facing copy — see CLAUDE.md)
   category: { type: String, trim: true, default: '' },
   purpose: { type: String, trim: true, default: '' },
   missionText: { type: String, trim: true, default: '' },
+  // One-line objective; longer "brief" shown before the task; the outcome the
+  // day produces; and any prerequisites.
+  objective: { type: String, trim: true, default: '' },
+  briefDescription: { type: String, trim: true, default: '' },
+  expectedOutcome: { type: String, trim: true, default: '' },
+  prerequisites: { type: String, trim: true, default: '' },
+  difficulty: { type: String, trim: true, default: '' },
   // Short lecture shown before the task (3–5 min): text and/or a video URL.
   lecture: { type: String, trim: true, default: '' },
   lectureVideoUrl: { type: String, trim: true, default: '' },
@@ -105,6 +116,28 @@ const MissionSchema = new mongoose.Schema({
 
   // KPI metrics requested by this mission
   kpiFields: { type: [KpiFieldSchema], default: [] },
+
+  // Inputs the doctor is asked to provide during the mission (from input-1..4).
+  inputs: {
+    type: [new mongoose.Schema({
+      label: { type: String, trim: true, required: true },
+      required: { type: Boolean, default: true },
+    }, { _id: false })],
+    default: [],
+  },
+
+  // Completion messaging + criteria.
+  successMessage: { type: String, trim: true, default: '' },
+  failureMessage: { type: String, trim: true, default: '' },
+  failureCriteria: { type: String, trim: true, default: '' },
+
+  // The Mission_ID this day points to next (sequence hint from the sheet).
+  nextMissionCode: { type: String, trim: true, default: '' },
+
+  // Everything from the sheet without a first-class home: createdBy, version,
+  // internalNotes, feedbackForUs, notesToSelfEnabled, instareel/GBP live numbers,
+  // module id, button actions, raw mission-inputs note, etc.
+  meta: { type: mongoose.Schema.Types.Mixed, default: {} },
 
   // Free-form completion rules (evaluated later by the progress engine)
   completionRules: { type: mongoose.Schema.Types.Mixed, default: {} },
