@@ -13,6 +13,12 @@ const AchievementSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
+  // Achievements are per-pack (a doctor earns them within one framework).
+  frameworkId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Framework',
+    index: true,
+  },
   type: {
     type: String,
     enum: ['mission', 'weekly', 'monthly', 'framework', 'streak', 'custom'],

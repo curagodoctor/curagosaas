@@ -52,12 +52,21 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: 'A framework with this name already exists' }, { status: 409 });
     }
 
+    const outcomes = Array.isArray(body.outcomes)
+      ? body.outcomes.map((o) => String(o).trim()).filter(Boolean)
+      : String(body.outcomes || '').split('\n').map((o) => o.trim()).filter(Boolean);
+
     const framework = await Framework.create({
       title,
       slug,
       description: body.description || '',
       category: body.category || '',
       coverImage: body.coverImage || '',
+      tagline: body.tagline || '',
+      summary: body.summary || '',
+      outcomes,
+      priceInInr: Math.max(0, Number(body.priceInInr) || 0),
+      isPublished: body.isPublished ?? false,
       order: body.order ?? 0,
       isActive: body.isActive ?? true,
     });

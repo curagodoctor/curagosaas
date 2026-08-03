@@ -21,7 +21,13 @@ const VisibilityScoreSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Doctor',
     required: true,
-    unique: true,
+    index: true,
+  },
+  // Score is per-pack: each framework the doctor owns has its own Visibility Score.
+  frameworkId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Framework',
+    required: true,
   },
   // Points earned per component (each capped at its weight).
   components: {
@@ -51,6 +57,9 @@ VisibilityScoreSchema.methods.recompute = function () {
   this.total = Math.max(this.total || 0, total);
   return this.total;
 };
+
+// One Visibility Score per (doctor, pack).
+VisibilityScoreSchema.index({ doctorId: 1, frameworkId: 1 }, { unique: true });
 
 export default mongoose.models.VisibilityScore
   || mongoose.model('VisibilityScore', VisibilityScoreSchema);

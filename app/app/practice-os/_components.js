@@ -15,14 +15,14 @@ export const WEEK_THEMES = {
  * The 30-day spine. Treatment-chart grammar: green behind you, one orange mark
  * where you are, hairlines ahead. Locked day = paper, never orange.
  */
-export function Spine({ days }) {
+export function Spine({ days, totalDays }) {
   const byWeek = {};
   for (const d of days) (byWeek[d.weekNumber || 1] ??= []).push(d);
   const weeks = Object.keys(byWeek).map(Number).sort((a, b) => a - b);
 
   return (
     <div className="sticky top-6">
-      <p className="pos-label mb-3">Your 30 days</p>
+      <p className="pos-label mb-3">Your {totalDays || days.length} missions</p>
       <div className="space-y-4">
         {weeks.map((w) => (
           <div key={w}>
@@ -67,7 +67,7 @@ export function Spine({ days }) {
 export function ContextRail({ score, performance, aiCredits, upcomingAchievement, summary, enrollment, days }) {
   const total = score?.total || 0;
   const completed = enrollment?.daysCompleted || 0;
-  const totalDays = enrollment?.totalDays || days.length || 30;
+  const totalDays = enrollment?.totalDays || days.length || 0;
 
   // This week's dots
   const currentWeek = days.find((d) => d.status === 'available')?.weekNumber || 1;
@@ -136,9 +136,9 @@ export function ContextRail({ score, performance, aiCredits, upcomingAchievement
       {/* Completed — with progress bar */}
       <div className="pos-card p-5">
         <p className="pos-label mb-1">Completed</p>
-        <p className="text-[var(--ink)] mb-2"><span className="pos-num text-xl">{completed}</span> of {totalDays} days finished</p>
+        <p className="text-[var(--ink)] mb-2"><span className="pos-num text-xl">{completed}</span> of {totalDays} missions finished</p>
         <div className="pos-meter"><span style={{ width: `${totalDays ? Math.round((completed / totalDays) * 100) : 0}%` }} /></div>
-        <p className="text-[11px] text-[var(--muted)] mt-1.5">{totalDays ? Math.round((completed / totalDays) * 100) : 0}% of the programme</p>
+        <p className="text-[11px] text-[var(--muted)] mt-1.5">{totalDays ? Math.round((completed / totalDays) * 100) : 0}% complete</p>
       </div>
 
       {/* This week */}

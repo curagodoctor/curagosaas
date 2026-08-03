@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor } from '@/lib/practice-os/access';
-import { getOrCreateEnrollment } from '@/lib/practice-os/engine';
+import { getOrCreateProfile } from '@/lib/practice-os/profile';
 import { extractCvText, extractProfileFields } from '@/lib/practice-os/extract';
 
 export const runtime = 'nodejs';
@@ -24,12 +24,12 @@ export async function POST(request) {
     const contentType = fileRes.headers.get('content-type') || '';
     const text = await extractCvText(buffer, contentType, rawFileUrl);
 
-    // Persist the CV text as the knowledge base (capped; DPDP — deletable).
-    const enr = await getOrCreateEnrollment(doctor._id);
-    enr.credentials = enr.credentials || {};
-    enr.credentials.rawFileUrl = rawFileUrl;
-    enr.credentials.cvText = (text || '').slice(0, 8000);
-    await enr.save();
+    // Persist the CV text as the doctor-global knowledge base (capped; DPDP — deletable).
+    const profile = await getOrCreateProfile(doctor._id);
+    profile.credentials = profile.credentials || {};
+    profile.credentials.rawFileUrl = rawFileUrl;
+    profile.credentials.cvText = (text || '').slice(0, 8000);
+    await profile.save();
 
     if (!text) {
       return NextResponse.json({ success: true, fields: [], parsed: false, note: 'Could not read text from this file — please type your details.' });

@@ -21,15 +21,18 @@ const LeaveSchema = new mongoose.Schema({
 }, { _id: false });
 
 const PracticeOsEnrollmentSchema = new mongoose.Schema({
+  // A doctor can be enrolled in MANY packs (frameworks) at once — one enrollment
+  // per (doctor, pack). Uniqueness is the compound index below, not doctorId alone.
   doctorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Doctor',
     required: true,
-    unique: true,
+    index: true,
   },
   frameworkId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Framework',
+    required: true,
   },
   status: {
     type: String,
@@ -45,6 +48,9 @@ const PracticeOsEnrollmentSchema = new mongoose.Schema({
   currentDayNumber: { type: Number, default: 1 },  // the day currently actionable/next
   daysCompleted: { type: Number, default: 0 },     // monotonic — never decreases
 
+  // NOTE: `intent` and `credentials` below are LEGACY per-enrollment copies.
+  // The source of truth is now the doctor-global `PracticeOsProfile` (setup is
+  // entered once and reused by every pack). Kept here only for back-compat reads.
   // Intent answers (§6) — reused later (coming-back screen, month review).
   intent: {
     whyPractice: { type: String, default: '' },
@@ -73,6 +79,8 @@ const PracticeOsEnrollmentSchema = new mongoose.Schema({
   lastReminderAt: { type: Date },
 }, { timestamps: true });
 
+// One enrollment per (doctor, pack).
+PracticeOsEnrollmentSchema.index({ doctorId: 1, frameworkId: 1 }, { unique: true });
 PracticeOsEnrollmentSchema.index({ status: 1, nextUnlockAt: 1 });
 
 export default mongoose.models.PracticeOsEnrollment

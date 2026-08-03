@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import { requirePracticeOsDoctor, isDevPaymentBypass } from '@/lib/practice-os/access';
+import { requirePracticeOsDoctor, assertPackAccess } from '@/lib/practice-os/access';
 import UserMissionProgress from '@/models/practice-os/UserMissionProgress';
+import Mission from '@/models/practice-os/Mission';
 import { completeDay, skipDay, getDay, getOrCreateEnrollment } from '@/lib/practice-os/engine';
 
 // GET /api/practice-os/day/[id] — a single day (for the Focus session).
@@ -29,10 +30,17 @@ export async function POST(request, { params }) {
     const { id } = await params;
     const body = await request.json();
 
+    // The pack is derived from the mission; stamp frameworkId on every progress
+    // write so the pack-scoped state query can see it.
+    const mission = await Mission.findById(id).select('frameworkId').lean();
+    if (!mission) return NextResponse.json({ success: false, error: 'Day not found' }, { status: 404 });
+    const frameworkId = mission.frameworkId;
+    await assertPackAccess(doctor._id, frameworkId);
+
     if (body.action === 'start') {
       await UserMissionProgress.findOneAndUpdate(
         { doctorId: doctor._id, missionId: id },
-        { $set: { status: 'available' }, $setOnInsert: { startedAt: new Date() } },
+        { $set: { status: 'available', frameworkId }, $setOnInsert: { startedAt: new Date() } },
         { upsert: true, setDefaultsOnInsert: true }
       );
       return NextResponse.json({ success: true });
@@ -42,7 +50,7 @@ export async function POST(request, { params }) {
       // Save the logbook entries as the doctor goes (his record, not a submission).
       await UserMissionProgress.findOneAndUpdate(
         { doctorId: doctor._id, missionId: id },
-        { $set: { record: body.record || {} } },
+        { $set: { record: body.record || {}, frameworkId }, $setOnInsert: { startedAt: new Date() } },
         { upsert: true, setDefaultsOnInsert: true }
       );
       return NextResponse.json({ success: true });
@@ -67,7 +75,7 @@ export async function POST(request, { params }) {
     // Soft lock: the doctor may choose to open the next task before the timer
     // ends. Clears the unlock clock so the current day becomes available now.
     if (body.action === 'continue-now' || body.action === 'dev-unlock') {
-      const enr = await getOrCreateEnrollment(doctor._id);
+      const enr = await getOrCreateEnrollment(doctor._id, frameworkId);
       enr.nextUnlockAt = null;
       await enr.save();
       return NextResponse.json({ success: true });

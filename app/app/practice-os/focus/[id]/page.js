@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SCORE_LABELS } from '../../_score';
@@ -13,10 +13,12 @@ const WINDOWS = [
   { id: 'night', label: 'Night', hint: '9–12' },
 ];
 
-export default function FocusSession() {
+function FocusSession() {
   const { id } = useParams();
   const router = useRouter();
-  const quick = useSearchParams().get('quick') === '1';
+  const params = useSearchParams();
+  const packId = params.get('pack');
+  const quick = params.get('quick') === '1';
 
   const [day, setDay] = useState(null);
   const [phase, setPhase] = useState('focus'); // 'focus' | 'complete'
@@ -34,13 +36,14 @@ export default function FocusSession() {
   const startedRef = useRef(false);
 
   useEffect(() => {
+    if (!packId) { router.replace('/app/practice-os'); return; }
     (async () => {
       const res = await fetch(`/api/practice-os/day/${id}`);
       const data = await res.json();
       if (data.success) setDay(data.day);
       if (!startedRef.current) { startedRef.current = true; fetch(`/api/practice-os/day/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'start' }) }); }
     })();
-  }, [id]);
+  }, [id, packId, router]);
 
   // Overtime timer — counts up, never stops (CLAUDE.md §4.2).
   useEffect(() => {
@@ -66,18 +69,18 @@ export default function FocusSession() {
     const data = await res.json();
     setResult(data);
     // Reveal tomorrow's task (now the current day).
-    const st = await (await fetch('/api/practice-os/state')).json();
+    const st = await (await fetch(`/api/practice-os/state?pack=${packId}`)).json();
     setTomorrow(st.allComplete ? null : st.today);
     setPhase('complete');
     setSaving(false);
-  }, [id, links, notes, seconds, evidence, reflection, kpiValues, day]);
+  }, [id, links, notes, seconds, evidence, reflection, kpiValues, day, packId]);
 
   const setItAndGo = async () => {
     await fetch(`/api/practice-os/day/${id}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'complete', nextCommitment: commit }),
     });
-    router.push('/app/practice-os');
+    router.push(`/app/practice-os/track?pack=${packId}`);
   };
 
   if (!day) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>;
@@ -132,7 +135,7 @@ export default function FocusSession() {
 
           <div className="flex items-center gap-5">
             <button onClick={finish} disabled={saving} className="pos-action pos-focusable" style={{ background: 'var(--green)' }}>{saving ? 'Saving…' : 'Finish task'}</button>
-            <Link href="/app/practice-os" className="pos-link text-sm">Leave for now</Link>
+            <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm">Leave for now</Link>
           </div>
           </div>
 
@@ -224,6 +227,14 @@ export default function FocusSession() {
   );
 }
 
+export default function FocusPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>}>
+      <FocusSession />
+    </Suspense>
+  );
+}
+
 // Lecture, video, action buttons and education resources for the mission.
 function MissionResources({ day }) {
   const hasVideo = !!day.lectureVideoUrl;
@@ -295,6 +306,8 @@ function ChatAssistant({ missionId, missionTitle }) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // When true, the next message starts a fresh thread (no prior context).
+  const [pendingNewSession, setPendingNewSession] = useState(false);
   const scrollRef = useRef(null);
 
   // Load saved conversation + credits once.
@@ -319,20 +332,33 @@ function ChatAssistant({ missionId, missionTitle }) {
 
   const credits = meta?.creditsRemaining;
   const noCredits = credits === 0;
+  const canStartNew = messages.length > 0 && !pendingNewSession;
+
+  // Start a fresh thread — clears the view; the next message begins a new chat.
+  // Older threads stay saved server-side, just no longer shown or used as context.
+  function newChat() {
+    if (busy) return;
+    setMessages([]);
+    setError('');
+    setInput('');
+    setPendingNewSession(true);
+  }
 
   async function send() {
     const p = input.trim();
     if (!p || busy || noCredits) return;
     setError(''); setInput('');
+    const startingNew = pendingNewSession;
     setMessages((m) => [...m, { role: 'user', content: p }]);
     setBusy(true);
     try {
       const res = await fetch(`/api/practice-os/day/${missionId}/ai`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: p }),
+        body: JSON.stringify({ prompt: p, newSession: startingNew }),
       });
       const data = await res.json();
       if (data.success) {
+        setPendingNewSession(false);
         setMessages((m) => [...m, { role: 'assistant', content: data.text }]);
         setMeta((mt) => ({ ...mt, creditsRemaining: data.creditsRemaining }));
       } else {
@@ -354,7 +380,17 @@ function ChatAssistant({ missionId, missionTitle }) {
           <p className="pos-label">Mission assistant</p>
           <p className="text-[11px] text-[var(--muted)]">Drafts using your CV knowledge base</p>
         </div>
-        {typeof credits === 'number' && <span className="pos-label" style={{ color: 'var(--muted)' }}>{credits}/{meta?.dailyLimit || 10}</span>}
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            onClick={newChat}
+            disabled={busy || !canStartNew}
+            className="pos-link text-[12px] disabled:opacity-40"
+            title="Start a fresh conversation"
+          >
+            + New chat
+          </button>
+          {typeof credits === 'number' && <span className="pos-label" style={{ color: 'var(--muted)' }}>{credits}/{meta?.dailyLimit || 10}</span>}
+        </div>
       </div>
 
       {/* Thread */}

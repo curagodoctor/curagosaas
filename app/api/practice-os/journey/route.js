@@ -10,7 +10,9 @@ export async function GET(request) {
   try {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
-    const entries = await JourneyTimeline.find({ doctorId: doctor._id })
+    const packId = new URL(request.url).searchParams.get('pack');
+    const filter = { doctorId: doctor._id, ...(packId ? { frameworkId: packId } : {}) };
+    const entries = await JourneyTimeline.find(filter)
       .sort({ occurredAt: -1 })
       .limit(300)
       .lean();

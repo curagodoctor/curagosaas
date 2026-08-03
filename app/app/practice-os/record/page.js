@@ -1,20 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 // Your record — the doctor's logbook, not a submission (CLAUDE.md §4/§6).
 // No approval, no grading. Skipped days show as gaps with no penalty.
-export default function RecordPage() {
+function RecordInner() {
+  const router = useRouter();
+  const params = useSearchParams();
+  const packId = params.get('pack');
   const [state, setState] = useState(null);
-  useEffect(() => { fetch('/api/practice-os/state').then((r) => r.json()).then(setState); }, []);
+  useEffect(() => {
+    if (!packId) { router.replace('/app/practice-os'); return; }
+    fetch(`/api/practice-os/state?pack=${packId}`).then((r) => r.json()).then(setState);
+  }, [packId, router]);
   if (!state) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>;
 
   const done = state.days.filter((d) => d.status === 'completed');
 
   return (
     <div className="max-w-2xl mx-auto px-5 py-10">
-      <Link href="/app/practice-os" className="pos-link text-sm">← Back to today</Link>
+      <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm">← Back to today</Link>
       <div className="my-8">
         <p className="pos-label mb-1">Your record</p>
         <h1 className="text-2xl font-semibold text-[var(--ink)]" style={{ letterSpacing: '-0.02em' }}>
@@ -60,5 +67,13 @@ export default function RecordPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function RecordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>}>
+      <RecordInner />
+    </Suspense>
   );
 }

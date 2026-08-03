@@ -10,7 +10,9 @@ export async function GET(request) {
   try {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
-    const rows = await KpiEntry.find({ doctorId: doctor._id }).sort({ recordedAt: 1 }).lean();
+    const packId = new URL(request.url).searchParams.get('pack');
+    const filter = { doctorId: doctor._id, ...(packId ? { frameworkId: packId } : {}) };
+    const rows = await KpiEntry.find(filter).sort({ recordedAt: 1 }).lean();
 
     const byKey = new Map();
     for (const r of rows) {

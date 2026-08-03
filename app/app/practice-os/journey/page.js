@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 // Your practice-building history (§18) — milestones, evidence, achievements, KPIs.
@@ -20,19 +20,22 @@ const COLORS = {
   milestone: 'var(--orange)',
 };
 
-export default function JourneyPage() {
+function JourneyInner() {
   const router = useRouter();
+  const params = useSearchParams();
+  const packId = params.get('pack');
   const [entries, setEntries] = useState(null);
 
   useEffect(() => {
+    if (!packId) { router.replace('/app/practice-os'); return; }
     (async () => {
-      const res = await fetch('/api/practice-os/journey');
+      const res = await fetch(`/api/practice-os/journey?pack=${packId}`);
       if (res.status === 401) { router.push('/login?entry=practice-os'); return; }
       if (res.status === 402) { router.push('/app/practice-os/unlock'); return; }
       const data = await res.json();
       setEntries(data.success ? data.entries : []);
     })();
-  }, [router]);
+  }, [packId, router]);
 
   if (!entries) {
     return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>;
@@ -40,7 +43,7 @@ export default function JourneyPage() {
 
   return (
     <div className="max-w-xl mx-auto px-5 py-10">
-      <Link href="/app/practice-os" className="pos-link text-sm">← Back to today</Link>
+      <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm">← Back to today</Link>
 
       <div className="my-8">
         <p className="pos-label mb-1">Your journey</p>
@@ -79,5 +82,13 @@ export default function JourneyPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function JourneyPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>}>
+      <JourneyInner />
+    </Suspense>
   );
 }

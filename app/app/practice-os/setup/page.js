@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { SECTIONS, ALL_FIELDS, REQUIRED_FIELDS, Field } from '../_profile-fields';
 import { UsernamePicker } from '../_username';
 
 // Day-0 setup: Profile form (mandatory) → intent → CV (optional, last) → AI summary.
-export default function Setup() {
+// Global (entered once); on completion it starts the pack given by ?pack=.
+function SetupInner() {
   const router = useRouter();
+  const params = useSearchParams();
+  const packId = params.get('pack');
   const [step, setStep] = useState(1);
   const [fields, setFields] = useState(() => Object.fromEntries(ALL_FIELDS.map((f) => [f.key, ''])));
   const [errors, setErrors] = useState({});
@@ -25,11 +28,12 @@ export default function Setup() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    fetch('/api/practice-os/state').then((r) => r.json()).then((d) => {
-      if (d.enrollment?.setupComplete) router.replace('/app/practice-os');
+    if (!packId) { router.replace('/app/practice-os'); return; }
+    fetch(`/api/practice-os/state?pack=${packId}`).then((r) => r.json()).then((d) => {
+      if (d.enrollment?.setupComplete) router.replace(`/app/practice-os/track?pack=${packId}`);
       setDays(d.days || []);
     });
-  }, [router]);
+  }, [router, packId]);
 
   const setField = (key, value) => { setFields((s) => ({ ...s, [key]: value })); setErrors((e) => ({ ...e, [key]: false })); };
   const toggleTag = (key, tag) => setFields((s) => {
@@ -115,8 +119,8 @@ export default function Setup() {
 
   const finish = async () => {
     setBusy(true);
-    await fetch('/api/practice-os/setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: 'complete' }) });
-    router.push('/app/practice-os');
+    await fetch('/api/practice-os/setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: 'complete', packId }) });
+    router.push(`/app/practice-os/track?pack=${packId}`);
   };
 
   return (
@@ -129,7 +133,7 @@ export default function Setup() {
           <h1 className="text-2xl font-semibold text-[var(--ink)] mb-2" style={{ letterSpacing: '-0.02em' }}>Tell us about your practice</h1>
           <div className="pos-card p-4 mb-6" style={{ background: 'var(--green-soft)', borderColor: 'var(--green)' }}>
             <p className="text-sm text-[var(--ink)]" style={{ maxWidth: '54ch' }}>
-              <b>Why this matters:</b> everything CuraGo writes for you — your website, Google posts, Instagram captions, patient replies and reception script — is generated from this. It&apos;s saved to your profile and you can edit it anytime. Fields marked <span style={{ color: 'var(--orange)' }}>*</span> are required.
+              <b>Why this matters:</b> Everything CuraGo writes for you — your website, Google posts, Instagram captions, patient replies and reception script — is generated from this. It&apos;s saved to your profile and you can edit it anytime. Fields marked <span style={{ color: 'var(--orange)' }}>*</span> are required.
             </p>
           </div>
 
@@ -240,5 +244,13 @@ function Q({ label, value, onChange }) {
       <label className="pos-label">{label}</label>
       <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={2} className="w-full pos-card p-2.5 text-sm mt-1" />
     </div>
+  );
+}
+
+export default function Setup() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>}>
+      <SetupInner />
+    </Suspense>
   );
 }

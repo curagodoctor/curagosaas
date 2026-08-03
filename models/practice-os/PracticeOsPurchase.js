@@ -14,6 +14,12 @@ const PracticeOsPurchaseSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
+  // Which pack (framework) this payment unlocked. Access is granted per-pack.
+  frameworkId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Framework',
+    index: true,
+  },
   // Razorpay identifiers — paymentId is the idempotency key.
   paymentId: { type: String, required: true, unique: true },
   orderId: { type: String, default: '' },

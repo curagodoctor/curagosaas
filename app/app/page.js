@@ -58,29 +58,21 @@ export default function WorkspaceShell() {
       </h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* Practice OS */}
-        {practiceOsActive ? (
-          <Link href="/app/practice-os" className="pos-card p-6 block hover:shadow-md transition-shadow">
-            <div className="w-10 h-10 rounded-xl bg-[var(--green-soft)] text-[var(--green)] flex items-center justify-center mb-4">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            </div>
-            <h2 className="font-semibold text-[var(--ink)]">Practice OS</h2>
-            <p className="text-sm text-[var(--muted)] mt-1">Your 30-day programme. Continue today&apos;s task.</p>
-            <span className="inline-block mt-4 text-[var(--orange)] font-semibold text-sm">Continue →</span>
-          </Link>
-        ) : (
-          <div className="pos-card p-6 relative">
-            <div className="absolute top-4 right-4 text-[var(--muted)]">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-[var(--green-soft)] text-[var(--green)] flex items-center justify-center mb-4">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            </div>
-            <h2 className="font-semibold text-[var(--ink)]">Practice OS</h2>
-            <p className="text-sm text-[var(--muted)] mt-1">A 30-day guided programme that makes you build your digital presence — one task a day.</p>
-            <Link href="/app/practice-os/unlock" className="inline-block mt-4 text-[var(--green)] font-semibold text-sm">Unlock Practice OS →</Link>
+        {/* Practice OS — the pack catalog (browsable whether or not you own a pack) */}
+        <Link href="/app/practice-os" className="pos-card p-6 block hover:shadow-md transition-shadow">
+          <div className="w-10 h-10 rounded-xl bg-[var(--green-soft)] text-[var(--green)] flex items-center justify-center mb-4">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
           </div>
-        )}
+          <h2 className="font-semibold text-[var(--ink)]">Practice OS</h2>
+          <p className="text-sm text-[var(--muted)] mt-1">
+            {practiceOsActive
+              ? 'Your builder packs. Continue where you left off, or add another.'
+              : 'Guided builder packs that make you build your digital presence — one mission at a time.'}
+          </p>
+          <span className="inline-block mt-4 text-[var(--orange)] font-semibold text-sm">
+            {practiceOsActive ? 'Continue →' : 'Browse packs →'}
+          </span>
+        </Link>
 
         {/* Website Builder — free */}
         <Link href="/admin/dashboard" className="pos-card p-6 block hover:shadow-md transition-shadow">

@@ -39,10 +39,17 @@ export async function PATCH(request, { params }) {
 
     const { id } = await params;
     const body = await request.json();
-    const allowed = ['title', 'description', 'category', 'coverImage', 'order', 'isActive'];
+    const allowed = ['title', 'description', 'category', 'coverImage', 'order', 'isActive',
+      'tagline', 'summary', 'outcomes', 'priceInInr', 'isPublished'];
     const update = {};
     for (const key of allowed) {
       if (key in body) update[key] = body[key];
+    }
+    if ('priceInInr' in update) update.priceInInr = Math.max(0, Number(update.priceInInr) || 0);
+    if ('outcomes' in update) {
+      update.outcomes = Array.isArray(update.outcomes)
+        ? update.outcomes.map((o) => String(o).trim()).filter(Boolean)
+        : String(update.outcomes || '').split('\n').map((o) => o.trim()).filter(Boolean);
     }
 
     const framework = await Framework.findByIdAndUpdate(id, { $set: update }, { new: true });

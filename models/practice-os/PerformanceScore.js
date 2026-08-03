@@ -11,7 +11,13 @@ const PerformanceScoreSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Doctor',
     required: true,
-    unique: true,
+    index: true,
+  },
+  // Performance/streak is per-pack: each framework has its own execution & streak.
+  frameworkId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Framework',
+    required: true,
   },
   executionScore: { type: Number, default: 0 },
   consistencyScore: { type: Number, default: 0 },
@@ -28,6 +34,9 @@ const PerformanceScoreSchema = new mongoose.Schema({
   lastLoginScoredDate: { type: Date },
   lastAiScoredDate: { type: Date },
 }, { timestamps: true });
+
+// One Performance Score per (doctor, pack).
+PerformanceScoreSchema.index({ doctorId: 1, frameworkId: 1 }, { unique: true });
 
 export default mongoose.models.PerformanceScore
   || mongoose.model('PerformanceScore', PerformanceScoreSchema);

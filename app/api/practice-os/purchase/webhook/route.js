@@ -39,8 +39,8 @@ export async function POST(request) {
     // We stamp `notes` on the order at creation; fall back to the payment's notes.
     const notes = order?.notes || payment?.notes || {};
 
-    if (notes.type !== 'practice_os' || !notes.doctorId) {
-      return NextResponse.json({ success: true, ignored: 'not a practice_os order' });
+    if (notes.type !== 'practice_os' || !notes.doctorId || !notes.frameworkId) {
+      return NextResponse.json({ success: true, ignored: 'not a practice_os pack order' });
     }
 
     const paymentId = payment?.id;
@@ -49,13 +49,13 @@ export async function POST(request) {
     }
 
     await connectDB();
-    await grantPracticeOsAccess(notes.doctorId, {
+    await grantPracticeOsAccess(notes.doctorId, notes.frameworkId, {
       paymentId,
       orderId: order?.id || payment?.order_id || '',
       amountInInr: Math.round(((payment?.amount ?? order?.amount) || 0) / 100),
     });
 
-    console.log(`[Practice OS webhook] ${eventType} granted access to doctor ${notes.doctorId}`);
+    console.log(`[Practice OS webhook] ${eventType} granted doctor ${notes.doctorId} access to pack ${notes.frameworkId}`);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[Practice OS webhook]', error);

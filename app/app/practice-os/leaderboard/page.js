@@ -54,7 +54,7 @@ export default function LeaderboardPage() {
         <div className="pos-card p-4 mb-5 flex items-center justify-between" style={{ borderLeft: '3px solid var(--green)' }}>
           <div>
             <p className="pos-label">Your rank</p>
-            <p className="pos-num text-2xl text-[var(--ink)]">#{me.rank}<span className="text-sm text-[var(--muted)]"> of {total}</span></p>
+            <p className="text-[var(--ink)]"><span className="pos-num text-2xl">#{me.rank}</span> <span className="text-sm text-[var(--muted)]">of {total}</span></p>
           </div>
           <div className="text-right text-[13px] text-[var(--muted)]">
             <p><span className="pos-num text-[var(--ink)]">{me.points}</span> points</p>

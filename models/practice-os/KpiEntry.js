@@ -18,6 +18,12 @@ const KpiEntrySchema = new mongoose.Schema({
     ref: 'Mission',
     index: true,
   },
+  // The pack this KPI belongs to (scopes per-pack KPI graphs & reports).
+  frameworkId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Framework',
+    index: true,
+  },
   key: { type: String, trim: true, required: true },
   label: { type: String, trim: true, default: '' },
   value: { type: Number, required: true },

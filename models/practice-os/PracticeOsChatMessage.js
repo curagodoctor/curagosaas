@@ -18,6 +18,10 @@ const PracticeOsChatMessageSchema = new mongoose.Schema({
     ref: 'Mission',
     index: true,
   },
+  // Conversation thread. "New chat" starts a fresh sessionId; older sessions stay
+  // saved but are no longer shown/used for context. Legacy messages (no sessionId)
+  // are treated as the 'default' thread.
+  sessionId: { type: String, default: 'default', index: true },
   role: { type: String, enum: ['user', 'assistant'], required: true },
   content: { type: String, default: '' },
   // Token accounting (assistant turn carries the completion usage).
@@ -27,6 +31,7 @@ const PracticeOsChatMessageSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 PracticeOsChatMessageSchema.index({ doctorId: 1, missionId: 1, createdAt: 1 });
+PracticeOsChatMessageSchema.index({ doctorId: 1, missionId: 1, sessionId: 1, createdAt: 1 });
 
 export default mongoose.models.PracticeOsChatMessage
   || mongoose.model('PracticeOsChatMessage', PracticeOsChatMessageSchema);

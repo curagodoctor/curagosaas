@@ -1,19 +1,22 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 // The Month / Progress report (PRD §20, §23) — a ledger of real work done, never
 // promised results, ending with the doctor's own day-0 goal quoted back.
-export default function ReportPage() {
+function ReportInner() {
   const router = useRouter();
+  const params = useSearchParams();
+  const packId = params.get('pack');
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    if (!packId) { router.replace('/app/practice-os'); return; }
     try {
-      const res = await fetch('/api/practice-os/report');
+      const res = await fetch(`/api/practice-os/report?pack=${packId}`);
       if (res.status === 401) { router.push('/login?entry=practice-os'); return; }
       if (res.status === 402) { router.push('/app/practice-os/unlock'); return; }
       const data = await res.json();
@@ -22,7 +25,7 @@ export default function ReportPage() {
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, packId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -46,7 +49,7 @@ export default function ReportPage() {
     <div className="max-w-2xl mx-auto px-5 py-10">
       {/* Controls — hidden when printed */}
       <div className="flex items-center justify-between print:hidden">
-        <Link href="/app/practice-os" className="pos-link text-sm">← Back to today</Link>
+        <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm">← Back to today</Link>
         <button onClick={() => window.print()} className="pos-link text-sm pos-focusable">
           Print / Save as PDF
         </button>
@@ -176,5 +179,13 @@ export default function ReportPage() {
         <p className="text-sm text-[var(--muted)] mb-8">Everything above is yours and keeps running whether you continue or not.</p>
       )}
     </div>
+  );
+}
+
+export default function ReportPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>}>
+      <ReportInner />
+    </Suspense>
   );
 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor } from '@/lib/practice-os/access';
 import { getOrCreateEnrollment, getOrCreateScore } from '@/lib/practice-os/engine';
+import { getOrCreateProfile } from '@/lib/practice-os/profile';
 import Mission from '@/models/practice-os/Mission';
 import UserMissionProgress from '@/models/practice-os/UserMissionProgress';
 import PerformanceScore from '@/models/practice-os/PerformanceScore';
@@ -18,17 +19,22 @@ export async function GET(request) {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
 
-    const enr = await getOrCreateEnrollment(doctor._id);
-    const score = await getOrCreateScore(doctor._id);
+    const packId = new URL(request.url).searchParams.get('pack');
+    if (!packId) return NextResponse.json({ success: false, error: 'Missing pack' }, { status: 400 });
+
+    const enr = await getOrCreateEnrollment(doctor._id, packId);
+    const [score, profile] = await Promise.all([
+      getOrCreateScore(doctor._id, packId),
+      getOrCreateProfile(doctor._id),
+    ]);
+    const frameworkId = enr.frameworkId;
 
     const [progresses, perf, kpiRows, achRows, totalDays] = await Promise.all([
-      UserMissionProgress.find({ doctorId: doctor._id, status: 'completed' }).lean(),
-      PerformanceScore.findOne({ doctorId: doctor._id }).lean(),
-      KpiEntry.find({ doctorId: doctor._id }).sort({ recordedAt: 1 }).lean(),
-      Achievement.find({ doctorId: doctor._id }).sort({ awardedAt: -1 }).lean(),
-      enr.frameworkId
-        ? Mission.countDocuments({ frameworkId: enr.frameworkId, status: 'published' })
-        : 0,
+      UserMissionProgress.find({ doctorId: doctor._id, frameworkId, status: 'completed' }).lean(),
+      PerformanceScore.findOne({ doctorId: doctor._id, frameworkId }).lean(),
+      KpiEntry.find({ doctorId: doctor._id, frameworkId }).sort({ recordedAt: 1 }).lean(),
+      Achievement.find({ doctorId: doctor._id, frameworkId }).sort({ awardedAt: -1 }).lean(),
+      Mission.countDocuments({ frameworkId, status: 'published' }),
     ]);
 
     // Time invested — sum of actual minutes across completed days (never penalise long).
@@ -103,7 +109,7 @@ export async function GET(request) {
         visibilityScore,
         kpis,
         achievements,
-        intentSixMonths: enr.intent?.sixMonths || '',
+        intentSixMonths: profile.intent?.sixMonths || '',
         generatedAt: new Date(),
       },
     });

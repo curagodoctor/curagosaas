@@ -13,6 +13,12 @@ const JourneyTimelineSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
+  // Journey entries are per-pack (scoped to one framework).
+  frameworkId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Framework',
+    index: true,
+  },
   type: {
     type: String,
     enum: ['mission_completed', 'kpi', 'evidence', 'achievement', 'milestone'],
