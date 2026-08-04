@@ -126,8 +126,10 @@ function TopBar({ pack, withPack }) {
         <Link href={withPack('/app/practice-os/score')} className="pos-link">Your progress</Link>
         <Link href={withPack('/app/practice-os/journey')} className="pos-link">Journey</Link>
         <Link href={withPack('/app/practice-os/report')} className="pos-link">Report</Link>
+        <Link href={withPack('/app/practice-os/leaderboard')} className="pos-link">Leaderboard</Link>
         <Link href={withPack('/app/practice-os/record')} className="pos-link">Your record</Link>
         <Link href="/app/practice-os/profile" className="pos-link">My profile</Link>
+        <Link href="/admin/dashboard" className="pos-link" style={{ color: 'var(--green)' }}>Website builder →</Link>
         <button onClick={logout} className="pos-link" style={{ color: 'var(--muted)' }}>Sign out</button>
       </div>
     </div>
