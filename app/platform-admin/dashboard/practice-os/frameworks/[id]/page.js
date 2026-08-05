@@ -114,7 +114,7 @@ export default function FrameworkDetailPage() {
   useEffect(() => { load(); }, [load]);
 
   const handleDeleteFramework = async () => {
-    if (!confirm('Delete this framework and all its missions? This cannot be undone.')) return;
+    if (!confirm('Delete this builder pack and all its missions? This cannot be undone.')) return;
     await fetch(`/api/platform/practice-os/frameworks/${id}`, { method: 'DELETE' });
     router.push('/dashboard/practice-os');
   };
@@ -123,7 +123,7 @@ export default function FrameworkDetailPage() {
     return <div className="flex justify-center py-24"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" /></div>;
   }
   if (!data) {
-    return <div className="text-center py-24 text-gray-500">Framework not found.</div>;
+    return <div className="text-center py-24 text-gray-500">Builder pack not found.</div>;
   }
 
   const { framework, modules, missions } = data;
@@ -148,7 +148,7 @@ export default function FrameworkDetailPage() {
           <p className="text-gray-500">{framework.category || 'No category'} · {modules.length} modules · {missions.length} missions</p>
         </div>
         <button onClick={handleDeleteFramework} className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 text-sm font-medium">
-          Delete Framework
+          Delete Builder Pack
         </button>
       </div>
 

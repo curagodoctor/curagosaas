@@ -4,21 +4,26 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-// The pack catalog — the entry to Practice OS. A doctor browses the available
-// Builder Packs, sees what each is (summary, counts, outcomes) and, for packs
-// they own, their progress / XP / streak / next-up. Each pack is bought separately.
-export default function PackCatalog() {
+// The Control Center — the logged-in landing. Left: welcome + the doctor's
+// Builder Packs. Right: an aggregate progress rail (XP, streak, today's next
+// mission) rolled up across the packs they own. Each pack is bought separately.
+export default function ControlCenter() {
   const router = useRouter();
   const [packs, setPacks] = useState(null);
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('/api/practice-os/packs');
-        if (res.status === 401) { router.push('/login?entry=practice-os'); return; }
-        const data = await res.json();
-        if (data.success) setPacks(data.packs);
+        const [pRes, meRes] = await Promise.all([
+          fetch('/api/practice-os/packs'),
+          fetch('/api/auth/me'),
+        ]);
+        if (pRes.status === 401) { router.push('/login?entry=practice-os'); return; }
+        const pData = await pRes.json();
+        if (pData.success) setPacks(pData.packs);
+        if (meRes.ok) { const me = await meRes.json(); setName(me.doctor?.displayName || me.doctor?.name || ''); }
       } finally {
         setLoading(false);
       }
@@ -34,36 +39,96 @@ export default function PackCatalog() {
     return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>;
   }
 
+  const owned = (packs || []).filter((p) => p.owned);
+  const started = owned.filter((p) => p.started);
+  const totalXp = started.reduce((s, p) => s + (p.xp || 0), 0);
+  const bestStreak = started.reduce((m, p) => Math.max(m, p.streak || 0), 0);
+  const overallPct = started.length
+    ? Math.round(started.reduce((s, p) => s + (p.progress?.percent || 0), 0) / started.length)
+    : 0;
+  // Today's mission = the next-up from the first started pack that has one.
+  const activePack = started.find((p) => p.nextUp) || null;
+  const firstName = (name || 'there').replace(/^Dr\.?\s*/i, 'Dr. ').split(' ').slice(0, 2).join(' ');
+
   return (
-    <div className="w-full px-4 sm:px-8 lg:px-12 py-6 max-w-[1200px] mx-auto">
+    <div className="w-full px-4 sm:px-8 lg:px-12 py-6 max-w-[1240px] mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3 mb-10">
+      <div className="flex items-center justify-between gap-3 mb-8">
         <Link href="/app" className="flex items-center shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/Logo.svg" alt="CuraGo" className="h-7 sm:h-8 w-auto" />
         </Link>
         <div className="flex items-center gap-x-4 gap-y-1 text-[13px] flex-wrap justify-end">
+          <Link href="/app/practice-os/schedule" className="pos-link">Schedule</Link>
           <Link href="/app/practice-os/profile" className="pos-link">My profile</Link>
           <Link href="/admin/dashboard" className="pos-link" style={{ color: 'var(--green)' }}>Website builder →</Link>
           <button onClick={logout} className="pos-link" style={{ color: 'var(--muted)' }}>Sign out</button>
         </div>
       </div>
 
-      <p className="pos-label mb-2">Practice OS · Builder packs</p>
-      <h1 className="text-[30px] md:text-[38px] font-semibold text-[var(--ink)] leading-tight" style={{ letterSpacing: '-0.027em', maxWidth: '18ch' }}>
-        Choose a pack to build next.
+      {/* Welcome */}
+      <p className="pos-label mb-2">Control Center</p>
+      <h1 className="text-[30px] md:text-[38px] font-semibold text-[var(--ink)] leading-tight" style={{ letterSpacing: '-0.027em' }}>
+        Welcome back, {firstName}.
       </h1>
-      <p className="text-[16.5px] text-[var(--muted)] mt-4 leading-relaxed" style={{ maxWidth: '54ch' }}>
-        Each pack is a guided programme — one mission at a time — that produces a real asset, not a certificate. Own as many as you like; each keeps its own progress.
+      <p className="text-[16px] text-[var(--muted)] mt-3 leading-relaxed" style={{ maxWidth: '54ch' }}>
+        {started.length
+          ? <>Your practice is <strong className="text-[var(--green)]">{overallPct}%</strong> built across your packs. One mission a day gets you the rest.</>
+          : <>Pick a builder pack below. Each is a guided programme that produces a real asset — not a certificate.</>}
       </p>
 
-      {(!packs || packs.length === 0) ? (
-        <div className="pos-card p-10 text-center text-[var(--muted)] mt-10">No packs are available yet. Check back soon.</div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-9">
-          {packs.map((p) => <PackCard key={p.id} pack={p} />)}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8 mt-9">
+        {/* Main — the packs */}
+        <div className="min-w-0">
+          <h2 className="text-[16px] font-semibold text-[var(--ink)] mb-4" style={{ letterSpacing: '-0.01em' }}>Builder Packs</h2>
+          {(!packs || packs.length === 0) ? (
+            <div className="pos-card p-10 text-center text-[var(--muted)]">No packs are available yet. Check back soon.</div>
+          ) : (
+            <div className="flex flex-col gap-5">
+              {packs.map((p) => <PackCard key={p.id} pack={p} />)}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Rail — aggregate progress */}
+        <aside className="min-w-0">
+          <div className="lg:sticky lg:top-6 space-y-4">
+            <p className="pos-label">Your progress</p>
+
+            {/* XP + streak */}
+            <div className="pos-card p-5" style={{ background: 'var(--green)', color: '#fff', border: 'none' }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="pos-label" style={{ color: 'rgba(255,255,255,.7)' }}>Total XP</span>
+                <span className="pos-num text-lg">{totalXp.toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="pos-label" style={{ color: 'rgba(255,255,255,.7)' }}>Best streak</span>
+                <span className="text-[15px] font-medium">{bestStreak > 0 ? `🔥 ${bestStreak}` : '—'}</span>
+              </div>
+            </div>
+
+            {/* Packs owned */}
+            <div className="pos-card p-5">
+              <div className="grid grid-cols-2 gap-3 text-center">
+                <div><p className="pos-num text-2xl text-[var(--ink)]">{owned.length}</p><p className="text-[10px] text-[var(--muted)] uppercase tracking-wide">packs owned</p></div>
+                <div><p className="pos-num text-2xl text-[var(--ink)]">{started.length}</p><p className="text-[10px] text-[var(--muted)] uppercase tracking-wide">in progress</p></div>
+              </div>
+            </div>
+
+            {/* Today's mission */}
+            {activePack && activePack.nextUp && (
+              <div className="pos-card p-5" style={{ background: 'linear-gradient(150deg, #fff, var(--green-soft))', borderColor: 'var(--green)' }}>
+                <p className="pos-label mb-1" style={{ color: 'var(--orange)' }}>Today · Day {activePack.nextUp.dayNumber}</p>
+                <p className="font-semibold text-[15px] text-[var(--ink)] leading-snug">{activePack.nextUp.title}</p>
+                <p className="text-[12px] text-[var(--muted)] mt-1 mb-4">{activePack.title}</p>
+                <Link href={`/app/practice-os/track?pack=${activePack.id}`} className="pos-action pos-focusable block text-center" style={{ background: 'var(--green)' }}>
+                  Open today&apos;s mission
+                </Link>
+              </div>
+            )}
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }
@@ -82,14 +147,12 @@ function PackCard({ pack }) {
       {pack.tagline && <p className="text-[14.5px] text-[var(--muted)] mt-1">{pack.tagline}</p>}
       {summary && <p className="text-[15px] text-[var(--muted)] mt-3 leading-relaxed" style={{ maxWidth: '48ch' }}>{summary}</p>}
 
-      {/* Counts */}
       <div className="flex flex-wrap gap-x-6 gap-y-2 mt-5">
         <Stat n={counts.modules} label={counts.modules === 1 ? 'module' : 'modules'} />
         <Stat n={counts.missions} label={counts.missions === 1 ? 'mission' : 'missions'} />
         <Stat n={counts.days} label={counts.days === 1 ? 'day' : 'days'} />
       </div>
 
-      {/* Outcomes */}
       {outcomes.length > 0 && (
         <div className="mt-5">
           <p className="pos-label mb-2">What you walk away with</p>
@@ -104,7 +167,6 @@ function PackCard({ pack }) {
         </div>
       )}
 
-      {/* Progress (owned + started) */}
       {owned && started && progress && (
         <div className="mt-6 rounded-xl p-4" style={{ background: 'var(--rule-soft)' }}>
           <div className="flex items-center justify-between mb-1.5">
@@ -128,7 +190,6 @@ function PackCard({ pack }) {
         </div>
       )}
 
-      {/* CTA */}
       <div className="mt-6 pt-5 border-t flex items-center justify-between gap-3" style={{ borderColor: 'var(--rule-soft)' }}>
         {owned ? (
           <>

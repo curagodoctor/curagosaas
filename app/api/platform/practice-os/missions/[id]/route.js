@@ -25,8 +25,69 @@ const EDITABLE = [
   'weekNumber', 'dayNumber', 'missionNumber', 'category', 'purpose', 'missionText',
   'subSteps', 'scoreComponent', 'estimatedMinutes', 'lecture', 'lectureVideoUrl',
   'education', 'buttons', 'aiContext', 'evidence', 'reflection', 'reward',
-  'kpiFields', 'completionRules', 'unlockDelayDays', 'isActive', 'status',
+  'kpiFields', 'completionRules', 'unlockDelayDays', 'isActive', 'status', 'modules',
 ];
+
+// Accept either an array of strings or a newline-joined string; return trimmed,
+// non-empty strings.
+function toStringArray(value) {
+  const arr = Array.isArray(value)
+    ? value
+    : typeof value === 'string'
+      ? value.split('\n')
+      : [];
+  return arr.map((s) => (typeof s === 'string' ? s.trim() : String(s ?? '').trim())).filter(Boolean);
+}
+
+// Coerce the incoming `modules` array to the ModuleSchema shape. Preserves `_id`
+// on existing modules so edits update in place rather than duplicating.
+function sanitizeModules(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((mod, i) => {
+      if (!mod || typeof mod !== 'object') return null;
+      const title = typeof mod.title === 'string' ? mod.title.trim() : '';
+      if (!title) return null;
+
+      const buttons = Array.isArray(mod.buttons)
+        ? mod.buttons
+            .map((b) => ({
+              label: typeof b?.label === 'string' ? b.label.trim() : '',
+              url: typeof b?.url === 'string' ? b.url.trim() : '',
+            }))
+            .filter((b) => b.label)
+        : [];
+
+      const inputs = Array.isArray(mod.inputs)
+        ? mod.inputs
+            .map((inp) => ({
+              label: typeof inp?.label === 'string' ? inp.label.trim() : '',
+              placeholder: typeof inp?.placeholder === 'string' ? inp.placeholder.trim() : '',
+              required: Boolean(inp?.required),
+              variable: String(inp?.variable || '').trim(),
+            }))
+            .filter((inp) => inp.label)
+        : [];
+
+      const out = {
+        title,
+        order: Number.isFinite(Number(mod.order)) ? Number(mod.order) : i,
+        xp: Number.isFinite(Number(mod.xp)) ? Number(mod.xp) : 40,
+        videoUrl: typeof mod.videoUrl === 'string' ? mod.videoUrl.trim() : '',
+        expectedOutcome: typeof mod.expectedOutcome === 'string' ? mod.expectedOutcome.trim() : '',
+        prerequisites: typeof mod.prerequisites === 'string' ? mod.prerequisites.trim() : '',
+        steps: toStringArray(mod.steps),
+        aiPrompt: typeof mod.aiPrompt === 'string' ? mod.aiPrompt.trim() : '',
+        aiSystemPrompt: typeof mod.aiSystemPrompt === 'string' ? mod.aiSystemPrompt.trim() : '',
+        buttons,
+        inputs,
+      };
+      // Keep the existing sub-document id so Mongoose updates in place.
+      if (mod._id) out._id = mod._id;
+      return out;
+    })
+    .filter(Boolean);
+}
 
 // PATCH /api/platform/practice-os/missions/[id]
 export async function PATCH(request, { params }) {
@@ -41,6 +102,7 @@ export async function PATCH(request, { params }) {
     for (const key of EDITABLE) {
       if (key in body) update[key] = body[key];
     }
+    if ('modules' in update) update.modules = sanitizeModules(update.modules);
 
     const mission = await Mission.findByIdAndUpdate(id, { $set: update }, { new: true, runValidators: true });
     if (!mission) return NextResponse.json({ success: false, error: 'Mission not found' }, { status: 404 });

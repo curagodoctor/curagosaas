@@ -46,14 +46,6 @@ function TrackView() {
   const { pack, today, days, enrollment, score, performance, aiCredits, upcomingAchievement, summary, allComplete, daysAway } = state;
   const totalDays = enrollment.totalDays || days.length;
 
-  const finishToday = async (id) => {
-    await fetch(`/api/practice-os/day/${id}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'complete' }),
-    });
-    await load();
-  };
-
   return (
     <div className="w-full px-4 sm:px-8 lg:px-12 py-6">
       <TopBar pack={pack} withPack={withPack} />
@@ -79,7 +71,7 @@ function TrackView() {
           ) : today?.status === 'locked' ? (
             <LockedDay day={today} nextUnlockAt={enrollment.nextUnlockAt} now={now} devBypass={state.devBypass} onUnlocked={load} />
           ) : today ? (
-            <TaskCard day={today} totalDays={totalDays} onFinish={finishToday} withPack={withPack} />
+            <TaskCard day={today} totalDays={totalDays} withPack={withPack} />
           ) : (
             <div className="pos-card p-8 text-center text-[var(--muted)]">No missions available yet.</div>
           )}
@@ -125,6 +117,7 @@ function TopBar({ pack, withPack }) {
         <Link href="/app/practice-os" className="pos-link">All packs</Link>
         <Link href={withPack('/app/practice-os/score')} className="pos-link">Your progress</Link>
         <Link href={withPack('/app/practice-os/journey')} className="pos-link">Journey</Link>
+        <Link href="/app/practice-os/schedule" className="pos-link">Schedule</Link>
         <Link href={withPack('/app/practice-os/report')} className="pos-link">Report</Link>
         <Link href={withPack('/app/practice-os/leaderboard')} className="pos-link">Leaderboard</Link>
         <Link href={withPack('/app/practice-os/record')} className="pos-link">Your record</Link>
@@ -136,9 +129,8 @@ function TopBar({ pack, withPack }) {
   );
 }
 
-function TaskCard({ day, totalDays, onFinish, withPack }) {
+function TaskCard({ day, totalDays, withPack }) {
   const theme = WEEK_THEMES[day.weekNumber] || 'Practice building';
-  const [finishing, setFinishing] = useState(false);
   return (
     <div className="pos-card p-7">
       <p className="pos-label">Week {day.weekNumber} · {theme}</p>
@@ -153,16 +145,13 @@ function TaskCard({ day, totalDays, onFinish, withPack }) {
         <Chip>Mission {day.missionNumber} of {totalDays}</Chip>
       </div>
 
-      <div className="mt-7 flex flex-wrap items-center gap-4">
-        <button
-          onClick={async () => { setFinishing(true); await onFinish?.(day._id); setFinishing(false); }}
-          disabled={finishing}
-          className="pos-action pos-focusable inline-flex items-center gap-2 disabled:opacity-60"
-          style={{ background: 'var(--green)' }}
-        >
-          {finishing ? 'Saving…' : '✓ Finish task'}
-        </button>
-        <Link href={withPack(`/app/practice-os/focus/${day._id}`)} className="pos-link text-sm">Open guided steps →</Link>
+      {/* A mission can only be completed by opening it and stepping through its
+          modules — no finish-without-opening. */}
+      <div className="mt-7">
+        <Link href={withPack(`/app/practice-os/focus/${day._id}`)} className="pos-action pos-focusable inline-flex items-center gap-2" style={{ background: 'var(--orange)' }}>
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M7 5l12 7-12 7V5Z" fill="#fff" /></svg>
+          Start task
+        </Link>
       </div>
     </div>
   );

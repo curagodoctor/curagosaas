@@ -149,9 +149,9 @@ const BODY = `<div style="font-family:var(--sans)">
       <h1 data-reveal="" style="font-weight:800;font-size:clamp(38px,6.4vw,74px);line-height:.98;letter-spacing:-.03em;margin:0 0 8px">
         You know you're<br>a good doctor.
       </h1>
-      <h1 data-reveal="" data-reveal-delay="80" style="font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(38px,6.4vw,74px);line-height:1;letter-spacing:-.01em;margin:0 0 26px;color:var(--leaf-2)">
+      <span data-reveal="" data-reveal-delay="80" style="display:block;font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(38px,6.4vw,74px);line-height:1;letter-spacing:-.01em;margin:0 0 26px;color:var(--leaf-2)">
         Patients don't.
-      </h1>
+      </span>
       <p data-reveal="" data-reveal-delay="140" style="font-size:clamp(16px,1.4vw,19px);line-height:1.6;color:rgba(255,255,255,.8);max-width:520px;margin:0 0 34px">
         Most doctors don't struggle because they aren't skilled. They struggle because patients never discover them. <strong style="color:#fff;font-weight:600"><br>28 days, one task a day</strong> — from zero digital presence to a real, discoverable practice.
       </p>
@@ -619,9 +619,53 @@ const BODY = `<div style="font-family:var(--sans)">
 
 </div>`;
 
+// FAQ structured data — MUST mirror the visible FAQ copy on the page (Google
+// requires the JSON-LD to match on-page content for rich results).
+const FAQ = [
+  ['Why 28 days?', 'Long enough to build something real, short enough to stay disciplined. One mission a day keeps momentum without eating into your practice.'],
+  ['How much time does it take daily?', 'Around 60 minutes. Every mission is sized to fit between OPD and dinner or between your work and evening OPD.'],
+  ['Will AI write everything for me?', 'AI does the heavy lifting — you copy a prompt, generate, review, and publish. Your judgement stays in charge of every word that goes out.'],
+  ['Do I own everything I build?', 'Yes. Your profile, website, content and brand are all yours, forever. Nothing is locked to us.'],
+  ['Can a complete beginner do this?', 'If you can use WhatsApp, you can do this. Every task is a step-by-step mission with the prompt already written.'],
+  ['Do I need ChatGPT Plus?', 'No. The free tier is enough for every mission inside the Builder.'],
+  ['How much work is it, really?', 'One mission a day. Follow the step-wise instructions and finish the modules under each mission.'],
+  ['Can I use my existing website?', "Yes. But certain tasks require you to create multiple pages on your own. Ensure your website stack supports that. All the instructions and missions are tailored for CuraGo's website builders."],
+];
+
+const JSON_LD = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': 'https://curago.in/#organization',
+      name: 'CuraGo',
+      url: 'https://curago.in',
+      logo: 'https://curago.in/logo.png',
+      description: 'CuraGo helps doctors in India build their digital practice — website, patient booking, WhatsApp integration and growth tools.',
+    },
+    {
+      '@type': 'WebSite',
+      '@id': 'https://curago.in/#website',
+      name: 'CuraGo',
+      url: 'https://curago.in',
+      publisher: { '@id': 'https://curago.in/#organization' },
+      inLanguage: 'en-IN',
+    },
+    {
+      '@type': 'FAQPage',
+      mainEntity: FAQ.map(([q, a]) => ({
+        '@type': 'Question',
+        name: q,
+        acceptedAnswer: { '@type': 'Answer', text: a },
+      })),
+    },
+  ],
+};
+
 export default function Page() {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }} />
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div dangerouslySetInnerHTML={{ __html: BODY }} />
     </>

@@ -3,7 +3,7 @@ import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor, assertPackAccess } from '@/lib/practice-os/access';
 import UserMissionProgress from '@/models/practice-os/UserMissionProgress';
 import Mission from '@/models/practice-os/Mission';
-import { completeDay, skipDay, getDay, getOrCreateEnrollment } from '@/lib/practice-os/engine';
+import { completeDay, completeModule, skipDay, getDay, getOrCreateEnrollment, setNextSchedule } from '@/lib/practice-os/engine';
 
 // GET /api/practice-os/day/[id] — a single day (for the Focus session).
 export async function GET(request, { params }) {
@@ -56,6 +56,18 @@ export async function POST(request, { params }) {
       return NextResponse.json({ success: true });
     }
 
+    // Finish one module within the mission. When the last module is done the
+    // mission finalizes (score, celebration) and result.missionComplete is true.
+    if (body.action === 'complete-module') {
+      const result = await completeModule(doctor._id, id, body.moduleId, {
+        inputs: body.inputs,
+        actualMinutes: body.actualMinutes,
+        kpis: body.kpis,
+        reflection: body.reflection,
+      });
+      return NextResponse.json({ success: true, ...result });
+    }
+
     if (body.action === 'complete') {
       const result = await completeDay(doctor._id, id, {
         record: body.record,
@@ -70,6 +82,16 @@ export async function POST(request, { params }) {
     if (body.action === 'skip') {
       await skipDay(doctor._id, id);
       return NextResponse.json({ success: true });
+    }
+
+    // Set the doctor's schedule for the next task (same day up to 2 days out).
+    if (body.action === 'set-schedule') {
+      const r = await setNextSchedule(doctor._id, id, {
+        dayOffset: body.dayOffset,
+        window: body.window,
+        exactTime: body.exactTime,
+      });
+      return NextResponse.json({ success: true, ...r });
     }
 
     // Soft lock: the doctor may choose to open the next task before the timer

@@ -41,6 +41,10 @@ const PracticeOsProfileSchema = new mongoose.Schema({
     cvText: { type: String, default: '' },
     summary: { type: String, default: '' },        // AI-generated professional summary
   },
+
+  // Doctor-global variables collected from module inputs (e.g. gbp_link,
+  // website_url, whatsapp_number). Injected into prompts/content via {{name}}.
+  variables: { type: mongoose.Schema.Types.Mixed, default: {} },
 }, { timestamps: true });
 
 export default mongoose.models.PracticeOsProfile

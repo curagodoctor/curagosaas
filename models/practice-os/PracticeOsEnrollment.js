@@ -45,6 +45,10 @@ const PracticeOsEnrollmentSchema = new mongoose.Schema({
   startedAt: { type: Date },                       // when Day 1 opened
   // Sequence-paced unlock clock: the next day becomes available at this time.
   nextUnlockAt: { type: Date },
+  // The doctor's own schedule for the NEXT task (same day up to 2 days out).
+  scheduledFor: { type: Date },
+  scheduleWindow: { type: String, default: '' },   // morning|afternoon|evening|night
+  scheduleExactTime: { type: String, default: '' },// "19:30"
   currentDayNumber: { type: Number, default: 1 },  // the day currently actionable/next
   daysCompleted: { type: Number, default: 0 },     // monotonic — never decreases
 

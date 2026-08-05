@@ -35,6 +35,42 @@ const KpiFieldSchema = new mongoose.Schema({
   unit: { type: String, trim: true, default: '' },
 }, { _id: true });
 
+// An input the doctor records inside a module (evidence field). If `variable` is
+// set (e.g. "gbp_link"), the entered value is stored as a doctor-global variable
+// and can be injected into any later prompt/content via {{gbp_link}}.
+const ModuleInputSchema = new mongoose.Schema({
+  label: { type: String, trim: true, required: true },
+  placeholder: { type: String, trim: true, default: '' },
+  required: { type: Boolean, default: false },
+  // Variable name this input feeds. Reused across missions in prompts as {{name}}.
+  variable: { type: String, trim: true, default: '' },
+}, { _id: true });
+
+/**
+ * A MODULE — a rich work-unit INSIDE a mission (day). The doctor steps through a
+ * mission's modules one at a time in the workspace; finishing the last module
+ * completes the mission. Each module has its own walkthrough video, step-by-step,
+ * ready-to-use AI prompt, action buttons, evidence inputs, and XP.
+ */
+const ModuleSchema = new mongoose.Schema({
+  title: { type: String, trim: true, required: true },
+  order: { type: Number, default: 0 },
+  xp: { type: Number, default: 40 },
+  // Optional 3–5 min walkthrough video (gs:// ref or external URL).
+  videoUrl: { type: String, trim: true, default: '' },
+  expectedOutcome: { type: String, trim: true, default: '' },
+  prerequisites: { type: String, trim: true, default: '' },
+  // The numbered step-by-step for this module.
+  steps: { type: [String], default: [] },
+  // A ready-to-copy AI prompt shown in the workspace (distinct from the chat
+  // assistant's hidden system prompt).
+  aiPrompt: { type: String, trim: true, default: '' },
+  // Optional per-module override for the chat assistant's system prompt.
+  aiSystemPrompt: { type: String, trim: true, default: '' },
+  buttons: { type: [ButtonSchema], default: [] },
+  inputs: { type: [ModuleInputSchema], default: [] },
+}, { _id: true });
+
 const MissionSchema = new mongoose.Schema({
   frameworkId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -73,8 +109,15 @@ const MissionSchema = new mongoose.Schema({
   // Short lecture shown before the task (3–5 min): text and/or a video URL.
   lecture: { type: String, trim: true, default: '' },
   lectureVideoUrl: { type: String, trim: true, default: '' },
-  // The sub-steps ticked off during the Focus session.
+  // The sub-steps ticked off during the Focus session. (Legacy mission-level;
+  // the workspace now steps through `modules[]` below. Kept for back-compat.)
   subSteps: { type: [String], default: [] },
+
+  // The rich work-units the doctor steps through in the workspace. A mission
+  // completes when all its modules are done. Missions authored before this
+  // existed carry a single default module (see the packs migration).
+  modules: { type: [ModuleSchema], default: [] },
+
   // Estimated minutes (30–45). Shown as a chip; compared to actual on completion.
   estimatedMinutes: { type: Number, default: 35 },
   // Which Visibility Score component this day builds, and how many points it adds.

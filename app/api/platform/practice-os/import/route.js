@@ -265,10 +265,26 @@ export async function POST(request) {
         }
 
         if (existing) {
+          // Don't overwrite admin-authored modules[] on re-import.
           await Mission.updateOne({ _id: existing._id }, { $set: doc });
           updated += 1;
         } else {
-          await Mission.create(doc);
+          // New missions are module-native: seed a single module from the row's
+          // rich fields so the content lives in modules[] (editable in the admin).
+          const importedModule = {
+            title: c('missionobjective') || r.missionText || 'Complete this mission',
+            order: 0,
+            xp: points,
+            videoUrl: c('videolink'),
+            expectedOutcome: c('expectedoutcome'),
+            prerequisites: c('prerequisites'),
+            steps: parseSubSteps(c('stepbystepguide')),
+            aiPrompt: c('promptoutputwithplaceholder'),
+            aiSystemPrompt: '',
+            buttons,
+            inputs: inputs.map((i) => ({ label: i.label, placeholder: '', required: !!i.required })),
+          };
+          await Mission.create({ ...doc, modules: [importedModule] });
           created += 1;
         }
       } catch (rowError) {

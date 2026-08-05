@@ -32,6 +32,11 @@ const UserMissionProgressSchema = new mongoose.Schema({
   unlockedAt: { type: Date },
   startedAt: { type: Date },
   completedAt: { type: Date },
+  // Which modules (by their _id) within this mission the doctor has finished.
+  // The mission completes when every module is in here. Per-module evidence
+  // inputs are stored in `moduleInputs` keyed by module id.
+  completedModuleIds: { type: [String], default: [] },
+  moduleInputs: { type: mongoose.Schema.Types.Mixed, default: {} },
   // Actual minutes spent (Focus session timer; may exceed estimate — never penalised).
   actualMinutes: { type: Number, default: 0 },
   // "Your record" — the doctor's logbook for this day (his, not a submission).

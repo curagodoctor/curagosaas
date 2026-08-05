@@ -15,6 +15,9 @@ export default function ProfilePage() {
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  const [hasCv, setHasCv] = useState(false);
+  const [cvBusy, setCvBusy] = useState(false);
+  const [cvNote, setCvNote] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -25,8 +28,43 @@ export default function ProfilePage() {
       const base = Object.fromEntries(ALL_FIELDS.map((f) => [f.key, '']));
       setFields({ ...base, ...(d.fields || {}) });
       setSummary(d.summary || '');
+      setHasCv(!!d.hasCv);
     })();
   }, [router]);
+
+  // Upload or re-upload the CV — parses it, stores the knowledge base, and fills
+  // any blank fields below (never overwrites what you've already entered).
+  const uploadCv = async (file) => {
+    setCvBusy(true); setCvNote('');
+    try {
+      const fd = new FormData(); fd.append('file', file); fd.append('kind', 'cv');
+      const up = await fetch('/api/practice-os/upload', { method: 'POST', body: fd });
+      const upd = await up.json();
+      if (!upd.success) { setCvNote(upd.error || 'Upload failed.'); return; }
+      const ex = await fetch('/api/practice-os/setup/extract', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rawFileUrl: upd.url }),
+      });
+      const exd = await ex.json();
+      setHasCv(true);
+      if (exd.parsed) {
+        const filled = (exd.fields || []).filter((f) => f.value);
+        let added = 0;
+        setFields((prev) => {
+          const next = { ...prev };
+          for (const f of filled) if (!(next[f.field] || '').trim()) { next[f.field] = f.value; added += 1; }
+          return next;
+        });
+        setCvNote(added ? `Added ${added} detail${added === 1 ? '' : 's'} from your CV to blank fields — review and save.` : 'CV saved. Your profile already had everything.');
+      } else {
+        setCvNote(exd.note || 'CV saved.');
+      }
+    } catch {
+      setCvNote('Upload failed.');
+    } finally {
+      setCvBusy(false);
+    }
+  };
 
   const setField = (key, value) => { setFields((s) => ({ ...s, [key]: value })); setErrors((e) => ({ ...e, [key]: false })); };
   const toggleTag = (key, tag) => setFields((s) => {
@@ -77,6 +115,23 @@ export default function ProfilePage() {
         <p className="pos-label mb-1" style={{ color: 'var(--green)' }}>Leaderboard name</p>
         <p className="text-sm text-[var(--muted)] mb-3" style={{ maxWidth: '52ch' }}>Your anonymous name on the cohort leaderboard.</p>
         <UsernamePicker />
+      </div>
+
+      {/* CV — upload after skipping, or re-upload to refresh the knowledge base */}
+      <div className="pos-card p-5 mb-8">
+        <p className="pos-label mb-1" style={{ color: 'var(--green)' }}>Your CV</p>
+        <p className="text-sm text-[var(--muted)] mb-3" style={{ maxWidth: '52ch' }}>
+          {hasCv
+            ? 'A CV is on file. Re-upload to refresh what CuraGo knows about you — it fills any blank fields below.'
+            : 'Optional. Upload your CV and we’ll fill in anything you left blank below.'}
+        </p>
+        <label className={`pos-link text-sm inline-flex items-center gap-2 ${cvBusy ? 'opacity-60' : 'cursor-pointer'}`}>
+          {cvBusy ? 'Reading your CV…' : (hasCv ? '↻ Re-upload CV' : '+ Upload CV')}
+          <input type="file" accept=".pdf,.doc,.docx" className="hidden" disabled={cvBusy}
+            onChange={(e) => e.target.files?.[0] && uploadCv(e.target.files[0])} />
+        </label>
+        {cvNote && <p className="text-sm mt-2" style={{ color: 'var(--green)' }}>{cvNote}</p>}
+        <p className="text-[11px] text-[var(--muted)] mt-3">Your CV is personal data, stored securely. You can delete it any time.</p>
       </div>
 
       <div className="space-y-8">

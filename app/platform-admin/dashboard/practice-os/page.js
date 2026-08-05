@@ -8,8 +8,7 @@ import {
 
 const TABS = [
   { id: 'import', label: 'Bulk Upload' },
-  { id: 'curriculum', label: 'Curriculum' },
-  { id: 'create', label: 'Mission Creator' },
+  { id: 'curriculum', label: 'Builder Packs' },
   { id: 'analytics', label: 'Analytics' },
   { id: 'doctors', label: 'Doctors' },
   { id: 'settings', label: 'Settings' },
@@ -42,7 +41,7 @@ export default function PracticeOSPage() {
       <div className="bg-white rounded-xl shadow-sm p-6 border-b border-gray-100">
         <h1 className="text-2xl font-bold text-gray-900">Practice OS — Command Center</h1>
         <p className="text-gray-500 text-sm mt-1">
-          Upload a full curriculum from Excel, browse frameworks &amp; missions, and create missions manually. Nothing is hardcoded.
+          Upload a full curriculum from Excel, and manage your Builder Packs — pricing, publishing, missions and per-doctor progress.
         </p>
         {/* Sub-tabs */}
         <div className="flex gap-2 mt-5 border-b border-gray-100 -mb-6">
@@ -64,7 +63,6 @@ export default function PracticeOSPage() {
       {tab === 'curriculum' && (
         <CurriculumTab frameworks={frameworks} loading={loading} onNew={() => setShowNew(true)} />
       )}
-      {tab === 'create' && <MissionCreator onCreated={loadFrameworks} />}
       {tab === 'analytics' && <AnalyticsTab />}
       {tab === 'doctors' && <DoctorsTab />}
       {tab === 'settings' && <SettingsTab />}
@@ -115,8 +113,8 @@ function SettingsTab() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 max-w-lg">
-      <h2 className="font-semibold text-gray-900 mb-1">Pricing</h2>
-      <p className="text-sm text-gray-500 mb-4">The one-time Practice OS price shown at checkout. Changes take effect immediately — no redeploy.</p>
+      <h2 className="font-semibold text-gray-900 mb-1">Legacy default price</h2>
+      <p className="text-sm text-gray-500 mb-4">Pricing is now set <strong>per Builder Pack</strong> (open a pack → Pack settings → Price). This legacy value only seeds the price when migrating older packs and is otherwise unused.</p>
       <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹, one-time)</label>
       <div className="flex items-center gap-3">
         <div className="relative">
@@ -212,17 +210,17 @@ function CurriculumTab({ frameworks, loading, onNew }) {
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
-        <h2 className="font-semibold text-gray-900">Frameworks</h2>
-        <button onClick={onNew} className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm font-medium">New Framework</button>
+        <h2 className="font-semibold text-gray-900">Builder Packs</h2>
+        <button onClick={onNew} className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm font-medium">New Builder Pack</button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Framework</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Builder Pack</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Modules</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Missions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
             </tr>
           </thead>
@@ -232,7 +230,7 @@ function CurriculumTab({ frameworks, loading, onNew }) {
                 <tr key={i} className="animate-pulse"><td className="px-6 py-4" colSpan={5}><div className="h-4 bg-gray-100 rounded w-1/3" /></td></tr>
               ))
             ) : frameworks.length === 0 ? (
-              <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">No frameworks yet. Use <strong>Bulk Upload</strong> or <strong>Mission Creator</strong> to add content.</td></tr>
+              <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">No builder packs yet. Use <strong>Bulk Upload</strong> to import one.</td></tr>
             ) : (
               frameworks.map((fw) => (
                 <tr key={fw._id} className="hover:bg-gray-50">
@@ -240,11 +238,11 @@ function CurriculumTab({ frameworks, loading, onNew }) {
                     <Link href={`/dashboard/practice-os/frameworks/${fw._id}`} className="text-blue-600 hover:underline font-medium">{fw.title}</Link>
                   </td>
                   <td className="px-6 py-4 text-gray-600">{fw.category || '—'}</td>
-                  <td className="px-6 py-4 text-gray-600">{fw.moduleCount}</td>
                   <td className="px-6 py-4 text-gray-600">{fw.missionCount}</td>
+                  <td className="px-6 py-4 text-gray-600">{(fw.priceInInr || 0) > 0 ? `₹${Number(fw.priceInInr).toLocaleString('en-IN')}` : 'Free'}</td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${fw.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                      {fw.isActive ? 'Active' : 'Inactive'}
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${fw.isPublished ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
+                      {fw.isPublished ? 'Published' : 'Draft'}
                     </span>
                   </td>
                 </tr>
@@ -257,122 +255,9 @@ function CurriculumTab({ frameworks, loading, onNew }) {
   );
 }
 
-/* ---------------- Mission Creator ---------------- */
+/* ---------------- Shared form styles ---------------- */
 const INPUT = 'w-full bg-white border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500';
 const LBL = 'block text-[11px] font-bold text-gray-500 uppercase mb-1';
-const EMPTY = {
-  framework: 'Practice Building', module: '', weekNumber: 1, dayNumber: 1, missionNumber: 1,
-  category: '', purpose: '', missionText: '', videoUrl: '', pdfUrl: '', externalLink: '',
-  gptPrompt: '', b1l: '', b1u: '', b2l: '', b2u: '',
-  evidenceRequired: 'none', rewardPoints: 10, celebrationMessage: '', kpiFields: '', unlockDelayDays: 1,
-};
-
-function MissionCreator({ onCreated }) {
-  const [form, setForm] = useState(EMPTY);
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState(null);
-  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-
-  const handleSave = async () => {
-    setMsg(null);
-    if (!form.framework.trim() || !form.module.trim() || !form.missionText.trim()) {
-      setMsg({ type: 'err', text: 'Framework, Module and Mission text are required.' });
-      return;
-    }
-    setSaving(true);
-    try {
-      const buttons = [
-        { label: form.b1l, url: form.b1u },
-        { label: form.b2l, url: form.b2u },
-      ].filter((b) => b.label.trim());
-      const res = await fetch('/api/platform/practice-os/missions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, buttons }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setMsg({ type: 'ok', text: 'Mission created & published.', frameworkId: data.frameworkId });
-        setForm((p) => ({ ...EMPTY, framework: p.framework, module: p.module, weekNumber: p.weekNumber, missionNumber: Number(p.missionNumber) + 1, dayNumber: Number(p.dayNumber) + 1 }));
-        onCreated();
-      } else {
-        setMsg({ type: 'err', text: data.error || 'Failed to create mission' });
-      }
-    } catch {
-      setMsg({ type: 'err', text: 'Something went wrong.' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
-      <h2 className="font-semibold text-gray-900">Create a Mission</h2>
-      <p className="text-sm text-gray-500 -mt-2">Same fields as one import row. The framework and module are created if they don&apos;t exist.</p>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div><label className={LBL}>Framework *</label><input className={INPUT} value={form.framework} onChange={(e) => set('framework', e.target.value)} /></div>
-        <div><label className={LBL}>Module *</label><input className={INPUT} value={form.module} onChange={(e) => set('module', e.target.value)} placeholder="e.g. Google Business Profile" /></div>
-      </div>
-      <div className="grid grid-cols-3 gap-4">
-        <div><label className={LBL}>Week</label><input type="number" className={INPUT} value={form.weekNumber} onChange={(e) => set('weekNumber', e.target.value)} /></div>
-        <div><label className={LBL}>Day</label><input type="number" className={INPUT} value={form.dayNumber} onChange={(e) => set('dayNumber', e.target.value)} /></div>
-        <div><label className={LBL}>Mission #</label><input type="number" className={INPUT} value={form.missionNumber} onChange={(e) => set('missionNumber', e.target.value)} /></div>
-      </div>
-      <div><label className={LBL}>Category</label><input className={INPUT} value={form.category} onChange={(e) => set('category', e.target.value)} /></div>
-      <div><label className={LBL}>Purpose (why this matters)</label><textarea className={`${INPUT} h-16`} value={form.purpose} onChange={(e) => set('purpose', e.target.value)} /></div>
-      <div><label className={LBL}>Mission (execution objective) *</label><textarea className={`${INPUT} h-16`} value={form.missionText} onChange={(e) => set('missionText', e.target.value)} /></div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div><label className={LBL}>Video URL</label><input className={INPUT} value={form.videoUrl} onChange={(e) => set('videoUrl', e.target.value)} /></div>
-        <div><label className={LBL}>PDF URL</label><input className={INPUT} value={form.pdfUrl} onChange={(e) => set('pdfUrl', e.target.value)} /></div>
-        <div><label className={LBL}>External Link</label><input className={INPUT} value={form.externalLink} onChange={(e) => set('externalLink', e.target.value)} /></div>
-      </div>
-
-      <div><label className={LBL}>AI system prompt</label><textarea className={`${INPUT} h-16 font-mono`} value={form.gptPrompt} onChange={(e) => set('gptPrompt', e.target.value)} placeholder="You are helping this doctor complete this mission. Stay on task." /></div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div><label className={LBL}>Button 1 label</label><input className={INPUT} value={form.b1l} onChange={(e) => set('b1l', e.target.value)} placeholder="Open GBP" /></div>
-        <div><label className={LBL}>Button 1 URL</label><input className={INPUT} value={form.b1u} onChange={(e) => set('b1u', e.target.value)} /></div>
-        <div><label className={LBL}>Button 2 label</label><input className={INPUT} value={form.b2l} onChange={(e) => set('b2l', e.target.value)} /></div>
-        <div><label className={LBL}>Button 2 URL</label><input className={INPUT} value={form.b2u} onChange={(e) => set('b2u', e.target.value)} /></div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className={LBL}>Evidence required</label>
-          <select className={INPUT} value={form.evidenceRequired} onChange={(e) => set('evidenceRequired', e.target.value)}>
-            <option value="none">No proof required</option>
-            <option value="image">Screenshot / image</option>
-            <option value="text">Text statement</option>
-            <option value="url">Web link / URL</option>
-            <option value="pdf">PDF</option>
-            <option value="document">Document</option>
-          </select>
-        </div>
-        <div><label className={LBL}>Reward points (XP)</label><input type="number" className={INPUT} value={form.rewardPoints} onChange={(e) => set('rewardPoints', e.target.value)} /></div>
-      </div>
-      <div><label className={LBL}>Celebration message</label><input className={INPUT} value={form.celebrationMessage} onChange={(e) => set('celebrationMessage', e.target.value)} placeholder="Great work! Your clinic is on the map." /></div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div><label className={LBL}>KPI fields (comma or ; separated)</label><input className={INPUT} value={form.kpiFields} onChange={(e) => set('kpiFields', e.target.value)} placeholder="Google Reviews, Instagram Followers" /></div>
-        <div><label className={LBL}>Unlock delay (days)</label><input type="number" className={INPUT} value={form.unlockDelayDays} onChange={(e) => set('unlockDelayDays', e.target.value)} /></div>
-      </div>
-
-      {msg && (
-        <p className={`text-sm ${msg.type === 'ok' ? 'text-green-600' : 'text-red-600'}`}>
-          {msg.text} {msg.frameworkId && <Link href={`/dashboard/practice-os/frameworks/${msg.frameworkId}`} className="underline">View framework</Link>}
-        </p>
-      )}
-
-      <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
-        <button onClick={() => setForm(EMPTY)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">Reset</button>
-        <button onClick={handleSave} disabled={saving} className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium">
-          {saving ? 'Saving…' : 'Create & Publish Mission'}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 /* ---------------- New Framework modal ---------------- */
 function NewFrameworkModal({ onClose, onDone }) {
@@ -395,7 +280,8 @@ function NewFrameworkModal({ onClose, onDone }) {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/40" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">New Framework</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">New Builder Pack</h2>
+        <p className="text-sm text-gray-500 -mt-2 mb-4">Create the pack, then open it to set its price, outcomes, publish state and add missions.</p>
         <div className="space-y-4">
           <div><label className={LBL}>Title *</label><input className={INPUT} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Practice Building" /></div>
           <div><label className={LBL}>Category</label><input className={INPUT} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>

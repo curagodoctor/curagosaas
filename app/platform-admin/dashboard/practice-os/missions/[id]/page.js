@@ -154,6 +154,14 @@ export default function MissionEditorPage() {
         </div>
       </Section>
 
+      {/* Modules */}
+      <Section title="Modules">
+        <p className="text-sm text-gray-500 mb-4">
+          The rich work-units the doctor steps through in the workspace. The mission completes when all its modules are done.
+        </p>
+        <ModulesEditor modules={m.modules || []} onChange={(modules) => set({ modules })} />
+      </Section>
+
       {/* Lecture */}
       <Section title="Lecture">
         <label className={LABEL}>Lecture text (short, 3–5 min read — optional)</label>
@@ -316,6 +324,132 @@ function ArrayEditor({ items = [], onChange, empty, render }) {
         </div>
       ))}
       <button onClick={add} className="text-sm text-blue-600 hover:underline">+ Add</button>
+    </div>
+  );
+}
+
+// Editor for the ordered array of rich modules inside a mission. Each module
+// keeps its persisted `_id` (when present) so edits update in place on save.
+function ModulesEditor({ modules = [], onChange }) {
+  const updateMod = (i, patch) =>
+    onChange(modules.map((mod, idx) => (idx === i ? { ...mod, ...patch } : mod)));
+
+  const removeMod = (i) => {
+    if (!window.confirm('Delete this module? This cannot be undone until you save.')) return;
+    onChange(modules.filter((_, idx) => idx !== i));
+  };
+
+  const addMod = () =>
+    onChange([
+      ...modules,
+      {
+        title: '',
+        order: modules.length,
+        xp: 40,
+        videoUrl: '',
+        expectedOutcome: '',
+        prerequisites: '',
+        steps: [],
+        aiPrompt: '',
+        aiSystemPrompt: '',
+        buttons: [],
+        inputs: [],
+      },
+    ]);
+
+  // Swap two modules and keep their `order` fields in sync with position.
+  const swap = (a, b) => {
+    if (b < 0 || b >= modules.length) return;
+    const next = modules.slice();
+    [next[a], next[b]] = [next[b], next[a]];
+    onChange(next.map((mod, idx) => ({ ...mod, order: idx })));
+  };
+
+  return (
+    <div className="space-y-4">
+      {modules.map((mod, i) => (
+        <div key={mod._id || i} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Module {i + 1}</span>
+            <div className="flex items-center gap-1">
+              <button type="button" onClick={() => swap(i, i - 1)} disabled={i === 0} className="px-2 py-1 text-sm text-gray-600 hover:text-blue-600 disabled:opacity-30" title="Move up">↑</button>
+              <button type="button" onClick={() => swap(i, i + 1)} disabled={i === modules.length - 1} className="px-2 py-1 text-sm text-gray-600 hover:text-blue-600 disabled:opacity-30" title="Move down">↓</button>
+              <button type="button" onClick={() => removeMod(i)} className="px-2 py-1 text-sm text-gray-400 hover:text-red-500" title="Delete module">Delete</button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-12 gap-3">
+            <div className="col-span-8"><label className={LABEL}>Title</label><input className={INPUT} value={mod.title || ''} onChange={(e) => updateMod(i, { title: e.target.value })} /></div>
+            <div className="col-span-4"><label className={LABEL}>XP</label><input type="number" className={INPUT} value={mod.xp ?? 40} onChange={(e) => updateMod(i, { xp: Number(e.target.value) })} /></div>
+          </div>
+
+          <div className="mt-3">
+            <label className={LABEL}>Walkthrough video</label>
+            <VideoUpload value={mod.videoUrl || ''} onChange={(url) => updateMod(i, { videoUrl: url })} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            <div><label className={LABEL}>Expected outcome</label><textarea rows={2} className={INPUT} value={mod.expectedOutcome || ''} onChange={(e) => updateMod(i, { expectedOutcome: e.target.value })} /></div>
+            <div><label className={LABEL}>Prerequisites</label><textarea rows={2} className={INPUT} value={mod.prerequisites || ''} onChange={(e) => updateMod(i, { prerequisites: e.target.value })} /></div>
+          </div>
+
+          <div className="mt-3">
+            <label className={LABEL}>Steps (one per line)</label>
+            <textarea rows={4} className={INPUT} value={(mod.steps || []).join('\n')} onChange={(e) => updateMod(i, { steps: e.target.value.split('\n') })} />
+          </div>
+
+          <div className="mt-3">
+            <label className={LABEL}>AI prompt (ready-to-copy, shown to the doctor)</label>
+            <textarea rows={3} className={INPUT} value={mod.aiPrompt || ''} onChange={(e) => updateMod(i, { aiPrompt: e.target.value })} />
+          </div>
+
+          <div className="mt-3">
+            <label className={LABEL}>Hidden assistant prompt (never shown to the doctor)</label>
+            <textarea rows={3} className={INPUT} value={mod.aiSystemPrompt || ''} onChange={(e) => updateMod(i, { aiSystemPrompt: e.target.value })} />
+          </div>
+
+          <div className="mt-3">
+            <label className={LABEL}>Action buttons</label>
+            <ArrayEditor
+              items={mod.buttons || []}
+              onChange={(buttons) => updateMod(i, { buttons })}
+              empty={{ label: '', url: '' }}
+              render={(item, upd) => (
+                <div className="grid grid-cols-2 gap-2">
+                  <input className={INPUT} placeholder="Label" value={item.label} onChange={(e) => upd({ label: e.target.value })} />
+                  <input className={INPUT} placeholder="URL" value={item.url} onChange={(e) => upd({ url: e.target.value })} />
+                </div>
+              )}
+            />
+          </div>
+
+          <div className="mt-3">
+            <label className={LABEL}>Evidence inputs</label>
+            <ArrayEditor
+              items={mod.inputs || []}
+              onChange={(inputs) => updateMod(i, { inputs })}
+              empty={{ label: '', placeholder: '', required: false, variable: '' }}
+              render={(item, upd) => (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-12 gap-2 items-center">
+                    <input className={`${INPUT} col-span-5`} placeholder="Label" value={item.label} onChange={(e) => upd({ label: e.target.value })} />
+                    <input className={`${INPUT} col-span-5`} placeholder="Placeholder" value={item.placeholder} onChange={(e) => upd({ placeholder: e.target.value })} />
+                    <label className="col-span-2 flex items-center gap-1.5 text-sm text-gray-600">
+                      <input type="checkbox" checked={!!item.required} onChange={(e) => upd({ required: e.target.checked })} />
+                      Required
+                    </label>
+                  </div>
+                  <div>
+                    <input className={INPUT} placeholder="e.g. gbp_link" value={item.variable || ''} onChange={(e) => upd({ variable: e.target.value })} />
+                    <p className="mt-1 text-xs text-gray-500">Variable name (optional) — reuse in prompts as {'{{name}}'}</p>
+                  </div>
+                </div>
+              )}
+            />
+          </div>
+        </div>
+      ))}
+      <button type="button" onClick={addMod} className="text-sm text-blue-600 hover:underline">+ Add module</button>
     </div>
   );
 }

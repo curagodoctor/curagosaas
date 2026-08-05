@@ -8,6 +8,7 @@ import { getDay } from '@/lib/practice-os/engine';
 import { runMissionAssistant, isAiConfigured } from '@/lib/practice-os/ai';
 import { getDoctorProfileContext, getDoctorProfileFields } from '@/lib/practice-os/profile';
 import { recordAiUse } from '@/lib/practice-os/performance';
+import { findModule } from '@/lib/practice-os/modules';
 
 export const runtime = 'nodejs';
 
@@ -51,7 +52,7 @@ export async function POST(request, { params }) {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
     const { id } = await params;
-    const { prompt, newSession } = await request.json();
+    const { prompt, newSession, moduleId } = await request.json();
 
     if (!prompt || !prompt.trim()) {
       return NextResponse.json({ success: false, error: 'Please enter a prompt.' }, { status: 400 });
@@ -85,7 +86,8 @@ export async function POST(request, { params }) {
         : PracticeOsChatMessage.find({ doctorId: doctor._id, missionId: id, sessionId }).sort({ createdAt: 1 }).limit(20).lean(),
     ]);
     const history = priorMessages.map((m) => ({ role: m.role, content: m.content }));
-    const result = await runMissionAssistant({ mission: found.day, userPrompt: prompt, profileContext, profileFields, history });
+    const activeModule = moduleId ? findModule(found.modules || [], moduleId) : null;
+    const result = await runMissionAssistant({ mission: found.day, module: activeModule, userPrompt: prompt, profileContext, profileFields, history });
     if (!result.success) {
       // Don't charge a credit for a failed call.
       return NextResponse.json({ success: false, error: result.error }, { status: 502 });
