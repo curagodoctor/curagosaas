@@ -2,6 +2,7 @@
 import WaitlistEnhancer from './_waitlist-enhancer';
 import RazorpayButtons from './_razorpay-buttons';
 import RevealOnScroll from './_reveal';
+import MobileMenu from './_mobile-menu';
 
 export const metadata = {
   title: "CuraGo - Build Your Medical Practice Online | Website, Booking & Growth for Doctors",
@@ -83,6 +84,7 @@ export default function MarketingLayout({ children }) {
       <WaitlistEnhancer />
       <RazorpayButtons />
       <RevealOnScroll />
+      <MobileMenu />
     </>
   );
 }

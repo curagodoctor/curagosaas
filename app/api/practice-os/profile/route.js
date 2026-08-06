@@ -18,6 +18,7 @@ export async function GET(request) {
       fields,
       summary: profile.credentials?.summary || '',
       hasCv: !!profile.credentials?.rawFileUrl,
+      cvUrl: profile.credentials?.rawFileUrl || '',
     });
   } catch (error) {
     return errorResponse(error);

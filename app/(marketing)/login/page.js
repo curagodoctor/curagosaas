@@ -28,6 +28,7 @@ function LoginPageInner() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -210,14 +211,29 @@ function LoginPageInner() {
                       Forgot password?
                     </Link>
                   </div>
-                  <input
-                    type="password" id="password" name="password" autoComplete="current-password"
-                    value={formData.password} onChange={handleChange} placeholder="Enter your password"
-                    className="w-full px-4 py-3 rounded-[10px] outline-none transition-all"
-                    style={{ border: `1px solid ${errors.password ? '#dc2626' : 'var(--rule)'}`, backgroundColor: '#fff' }}
-                    onFocus={(e) => { e.target.style.outline = '2px solid var(--orange)'; e.target.style.outlineOffset = '1px'; }}
-                    onBlur={(e) => { e.target.style.outline = 'none'; }}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'} id="password" name="password" autoComplete="current-password"
+                      value={formData.password} onChange={handleChange} placeholder="Enter your password"
+                      className="w-full px-4 pr-11 py-3 rounded-[10px] outline-none transition-all"
+                      style={{ border: `1px solid ${errors.password ? '#dc2626' : 'var(--rule)'}`, backgroundColor: '#fff' }}
+                      onFocus={(e) => { e.target.style.outline = '2px solid var(--orange)'; e.target.style.outlineOffset = '1px'; }}
+                      onBlur={(e) => { e.target.style.outline = 'none'; }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center"
+                      style={{ color: 'var(--muted)' }}
+                    >
+                      {showPassword ? (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      )}
+                    </button>
+                  </div>
                   {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
                 </div>
 
@@ -261,24 +277,7 @@ function LoginPageInner() {
               </div>
             </div>
 
-            <div className="mt-8 text-center">
-              <p className="text-sm mb-2" style={{ color: 'var(--muted)' }}>Trusted by 500+ doctors across India</p>
-              <div className="flex justify-center gap-4">
-                <div className="flex -space-x-2">
-                  {['RK', 'AS', 'PM', 'SK'].map((initials) => (
-                    <div
-                      key={initials}
-                      className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-medium"
-                      style={{ backgroundColor: 'var(--green)' }}
-                    >
-                      {initials}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <p className="mt-6 text-center text-sm" style={{ color: 'var(--muted)' }}>
+            <p className="mt-8 text-center text-sm" style={{ color: 'var(--muted)' }}>
               Need help?{' '}
               <a href="mailto:support@curago.in" className="font-medium hover:underline" style={{ color: 'var(--green)' }}>
                 Contact Support

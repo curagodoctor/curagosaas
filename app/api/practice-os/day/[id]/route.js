@@ -94,11 +94,25 @@ export async function POST(request, { params }) {
       return NextResponse.json({ success: true, ...r });
     }
 
-    // Soft lock: the doctor may choose to open the next task before the timer
-    // ends. Clears the unlock clock so the current day becomes available now.
-    if (body.action === 'continue-now' || body.action === 'dev-unlock') {
+    // Work ONE mission ahead: unlock only this mission (not the whole timeline)
+    // and mark the advance as used so the doctor can't keep racing forward.
+    if (body.action === 'continue-now') {
+      await UserMissionProgress.findOneAndUpdate(
+        { doctorId: doctor._id, missionId: id },
+        { $set: { manuallyUnlocked: true, frameworkId }, $setOnInsert: { unlockedAt: new Date(), startedAt: new Date() } },
+        { upsert: true, setDefaultsOnInsert: true }
+      );
+      const enr = await getOrCreateEnrollment(doctor._id, frameworkId);
+      enr.aheadUsed = true;
+      await enr.save();
+      return NextResponse.json({ success: true });
+    }
+
+    // Dev-only: clear the whole unlock clock (no one-day-ahead cap).
+    if (body.action === 'dev-unlock') {
       const enr = await getOrCreateEnrollment(doctor._id, frameworkId);
       enr.nextUnlockAt = null;
+      enr.aheadUsed = false;
       await enr.save();
       return NextResponse.json({ success: true });
     }

@@ -61,7 +61,7 @@ export default function ControlCenter() {
         <div className="flex items-center gap-x-4 gap-y-1 text-[13px] flex-wrap justify-end">
           <Link href="/app/practice-os/schedule" className="pos-link">Schedule</Link>
           <Link href="/app/practice-os/profile" className="pos-link">My profile</Link>
-          <Link href="/admin/dashboard" className="pos-link" style={{ color: 'var(--green)' }}>Website builder →</Link>
+          <Link href="/admin/dashboard" className="text-white px-3.5 py-2 rounded-[8px] font-semibold" style={{ backgroundColor: 'var(--green)' }}>Website Builder</Link>
           <button onClick={logout} className="pos-link" style={{ color: 'var(--muted)' }}>Sign out</button>
         </div>
       </div>
@@ -76,6 +76,17 @@ export default function ControlCenter() {
           ? <>Your practice is <strong className="text-[var(--green)]">{overallPct}%</strong> built across your packs. One mission a day gets you the rest.</>
           : <>Pick a builder pack below. Each is a guided programme that produces a real asset — not a certificate.</>}
       </p>
+
+      {/* Overall progress across started packs */}
+      {started.length > 0 && (
+        <div className="mt-6 max-w-[560px]">
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="pos-label">Overall progress</span>
+            <span className="pos-num text-[var(--ink)]">{overallPct}%</span>
+          </div>
+          <div className="pos-meter"><span style={{ width: `${overallPct}%` }} /></div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8 mt-9">
         {/* Main — the packs */}

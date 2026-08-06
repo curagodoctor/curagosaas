@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { SECTIONS, ALL_FIELDS, REQUIRED_FIELDS, Field } from '../_profile-fields';
 import { UsernamePicker } from '../_username';
 
@@ -16,6 +15,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [hasCv, setHasCv] = useState(false);
+  const [cvUrl, setCvUrl] = useState('');
   const [cvBusy, setCvBusy] = useState(false);
   const [cvNote, setCvNote] = useState('');
 
@@ -29,6 +29,7 @@ export default function ProfilePage() {
       setFields({ ...base, ...(d.fields || {}) });
       setSummary(d.summary || '');
       setHasCv(!!d.hasCv);
+      setCvUrl(d.cvUrl || '');
     })();
   }, [router]);
 
@@ -96,7 +97,7 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-xl mx-auto px-5 py-10">
-      <Link href="/app/practice-os" className="pos-link text-sm">← Back to today</Link>
+      <button onClick={() => router.back()} className="pos-link text-sm">← Back</button>
 
       <div className="my-6">
         <p className="pos-label mb-1">My profile</p>
@@ -125,11 +126,19 @@ export default function ProfilePage() {
             ? 'A CV is on file. Re-upload to refresh what CuraGo knows about you — it fills any blank fields below.'
             : 'Optional. Upload your CV and we’ll fill in anything you left blank below.'}
         </p>
-        <label className={`pos-link text-sm inline-flex items-center gap-2 ${cvBusy ? 'opacity-60' : 'cursor-pointer'}`}>
-          {cvBusy ? 'Reading your CV…' : (hasCv ? '↻ Re-upload CV' : '+ Upload CV')}
-          <input type="file" accept=".pdf,.doc,.docx" className="hidden" disabled={cvBusy}
-            onChange={(e) => e.target.files?.[0] && uploadCv(e.target.files[0])} />
-        </label>
+        <div className="flex items-center gap-4 flex-wrap">
+          <label className={`pos-link text-sm inline-flex items-center gap-2 ${cvBusy ? 'opacity-60' : 'cursor-pointer'}`}>
+            {cvBusy ? 'Reading your CV…' : (hasCv ? '↻ Re-upload CV' : '+ Upload CV')}
+            <input type="file" accept=".pdf,.doc,.docx" className="hidden" disabled={cvBusy}
+              onChange={(e) => e.target.files?.[0] && uploadCv(e.target.files[0])} />
+          </label>
+          {hasCv && cvUrl && /^https?:\/\//.test(cvUrl) && (
+            <a href={cvUrl} target="_blank" rel="noopener noreferrer" className="pos-link text-sm inline-flex items-center gap-1.5">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+              View current CV
+            </a>
+          )}
+        </div>
         {cvNote && <p className="text-sm mt-2" style={{ color: 'var(--green)' }}>{cvNote}</p>}
         <p className="text-[11px] text-[var(--muted)] mt-3">Your CV is personal data, stored securely. You can delete it any time.</p>
       </div>

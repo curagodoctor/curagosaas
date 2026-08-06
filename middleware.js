@@ -58,12 +58,21 @@ export async function middleware(request) {
   const hostname = request.headers.get('host') || '';
   const pathname = request.nextUrl.pathname;
 
+  // sitemap.xml / robots.txt must be handled PER TENANT (each subdomain / custom
+  // domain gets its own), so they must NOT be short-circuited by the dotted-path
+  // skip below — let them fall through to the subdomain/custom-domain rewrites so
+  // a per-tenant handler generates them. On the root domain they pass through to
+  // the global marketing files.
+  const isSeoFile = pathname === '/sitemap.xml' || pathname === '/robots.txt';
+
   // Skip middleware for static files, API routes, and Next.js internals
   if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/static') ||
-    pathname.includes('.') // Files with extensions (images, etc.)
+    !isSeoFile && (
+      pathname.startsWith('/_next') ||
+      pathname.startsWith('/api') ||
+      pathname.startsWith('/static') ||
+      pathname.includes('.') // Files with extensions (images, etc.)
+    )
   ) {
     return NextResponse.next();
   }

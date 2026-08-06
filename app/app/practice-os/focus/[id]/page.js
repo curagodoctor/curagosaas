@@ -327,7 +327,7 @@ function FocusSession() {
           <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm">← Exit mission</Link>
           <div className="flex-1 min-w-[180px] max-w-[520px]">
             <div className="flex justify-between text-[11px] text-[var(--muted)] mb-1">
-              <span>Module {index + 1} of {modules.length}</span>
+              <span>Module <span className="pos-num">{index + 1}/{modules.length}</span></span>
               <span className="truncate ml-3">{mod.title}</span>
             </div>
             <div className="pos-meter"><span style={{ width: `${modulePct}%` }} /></div>

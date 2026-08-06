@@ -39,9 +39,24 @@ img{max-width:100%;display:block}
 @keyframes barfill{from{width:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
-/* nav links: hide on small screens (mobile menu runtime is not ported) */
+/* nav links: hide on small screens; a hamburger dropdown replaces them (see _mobile-menu.js) */
 .dc-navlinks{display:flex;align-items:center;gap:clamp(12px,1.8vw,24px)}
 @media (max-width:860px){.dc-navlinks{display:none}}
+
+/* mobile hamburger button — only shown < 860px, hidden on desktop */
+.dc-hamburger{display:none;flex-direction:column;justify-content:center;gap:5px;width:44px;height:44px;padding:11px;background:transparent;border:1px solid rgba(0,0,0,.12);border-radius:10px;cursor:pointer}
+.dc-hamburger span{display:block;height:2px;width:100%;background:#096B17;border-radius:2px;transition:transform .3s,opacity .3s}
+.dc-hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.dc-hamburger.open span:nth-child(2){opacity:0}
+.dc-hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+@media (max-width:860px){.dc-hamburger{display:flex}}
+
+/* mobile dropdown panel — hidden by default, toggled open by the enhancer */
+.dc-mobile-menu{display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border-bottom:1px solid rgba(0,0,0,.08);box-shadow:0 14px 32px rgba(0,0,0,.12);padding:8px clamp(16px,4vw,40px) 18px;flex-direction:column;gap:2px}
+.dc-mobile-menu.open{display:flex}
+.dc-mobile-menu a{padding:13px 6px;color:#096B17;font-size:16px;font-weight:600;border-bottom:1px solid rgba(0,0,0,.06)}
+.dc-mobile-menu a.dc-mm-cta{margin-top:12px;border-bottom:none;background:var(--orange);color:#fff;font-weight:700;text-align:center;padding:14px 20px;border-radius:11px;box-shadow:0 6px 18px rgba(255,122,26,.35)}
+@media (min-width:861px){.dc-mobile-menu{display:none!important}}
 
 /* native <details> FAQ styling to match the design's + toggle */
 .faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 4px}
@@ -123,9 +138,9 @@ const BODY = `<div style="font-family:var(--sans)">
 
 <!-- ============ NAV ============ -->
 <header style="position:sticky;top:0;z-index:60;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(0,0,0,.06);background-color:#FFFFFF">
-  <nav style="max-width:1220px;margin:0 auto;padding:14px clamp(16px,4vw,40px);display:flex;align-items:center;justify-content:space-between;gap:16px">
+  <nav style="max-width:1220px;margin:0 auto;padding:9px clamp(16px,4vw,40px);display:flex;align-items:center;justify-content:space-between;gap:16px">
     <a href="#top" style="display:flex;align-items:center;gap:10px">
-      <span style="display:grid;place-items:center;border-radius:10px;padding:5px"><img src="/landing/logo.png" alt="CuraGo" style="width:219px;height:53px;object-fit:contain"></span>
+      <span style="display:grid;place-items:center;border-radius:10px;padding:4px"><img src="/landing/logo.png" alt="CuraGo" style="width:186px;height:45px;object-fit:contain"></span>
     </a>
     <div class="dc-navlinks">
       <a href="#builder" style="color:#096B17;font-size:14.5px;font-weight:500">Practice Builder</a>
@@ -135,7 +150,18 @@ const BODY = `<div style="font-family:var(--sans)">
       <a href="#free" style="color:#096B17;font-size:14.5px;font-weight:500">Free website builder</a>
       <a href="#cohort" style="background:var(--orange);color:#fff;font-weight:700;font-size:14.5px;padding:11px 20px;border-radius:11px;box-shadow:0 6px 18px rgba(255,122,26,.35)">Join the cohort</a>
     </div>
+    <button class="dc-hamburger" data-mobile-toggle="" aria-label="Menu" aria-expanded="false" aria-controls="dc-mobile-menu">
+      <span></span><span></span><span></span>
+    </button>
   </nav>
+  <div class="dc-mobile-menu" id="dc-mobile-menu" data-mobile-menu="">
+    <a href="#builder">Practice Builder</a>
+    <a href="#how">How it works</a>
+    <a href="#cohort">Pricing</a>
+    <a href="#books">Buy books/masterclass</a>
+    <a href="#free">Free website builder</a>
+    <a href="#cohort" class="dc-mm-cta">Join the cohort</a>
+  </div>
 </header>
 
 <!-- ============ HERO ============ -->
@@ -609,9 +635,9 @@ const BODY = `<div style="font-family:var(--sans)">
       CuraGo · Made in India
     </div>
     <div style="display:flex;gap:20px;flex-wrap:wrap">
-      <a href="#top" style="color:rgba(255,255,255,.6)">Privacy</a>
-      <a href="#top" style="color:rgba(255,255,255,.6)">Refund policy</a>
-      <a href="#top" style="color:rgba(255,255,255,.6)">Contact</a>
+      <a href="/privacy" style="color:rgba(255,255,255,.6)">Privacy</a>
+      <a href="/refund" style="color:rgba(255,255,255,.6)">Refund policy</a>
+      <a href="mailto:support@curago.in" style="color:rgba(255,255,255,.6)">Contact</a>
     </div>
     <div>© 2026 CuraGo · Payments via Razorpay</div>
   </div>

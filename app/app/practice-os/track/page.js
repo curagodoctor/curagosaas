@@ -69,7 +69,7 @@ function TrackView() {
           {allComplete ? (
             <AllComplete daysCompleted={enrollment.daysCompleted} withPack={withPack} />
           ) : today?.status === 'locked' ? (
-            <LockedDay day={today} nextUnlockAt={enrollment.nextUnlockAt} now={now} devBypass={state.devBypass} onUnlocked={load} />
+            <LockedDay day={today} nextUnlockAt={enrollment.nextUnlockAt} now={now} devBypass={state.devBypass} onUnlocked={load} canAdvance={state.canAdvance} />
           ) : today ? (
             <TaskCard day={today} totalDays={totalDays} withPack={withPack} />
           ) : (
@@ -115,16 +115,45 @@ function TopBar({ pack, withPack }) {
       </div>
       <div className="flex items-center gap-x-4 gap-y-1 text-[13px] flex-wrap justify-end">
         <Link href="/app/practice-os" className="pos-link">All packs</Link>
-        <Link href={withPack('/app/practice-os/score')} className="pos-link">Your progress</Link>
-        <Link href={withPack('/app/practice-os/journey')} className="pos-link">Journey</Link>
+        <ProgressMenu withPack={withPack} />
         <Link href="/app/practice-os/schedule" className="pos-link">Schedule</Link>
-        <Link href={withPack('/app/practice-os/report')} className="pos-link">Report</Link>
         <Link href={withPack('/app/practice-os/leaderboard')} className="pos-link">Leaderboard</Link>
-        <Link href={withPack('/app/practice-os/record')} className="pos-link">Your record</Link>
         <Link href="/app/practice-os/profile" className="pos-link">My profile</Link>
-        <Link href="/admin/dashboard" className="pos-link" style={{ color: 'var(--green)' }}>Website builder →</Link>
+        <Link href="/admin/dashboard" className="text-white px-3.5 py-2 rounded-[8px] font-semibold" style={{ backgroundColor: 'var(--green)' }}>Website Builder</Link>
         <button onClick={logout} className="pos-link" style={{ color: 'var(--muted)' }}>Sign out</button>
       </div>
+    </div>
+  );
+}
+
+// Groups the four analytics views (Progress / Journey / Report / Record) under a
+// single "Progress" button so the header isn't cluttered with lookalike links.
+function ProgressMenu({ withPack }) {
+  const [open, setOpen] = useState(false);
+  const items = [
+    ['Your progress', withPack('/app/practice-os/score')],
+    ['Journey', withPack('/app/practice-os/journey')],
+    ['Report', withPack('/app/practice-os/report')],
+    ['Your record', withPack('/app/practice-os/record')],
+  ];
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen((o) => !o)} className="pos-link inline-flex items-center gap-1">
+        Progress
+        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-2 z-50 pos-card p-1 min-w-[180px]" style={{ boxShadow: '0 12px 32px rgba(16,26,19,.14)' }}>
+            {items.map(([label, href]) => (
+              <Link key={label} href={href} onClick={() => setOpen(false)} className="block px-3 py-2 text-[13px] rounded-md hover:bg-[var(--rule-soft)]" style={{ color: 'var(--ink)' }}>
+                {label}
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -150,14 +179,14 @@ function TaskCard({ day, totalDays, withPack }) {
       <div className="mt-7">
         <Link href={withPack(`/app/practice-os/focus/${day._id}`)} className="pos-action pos-focusable inline-flex items-center gap-2" style={{ background: 'var(--orange)' }}>
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M7 5l12 7-12 7V5Z" fill="#fff" /></svg>
-          Start task
+          Begin task
         </Link>
       </div>
     </div>
   );
 }
 
-function LockedDay({ day, nextUnlockAt, now, onUnlocked }) {
+function LockedDay({ day, nextUnlockAt, now, onUnlocked, canAdvance }) {
   const remaining = nextUnlockAt ? Math.max(0, new Date(nextUnlockAt).getTime() - now) : 0;
   const h = Math.floor(remaining / 3.6e6);
   const m = Math.floor((remaining % 3.6e6) / 6e4);
@@ -186,19 +215,27 @@ function LockedDay({ day, nextUnlockAt, now, onUnlocked }) {
       </div>
 
       <div className="mt-5">
-        <button
-          onClick={async () => {
-            await fetch(`/api/practice-os/day/${day._id}`, {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'continue-now' }),
-            });
-            onUnlocked?.();
-          }}
-          className="pos-action pos-focusable"
-        >
-          I&apos;m ready — start this task now
-        </button>
-        <p className="text-[12px] text-[var(--muted)] mt-2">Or wait for the timer above — the task stays right here either way.</p>
+        {canAdvance ? (
+          <>
+            <button
+              onClick={async () => {
+                await fetch(`/api/practice-os/day/${day._id}`, {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'continue-now' }),
+                });
+                onUnlocked?.();
+              }}
+              className="pos-action pos-focusable"
+            >
+              Do tomorrow&apos;s task today
+            </button>
+            <p className="text-[12px] text-[var(--muted)] mt-2">You can work one day ahead. After this, the next mission opens on the timer above.</p>
+          </>
+        ) : (
+          <p className="text-[13px] text-[var(--muted)]" style={{ maxWidth: '52ch' }}>
+            You&apos;re already one mission ahead — this one opens on the timer above. Working one day at a time is what builds a real practice.
+          </p>
+        )}
       </div>
     </div>
   );

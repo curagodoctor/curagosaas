@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { UsernamePicker } from '../_username';
 
 // Anonymous leaderboard — ranked by XP + streak + speed. Real names never shown.
@@ -29,7 +28,7 @@ export default function LeaderboardPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-5 py-10">
-      <Link href="/app/practice-os" className="pos-link text-sm">← Back to today</Link>
+      <button onClick={() => router.back()} className="pos-link text-sm">← Back</button>
 
       <div className="my-6">
         <p className="pos-label mb-1">Leaderboard</p>

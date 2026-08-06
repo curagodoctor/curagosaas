@@ -49,6 +49,9 @@ const PracticeOsEnrollmentSchema = new mongoose.Schema({
   scheduledFor: { type: Date },
   scheduleWindow: { type: String, default: '' },   // morning|afternoon|evening|night
   scheduleExactTime: { type: String, default: '' },// "19:30"
+  // True once the doctor has worked a mission ahead of schedule; blocks working
+  // further ahead until they complete a mission on-time again (max 1 day ahead).
+  aheadUsed: { type: Boolean, default: false },
   currentDayNumber: { type: Number, default: 1 },  // the day currently actionable/next
   daysCompleted: { type: Number, default: 0 },     // monotonic — never decreases
 
