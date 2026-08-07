@@ -1,8 +1,18 @@
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 import BookingPage from '@/models/BookingPage';
 import SiteBody from './_SiteBody';
+
+// The tenant's own origin (subdomain or custom domain), from the request host.
+// Used as metadataBase so canonical/OG URLs point at the DOCTOR's site, not curago.in.
+async function tenantBase() {
+  const h = await headers();
+  const host = h.get('host') || '';
+  const proto = h.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+  return host ? `${proto}://${host}` : null;
+}
 
 // Generate metadata
 export async function generateMetadata({ params }) {
@@ -27,13 +37,18 @@ export async function generateMetadata({ params }) {
       status: 'published',
     }).lean();
 
+    const base = await tenantBase();
     return {
+      // Override the app-wide curago.in metadataBase so relative canonical/OG
+      // URLs resolve to THIS doctor's own domain.
+      ...(base ? { metadataBase: new URL(base) } : {}),
       title: bookingPage?.title || `${doctor.displayName || doctor.name} - Book Appointment`,
       description: bookingPage?.metaDescription || `Book an appointment with ${doctor.displayName || doctor.name}`,
       alternates: { canonical: '/' },
       openGraph: {
         title: bookingPage?.title || doctor.displayName || doctor.name,
         description: bookingPage?.metaDescription || `Book an appointment with ${doctor.displayName || doctor.name}`,
+        url: '/',
         images: bookingPage?.ogImage ? [bookingPage.ogImage] : [],
       },
     };

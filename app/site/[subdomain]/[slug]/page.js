@@ -1,8 +1,18 @@
 import { notFound, redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 import BookingPage from '@/models/BookingPage';
 import SiteBody from '../_SiteBody';
+
+// The tenant's own origin (subdomain/custom domain) from the request host, so
+// canonical/OG URLs resolve to the doctor's domain, not curago.in.
+async function tenantBase() {
+  const h = await headers();
+  const host = h.get('host') || '';
+  const proto = h.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+  return host ? `${proto}://${host}` : null;
+}
 
 // Generate metadata
 export async function generateMetadata({ params }) {
@@ -34,13 +44,16 @@ export async function generateMetadata({ params }) {
       };
     }
 
+    const base = await tenantBase();
     return {
+      ...(base ? { metadataBase: new URL(base) } : {}),
       title: bookingPage.title || `${doctor.displayName || doctor.name}`,
       description: bookingPage.metaDescription || `Book an appointment with ${doctor.displayName || doctor.name}`,
       alternates: { canonical: '/' + slug },
       openGraph: {
         title: bookingPage.title || doctor.displayName || doctor.name,
         description: bookingPage.metaDescription || `Book an appointment with ${doctor.displayName || doctor.name}`,
+        url: '/' + slug,
         images: bookingPage.ogImage ? [bookingPage.ogImage] : [],
       },
     };
