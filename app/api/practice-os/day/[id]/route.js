@@ -38,6 +38,12 @@ export async function POST(request, { params }) {
     await assertPackAccess(doctor._id, frameworkId);
 
     if (body.action === 'start') {
+      // NEVER downgrade a finished mission. Re-opening the focus page (or hitting
+      // Back into it) must not revert a completed/skipped mission to 'available'.
+      const existing = await UserMissionProgress.findOne({ doctorId: doctor._id, missionId: id }).select('status');
+      if (existing?.status === 'completed' || existing?.status === 'skipped') {
+        return NextResponse.json({ success: true, alreadyDone: true });
+      }
       await UserMissionProgress.findOneAndUpdate(
         { doctorId: doctor._id, missionId: id },
         { $set: { status: 'available', frameworkId }, $setOnInsert: { startedAt: new Date() } },
