@@ -1,4 +1,6 @@
 import { resolveThemeId } from '@/lib/themes';
+import connectDB from '@/lib/mongodb';
+import BlogArticle from '@/models/BlogArticle';
 
 // Import section components (reuse existing booking page sections)
 import HeaderSection from '@/components/booking-page/sections/HeaderSection';
@@ -21,7 +23,7 @@ import BookNowStickyButton from '@/components/booking-page/sections/BookNowStick
 import FAQChatbot from '@/components/FAQChatbot';
 
 // Section renderer - pass pageSections for header auto-nav
-function renderSection(section, doctor, index, allSections = []) {
+function renderSection(section, doctor, index, allSections = [], extraNavLinks = []) {
   // Spread the config directly so section components receive their props
   const props = {
     key: section._id || index,
@@ -32,8 +34,9 @@ function renderSection(section, doctor, index, allSections = []) {
 
   switch (section.type) {
     case 'header':
-      // Pass all sections to header for auto-generated navigation
-      return <HeaderSection {...props} pageSections={allSections} />;
+      // Pass all sections to header for auto-generated navigation, plus any
+      // cross-page links (e.g. Resources/Blog) that aren't page sections.
+      return <HeaderSection {...props} pageSections={allSections} extraNavLinks={extraNavLinks} />;
     case 'hero_carousel':
       return <HeroCarouselSection {...props} />;
     case 'banner_image':
@@ -73,9 +76,23 @@ function renderSection(section, doctor, index, allSections = []) {
   }
 }
 
-export default function SiteBody({ doctor, bookingPage }) {
+export default async function SiteBody({ doctor, bookingPage }) {
   // `doctor` is expected to be a plain (serialized) object.
   const doctorData = doctor;
+
+  // Only surface the Resources/Blog link when this doctor has published at least
+  // one article. Scoped by doctorId so nothing from another doctor leaks in.
+  let hasBlog = false;
+  try {
+    await connectDB();
+    hasBlog = (await BlogArticle.countDocuments({
+      doctorId: doctorData._id,
+      status: 'published',
+    })) > 0;
+  } catch {
+    hasBlog = false;
+  }
+  const extraNavLinks = hasBlog ? [{ text: 'Resources', url: '/blog' }] : [];
 
   // Separate sticky buttons from regular sections
   const regularSections = bookingPage.sections.filter(
@@ -103,7 +120,7 @@ export default function SiteBody({ doctor, bookingPage }) {
       {/* Render regular sections */}
       {regularSections
         .sort((a, b) => (a.order || 0) - (b.order || 0))
-        .map((section, index) => renderSection(section, doctorData, index, regularSections))}
+        .map((section, index) => renderSection(section, doctorData, index, regularSections, extraNavLinks))}
 
       {/* Render sticky buttons */}
       {stickyButtons.map((section, index) => {

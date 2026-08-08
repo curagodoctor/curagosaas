@@ -507,7 +507,7 @@ export default function BookingsPage() {
               )}
 
               {/* Actions */}
-              {selectedBooking.status === 'confirmed' && (
+              {(selectedBooking.status === 'confirmed' || selectedBooking.status === 'pending_payment') && (
                 <div className="pt-4 border-t">
                   <button
                     onClick={() => handleCancelBooking(selectedBooking._id)}

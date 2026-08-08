@@ -175,7 +175,8 @@ const blogArticleSchema = new mongoose.Schema({
   tags: [String],
   category: {
     type: String,
-    enum: ['Gallstones', 'Pancreatitis', 'Liver Disease', 'IBS', 'GERD', 'Other'],
+    trim: true,
+    // Free-form: CuraGo is a multi-specialty builder, so any category is allowed.
     set: (v) => v === '' ? undefined : v,  // Convert empty string to undefined
   },
 

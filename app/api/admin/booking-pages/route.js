@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import BookingPage from '@/models/BookingPage';
 import { getCurrentDoctor } from '@/lib/doctorAuth';
+import { buildDefaultSections } from '@/lib/defaultTemplate';
 
 // GET - List all booking pages
 export async function GET(request) {
@@ -119,7 +120,7 @@ export async function POST(request) {
       metaDescription: data.metaDescription || '',
       metaKeywords: data.metaKeywords || [],
       status: data.status || 'draft',
-      sections: data.sections || [],
+      sections: data.sections || buildDefaultSections(doctor),
       consultationFee: data.consultationFee || 1000,
       bookingFee: data.bookingFee || 150,
       theme: data.theme || 'forest', // Default to forest green theme

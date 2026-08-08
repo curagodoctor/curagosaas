@@ -132,6 +132,14 @@ export async function POST(request) {
     }, { status: 201 });
   } catch (error) {
     console.error('Error creating blog article:', error);
+    // Surface Mongoose validation errors clearly instead of a generic 500
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map((e) => e.message);
+      return NextResponse.json(
+        { error: messages.join('; ') || 'Validation failed' },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { error: 'Failed to create blog article' },
       { status: 500 }

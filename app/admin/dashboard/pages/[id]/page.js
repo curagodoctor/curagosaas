@@ -784,8 +784,33 @@ export default function PageBuilderEditor() {
         </div>
       </div>
 
+      {/* Mobile-only sticky action bar — on phones the toolbar Save is a tiny
+          icon and Publish is hidden, so surface both as full buttons here. */}
+      <div
+        className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 px-3 py-2 flex items-center gap-2"
+        style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}
+      >
+        {hasUnsavedChanges && <span className="text-[11px] text-orange-600 font-medium mr-auto">Unsaved</span>}
+        <button
+          onClick={() => savePage(false)}
+          disabled={saving}
+          className="flex-1 px-4 py-2.5 rounded-lg font-medium text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+        {pageData.status !== 'published' && (
+          <button
+            onClick={() => savePage(true)}
+            disabled={saving}
+            className="flex-1 px-4 py-2.5 rounded-lg font-medium text-sm bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+          >
+            Publish
+          </button>
+        )}
+      </div>
+
       {/* Main Content - Three Columns */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex overflow-hidden relative pb-16 sm:pb-0">
         {/* Mobile Overlay */}
         {(isMobilePaletteOpen || showConfig) && (
           <div

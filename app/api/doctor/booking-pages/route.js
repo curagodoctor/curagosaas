@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentDoctor } from '@/lib/doctorAuth';
 import BookingPage from '@/models/BookingPage';
 import connectDB from '@/lib/mongodb';
+import { buildDefaultSections } from '@/lib/defaultTemplate';
 
 // GET - List all booking pages for the current doctor
 export async function GET(request) {
@@ -102,37 +103,10 @@ export async function POST(request) {
       );
     }
 
-    // Create default sections for a new clinic page
-    const defaultSections = data.sections || [
-      {
-        type: 'hero',
-        enabled: true,
-        order: 0,
-        settings: {
-          title: doctor.displayName || doctor.name,
-          subtitle: doctor.specialization || 'Healthcare Professional',
-          showBookButton: true,
-          bookButtonText: 'Book Appointment',
-        },
-      },
-      {
-        type: 'about',
-        enabled: true,
-        order: 1,
-        settings: {
-          title: 'About',
-          content: doctor.bio || 'Welcome to my clinic. Book an appointment to get started.',
-        },
-      },
-      {
-        type: 'booking-form',
-        enabled: true,
-        order: 2,
-        settings: {
-          title: 'Book an Appointment',
-        },
-      },
-    ];
+    // Create default sections for a new clinic page. Uses the shared template
+    // (valid section types + `config` shape) so the page renders and stays
+    // editable in the page builder.
+    const defaultSections = data.sections || buildDefaultSections(doctor);
 
     // Create page with doctorId
     const page = new BookingPage({

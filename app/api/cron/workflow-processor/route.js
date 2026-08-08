@@ -73,18 +73,14 @@ export async function GET(request) {
           template = await MessageTemplate.findOne({ doctorId: doctor._id, channel: step.channel });
         }
 
-        if (!template) {
-          execution.logs.push({ stepIndex: execution.currentStepIndex, channel: step.channel, status: 'failed', sentAt: new Date(), error: 'Template not found' });
-          execution.status = 'failed';
-          await execution.save();
-          failed++;
-          continue;
-        }
-
         const channel = step.channel;
         const to = channel === 'sms' ? contact.phone : contact.email;
 
-        if (!to) {
+        if (!template) {
+          // A missing/orphaned template must NOT kill the whole workflow — skip
+          // this step and advance so later steps (e.g. the email follow-up) run.
+          execution.logs.push({ stepIndex: execution.currentStepIndex, channel, status: 'skipped', sentAt: new Date(), error: 'Template not found' });
+        } else if (!to) {
           execution.logs.push({ stepIndex: execution.currentStepIndex, channel, status: 'skipped', sentAt: new Date(), error: `No ${channel === 'sms' ? 'phone' : 'email'} for contact` });
           // Skip this step but continue workflow
         } else {

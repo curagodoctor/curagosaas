@@ -38,6 +38,7 @@ export default function HeaderSection({
   navMode = "auto",
   autoNavConfig = { useSmartGroups: true, excludeSections: [], customLabels: {} },
   pageSections = [],
+  extraNavLinks = [],
   ctaButton = { text: "Book Appointment", url: "#booking_form", show: true },
   backgroundColor = "white",
   sticky = true,
@@ -73,12 +74,23 @@ export default function HeaderSection({
 
   // Build navigation items based on mode
   const navItems = useMemo(() => {
+    // Cross-page links (e.g. Resources/Blog) that live outside the section list.
+    // These are real routes, not #anchors, so handleNavClick lets them navigate.
+    const extraItems = (extraNavLinks || []).map((link) => ({
+      type: "link",
+      text: link.text,
+      url: link.url,
+    }));
+
     if (navMode === "manual") {
-      return navLinks.map((link) => ({
-        type: "link",
-        text: link.text,
-        url: link.url,
-      }));
+      return [
+        ...navLinks.map((link) => ({
+          type: "link",
+          text: link.text,
+          url: link.url,
+        })),
+        ...extraItems,
+      ];
     }
 
     // Auto mode: build from pageSections
@@ -95,14 +107,17 @@ export default function HeaderSection({
 
     if (!useSmartGroups) {
       // Simple flat list
-      return visibleSections.map((section) => {
-        const navInfo = SECTION_NAV_INFO[section.type];
-        return {
-          type: "link",
-          text: customLabels[section.type] || navInfo.navName,
-          url: `#${section.type}`,
-        };
-      });
+      return [
+        ...visibleSections.map((section) => {
+          const navInfo = SECTION_NAV_INFO[section.type];
+          return {
+            type: "link",
+            text: customLabels[section.type] || navInfo.navName,
+            url: `#${section.type}`,
+          };
+        }),
+        ...extraItems,
+      ];
     }
 
     // Smart grouping
@@ -172,8 +187,8 @@ export default function HeaderSection({
       }
     });
 
-    return items;
-  }, [navMode, navLinks, pageSections, autoNavConfig]);
+    return [...items, ...extraItems];
+  }, [navMode, navLinks, pageSections, autoNavConfig, extraNavLinks]);
 
   // Smooth scroll handler
   const handleNavClick = (e, url) => {
@@ -257,7 +272,7 @@ export default function HeaderSection({
                   <span className="text-lg font-bold">{displayLogoText.charAt(0)}</span>
                 </div>
               )}
-              <span className={`text-lg md:text-xl font-bold ${textClass} hidden sm:block`}>
+              <span className={`text-base sm:text-lg md:text-xl font-bold ${textClass} block truncate max-w-[150px] sm:max-w-none`}>
                 {displayLogoText}
               </span>
             </a>

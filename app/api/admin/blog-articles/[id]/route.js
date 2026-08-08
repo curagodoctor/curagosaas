@@ -108,6 +108,13 @@ export async function PATCH(request, { params }) {
     });
   } catch (error) {
     console.error('Error updating blog article:', error);
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map((e) => e.message);
+      return NextResponse.json(
+        { error: messages.join('; ') || 'Validation failed' },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { error: 'Failed to update blog article' },
       { status: 500 }

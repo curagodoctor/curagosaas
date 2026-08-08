@@ -8,6 +8,25 @@ import {
   getAllBookings,
   cancelBooking,
 } from "@/lib/slotManagerDB";
+import { sendBookingCancellationToPatient } from "@/lib/email";
+
+// Notify the patient that their booking was cancelled by the clinic.
+// Never let an email failure break the cancellation response.
+async function notifyPatientOfCancellation(booking, doctor) {
+  if (!booking?.email) return;
+  try {
+    await sendBookingCancellationToPatient({
+      email: booking.email,
+      patientName: booking.name,
+      doctorName: doctor?.name || "",
+      date: booking.date,
+      time: booking.time,
+      mode: booking.mode,
+    });
+  } catch (err) {
+    console.error("Failed to send cancellation email to patient:", err);
+  }
+}
 
 // GET - Get all slots (admin view)
 export async function GET(request) {
@@ -199,6 +218,8 @@ export async function PUT(request) {
         );
       }
 
+      await notifyPatientOfCancellation(result.booking, doctor);
+
       return NextResponse.json({
         success: true,
         message: `Booking cancelled and slot re-enabled successfully`,
@@ -221,6 +242,8 @@ export async function PUT(request) {
           { status: 404 }
         );
       }
+
+      await notifyPatientOfCancellation(result.booking, doctor);
 
       return NextResponse.json({
         success: true,

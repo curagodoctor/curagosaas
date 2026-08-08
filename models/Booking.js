@@ -70,6 +70,13 @@ const BookingSchema = new mongoose.Schema({
   calendarEventUrl: {
     type: String,
   },
+  cancelledAt: {
+    type: Date,
+  },
+  cancelledBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Doctor',
+  },
 }, {
   timestamps: true,
 });

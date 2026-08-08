@@ -5,6 +5,7 @@ import BookingPage from '@/models/BookingPage';
 import { generateDoctorToken, setAuthCookie } from '@/lib/doctorAuth';
 import { sendWelcomeEmail } from '@/lib/email';
 import { initializeDefaultModes } from '@/lib/slotManagerDB';
+import { buildDefaultSections } from '@/lib/defaultTemplate';
 
 // Create default website for new doctor
 async function createDefaultWebsite(doctor) {
@@ -12,48 +13,10 @@ async function createDefaultWebsite(doctor) {
   const existing = await BookingPage.findOne({ doctorId: doctor._id });
   if (existing) return existing;
 
-  const defaultSections = [
-    {
-      type: 'custom_text',
-      order: 0,
-      visible: true,
-      config: {
-        title: `${doctor.displayName || doctor.name}'s Clinic`,
-        content: `Welcome to ${doctor.displayName || doctor.name}'s Clinic.`,
-        alignment: 'center',
-        backgroundColor: 'white',
-      },
-    },
-    {
-      type: 'cta_button',
-      order: 1,
-      visible: true,
-      config: {
-        buttonText: 'Contact Clinic',
-        buttonLink: `tel:+91${doctor.phone}`,
-        buttonStyle: 'primary',
-        alignment: 'center',
-        size: 'large',
-        showIcon: true,
-      },
-    },
-    {
-      type: 'footer',
-      order: 2,
-      visible: true,
-      config: {
-        companyName: doctor.displayName || doctor.name,
-        tagline: '',
-        address: '',
-        phone: '',
-        email: '',
-        showQuickLinks: false,
-        quickLinks: [],
-        showSocialLinks: false,
-        copyrightText: `Powered by CuraGo`,
-      },
-    },
-  ];
+  // Seed a full, editable starter template (valid section types + `config`
+  // shape) instead of a near-empty page, so the new doctor's site renders
+  // immediately and every section is editable in the page builder.
+  const defaultSections = buildDefaultSections(doctor);
 
   const website = new BookingPage({
     doctorId: doctor._id,

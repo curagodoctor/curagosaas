@@ -72,10 +72,30 @@ function WorkflowsPageInner() {
     }));
   };
 
+  const handleDeleteWorkflow = async (workflow) => {
+    if (!window.confirm(`Delete "${workflow.name}"? Any contacts currently in this workflow will be stopped. This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/doctor/workflows/${workflow._id}`, { method: 'DELETE', credentials: 'include' });
+      const data = await res.json();
+      if (data.success) { fetchWorkflows(); fetchExecutions(); }
+      else window.alert(data.error || 'Failed to delete workflow');
+    } catch { window.alert('Failed to delete workflow'); }
+  };
+
   const handleStepChange = (index, field, value) => {
     setFormData(prev => ({
       ...prev,
-      steps: prev.steps.map((s, i) => i === index ? { ...s, [field]: value } : s),
+      steps: prev.steps.map((s, i) => {
+        if (i !== index) return s;
+        const next = { ...s, [field]: value };
+        // When the channel changes, switch to a template of that channel so an
+        // email step actually uses an email template (with a subject), not the SMS one.
+        if (field === 'channel') {
+          const match = templates.find((t) => t.channel === value);
+          if (match) next.templateId = match._id;
+        }
+        return next;
+      }),
     }));
   };
 
@@ -205,7 +225,10 @@ function WorkflowsPageInner() {
                         {workflow.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </div>
-                    <button onClick={() => handleEdit(workflow)} className="text-sm text-[#096b17] hover:underline">Edit</button>
+                    <div className="flex items-center gap-4">
+                      <button onClick={() => handleEdit(workflow)} className="text-sm text-[#096b17] hover:underline">Edit</button>
+                      <button onClick={() => handleDeleteWorkflow(workflow)} className="text-sm text-red-600 hover:underline">Delete</button>
+                    </div>
                   </div>
                   {workflow.description && (
                     <p className="text-sm text-gray-500 mb-4">{workflow.description}</p>

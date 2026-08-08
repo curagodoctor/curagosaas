@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Workflow from '@/models/Workflow';
+import WorkflowExecution from '@/models/WorkflowExecution';
 import MessageTemplate from '@/models/MessageTemplate';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
 import { requireFeatureOr403, FEATURES } from '@/lib/entitlements';
@@ -79,7 +80,14 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ success: false, error: 'Workflow not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true });
+    // Stop any in-flight executions of this workflow so the cron stops sending
+    // (deleting an assigned workflow must actually halt it).
+    const stopped = await WorkflowExecution.updateMany(
+      { workflowId: id, doctorId: doctor._id, status: { $in: ['active', 'paused'] } },
+      { $set: { status: 'cancelled' } }
+    );
+
+    return NextResponse.json({ success: true, stoppedExecutions: stopped.modifiedCount || 0 });
   } catch (error) {
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
