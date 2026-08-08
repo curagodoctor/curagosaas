@@ -292,6 +292,19 @@ export async function POST(request) {
       }
     }
 
+    // Give the pack's published missions clean, sequential missionNumbers (the
+    // sheet may omit or duplicate them), so the UI shows Mission 1, 2, 3… in
+    // curriculum order. Two-pass to avoid transient unique-index collisions.
+    try {
+      const pub = await Mission.find({ frameworkId: framework._id, status: 'published' })
+        .sort({ weekNumber: 1, dayNumber: 1, missionNumber: 1, createdAt: 1 })
+        .select('_id').lean();
+      for (let i = 0; i < pub.length; i++) await Mission.updateOne({ _id: pub[i]._id }, { $set: { missionNumber: 100000 + i } });
+      for (let i = 0; i < pub.length; i++) await Mission.updateOne({ _id: pub[i]._id }, { $set: { missionNumber: i + 1 } });
+    } catch (e) {
+      console.error('[Practice OS import] renumber failed:', e.message);
+    }
+
     return NextResponse.json({
       success: true,
       created,

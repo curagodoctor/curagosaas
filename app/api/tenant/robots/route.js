@@ -1,7 +1,6 @@
-// Per-tenant robots.txt. Reached because middleware rewrites `<host>/robots.txt`
-// (subdomain OR custom domain) to `/site/<subdomain>/robots.txt`. Host + Sitemap
-// are built from the REQUEST host, so every doctor site points at ITS OWN domain
-// — never curago.in.
+// Per-tenant robots.txt generator. Middleware rewrites `<host>/robots.txt` (any
+// doctor subdomain or custom domain) here. Host + Sitemap are built from the
+// REQUEST host, so every doctor site points at ITS OWN domain — never curago.in.
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 

@@ -8,6 +8,10 @@ import PerformanceScore from '@/models/practice-os/PerformanceScore';
 import Mission from '@/models/practice-os/Mission';
 import KpiEntry from '@/models/practice-os/KpiEntry';
 import JourneyTimeline from '@/models/practice-os/JourneyTimeline';
+import Framework from '@/models/practice-os/Framework';
+import PracticeOsPurchase from '@/models/practice-os/PracticeOsPurchase';
+import { requirePlatformAdmin } from '@/lib/platformAdminAuth';
+import { grantPracticeOsAccess, revokePracticeOsAccess } from '@/lib/practice-os/grant';
 
 export const runtime = 'nodejs';
 
@@ -61,6 +65,13 @@ export async function GET(request, { params }) {
       })
       .sort((a, b) => a.missionNumber - b.missionNumber);
 
+    // Access management: all packs + which the doctor currently owns (paid).
+    const [allPacks, purchases] = await Promise.all([
+      Framework.find({ isActive: true }).select('title priceInInr isPublished').sort({ order: 1, createdAt: 1 }).lean(),
+      PracticeOsPurchase.find({ doctorId: id, status: 'completed' }).select('frameworkId').lean(),
+    ]);
+    const ownedPackIds = purchases.map((p) => String(p.frameworkId)).filter(Boolean);
+
     return NextResponse.json({
       success: true,
       doctor,
@@ -69,9 +80,41 @@ export async function GET(request, { params }) {
       performance: performance || null,
       kpis,
       journey,
+      packs: allPacks.map((p) => ({ id: String(p._id), title: p.title, priceInInr: p.priceInInr || 0, isPublished: !!p.isPublished })),
+      ownedPackIds,
     });
   } catch (error) {
     console.error('[Practice OS user detail GET]', error);
     return NextResponse.json({ success: false, error: 'Failed to load doctor record' }, { status: 500 });
+  }
+}
+
+// POST /api/platform/practice-os/users/[id] — grant or remove pack access.
+// body: { action: 'grant' | 'revoke', frameworkId }
+export async function POST(request, { params }) {
+  try {
+    const { authenticated } = await requirePlatformAdmin();
+    if (!authenticated) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await connectDB();
+    const { id } = await params;
+    const { action, frameworkId } = await request.json();
+    if (!frameworkId) return NextResponse.json({ success: false, error: 'Missing pack' }, { status: 400 });
+
+    if (action === 'grant') {
+      await grantPracticeOsAccess(id, frameworkId, {
+        paymentId: `admin_${id}_${frameworkId}_${Date.now()}`,
+        amountInInr: 0,
+      });
+      return NextResponse.json({ success: true, granted: true });
+    }
+    if (action === 'revoke') {
+      await revokePracticeOsAccess(id, frameworkId);
+      return NextResponse.json({ success: true, revoked: true });
+    }
+    return NextResponse.json({ success: false, error: 'Unknown action' }, { status: 400 });
+  } catch (error) {
+    if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    console.error('[Practice OS user access POST]', error);
+    return NextResponse.json({ success: false, error: 'Failed to update access' }, { status: 500 });
   }
 }

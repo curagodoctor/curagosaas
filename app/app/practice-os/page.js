@@ -11,19 +11,22 @@ export default function ControlCenter() {
   const router = useRouter();
   const [packs, setPacks] = useState(null);
   const [name, setName] = useState('');
+  const [leaderboard, setLeaderboard] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
-        const [pRes, meRes] = await Promise.all([
+        const [pRes, meRes, lbRes] = await Promise.all([
           fetch('/api/practice-os/packs'),
           fetch('/api/auth/me'),
+          fetch('/api/practice-os/leaderboard'),
         ]);
         if (pRes.status === 401) { router.push('/login?entry=practice-os'); return; }
         const pData = await pRes.json();
         if (pData.success) setPacks(pData.packs);
         if (meRes.ok) { const me = await meRes.json(); setName(me.doctor?.displayName || me.doctor?.name || ''); }
+        if (lbRes.ok) { const lb = await lbRes.json(); if (lb.success) setLeaderboard(lb); }
       } finally {
         setLoading(false);
       }
@@ -60,6 +63,7 @@ export default function ControlCenter() {
         </Link>
         <div className="flex items-center gap-x-4 gap-y-1 text-[13px] flex-wrap justify-end">
           <Link href="/app/practice-os/schedule" className="pos-link">Schedule</Link>
+          <Link href="/app/practice-os/workspace" className="pos-link">Workspace</Link>
           <Link href="/app/practice-os/profile" className="pos-link">My profile</Link>
           <Link href="/admin/dashboard" className="text-white px-3.5 py-2 rounded-[8px] font-semibold" style={{ backgroundColor: 'var(--green)' }}>Website Builder</Link>
           <button onClick={logout} className="pos-link" style={{ color: 'var(--muted)' }}>Sign out</button>
@@ -76,17 +80,6 @@ export default function ControlCenter() {
           ? <>Your practice is <strong className="text-[var(--green)]">{overallPct}%</strong> built across your packs. One mission a day gets you the rest.</>
           : <>Pick a builder pack below. Each is a guided programme that produces a real asset — not a certificate.</>}
       </p>
-
-      {/* Overall progress across started packs */}
-      {started.length > 0 && (
-        <div className="mt-6 max-w-[560px]">
-          <div className="flex justify-between items-center mb-1.5">
-            <span className="pos-label">Overall progress</span>
-            <span className="pos-num text-[var(--ink)]">{overallPct}%</span>
-          </div>
-          <div className="pos-meter"><span style={{ width: `${overallPct}%` }} /></div>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8 mt-9">
         {/* Main — the packs */}
@@ -137,9 +130,48 @@ export default function ControlCenter() {
                 </Link>
               </div>
             )}
+
+            {/* Leaderboard */}
+            <LeaderboardCard lb={leaderboard} />
           </div>
         </aside>
       </div>
+    </div>
+  );
+}
+
+// Compact cohort leaderboard for the Control Center rail (top 5 + your rank).
+function LeaderboardCard({ lb }) {
+  if (!lb) return null;
+  const top = (lb.entries || []).slice(0, 5);
+  if (!top.length) {
+    return (
+      <div className="pos-card p-5">
+        <p className="pos-label mb-2">Leaderboard</p>
+        <p className="text-[13px] text-[var(--muted)]">Pick a name in <Link href="/app/practice-os/profile" className="pos-link">your profile</Link> to join the cohort leaderboard.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="pos-card p-5">
+      <div className="flex items-center justify-between mb-3">
+        <p className="pos-label">Leaderboard</p>
+        <Link href="/app/practice-os/leaderboard" className="pos-link text-[12px]">See all</Link>
+      </div>
+      <div className="space-y-2">
+        {top.map((e) => (
+          <div key={e.rank} className="flex items-center justify-between text-[13px]" style={{ fontWeight: e.isMe ? 600 : 400 }}>
+            <span className="flex items-center gap-2 min-w-0">
+              <span className="pos-num w-5 shrink-0" style={{ color: 'var(--muted)' }}>{e.rank}</span>
+              <span className="truncate" style={{ color: e.isMe ? 'var(--green)' : 'var(--ink)' }}>{e.username}{e.isMe ? ' (you)' : ''}</span>
+            </span>
+            <span className="pos-num shrink-0" style={{ color: 'var(--muted)' }}>{e.points}</span>
+          </div>
+        ))}
+      </div>
+      {lb.me?.hasUsername && lb.me.rank > 5 && (
+        <p className="text-[11px] text-[var(--muted)] mt-3 pt-2 border-t" style={{ borderColor: 'var(--rule-soft)' }}>You&apos;re #{lb.me.rank} of {lb.total}</p>
+      )}
     </div>
   );
 }

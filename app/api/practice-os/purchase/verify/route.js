@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
-import { getFrameworkPriceInr, verifyRazorpaySignature } from '@/lib/practice-os/access';
+import { getFrameworkPriceInr, verifyRazorpaySignature, computeGst } from '@/lib/practice-os/access';
 import { grantPracticeOsAccess } from '@/lib/practice-os/grant';
 
 export const runtime = 'nodejs';
@@ -27,12 +27,14 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: 'Payment verification failed' }, { status: 400 });
     }
 
-    // Record + unlock + enrol in this pack (idempotent; the webhook may also do this).
+    // Record + unlock + enrol in this pack (idempotent; the webhook may also do
+    // this). Amount is base price + GST, computed server-side (authoritative).
+    const { base, gst, total, pct } = computeGst(await getFrameworkPriceInr(packId));
     await grantPracticeOsAccess(doctor._id, packId, {
       paymentId: razorpay_payment_id,
       orderId: razorpay_order_id || '',
       signature: razorpay_signature || '',
-      amountInInr: await getFrameworkPriceInr(packId),
+      amountInInr: total, baseInInr: base, gstInInr: gst, gstPercent: pct,
     });
 
     return NextResponse.json({ success: true, practiceOsActive: true, packId: String(packId) });

@@ -143,6 +143,18 @@ export default function ProfilePage() {
         <p className="text-[11px] text-[var(--muted)] mt-3">Your CV is personal data, stored securely. You can delete it any time.</p>
       </div>
 
+      {/* Backup — download all Practice OS progress as JSON */}
+      <div className="pos-card p-5 mb-8">
+        <p className="pos-label mb-1" style={{ color: 'var(--green)' }}>Backup your progress</p>
+        <p className="text-sm text-[var(--muted)] mb-3" style={{ maxWidth: '52ch' }}>
+          Download everything — your missions, scores, KPIs, journey and workspace notes — as a file you can keep.
+        </p>
+        <a href="/api/practice-os/export" className="pos-action pos-focusable inline-flex items-center gap-2" style={{ background: 'var(--green)' }}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
+          Download backup
+        </a>
+      </div>
+
       <div className="space-y-8">
         {SECTIONS.map((sec) => (
           <div key={sec.id} id={`sec-${sec.id}`}>

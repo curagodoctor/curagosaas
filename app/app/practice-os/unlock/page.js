@@ -109,6 +109,8 @@ function UnlockPack() {
   if (!info) return null;
 
   const price = info.amountInr;
+  const pricing = info.pricing || { base: price, gst: 0, total: price, gstPercent: 0 };
+  const rupee = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
   const title = info.pack?.title || 'This pack';
 
   return (
@@ -127,9 +129,20 @@ function UnlockPack() {
       </p>
 
       <div className="pos-card p-7 mt-8">
-        <div className="flex items-baseline gap-2">
-          <span className="pos-num text-4xl text-[var(--ink)]">₹{Number(price).toLocaleString('en-IN')}</span>
-          <span className="text-sm text-[var(--muted)]">one-time · lifetime access to your work</span>
+        {/* Price breakdown — base + GST = total */}
+        <div className="space-y-2 pb-4 mb-4 border-b" style={{ borderColor: 'var(--rule-soft)' }}>
+          <div className="flex items-center justify-between text-[14.5px]">
+            <span className="text-[var(--muted)]">Pack price</span>
+            <span className="pos-num text-[var(--ink)]">{rupee(pricing.base)}</span>
+          </div>
+          <div className="flex items-center justify-between text-[14.5px]">
+            <span className="text-[var(--muted)]">GST ({pricing.gstPercent}%)</span>
+            <span className="pos-num text-[var(--ink)]">{rupee(pricing.gst)}</span>
+          </div>
+        </div>
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm text-[var(--muted)]">Total · one-time</span>
+          <span className="pos-num text-4xl text-[var(--ink)]">{rupee(pricing.total)}</span>
         </div>
 
         {!info.configured && (
@@ -142,9 +155,9 @@ function UnlockPack() {
           disabled={paying || !info.configured}
           className="pos-action pos-focusable inline-flex items-center gap-2 mt-6 disabled:opacity-50"
         >
-          {paying ? 'Opening checkout…' : `Get this pack — ₹${Number(price).toLocaleString('en-IN')}`}
+          {paying ? 'Opening checkout…' : `Pay ${rupee(pricing.total)}`}
         </button>
-        <p className="text-xs text-[var(--muted)] mt-3">Secure payment via Razorpay. You&apos;ll set up your first mission right after.</p>
+        <p className="text-xs text-[var(--muted)] mt-3">Secure payment via Razorpay. GST invoice emailed to you. You&apos;ll set up your first mission right after.</p>
 
         {info.devBypass && (
           <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--rule)' }}>

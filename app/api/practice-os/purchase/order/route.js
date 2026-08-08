@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
-import { getFrameworkPriceInr, getPracticeOsRazorpay, isDevPaymentBypass, hasPackAccess } from '@/lib/practice-os/access';
+import { getFrameworkPriceInr, getPracticeOsRazorpay, isDevPaymentBypass, hasPackAccess, computeGst } from '@/lib/practice-os/access';
 import Framework from '@/models/practice-os/Framework';
 
 export const runtime = 'nodejs';
@@ -17,11 +17,15 @@ export async function GET(request) {
     const fw = await Framework.findById(packId).select('title priceInInr isPublished isActive').lean();
     if (!fw) return NextResponse.json({ success: false, error: 'Pack not found' }, { status: 404 });
     const rzp = getPracticeOsRazorpay();
+    const price = fw.priceInInr || 0;
+    const { base, gst, total, pct } = computeGst(price);
     return NextResponse.json({
       success: true,
       pack: { id: String(fw._id), title: fw.title },
-      amountInr: fw.priceInInr || 0,
-      free: (fw.priceInInr || 0) <= 0,
+      amountInr: price,
+      // GST-inclusive breakdown shown at checkout.
+      pricing: { base, gst, total, gstPercent: pct },
+      free: price <= 0,
       alreadyOwned: await hasPackAccess(doctor._id, fw),
       configured: !!(rzp.keyId && rzp.keySecret),
       devBypass: isDevPaymentBypass(),
@@ -59,16 +63,21 @@ export async function POST(request) {
     if (amountInr <= 0) {
       return NextResponse.json({ success: false, error: 'This pack is free — no payment needed.' }, { status: 400 });
     }
+    // Charge base price + GST. The total (incl. GST) is what Razorpay collects.
+    const { base, gst, total, pct } = computeGst(amountInr);
     const auth = Buffer.from(`${rzp.keyId}:${rzp.keySecret}`).toString('base64');
 
     const res = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Basic ${auth}` },
       body: JSON.stringify({
-        amount: amountInr * 100, // paise
+        amount: total * 100, // paise, GST-inclusive
         currency: 'INR',
         receipt: `pos_${doctor._id}_${Date.now()}`,
-        notes: { type: 'practice_os', doctorId: String(doctor._id), frameworkId: String(packId) },
+        notes: {
+          type: 'practice_os', doctorId: String(doctor._id), frameworkId: String(packId),
+          base: String(base), gst: String(gst), gstPercent: String(pct),
+        },
       }),
     });
 
@@ -83,6 +92,7 @@ export async function POST(request) {
       success: true,
       order: { id: order.id, amount: order.amount, currency: order.currency },
       amountInr,
+      pricing: { base, gst, total, gstPercent: pct },
       packId: String(packId),
       key: rzp.publicKeyId,
       prefill: { name: doctor.displayName || doctor.name || '', email: doctor.email || '', contact: doctor.phone || '' },

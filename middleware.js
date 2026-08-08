@@ -77,6 +77,42 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
+  // Per-tenant sitemap.xml / robots.txt → dynamic generator under /api/tenant
+  // (route handlers literally named sitemap.xml/robots.txt collide with Next's
+  // reserved metadata routes and 404). Root domain falls through to the
+  // marketing app/sitemap.js + app/robots.js.
+  if (isSeoFile) {
+    const seoFile = pathname === '/sitemap.xml' ? 'sitemap' : 'robots';
+    const host = hostname.split(':')[0];
+
+    if (isCustomDomain(hostname)) {
+      try {
+        const lookupUrl = new URL('/api/public/domain-lookup', request.url);
+        lookupUrl.searchParams.set('domain', host);
+        const lookupRes = await fetch(lookupUrl.toString());
+        if (lookupRes.ok) {
+          const data = await lookupRes.json();
+          if (data.subdomain) {
+            const u = new URL(`/api/tenant/${seoFile}`, request.url);
+            u.searchParams.set('subdomain', data.subdomain);
+            return NextResponse.rewrite(u);
+          }
+        }
+      } catch (error) {
+        console.error('[Middleware] SEO custom-domain lookup failed:', error.message);
+      }
+      return NextResponse.next();
+    }
+
+    const seoSub = extractSubdomain(hostname);
+    if (seoSub && seoSub !== 'admin') {
+      const u = new URL(`/api/tenant/${seoFile}`, request.url);
+      u.searchParams.set('subdomain', seoSub);
+      return NextResponse.rewrite(u);
+    }
+    return NextResponse.next(); // root domain → marketing sitemap/robots
+  }
+
   // Check for custom domain first (e.g., doc.tripputech.com)
   if (isCustomDomain(hostname)) {
     const host = hostname.split(':')[0];

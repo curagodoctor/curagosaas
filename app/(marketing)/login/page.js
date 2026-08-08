@@ -104,7 +104,7 @@ function LoginPageInner() {
       {/* Main Content */}
       <div className="flex-1 flex pt-16">
         {/* Left Side - Branding */}
-        <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12" style={{ backgroundColor: 'var(--green-deep)' }}>
+        <div className="hidden lg:flex lg:w-3/5 items-center justify-center p-12" style={{ backgroundColor: 'var(--green-deep)' }}>
           <div className="max-w-md text-white">
             <h2 className="serif text-[44px] leading-[1.05] mb-6">Welcome back, Doctor.</h2>
             <p className="text-xl mb-8" style={{ color: 'var(--green-lite)' }}>
@@ -149,7 +149,7 @@ function LoginPageInner() {
         </div>
 
         {/* Right Side - Login Form */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12" style={{ backgroundColor: 'var(--paper)' }}>
+        <div className="w-full lg:w-2/5 flex items-center justify-center p-6 sm:p-12" style={{ backgroundColor: 'var(--paper)' }}>
           <div className="w-full max-w-md">
             <div className="text-center mb-8">
               <div className="lg:hidden mb-6">

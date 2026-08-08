@@ -49,10 +49,17 @@ export async function POST(request) {
     }
 
     await connectDB();
+    const total = Math.round(((payment?.amount ?? order?.amount) || 0) / 100);
+    const base = parseInt(notes.base || '', 10);
+    const gst = parseInt(notes.gst || '', 10);
+    const pct = parseFloat(notes.gstPercent || '');
     await grantPracticeOsAccess(notes.doctorId, notes.frameworkId, {
       paymentId,
       orderId: order?.id || payment?.order_id || '',
-      amountInInr: Math.round(((payment?.amount ?? order?.amount) || 0) / 100),
+      amountInInr: total,
+      baseInInr: Number.isFinite(base) ? base : total,
+      gstInInr: Number.isFinite(gst) ? gst : 0,
+      gstPercent: Number.isFinite(pct) ? pct : 0,
     });
 
     console.log(`[Practice OS webhook] ${eventType} granted doctor ${notes.doctorId} access to pack ${notes.frameworkId}`);

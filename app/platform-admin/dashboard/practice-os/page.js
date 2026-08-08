@@ -534,25 +534,72 @@ function DoctorsTab() {
   );
 }
 
+// Grant or remove a doctor's Builder Pack access (no payment needed). Grant is
+// non-destructive and reversible; Remove drops the paid entitlement but keeps
+// their progress (free packs stay accessible regardless).
+function AccessManager({ doctorId, packs, ownedPackIds, onChange }) {
+  const [pack, setPack] = useState(packs[0]?.id || '');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  const owned = new Set(ownedPackIds);
+
+  const act = async (action) => {
+    if (!pack) return;
+    setBusy(true); setMsg('');
+    try {
+      const res = await fetch(`/api/platform/practice-os/users/${doctorId}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, frameworkId: pack }),
+      });
+      const d = await res.json();
+      if (d.success) { setMsg(action === 'grant' ? 'Access granted.' : 'Access removed.'); await onChange?.(); }
+      else setMsg(d.error || 'Failed.');
+    } catch { setMsg('Something went wrong.'); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <div className="bg-gray-50 rounded-lg p-4">
+      <h3 className="font-semibold text-gray-900 mb-1">Pack access</h3>
+      <p className="text-xs text-gray-400 mb-3">Grant or remove this doctor&apos;s access to a Builder Pack (no payment required).</p>
+      <div className="flex flex-wrap gap-2 mb-3">
+        {packs.filter((p) => owned.has(p.id)).map((p) => (
+          <span key={p.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{p.title}</span>
+        ))}
+        {ownedPackIds.length === 0 && <span className="text-xs text-gray-400">No paid pack access.</span>}
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        <select value={pack} onChange={(e) => setPack(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          {packs.length === 0 && <option value="">No packs</option>}
+          {packs.map((p) => <option key={p.id} value={p.id}>{p.title}{p.priceInInr > 0 ? ` (₹${p.priceInInr})` : ' (free)'}</option>)}
+        </select>
+        <button onClick={() => act('grant')} disabled={busy || !pack} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">Grant</button>
+        <button onClick={() => act('revoke')} disabled={busy || !pack} className="px-4 py-2 border border-red-300 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 disabled:opacity-50">Remove</button>
+        {msg && <span className="text-sm text-gray-600">{msg}</span>}
+      </div>
+    </div>
+  );
+}
+
 function DoctorDetailModal({ doctorId, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`/api/platform/practice-os/users/${doctorId}`);
-        const json = await res.json();
-        if (json.success) setData(json);
-        else setError(json.error || 'Failed to load record');
-      } catch {
-        setError('Something went wrong.');
-      } finally {
-        setLoading(false);
-      }
-    })();
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/platform/practice-os/users/${doctorId}`);
+      const json = await res.json();
+      if (json.success) setData(json);
+      else setError(json.error || 'Failed to load record');
+    } catch {
+      setError('Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
   }, [doctorId]);
+
+  useEffect(() => { load(); }, [load]);
 
   const progressStyle = {
     locked: 'bg-gray-100 text-gray-500',
@@ -597,6 +644,9 @@ function DoctorDetailModal({ doctorId, onClose }) {
                   <p className="text-sm text-gray-800">{data.enrollment?.currentDayNumber ?? '—'}</p>
                 </div>
               </div>
+
+              {/* Pack access — grant / remove from backend */}
+              <AccessManager doctorId={doctorId} packs={data.packs || []} ownedPackIds={data.ownedPackIds || []} onChange={load} />
 
               {/* Performance */}
               {data.performance && (

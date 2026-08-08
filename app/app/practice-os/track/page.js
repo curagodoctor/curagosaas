@@ -117,6 +117,7 @@ function TopBar({ pack, withPack }) {
         <Link href="/app/practice-os" className="pos-link">All packs</Link>
         <ProgressMenu withPack={withPack} />
         <Link href="/app/practice-os/schedule" className="pos-link">Schedule</Link>
+        <Link href="/app/practice-os/workspace" className="pos-link">Workspace</Link>
         <Link href={withPack('/app/practice-os/leaderboard')} className="pos-link">Leaderboard</Link>
         <Link href="/app/practice-os/profile" className="pos-link">My profile</Link>
         <Link href="/admin/dashboard" className="text-white px-3.5 py-2 rounded-[8px] font-semibold" style={{ backgroundColor: 'var(--green)' }}>Website Builder</Link>
