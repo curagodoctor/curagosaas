@@ -12,7 +12,7 @@ export default function TemplatesPage() {
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', channel: 'sms', subject: '', body: '',
+    name: '', channel: 'email', subject: '', body: '',
   });
 
   const fetchTemplates = async () => {
@@ -55,7 +55,7 @@ export default function TemplatesPage() {
       if (data.success) {
         setShowModal(false);
         setEditing(null);
-        setFormData({ name: '', channel: 'sms', subject: '', body: '' });
+        setFormData({ name: '', channel: 'email', subject: '', body: '' });
         fetchTemplates();
       } else {
         await showAlert({ title: 'Error', message: data.error, type: 'error' });
@@ -137,7 +137,7 @@ export default function TemplatesPage() {
         <button
           onClick={() => {
             setEditing(null);
-            setFormData({ name: '', channel: 'sms', subject: '', body: '' });
+            setFormData({ name: '', channel: 'email', subject: '', body: '' });
             setShowModal(true);
           }}
           className="inline-flex items-center gap-2 px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] transition-colors"

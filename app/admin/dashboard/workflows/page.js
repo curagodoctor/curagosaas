@@ -61,7 +61,7 @@ function WorkflowsPageInner() {
   const handleAddStep = () => {
     setFormData(prev => ({
       ...prev,
-      steps: [...prev.steps, { stepOrder: prev.steps.length, delayDays: prev.steps.length === 0 ? 0 : 3, delayHours: 0, channel: 'sms', templateId: templates[0]?._id || '' }],
+      steps: [...prev.steps, { stepOrder: prev.steps.length, delayDays: prev.steps.length === 0 ? 0 : 3, delayHours: 0, channel: 'email', templateId: templates.find(t => t.channel === 'email')?._id || templates[0]?._id || '' }],
     }));
   };
 
@@ -374,7 +374,6 @@ function WorkflowsPageInner() {
                             onChange={e => handleStepChange(i, 'channel', e.target.value)}
                             className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm bg-white"
                           >
-                            <option value="sms">SMS</option>
                             <option value="email">Email</option>
                           </select>
                         </div>

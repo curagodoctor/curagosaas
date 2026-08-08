@@ -75,7 +75,14 @@ export async function GET(request) {
       return redirectTo(origin, '/login?error=suspended');
     }
 
-    const dest = DEST[entry] || '/app';
+    // Website Builder needs a subdomain; email signup collects it up front, but
+    // Google signup doesn't — so send those doctors through a one-step
+    // "choose your address" screen before landing in the app.
+    const landing = DEST[entry] || '/app';
+    const needsSubdomain = entry === 'website-builder' && !doctor.subdomain;
+    const dest = needsSubdomain
+      ? `/app/onboarding/subdomain?next=${encodeURIComponent(landing)}`
+      : landing;
     const token = generateDoctorToken(doctor);
     const res = redirectTo(origin, dest);
     res.cookies.set('doctor_token', token, {

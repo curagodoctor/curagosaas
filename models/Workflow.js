@@ -80,63 +80,52 @@ WorkflowSchema.statics.createDefaultsForDoctor = async function(doctorId, smsTem
   const existing = await this.countDocuments({ doctorId });
   if (existing > 0) return;
 
+  // All workflows are email-only — SMS is disabled platform-wide.
   const workflows = [
     {
       doctorId,
       name: 'Review Request Workflow',
-      description: 'Day 0 SMS → Day 3 SMS → Day 5 Email. Best for collecting Google Reviews after a visit.',
+      description: 'Day 0 → Day 3 → Day 5 via email. Best for collecting Google Reviews after a visit.',
       isDefault: true,
       isActive: true,
       steps: [
-        { stepOrder: 0, delayDays: 0, channel: 'sms', templateId: smsTemplateId, description: 'Initial review request via SMS' },
-        { stepOrder: 1, delayDays: 3, channel: 'sms', templateId: smsTemplateId, description: 'Follow-up SMS reminder' },
+        { stepOrder: 0, delayDays: 0, channel: 'email', templateId: emailTemplateId, description: 'Initial review request email' },
+        { stepOrder: 1, delayDays: 3, channel: 'email', templateId: emailTemplateId, description: 'Follow-up email reminder' },
         { stepOrder: 2, delayDays: 5, channel: 'email', templateId: emailTemplateId, description: 'Final email reminder' },
       ],
     },
     {
       doctorId,
       name: 'Quick Follow-up',
-      description: 'Day 0 SMS → Day 1 Email. Short 2-step follow-up for quick engagement.',
+      description: 'Day 0 → Day 1 via email. Short 2-step follow-up for quick engagement.',
       isDefault: false,
       isActive: true,
       steps: [
-        { stepOrder: 0, delayDays: 0, channel: 'sms', templateId: smsTemplateId, description: 'Immediate SMS' },
+        { stepOrder: 0, delayDays: 0, channel: 'email', templateId: emailTemplateId, description: 'Immediate email' },
         { stepOrder: 1, delayDays: 1, channel: 'email', templateId: emailTemplateId, description: 'Next day email follow-up' },
       ],
     },
     {
       doctorId,
       name: 'Gentle Reminder',
-      description: 'Day 1 SMS → Day 7 Email. Spaced out reminders for less urgent follow-ups.',
+      description: 'Day 1 → Day 7 via email. Spaced out reminders for less urgent follow-ups.',
       isDefault: false,
       isActive: true,
       steps: [
-        { stepOrder: 0, delayDays: 1, channel: 'sms', templateId: smsTemplateId, description: 'SMS after 1 day' },
+        { stepOrder: 0, delayDays: 1, channel: 'email', templateId: emailTemplateId, description: 'Email after 1 day' },
         { stepOrder: 1, delayDays: 7, channel: 'email', templateId: emailTemplateId, description: 'Email after 1 week' },
       ],
     },
     {
       doctorId,
-      name: 'Email Only Campaign',
-      description: 'Day 0 → Day 3 → Day 7 via Email. For contacts who prefer email communication.',
+      name: 'Extended Campaign',
+      description: 'Day 0 → Day 3 → Day 7 via email. A longer three-touch email sequence.',
       isDefault: false,
       isActive: true,
       steps: [
         { stepOrder: 0, delayDays: 0, channel: 'email', templateId: emailTemplateId, description: 'Initial email' },
         { stepOrder: 1, delayDays: 3, channel: 'email', templateId: emailTemplateId, description: 'Follow-up email' },
         { stepOrder: 2, delayDays: 7, channel: 'email', templateId: emailTemplateId, description: 'Final email reminder' },
-      ],
-    },
-    {
-      doctorId,
-      name: 'SMS Blitz',
-      description: 'Day 0 → Day 2 → Day 4 via SMS. Aggressive SMS-only campaign for quick results.',
-      isDefault: false,
-      isActive: true,
-      steps: [
-        { stepOrder: 0, delayDays: 0, channel: 'sms', templateId: smsTemplateId, description: 'Immediate SMS' },
-        { stepOrder: 1, delayDays: 2, channel: 'sms', templateId: smsTemplateId, description: 'SMS on Day 2' },
-        { stepOrder: 2, delayDays: 4, channel: 'sms', templateId: smsTemplateId, description: 'Final SMS on Day 4' },
       ],
     },
   ];

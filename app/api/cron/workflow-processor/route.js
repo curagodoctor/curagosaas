@@ -67,14 +67,16 @@ export async function GET(request) {
         await execution.populate('workflowId');
         const step = execution.workflowId.steps.sort((a, b) => a.stepOrder - b.stepOrder)[execution.currentStepIndex];
 
+        // SMS is disabled platform-wide — every workflow step is delivered via
+        // email, including steps that older workflows authored as SMS.
+        const channel = 'email';
         let template = await MessageTemplate.findById(step.templateId);
-        if (!template) {
-          // Orphaned template ref — fall back to a template of the same channel.
-          template = await MessageTemplate.findOne({ doctorId: doctor._id, channel: step.channel });
+        if (!template || template.channel !== 'email') {
+          // Missing, orphaned, or SMS template — use the doctor's email template.
+          template = await MessageTemplate.findOne({ doctorId: doctor._id, channel: 'email' });
         }
 
-        const channel = step.channel;
-        const to = channel === 'sms' ? contact.phone : contact.email;
+        const to = contact.email;
 
         if (!template) {
           // A missing/orphaned template must NOT kill the whole workflow — skip
