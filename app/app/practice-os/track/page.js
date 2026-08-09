@@ -47,7 +47,7 @@ function TrackView() {
   const totalDays = enrollment.totalDays || days.length;
 
   return (
-    <div className="w-full px-4 sm:px-8 lg:px-12 pt-[54px] pb-6">
+    <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-6">
       <TopBar pack={pack} withPack={withPack} />
 
       {daysAway >= 4 && !allComplete && (
@@ -104,7 +104,7 @@ function TopBar({ pack, withPack }) {
       <div className="flex items-center gap-3 min-w-0">
         <Link href="/app/practice-os" className="flex items-center shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/curago-logo.png" alt="CuraGo" className="h-6 w-auto" />
+          <img src="/curago-logo.png" alt="CuraGo" className="h-9 sm:h-10 w-auto" />
         </Link>
         {pack?.title && (
           <>

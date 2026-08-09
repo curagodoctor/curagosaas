@@ -164,7 +164,7 @@ export default function WorkspacePage() {
         <div className="flex items-center gap-3 min-w-0">
           <Link href="/app/practice-os" className="flex items-center shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/curago-logo.png" alt="CuraGo" className="h-6 w-auto" />
+            <img src="/curago-logo.png" alt="CuraGo" className="h-9 sm:h-10 w-auto" />
           </Link>
           <span className="text-[var(--rule)]">/</span>
           <span className="text-[13px] text-[var(--muted)]">Workspace</span>

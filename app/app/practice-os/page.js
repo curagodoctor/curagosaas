@@ -58,12 +58,12 @@ export default function ControlCenter() {
   const firstName = (name || 'there').replace(/^Dr\.?\s*/i, 'Dr. ').split(' ').slice(0, 2).join(' ');
 
   return (
-    <div className="w-full px-4 sm:px-8 lg:px-12 pt-[54px] pb-6 max-w-[1240px] mx-auto">
+    <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-6 max-w-[1240px] mx-auto">
       {/* Fixed top nav with quick links */}
       <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between gap-3 px-4 sm:px-8 lg:px-12 py-1.5" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--rule)' }}>
         <Link href="/app/practice-os" className="flex items-center shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/curago-logo.png" alt="CuraGo" className="h-6 w-auto" />
+          <img src="/curago-logo.png" alt="CuraGo" className="h-9 sm:h-10 w-auto" />
         </Link>
         <div className="flex items-center gap-x-4 text-[13px] flex-nowrap overflow-x-auto whitespace-nowrap justify-end">
           <Link href="/app/practice-os/schedule" className="pos-link">Schedule</Link>
