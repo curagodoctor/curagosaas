@@ -107,7 +107,7 @@ function UpgradeScreen({ title, entitlements, onUnlocked }) {
         </p>
         <p className="text-gray-600 mb-6">
           Upgrade your subscription or enter a promo code to unlock <strong>Contacts</strong>,{' '}
-          <strong>Workflows</strong> and <strong>Messaging</strong>.
+          <strong>Workflows</strong>, <strong>Templates</strong> and <strong>Messaging</strong>.
         </p>
 
         <a

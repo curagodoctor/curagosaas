@@ -47,7 +47,7 @@ function TrackView() {
   const totalDays = enrollment.totalDays || days.length;
 
   return (
-    <div className="w-full px-4 sm:px-8 lg:px-12 py-6">
+    <div className="w-full px-4 sm:px-8 lg:px-12 pt-[54px] pb-6">
       <TopBar pack={pack} withPack={withPack} />
 
       {daysAway >= 4 && !allComplete && (
@@ -100,27 +100,27 @@ function TopBar({ pack, withPack }) {
     router.push('/login');
   };
   return (
-    <div className="flex items-center justify-between gap-3 mb-8">
+    <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between gap-3 px-4 sm:px-8 lg:px-12 py-1.5" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--rule)' }}>
       <div className="flex items-center gap-3 min-w-0">
         <Link href="/app/practice-os" className="flex items-center shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/Logo.svg" alt="CuraGo" className="h-7 sm:h-8 w-auto" />
+          <img src="/curago-logo.png" alt="CuraGo" className="h-6 w-auto" />
         </Link>
         {pack?.title && (
           <>
             <span className="text-[var(--rule)]">/</span>
-            <Link href="/app/practice-os" className="text-[13px] text-[var(--muted)] hover:text-[var(--ink)] truncate">{pack.title}</Link>
+            <Link href="/app/practice-os" className="text-[13px] text-[var(--muted)] hover:text-[var(--ink)] truncate hidden sm:inline">{pack.title}</Link>
           </>
         )}
       </div>
-      <div className="flex items-center gap-x-4 gap-y-1 text-[13px] flex-wrap justify-end">
+      <div className="flex items-center gap-x-4 text-[13px] flex-nowrap overflow-x-auto whitespace-nowrap justify-end">
         <Link href="/app/practice-os" className="pos-link">All packs</Link>
         <ProgressMenu withPack={withPack} />
         <Link href="/app/practice-os/schedule" className="pos-link">Schedule</Link>
         <Link href="/app/practice-os/workspace" className="pos-link">Workspace</Link>
         <Link href={withPack('/app/practice-os/leaderboard')} className="pos-link">Leaderboard</Link>
         <Link href="/app/practice-os/profile" className="pos-link">My profile</Link>
-        <Link href="/admin/dashboard" className="text-white px-3.5 py-2 rounded-[8px] font-semibold" style={{ backgroundColor: 'var(--green)' }}>Website Builder</Link>
+        <Link href="/admin/dashboard" className="text-white px-3 py-1 rounded-[7px] font-semibold text-[12.5px] shrink-0" style={{ backgroundColor: 'var(--green)' }}>Website Builder</Link>
         <button onClick={logout} className="pos-link" style={{ color: 'var(--muted)' }}>Sign out</button>
       </div>
     </div>
@@ -133,9 +133,8 @@ function ProgressMenu({ withPack }) {
   const [open, setOpen] = useState(false);
   const items = [
     ['Your progress', withPack('/app/practice-os/score')],
-    ['Journey', withPack('/app/practice-os/journey')],
+    ['Journey & record', withPack('/app/practice-os/journey')],
     ['Report', withPack('/app/practice-os/report')],
-    ['Your record', withPack('/app/practice-os/record')],
   ];
   return (
     <div className="relative">

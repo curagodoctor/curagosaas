@@ -136,7 +136,7 @@ function ResetPasswordContent() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-3.5">
               <Link href="/" className="flex items-center">
-                <img src="/Logo.svg" alt="CuraGo Logo" className="h-7 sm:h-10 w-auto" />
+                <img src="/curago-logo.png" alt="CuraGo" className="h-7 sm:h-10 w-auto" />
               </Link>
             </div>
           </div>
@@ -172,7 +172,7 @@ function ResetPasswordContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-3.5">
             <Link href="/" className="flex items-center">
-              <img src="/Logo.svg" alt="CuraGo Logo" className="h-7 sm:h-10 w-auto" />
+              <img src="/curago-logo.png" alt="CuraGo" className="h-7 sm:h-10 w-auto" />
             </Link>
           </div>
         </div>

@@ -45,7 +45,7 @@ const SubscriptionSchema = new mongoose.Schema({
   },
   amount: {
     type: Number,
-    default: 1000, // ₹1,000/month
+    default: 500, // ₹500/month
   },
   // Promo code unlock
   promoCode: {

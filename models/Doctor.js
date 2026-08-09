@@ -117,6 +117,12 @@ const DoctorSchema = new mongoose.Schema({
     type: String,
     default: 'Asia/Kolkata'
   },
+  // Per-doctor website analytics — the doctor's own tracking IDs, injected into
+  // their published site so their pixels fire on their own traffic.
+  analytics: {
+    ga4MeasurementId: { type: String, trim: true, default: '' }, // e.g. G-XXXXXXXXXX
+    metaPixelId: { type: String, trim: true, default: '' },      // numeric Meta Pixel ID
+  },
   // Set once default workflows have been seeded, so deleting all workflows
   // doesn't cause them to regenerate on the next dashboard load.
   workflowsInitialized: {

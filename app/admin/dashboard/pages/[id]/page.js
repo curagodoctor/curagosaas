@@ -769,7 +769,7 @@ export default function PageBuilderEditor() {
           {/* Preview Button - Opens doctor's subdomain */}
           <a
             href={doctorData?.subdomain
-              ? `https://${doctorData.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'curago.in'}/`
+              ? `https://${doctorData.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'curago.in'}/${pageData.slug === 'home' ? '' : (pageData.slug || '')}`
               : `/`
             }
             target="_blank"

@@ -83,7 +83,7 @@ export default function SchedulePage() {
       <div className="flex items-center justify-between gap-3 mb-8">
         <Link href="/app/practice-os" className="flex items-center shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/Logo.svg" alt="CuraGo" className="h-7 sm:h-8 w-auto" />
+          <img src="/curago-logo.png" alt="CuraGo" className="h-7 sm:h-8 w-auto" />
         </Link>
         <div className="flex items-center gap-x-4 gap-y-1 text-[13px] flex-wrap justify-end">
           <Link href="/app/practice-os" className="pos-link">All packs</Link>

@@ -85,7 +85,7 @@ function LoginPageInner() {
           <div className="flex justify-between items-center py-3.5">
             <Link href="/" className="flex items-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/Logo.svg" alt="CuraGo Logo" className="h-7 sm:h-9 w-auto" />
+              <img src="/curago-logo.png" alt="CuraGo" className="h-7 sm:h-9 w-auto" />
             </Link>
             <div className="flex items-center gap-4">
               <span className="hidden sm:inline text-[15px]" style={{ color: 'var(--muted)' }}>Don&apos;t have an account?</span>

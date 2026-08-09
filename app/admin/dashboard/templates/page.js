@@ -2,8 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useModal } from '@/contexts/ModalContext';
+import FeatureGate from '@/components/FeatureGate';
 
 export default function TemplatesPage() {
+  return (
+    <FeatureGate feature="templates" title="Templates">
+      <TemplatesPageInner />
+    </FeatureGate>
+  );
+}
+
+function TemplatesPageInner() {
   const { showAlert, showConfirm } = useModal();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);

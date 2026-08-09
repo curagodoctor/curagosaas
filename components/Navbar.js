@@ -62,13 +62,13 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-12 h-12 rounded-xl overflow-hidden shadow-lg group-hover:scale-110 transition-transform duration-300">
+            <div className="h-12 flex items-center group-hover:scale-110 transition-transform duration-300">
               <Image
-                src="/logo.png"
-                alt="Dr. Yuvaraj T Logo"
-                width={48}
+                src="/curago-logo.png"
+                alt="CuraGo"
+                width={144}
                 height={48}
-                className="object-cover"
+                className="h-12 w-auto object-contain"
               />
             </div>
             <div>

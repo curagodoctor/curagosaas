@@ -32,7 +32,7 @@ export async function POST(request) {
         razorpaySubscriptionId: result.subscriptionId,
         trialStartDate: new Date(),
         trialEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        amount: 1000,
+        amount: 500,
       });
     }
 

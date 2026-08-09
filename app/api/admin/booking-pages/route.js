@@ -119,7 +119,7 @@ export async function POST(request) {
       title: data.title,
       metaDescription: data.metaDescription || '',
       metaKeywords: data.metaKeywords || [],
-      status: data.status || 'draft',
+      status: data.status || 'published',
       sections: data.sections || buildDefaultSections(doctor),
       consultationFee: data.consultationFee || 1000,
       bookingFee: data.bookingFee || 150,

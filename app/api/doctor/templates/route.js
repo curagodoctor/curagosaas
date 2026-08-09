@@ -2,11 +2,15 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import MessageTemplate from '@/models/MessageTemplate';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
+import { requireFeatureOr403, FEATURES } from '@/lib/entitlements';
 
 export async function GET(request) {
   try {
     const doctor = await requireDoctorAuth(request);
     await connectDB();
+
+    const locked = await requireFeatureOr403(doctor._id, FEATURES.TEMPLATES);
+    if (locked) return locked;
 
     const { searchParams } = new URL(request.url);
     const channel = searchParams.get('channel');
@@ -36,6 +40,9 @@ export async function POST(request) {
   try {
     const doctor = await requireDoctorAuth(request);
     await connectDB();
+
+    const locked = await requireFeatureOr403(doctor._id, FEATURES.TEMPLATES);
+    if (locked) return locked;
 
     const { name, channel, subject, body } = await request.json();
 

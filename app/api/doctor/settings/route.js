@@ -26,6 +26,8 @@ export async function GET(request) {
         subdomain: doctor.subdomain,
         customDomain: doctor.customDomain,
         email: doctor.email,
+        ga4MeasurementId: doctor.analytics?.ga4MeasurementId || '',
+        metaPixelId: doctor.analytics?.metaPixelId || '',
       }
     });
   } catch (error) {
@@ -87,6 +89,22 @@ export async function PUT(request) {
         { error: 'Bio cannot exceed 500 characters' },
         { status: 400 }
       );
+    }
+
+    // Website analytics IDs — stored nested under `analytics`. Empty string clears.
+    if (data.ga4MeasurementId !== undefined) {
+      const ga4 = String(data.ga4MeasurementId).trim();
+      if (ga4 && !/^G-[A-Z0-9]{4,}$/i.test(ga4)) {
+        return NextResponse.json({ error: 'GA4 Measurement ID should look like G-XXXXXXXXXX' }, { status: 400 });
+      }
+      updates['analytics.ga4MeasurementId'] = ga4;
+    }
+    if (data.metaPixelId !== undefined) {
+      const pixel = String(data.metaPixelId).trim();
+      if (pixel && !/^\d{6,20}$/.test(pixel)) {
+        return NextResponse.json({ error: 'Meta Pixel ID should be the numeric ID (6–20 digits)' }, { status: 400 });
+      }
+      updates['analytics.metaPixelId'] = pixel;
     }
 
     const updatedDoctor = await Doctor.findByIdAndUpdate(

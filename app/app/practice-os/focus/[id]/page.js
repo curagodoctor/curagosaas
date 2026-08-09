@@ -412,10 +412,11 @@ function FocusSession() {
               </div>
             )}
 
-            {/* Module inputs (evidence) */}
+            {/* Add to your record — its own distinct box (CLAUDE.md §4: "Your record", not "evidence"). */}
             {mod.inputs?.length > 0 && (
-              <div className="pos-card p-5 mb-4">
-                <p className="pos-label mb-3" style={{ color: 'var(--orange)' }}>Save your evidence</p>
+              <div className="pos-card p-5 mb-4" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)' }}>
+                <p className="pos-label mb-1" style={{ color: 'var(--green)' }}>Add to your record</p>
+                <p className="text-[12.5px] text-[var(--muted)] mb-3">Keep proof of what you built — it becomes part of your record and your Day 30 completion.</p>
                 <div className="space-y-3">
                   {mod.inputs.map((f) => (
                     <div key={f.id}>

@@ -37,7 +37,7 @@ export default function RefundPage() {
         <div className="legalWrap" style={{ padding: '14px 24px' }}>
           <Link href="/" style={{ display: 'inline-flex', alignItems: 'center' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/Logo.svg" alt="CuraGo" style={{ height: '32px', width: 'auto' }} />
+            <img src="/curago-logo.png" alt="CuraGo" style={{ height: '32px', width: 'auto' }} />
           </Link>
         </div>
       </nav>

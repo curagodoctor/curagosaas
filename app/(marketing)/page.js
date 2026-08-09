@@ -140,7 +140,7 @@ const BODY = `<div style="font-family:var(--sans)">
 <header style="position:sticky;top:0;z-index:60;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(0,0,0,.06);background-color:#FFFFFF">
   <nav style="max-width:1220px;margin:0 auto;padding:9px clamp(16px,4vw,40px);display:flex;align-items:center;justify-content:space-between;gap:16px">
     <a href="#top" style="display:flex;align-items:center;gap:10px">
-      <span style="display:grid;place-items:center;border-radius:10px;padding:4px"><img src="/landing/logo.png" alt="CuraGo" style="width:186px;height:45px;object-fit:contain"></span>
+      <span style="display:grid;place-items:center;border-radius:10px;padding:4px"><img src="/curago-logo.png" alt="CuraGo" style="height:40px;width:auto;object-fit:contain"></span>
     </a>
     <div class="dc-navlinks">
       <a href="#builder" style="color:#096B17;font-size:14.5px;font-weight:500">Practice Builder</a>
@@ -148,7 +148,8 @@ const BODY = `<div style="font-family:var(--sans)">
       <a href="#cohort" style="color:#096B17;font-size:14.5px;font-weight:500">Pricing</a>
       <a href="#books" style="color:#096B17;font-size:14.5px;font-weight:500">Buy books/masterclass</a>
       <a href="#free" style="color:#096B17;font-size:14.5px;font-weight:500">Free website builder</a>
-      <a href="#cohort" style="background:var(--orange);color:#fff;font-weight:700;font-size:14.5px;padding:11px 20px;border-radius:11px;box-shadow:0 6px 18px rgba(255,122,26,.35)">Join the cohort</a>
+      <a href="/login" style="color:#096B17;font-size:14.5px;font-weight:600;padding:11px 14px">Login</a>
+      <a href="/signup" style="background:var(--orange);color:#fff;font-weight:700;font-size:14.5px;padding:11px 20px;border-radius:11px;box-shadow:0 6px 18px rgba(255,122,26,.35)">Sign up</a>
     </div>
     <button class="dc-hamburger" data-mobile-toggle="" aria-label="Menu" aria-expanded="false" aria-controls="dc-mobile-menu">
       <span></span><span></span><span></span>
@@ -160,7 +161,8 @@ const BODY = `<div style="font-family:var(--sans)">
     <a href="#cohort">Pricing</a>
     <a href="#books">Buy books/masterclass</a>
     <a href="#free">Free website builder</a>
-    <a href="#cohort" class="dc-mm-cta">Join the cohort</a>
+    <a href="/login">Login</a>
+    <a href="/signup" class="dc-mm-cta">Sign up</a>
   </div>
 </header>
 
@@ -631,7 +633,7 @@ const BODY = `<div style="font-family:var(--sans)">
 <footer style="background:var(--forest-3);color:rgba(255,255,255,.6);padding:40px clamp(16px,4vw,40px)">
   <div style="max-width:1120px;margin:0 auto;display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:12.5px">
     <div style="display:flex;align-items:center;gap:10px;color:#fff">
-      <span style="display:grid;place-items:center;border-radius:8px;background:#fff;padding:4px"><img src="/landing/logo.png" alt="" style="width:128px;height:33px;object-fit:contain"></span>
+      <span style="display:grid;place-items:center;border-radius:8px;background:#fff;padding:4px"><img src="/curago-logo.png" alt="CuraGo" style="height:30px;width:auto;object-fit:contain"></span>
       CuraGo · Made in India
     </div>
     <div style="display:flex;gap:20px;flex-wrap:wrap">

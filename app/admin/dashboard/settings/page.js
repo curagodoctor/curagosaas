@@ -18,6 +18,8 @@ export default function SettingsPage() {
     phone: '',
     licenseNumber: '',
     timezone: 'Asia/Kolkata',
+    ga4MeasurementId: '',
+    metaPixelId: '',
   });
   const [domainInfo, setDomainInfo] = useState({ subdomain: '', customDomain: null });
   const [domainInput, setDomainInput] = useState('');
@@ -122,6 +124,8 @@ export default function SettingsPage() {
           phone: data.doctor.phone || '',
           licenseNumber: data.doctor.licenseNumber || '',
           timezone: data.doctor.timezone || 'Asia/Kolkata',
+          ga4MeasurementId: data.doctor.ga4MeasurementId || '',
+          metaPixelId: data.doctor.metaPixelId || '',
         });
         setDomainInfo({
           subdomain: data.doctor.subdomain || '',
@@ -187,6 +191,7 @@ export default function SettingsPage() {
     { id: 'contact', label: 'Contact & WhatsApp' },
     { id: 'practice', label: 'Practice Info' },
     { id: 'domain', label: 'Domain & DNS' },
+    { id: 'analytics', label: 'Analytics & Tracking' },
     { id: 'subscription', label: 'Subscription' },
     { id: 'seo', label: 'SEO Team' },
     { id: 'clinic-manager', label: 'Clinic Manager' },
@@ -683,11 +688,12 @@ export default function SettingsPage() {
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 mb-1">Monthly Subscription — ₹1,000/month</h4>
+                          <h4 className="font-semibold text-gray-900 mb-1">Monthly Subscription — ₹500/month</h4>
                           <ul className="text-sm text-gray-600 space-y-1 mb-4">
+                            <li>Contacts</li>
                             <li>Automated Workflows &amp; Campaigns</li>
-                            <li>Review Automation</li>
-                            <li>Higher SMS &amp; Email Quotas</li>
+                            <li>Message Templates</li>
+                            <li>Review Automation &amp; Email Messaging</li>
                             <li>Priority Support</li>
                           </ul>
                           <button
@@ -982,6 +988,55 @@ export default function SettingsPage() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
                   Clinic managers login at <strong>/clinic-manager/login</strong> and can only access the Contacts and Workflows sections.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'analytics' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 mb-1">Analytics &amp; Tracking</h2>
+                <p className="text-sm text-gray-600">
+                  Add your own Google Analytics 4 and Meta (Facebook) Pixel IDs. When set, these scripts are
+                  injected into <strong>your published website</strong> ({domainInfo.customDomain || (domainInfo.subdomain ? `${domainInfo.subdomain}.curago.in` : 'your site')}) so tracking fires on your own visitors. Leave a field blank to disable it.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Google Analytics 4 — Measurement ID</label>
+                <input
+                  type="text"
+                  name="ga4MeasurementId"
+                  value={formData.ga4MeasurementId}
+                  onChange={handleChange}
+                  placeholder="G-XXXXXXXXXX"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Find it in Google Analytics → Admin → Data Streams → your web stream. Starts with <strong>G-</strong>.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Meta (Facebook) Pixel ID</label>
+                <input
+                  type="text"
+                  name="metaPixelId"
+                  value={formData.metaPixelId}
+                  onChange={handleChange}
+                  placeholder="123456789012345"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Find it in Meta Events Manager → Data Sources → your pixel. It&apos;s the numeric Pixel ID.
+                </p>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-sm text-amber-800">
+                  Changes go live on your website within a minute of saving. Use each platform&apos;s own debugger
+                  (GA4 Realtime, Meta Pixel Helper) to confirm events are firing.
                 </p>
               </div>
             </div>

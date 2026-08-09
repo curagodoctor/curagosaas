@@ -93,7 +93,7 @@ export default function DashboardLayout({ children }) {
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 bg-white shadow-md z-40 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src="/Logo.svg" alt="CuraGo" className="h-8 w-auto" />
+          <img src="/curago-logo.png" alt="CuraGo" className="h-8 w-auto" />
         </div>
         <button
           onClick={toggleSidebar}
@@ -127,7 +127,7 @@ export default function DashboardLayout({ children }) {
         {/* Sidebar Header */}
         <div className="p-4 border-b flex items-center justify-between">
           <Link href="/admin/dashboard" className="flex items-center gap-2">
-            <img src="/Logo.svg" alt="CuraGo" className="h-8 w-auto" />
+            <img src="/curago-logo.png" alt="CuraGo" className="h-8 w-auto" />
           </Link>
           <button
             onClick={toggleSidebar}

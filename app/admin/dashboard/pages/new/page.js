@@ -16,7 +16,7 @@ export default function NewBookingPageForm() {
     metaKeywords: "",
     consultationFee: 1000,
     bookingFee: 150,
-    status: "draft",
+    status: "published",
   });
 
   const handleChange = (e) => {

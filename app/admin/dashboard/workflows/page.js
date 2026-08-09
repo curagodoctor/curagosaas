@@ -82,6 +82,24 @@ function WorkflowsPageInner() {
     } catch { window.alert('Failed to delete workflow'); }
   };
 
+  const handleToggleActive = async (workflow) => {
+    // Stop (pause) or re-activate a workflow. Deactivating stops it from
+    // enrolling/advancing contacts without deleting it.
+    const nextActive = !workflow.isActive;
+    if (workflow.isActive && !window.confirm(`Stop "${workflow.name}"? It will no longer send messages until you re-activate it.`)) return;
+    try {
+      const res = await fetch(`/api/doctor/workflows/${workflow._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ isActive: nextActive }),
+      });
+      const data = await res.json();
+      if (data.success) { fetchWorkflows(); fetchExecutions(); }
+      else window.alert(data.error || 'Failed to update workflow');
+    } catch { window.alert('Failed to update workflow'); }
+  };
+
   const handleStepChange = (index, field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -226,6 +244,9 @@ function WorkflowsPageInner() {
                       </span>
                     </div>
                     <div className="flex items-center gap-4">
+                      <button onClick={() => handleToggleActive(workflow)} className={`text-sm hover:underline ${workflow.isActive ? 'text-amber-600' : 'text-green-700'}`}>
+                        {workflow.isActive ? 'Stop' : 'Activate'}
+                      </button>
                       <button onClick={() => handleEdit(workflow)} className="text-sm text-[#096b17] hover:underline">Edit</button>
                       <button onClick={() => handleDeleteWorkflow(workflow)} className="text-sm text-red-600 hover:underline">Delete</button>
                     </div>

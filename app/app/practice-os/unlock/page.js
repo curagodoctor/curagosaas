@@ -117,7 +117,7 @@ function UnlockPack() {
     <div className="max-w-2xl mx-auto px-5 py-12">
       <Link href="/app/practice-os" className="flex items-center gap-2 mb-10">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/Logo.svg" alt="CuraGo" className="h-7 sm:h-8 w-auto" />
+        <img src="/curago-logo.png" alt="CuraGo" className="h-7 sm:h-8 w-auto" />
       </Link>
 
       <p className="pos-label mb-2">Builder pack</p>

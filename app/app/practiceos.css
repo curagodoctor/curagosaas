@@ -17,12 +17,15 @@
   min-height: 100vh;
 }
 
-/* Serif is for NUMERALS ONLY — the emotional content of the product. */
+/* Numerals — clean tabular sans figures for clarity and cohesion with the UI.
+   (Switched from Instrument Serif per founder feedback: serif numerals read
+   thin/unclear at the small sizes they're mostly used at.) */
 .pos-num {
-  font-family: var(--font-serif), Georgia, "Times New Roman", serif;
+  font-family: var(--font-sans), -apple-system, "Helvetica Neue", Arial, sans-serif;
   font-feature-settings: "tnum" 1;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
+  font-weight: 600;
 }
 
 /* Mono for eyebrows, labels, chips, tabular data. */

@@ -51,22 +51,26 @@ export default function ControlCenter() {
     : 0;
   // Today's mission = the next-up from the first started pack that has one.
   const activePack = started.find((p) => p.nextUp) || null;
+  // Upcoming scheduled missions across packs, soonest first.
+  const scheduled = started
+    .filter((p) => p.scheduledFor && p.nextUp)
+    .sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor));
   const firstName = (name || 'there').replace(/^Dr\.?\s*/i, 'Dr. ').split(' ').slice(0, 2).join(' ');
 
   return (
-    <div className="w-full px-4 sm:px-8 lg:px-12 py-6 max-w-[1240px] mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 mb-8">
-        <Link href="/app" className="flex items-center shrink-0">
+    <div className="w-full px-4 sm:px-8 lg:px-12 pt-[54px] pb-6 max-w-[1240px] mx-auto">
+      {/* Fixed top nav with quick links */}
+      <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between gap-3 px-4 sm:px-8 lg:px-12 py-1.5" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--rule)' }}>
+        <Link href="/app/practice-os" className="flex items-center shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/Logo.svg" alt="CuraGo" className="h-7 sm:h-8 w-auto" />
+          <img src="/curago-logo.png" alt="CuraGo" className="h-6 w-auto" />
         </Link>
-        <div className="flex items-center gap-x-4 gap-y-1 text-[13px] flex-wrap justify-end">
+        <div className="flex items-center gap-x-4 text-[13px] flex-nowrap overflow-x-auto whitespace-nowrap justify-end">
           <Link href="/app/practice-os/schedule" className="pos-link">Schedule</Link>
           <Link href="/app/practice-os/workspace" className="pos-link">Workspace</Link>
+          <Link href="/app/practice-os/leaderboard" className="pos-link">Leaderboard</Link>
           <Link href="/app/practice-os/profile" className="pos-link">My profile</Link>
-          <Link href="/admin/dashboard" className="text-white px-3.5 py-2 rounded-[8px] font-semibold" style={{ backgroundColor: 'var(--green)' }}>Website Builder</Link>
-          <button onClick={logout} className="pos-link" style={{ color: 'var(--muted)' }}>Sign out</button>
+          <button onClick={logout} className="pos-link shrink-0" style={{ color: 'var(--muted)' }}>Sign out</button>
         </div>
       </div>
 
@@ -97,6 +101,27 @@ export default function ControlCenter() {
         {/* Rail — aggregate progress */}
         <aside className="min-w-0">
           <div className="lg:sticky lg:top-6 space-y-4">
+            {/* Website Builder — the other product, surfaced as an appealing card
+                (replaces the old nav button). */}
+            <Link
+              href="/admin/dashboard"
+              className="pos-card p-5 block hover:shadow-md transition-shadow group"
+              style={{ background: 'linear-gradient(150deg, var(--green), #053d0b)', color: '#fff', border: 'none' }}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="pos-label" style={{ color: 'rgba(255,255,255,.72)' }}>Your website</p>
+                  <p className="font-semibold text-[16px] mt-1 leading-snug">Open Website Builder</p>
+                  <p className="text-[12.5px] mt-1.5 leading-relaxed" style={{ color: 'rgba(255,255,255,.85)' }}>
+                    Build and edit your patient-facing site — pages, bookings and more.
+                  </p>
+                </div>
+                <span className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-transform group-hover:translate-x-0.5" style={{ background: 'rgba(255,255,255,.15)' }}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                </span>
+              </div>
+            </Link>
+
             <p className="pos-label">Your progress</p>
 
             {/* XP + streak */}
@@ -131,10 +156,49 @@ export default function ControlCenter() {
               </div>
             )}
 
+            {/* Scheduled events */}
+            <ScheduledCard scheduled={scheduled} />
+
             {/* Leaderboard */}
             <LeaderboardCard lb={leaderboard} />
           </div>
         </aside>
+      </div>
+    </div>
+  );
+}
+
+// "Today, 6:30 PM" / "Tomorrow, 9:00 AM" / "12 Aug, 5:00 PM"
+function formatSchedule(iso) {
+  const d = new Date(iso);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const day = new Date(d); day.setHours(0, 0, 0, 0);
+  const diff = Math.round((day - today) / 86400000);
+  const dayLabel = diff === 0 ? 'Today' : diff === 1 ? 'Tomorrow' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  const time = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+  return `${dayLabel}, ${time}`;
+}
+
+// The scheduled-events section — upcoming sessions the doctor has booked, with a
+// link to move them. Only shows when something is actually scheduled.
+function ScheduledCard({ scheduled }) {
+  if (!scheduled || scheduled.length === 0) return null;
+  return (
+    <div className="pos-card p-5">
+      <div className="flex items-center justify-between mb-3">
+        <p className="pos-label">Scheduled</p>
+        <Link href="/app/practice-os/schedule" className="pos-link text-[12px]">Manage</Link>
+      </div>
+      <div className="space-y-3">
+        {scheduled.map((s) => (
+          <div key={s.id} className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[13px] text-[var(--ink)] font-medium truncate">Mission {s.nextUp.dayNumber}: {s.nextUp.title}</p>
+              <p className="text-[11px] text-[var(--muted)] truncate">{s.title}</p>
+            </div>
+            <span className="text-[12px] font-medium shrink-0 whitespace-nowrap" style={{ color: 'var(--orange)' }}>{formatSchedule(s.scheduledFor)}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
