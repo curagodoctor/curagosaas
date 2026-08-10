@@ -61,23 +61,28 @@ export async function GET() {
       else if (p.status === 'skipped') rec.skipped += 1;
     }
 
-    const missionStats = [...perMission.entries()].map(([missionId, s]) => {
-      const m = missionById.get(missionId);
-      // Prefer the mission text, then its objective, then a stable positional
-      // label so imported missions without Todays_Mission don't all read "Untitled".
-      const title = (m?.missionText || m?.objective || '').trim()
-        || (m?.missionNumber ? `Mission ${m.missionNumber}` : '')
-        || (m?.dayNumber ? `Day ${m.dayNumber}` : '')
-        || 'Untitled mission';
-      return {
-        missionId,
-        title,
-        category: m?.category || '',
-        missionNumber: m?.missionNumber || 0,
-        completed: s.completed,
-        skipped: s.skipped,
-      };
-    });
+    const missionStats = [...perMission.entries()]
+      .map(([missionId, s]) => {
+        const m = missionById.get(missionId);
+        // Skip progress that points at a mission that no longer exists (deleted /
+        // re-imported packs) — those are what showed up as rows of "Untitled".
+        if (!m) return null;
+        // Prefer the mission text, then its objective, then a stable positional
+        // label so imported missions without Todays_Mission still read cleanly.
+        const title = (m.missionText || m.objective || '').trim()
+          || (m.missionNumber ? `Mission ${m.missionNumber}` : '')
+          || (m.dayNumber ? `Day ${m.dayNumber}` : '')
+          || 'Untitled mission';
+        return {
+          missionId,
+          title,
+          category: m.category || '',
+          missionNumber: m.missionNumber || 0,
+          completed: s.completed,
+          skipped: s.skipped,
+        };
+      })
+      .filter(Boolean);
 
     const completionByMission = [...missionStats]
       .sort((a, b) => b.completed - a.completed)
