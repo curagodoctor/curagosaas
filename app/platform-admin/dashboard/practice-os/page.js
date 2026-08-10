@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
@@ -169,10 +170,23 @@ function BulkUpload({ frameworks = [], onImported }) {
         <svg className="w-5 h-5 shrink-0 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         <div className="space-y-1">
           <p className="font-semibold">Spreadsheet guidelines</p>
-          <p>One row = one <strong>module</strong>. Rows that share a Mission_ID (or the same Week + Day) become one mission with multiple modules. Content imports into the <strong>Builder Pack you select below</strong> — nothing is created automatically. Re-uploading updates existing missions in place. Start from the template below.</p>
-          <a href="/api/platform/practice-os/import/template" className="inline-block mt-1 text-blue-700 underline font-medium">Download the Excel template</a>
+          <p>One row = one <strong>module</strong>. Rows that share the same <strong>Week + Day</strong> become one mission with multiple modules. Content imports into the <strong>Builder Pack you select below</strong> — nothing is created automatically. Re-uploading updates existing missions in place.</p>
         </div>
       </div>
+
+      {/* Prominent sample/template download */}
+      <a
+        href="/api/platform/practice-os/import/template"
+        className="flex items-center gap-3 border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50/40 rounded-lg p-4 transition-colors"
+      >
+        <span className="w-10 h-10 rounded-lg bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 6H7a2 2 0 01-2-2V6a2 2 0 012-2h5l2 2h4a2 2 0 012 2v10a2 2 0 01-2 2z" /></svg>
+        </span>
+        <span>
+          <span className="block font-semibold text-gray-900 text-sm">Download the sample template (.xlsx)</span>
+          <span className="block text-xs text-gray-500">Pre-filled example — includes an Instructions sheet and a mission with multiple modules. Copy its format.</span>
+        </span>
+      </a>
 
       <div>
         <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Import into Builder Pack</label>
@@ -383,6 +397,7 @@ function KbGroup({ label, list, onEdit, onRemove }) {
 
 /* ---------------- Curriculum (frameworks) ---------------- */
 function CurriculumTab({ frameworks, loading, onNew }) {
+  const router = useRouter();
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
@@ -409,10 +424,12 @@ function CurriculumTab({ frameworks, loading, onNew }) {
               <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">No builder packs yet. Use <strong>Bulk Upload</strong> to import one.</td></tr>
             ) : (
               frameworks.map((fw) => (
-                <tr key={fw._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <Link href={`/dashboard/practice-os/frameworks/${fw._id}`} className="text-blue-600 hover:underline font-medium">{fw.title}</Link>
-                  </td>
+                <tr
+                  key={fw._id}
+                  onClick={() => router.push(`/dashboard/practice-os/frameworks/${fw._id}`)}
+                  className="hover:bg-gray-50 cursor-pointer"
+                >
+                  <td className="px-6 py-4 text-blue-600 font-medium">{fw.title}</td>
                   <td className="px-6 py-4 text-gray-600">{fw.category || '—'}</td>
                   <td className="px-6 py-4 text-gray-600">{fw.missionCount}</td>
                   <td className="px-6 py-4 text-gray-600">{(fw.priceInInr || 0) > 0 ? `₹${Number(fw.priceInInr).toLocaleString('en-IN')}` : 'Free'}</td>

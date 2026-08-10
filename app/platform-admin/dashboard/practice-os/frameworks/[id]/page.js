@@ -189,6 +189,12 @@ export default function FrameworkDetailPage() {
     router.push('/dashboard/practice-os');
   };
 
+  const handleDeleteMission = async (mission) => {
+    if (!confirm(`Delete mission "${mission.missionText?.slice(0, 60) || 'Untitled'}"? This cannot be undone.`)) return;
+    await fetch(`/api/platform/practice-os/missions/${mission._id}`, { method: 'DELETE' });
+    load();
+  };
+
   if (loading) {
     return <div className="flex justify-center py-24"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" /></div>;
   }
@@ -245,18 +251,21 @@ export default function FrameworkDetailPage() {
                   <th className="px-6 py-2">Mission</th>
                   <th className="px-6 py-2">Category</th>
                   <th className="px-6 py-2">Status</th>
+                  <th className="px-6 py-2 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {byWeek[week].sort((a, b) => a.dayNumber - b.dayNumber).map((m) => (
-                  <tr key={m._id} className="hover:bg-gray-50">
+                  <tr
+                    key={m._id}
+                    onClick={() => router.push(`/dashboard/practice-os/missions/${m._id}`)}
+                    className="hover:bg-gray-50 cursor-pointer"
+                  >
                     <td className="px-6 py-3 text-gray-500">{m.missionNumber}</td>
                     <td className="px-6 py-3 text-gray-600">Day {m.dayNumber}</td>
                     <td className="px-6 py-3 text-gray-600">{moduleName(m.moduleId)}</td>
-                    <td className="px-6 py-3">
-                      <Link href={`/dashboard/practice-os/missions/${m._id}`} className="text-blue-600 hover:underline">
-                        {m.missionText?.slice(0, 60) || 'Untitled'}{m.missionText?.length > 60 ? '…' : ''}
-                      </Link>
+                    <td className="px-6 py-3 text-blue-600 font-medium">
+                      {m.missionText?.slice(0, 60) || 'Untitled'}{m.missionText?.length > 60 ? '…' : ''}
                     </td>
                     <td className="px-6 py-3 text-gray-600">{m.category || '—'}</td>
                     <td className="px-6 py-3">
@@ -265,6 +274,15 @@ export default function FrameworkDetailPage() {
                       }`}>
                         {m.status === 'draft' ? 'Draft' : 'Published'}
                       </span>
+                    </td>
+                    <td className="px-6 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteMission(m); }}
+                        className="text-sm text-red-600 hover:text-red-700 hover:underline"
+                      >
+                        Delete
+                      </button>
                     </td>
                   </tr>
                 ))}
