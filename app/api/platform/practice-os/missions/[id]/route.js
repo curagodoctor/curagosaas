@@ -76,6 +76,16 @@ function sanitizeModules(value) {
         videoUrl: typeof mod.videoUrl === 'string' ? mod.videoUrl.trim() : '',
         expectedOutcome: typeof mod.expectedOutcome === 'string' ? mod.expectedOutcome.trim() : '',
         prerequisites: typeof mod.prerequisites === 'string' ? mod.prerequisites.trim() : '',
+        lecture: typeof mod.lecture === 'string' ? mod.lecture.trim() : '',
+        education: Array.isArray(mod.education)
+          ? mod.education
+              .map((e) => ({
+                type: typeof e?.type === 'string' && e.type ? e.type : 'link',
+                label: typeof e?.label === 'string' ? e.label.trim() : '',
+                url: typeof e?.url === 'string' ? e.url.trim() : '',
+              }))
+              .filter((e) => e.label || e.url)
+          : [],
         steps: toStringArray(mod.steps),
         aiPrompt: typeof mod.aiPrompt === 'string' ? mod.aiPrompt.trim() : '',
         aiSystemPrompt: typeof mod.aiSystemPrompt === 'string' ? mod.aiSystemPrompt.trim() : '',

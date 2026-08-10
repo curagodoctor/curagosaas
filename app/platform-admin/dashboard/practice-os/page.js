@@ -9,9 +9,9 @@ import {
 const TABS = [
   { id: 'import', label: 'Bulk Upload' },
   { id: 'curriculum', label: 'Builder Packs' },
+  { id: 'knowledge', label: 'Knowledge Base' },
   { id: 'analytics', label: 'Analytics' },
   { id: 'doctors', label: 'Doctors' },
-  { id: 'settings', label: 'Settings' },
 ];
 
 export default function PracticeOSPage() {
@@ -59,13 +59,13 @@ export default function PracticeOSPage() {
         </div>
       </div>
 
-      {tab === 'import' && <BulkUpload onImported={loadFrameworks} />}
+      {tab === 'import' && <BulkUpload frameworks={frameworks} onImported={loadFrameworks} />}
       {tab === 'curriculum' && (
         <CurriculumTab frameworks={frameworks} loading={loading} onNew={() => setShowNew(true)} />
       )}
+      {tab === 'knowledge' && <KnowledgeBaseTab frameworks={frameworks} />}
       {tab === 'analytics' && <AnalyticsTab />}
       {tab === 'doctors' && <DoctorsTab />}
-      {tab === 'settings' && <SettingsTab />}
 
       {showNew && <NewFrameworkModal onClose={() => setShowNew(false)} onDone={loadFrameworks} />}
     </div>
@@ -137,18 +137,21 @@ function SettingsTab() {
 }
 
 /* ---------------- Bulk Upload ---------------- */
-function BulkUpload({ onImported }) {
+function BulkUpload({ frameworks = [], onImported }) {
   const [file, setFile] = useState(null);
+  const [frameworkId, setFrameworkId] = useState('');
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
 
   const handleUpload = async () => {
     if (!file) return;
+    if (!frameworkId) { setError('Choose the Builder Pack to import into.'); return; }
     setUploading(true); setError(''); setResult(null);
     try {
       const fd = new FormData();
       fd.append('file', file);
+      fd.append('frameworkId', frameworkId);
       const res = await fetch('/api/platform/practice-os/import', { method: 'POST', body: fd });
       const data = await res.json();
       if (data.success) { setResult(data); onImported(); }
@@ -166,9 +169,26 @@ function BulkUpload({ onImported }) {
         <svg className="w-5 h-5 shrink-0 text-blue-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         <div className="space-y-1">
           <p className="font-semibold">Spreadsheet guidelines</p>
-          <p>One row = one mission. Frameworks and modules are created automatically. Re-uploading the same sheet updates existing missions in place (matched by Framework + Module + Week + Day + Mission Number). Start from the template below.</p>
+          <p>One row = one <strong>module</strong>. Rows that share a Mission_ID (or the same Week + Day) become one mission with multiple modules. Content imports into the <strong>Builder Pack you select below</strong> — nothing is created automatically. Re-uploading updates existing missions in place. Start from the template below.</p>
           <a href="/api/platform/practice-os/import/template" className="inline-block mt-1 text-blue-700 underline font-medium">Download the Excel template</a>
         </div>
+      </div>
+
+      <div>
+        <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Import into Builder Pack</label>
+        <select
+          value={frameworkId}
+          onChange={(e) => setFrameworkId(e.target.value)}
+          className="block w-full text-sm border border-gray-300 rounded-lg px-3 py-2.5 bg-white"
+        >
+          <option value="">— Choose a pack —</option>
+          {frameworks.map((f) => (
+            <option key={f._id} value={f._id}>{f.title}</option>
+          ))}
+        </select>
+        {frameworks.length === 0 && (
+          <p className="text-xs text-amber-700 mt-1">No packs yet — create a Builder Pack first (Builder Packs tab → New).</p>
+        )}
       </div>
 
       <div>
@@ -196,11 +216,167 @@ function BulkUpload({ onImported }) {
 
       <button
         onClick={handleUpload}
-        disabled={!file || uploading}
+        disabled={!file || !frameworkId || uploading}
         className="bg-gray-900 hover:bg-black text-white font-medium text-sm px-5 py-2.5 rounded-lg disabled:opacity-50 inline-flex items-center gap-2"
       >
         {uploading ? 'Importing…' : 'Process Bulk Import'}
       </button>
+    </div>
+  );
+}
+
+/* ---------------- Knowledge Base ---------------- */
+function KnowledgeBaseTab({ frameworks = [] }) {
+  const [entries, setEntries] = useState(null);
+  const [editing, setEditing] = useState(null); // entry being edited, or a new draft
+  const [form, setForm] = useState({ title: '', frameworkId: '', content: '', sourceName: '' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const packName = (fid) => frameworks.find((f) => f._id === fid)?.title || 'Unknown pack';
+
+  const load = useCallback(async () => {
+    const res = await fetch('/api/platform/practice-os/knowledge');
+    const data = await res.json();
+    setEntries(data.success ? data.entries : []);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const startNew = () => { setEditing({}); setForm({ title: '', frameworkId: '', content: '', sourceName: '' }); setError(''); };
+  const startEdit = (e) => {
+    setEditing(e);
+    setForm({ title: e.title || '', frameworkId: e.frameworkId || '', content: e.content || '', sourceName: e.sourceName || '' });
+    setError('');
+  };
+
+  const [reading, setReading] = useState(false);
+  const onFile = async (file) => {
+    if (!file) return;
+    if (!/\.(txt|md|csv|pdf|docx)$/i.test(file.name)) { setError('Upload a .pdf, .docx, .txt, .md or .csv file — or paste text.'); return; }
+    setReading(true); setError('');
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/platform/practice-os/knowledge/extract', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.success) {
+        setForm((f) => ({ ...f, content: (f.content ? f.content + '\n\n' : '') + data.text, sourceName: data.sourceName, title: f.title || data.sourceName.replace(/\.[^.]+$/, '') }));
+      } else {
+        setError(data.error || 'Could not read the file.');
+      }
+    } catch {
+      setError('Could not read the file.');
+    } finally {
+      setReading(false);
+    }
+  };
+
+  const save = async () => {
+    if (!form.title.trim() || !form.content.trim()) { setError('Title and content are required.'); return; }
+    setSaving(true); setError('');
+    try {
+      const isNew = !editing?._id;
+      const res = await fetch(
+        isNew ? '/api/platform/practice-os/knowledge' : `/api/platform/practice-os/knowledge/${editing._id}`,
+        { method: isNew ? 'POST' : 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) },
+      );
+      const data = await res.json();
+      if (data.success) { setEditing(null); await load(); }
+      else setError(data.error || 'Failed to save');
+    } finally { setSaving(false); }
+  };
+
+  const remove = async (e) => {
+    if (!window.confirm(`Delete "${e.title}"?`)) return;
+    await fetch(`/api/platform/practice-os/knowledge/${e._id}`, { method: 'DELETE' });
+    load();
+  };
+
+  if (!entries) return <div className="bg-white rounded-xl shadow-sm p-8 text-gray-500">Loading…</div>;
+
+  const globals = entries.filter((e) => !e.frameworkId);
+  const scoped = entries.filter((e) => e.frameworkId);
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-sm text-blue-800">
+        Knowledge the mission assistant learns from. <strong>Global</strong> entries apply to every pack; <strong>pack-scoped</strong> entries apply only inside that pack. The assistant combines global + the doctor&apos;s current pack automatically. Paste text or upload a PDF, DOCX, TXT, MD or CSV file.
+      </div>
+
+      {!editing ? (
+        <div className="bg-white rounded-xl shadow-sm p-6 space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900">Knowledge entries</h2>
+            <button onClick={startNew} className="bg-gray-900 hover:bg-black text-white text-sm font-medium px-4 py-2 rounded-lg">+ Add knowledge</button>
+          </div>
+          {entries.length === 0 ? (
+            <p className="text-sm text-gray-500">No knowledge yet. Add global knowledge (all packs) or scope it to a specific Builder Pack.</p>
+          ) : (
+            <div className="space-y-5">
+              <KbGroup label="Global — applies to all packs" list={globals} onEdit={startEdit} onRemove={remove} />
+              {frameworks.map((f) => {
+                const list = scoped.filter((e) => String(e.frameworkId) === String(f._id));
+                if (!list.length) return null;
+                return <KbGroup key={f._id} label={`${f.title} — this pack only`} list={list} onEdit={startEdit} onRemove={remove} />;
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+          <h2 className="font-semibold text-gray-900">{editing._id ? 'Edit knowledge' : 'Add knowledge'}</h2>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Title</label>
+            <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="e.g. GBP verification playbook" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Applies to</label>
+            <select value={form.frameworkId} onChange={(e) => setForm((f) => ({ ...f, frameworkId: e.target.value }))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+              <option value="">Global — all packs</option>
+              {frameworks.map((f) => <option key={f._id} value={f._id}>{f.title} — this pack only</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Content</label>
+            <textarea value={form.content} onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))} rows={12} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono" placeholder="Paste the working knowledge here…" />
+            <div className="mt-2 flex items-center gap-3">
+              <label className="text-xs text-blue-700 underline cursor-pointer">
+                {reading ? 'Reading…' : 'Upload PDF / DOCX / TXT / MD / CSV'}
+                <input type="file" accept=".pdf,.docx,.txt,.md,.csv" className="hidden" disabled={reading} onChange={(e) => onFile(e.target.files?.[0])} />
+              </label>
+              {form.sourceName && <span className="text-xs text-gray-500">from {form.sourceName}</span>}
+            </div>
+          </div>
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <div className="flex items-center gap-3">
+            <button onClick={save} disabled={saving} className="bg-gray-900 hover:bg-black text-white text-sm font-medium px-5 py-2.5 rounded-lg disabled:opacity-50">{saving ? 'Saving…' : 'Save'}</button>
+            <button onClick={() => setEditing(null)} className="text-sm text-gray-500">Cancel</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function KbGroup({ label, list, onEdit, onRemove }) {
+  if (!list.length) return null;
+  return (
+    <div>
+      <p className="text-xs font-bold text-gray-400 uppercase mb-2">{label}</p>
+      <div className="space-y-2">
+        {list.map((e) => (
+          <div key={e._id} className="border border-gray-200 rounded-lg p-3 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">{e.title}</p>
+              <p className="text-xs text-gray-500 line-clamp-2">{(e.content || '').slice(0, 160)}</p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <button onClick={() => onEdit(e)} className="text-sm text-blue-600 hover:underline">Edit</button>
+              <button onClick={() => onRemove(e)} className="text-sm text-red-600 hover:underline">Delete</button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

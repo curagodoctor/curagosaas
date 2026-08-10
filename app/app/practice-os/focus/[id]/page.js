@@ -40,6 +40,7 @@ function FocusSession() {
   const [remaining, setRemaining] = useState(0);       // countdown seconds; negative = overtime
   const [paused, setPaused] = useState(false);
   const [inputVals, setInputVals] = useState({});      // { [moduleId]: { [inputId]: value } }
+  const [inputError, setInputError] = useState('');    // required-input validation message
   const [showVideo, setShowVideo] = useState(false);
   // Gathered on the final module only.
   const [reflection, setReflection] = useState({ confidence: 0, learning: '', challenge: '' });
@@ -86,16 +87,29 @@ function FocusSession() {
   const mod = modules[index] || null;
   const isLast = modules.length > 0 && index === modules.length - 1;
 
-  const setInput = (moduleId, inputId, v) =>
+  const setInput = (moduleId, inputId, v) => {
+    setInputError('');
     setInputVals((s) => ({ ...s, [moduleId]: { ...(s[moduleId] || {}), [inputId]: v } }));
+  };
 
   const finishModule = useCallback(async () => {
     if (!mod) return;
+
+    const vals = inputVals[mod.id] || {};
+
+    // Block completion until every required (compulsory) input is filled.
+    const missing = (mod.inputs || []).filter((f) => f.required && !String(vals[f.id] ?? '').trim());
+    if (missing.length) {
+      setInputError(`Please fill in: ${missing.map((f) => f.label).join(', ')}`);
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    setInputError('');
+
     setSaving(true);
     const estimateSeconds = (day.estimatedMinutes || 35) * 60;
     const actualMinutes = Math.max(0, Math.round((estimateSeconds - remaining) / 60));
 
-    const vals = inputVals[mod.id] || {};
     const inputs = {};                 // keyed by input id — the server maps to labels/variables
     for (const f of mod.inputs || []) {
       const v = vals[f.id];
@@ -364,6 +378,14 @@ function FocusSession() {
               </div>
             )}
 
+            {/* Lecture notes for this module */}
+            {mod.lecture && (
+              <div className="pos-card p-5 mb-4">
+                <p className="pos-label mb-2">Lecture</p>
+                <p className="text-[14.5px] text-[var(--ink)] leading-relaxed whitespace-pre-wrap">{mod.lecture}</p>
+              </div>
+            )}
+
             {/* Walkthrough video */}
             {mod.hasVideo && (
               showVideo ? (
@@ -391,6 +413,21 @@ function FocusSession() {
                       <span className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-semibold text-white" style={{ background: 'var(--green)' }}>{i + 1}</span>
                       <p className="text-[14px] text-[var(--ink)] leading-relaxed pt-0.5">{step}</p>
                     </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Education / reference material for this module */}
+            {mod.education?.length > 0 && (
+              <div className="pos-card p-5 mb-4">
+                <p className="pos-label mb-3">Learn more</p>
+                <div className="space-y-2">
+                  {mod.education.map((e, i) => (
+                    <a key={i} href={e.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[13.5px] text-[var(--green)] hover:underline">
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--green)' }} />
+                      {e.label}
+                    </a>
                   ))}
                 </div>
               </div>
@@ -435,6 +472,10 @@ function FocusSession() {
 
             {/* Final-module extras: reflection + KPIs */}
             {isLast && <FinalExtras day={day} reflection={reflection} setReflection={setReflection} kpiValues={kpiValues} setKpiValues={setKpiValues} />}
+
+            {inputError && (
+              <p className="text-[13px] mb-2" style={{ color: 'var(--orange)' }}>{inputError}</p>
+            )}
 
             <div className="flex items-center gap-5 mt-2 flex-wrap">
               <button onClick={finishModule} disabled={saving} className="pos-action pos-focusable" style={{ background: 'var(--green)' }}>

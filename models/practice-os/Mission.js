@@ -60,6 +60,10 @@ const ModuleSchema = new mongoose.Schema({
   videoUrl: { type: String, trim: true, default: '' },
   expectedOutcome: { type: String, trim: true, default: '' },
   prerequisites: { type: String, trim: true, default: '' },
+  // Short lecture notes shown before the module's task.
+  lecture: { type: String, trim: true, default: '' },
+  // Education/reference material for THIS module (docs, articles, resources).
+  education: { type: [ResourceSchema], default: [] },
   // The numbered step-by-step for this module.
   steps: { type: [String], default: [] },
   // A ready-to-copy AI prompt shown in the workspace (distinct from the chat

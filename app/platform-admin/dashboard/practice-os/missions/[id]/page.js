@@ -349,6 +349,8 @@ function ModulesEditor({ modules = [], onChange }) {
         videoUrl: '',
         expectedOutcome: '',
         prerequisites: '',
+        lecture: '',
+        education: [],
         steps: [],
         aiPrompt: '',
         aiSystemPrompt: '',
@@ -391,6 +393,26 @@ function ModulesEditor({ modules = [], onChange }) {
           <div className="grid grid-cols-2 gap-3 mt-3">
             <div><label className={LABEL}>Expected outcome</label><textarea rows={2} className={INPUT} value={mod.expectedOutcome || ''} onChange={(e) => updateMod(i, { expectedOutcome: e.target.value })} /></div>
             <div><label className={LABEL}>Prerequisites</label><textarea rows={2} className={INPUT} value={mod.prerequisites || ''} onChange={(e) => updateMod(i, { prerequisites: e.target.value })} /></div>
+          </div>
+
+          <div className="mt-3">
+            <label className={LABEL}>Lecture notes (shown before the task)</label>
+            <textarea rows={3} className={INPUT} value={mod.lecture || ''} onChange={(e) => updateMod(i, { lecture: e.target.value })} />
+          </div>
+
+          <div className="mt-3">
+            <label className={LABEL}>Education / resources — one per line as <span className="font-mono">Label | https://url</span></label>
+            <textarea
+              rows={3}
+              className={INPUT}
+              value={(mod.education || []).map((e) => `${e.label || ''} | ${e.url || ''}`).join('\n')}
+              onChange={(e) => updateMod(i, {
+                education: e.target.value.split('\n').map((line) => {
+                  const [label, url] = line.split('|').map((s) => (s || '').trim());
+                  return (label || url) ? { type: 'link', label: label || url, url: url || '' } : null;
+                }).filter(Boolean),
+              })}
+            />
           </div>
 
           <div className="mt-3">

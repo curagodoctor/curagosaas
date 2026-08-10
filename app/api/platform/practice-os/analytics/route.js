@@ -63,9 +63,15 @@ export async function GET() {
 
     const missionStats = [...perMission.entries()].map(([missionId, s]) => {
       const m = missionById.get(missionId);
+      // Prefer the mission text, then its objective, then a stable positional
+      // label so imported missions without Todays_Mission don't all read "Untitled".
+      const title = (m?.missionText || m?.objective || '').trim()
+        || (m?.missionNumber ? `Mission ${m.missionNumber}` : '')
+        || (m?.dayNumber ? `Day ${m.dayNumber}` : '')
+        || 'Untitled mission';
       return {
         missionId,
-        title: m?.missionText || m?.category || 'Untitled mission',
+        title,
         category: m?.category || '',
         missionNumber: m?.missionNumber || 0,
         completed: s.completed,

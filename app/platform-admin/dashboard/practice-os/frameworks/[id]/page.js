@@ -92,6 +92,76 @@ function PackSettings({ framework, onSaved }) {
   );
 }
 
+// Manually add a mission to THIS pack (alternative to Excel import). Creates the
+// mission with a starter module, then opens the mission editor to add modules.
+function AddMissionForm({ frameworkId, onAdded }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ missionText: '', weekNumber: 1, dayNumber: 1, missionNumber: 1, module: 'Module 1', category: '' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  const submit = async () => {
+    if (!form.missionText.trim()) { setError('Mission text is required.'); return; }
+    setSaving(true); setError('');
+    try {
+      const res = await fetch('/api/platform/practice-os/missions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, frameworkId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        onAdded();
+        if (data.mission?._id) router.push(`/dashboard/practice-os/missions/${data.mission._id}`);
+      } else setError(data.error || 'Failed to add mission');
+    } finally { setSaving(false); }
+  };
+
+  if (!open) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+        <p className="text-sm text-gray-600">Add a mission to this pack manually, then add its modules in the editor.</p>
+        <button onClick={() => setOpen(true)} className="bg-gray-900 hover:bg-black text-white text-sm font-medium px-4 py-2 rounded-lg">+ Add mission</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+      <h2 className="font-semibold text-gray-900">Add mission</h2>
+      <div>
+        <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Mission (today&apos;s task)</label>
+        <input value={form.missionText} onChange={(e) => set('missionText', e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="e.g. Add three clinic photos to your Google profile" />
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div>
+          <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Week</label>
+          <input type="number" min={1} value={form.weekNumber} onChange={(e) => set('weekNumber', Number(e.target.value))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Day</label>
+          <input type="number" min={1} value={form.dayNumber} onChange={(e) => set('dayNumber', Number(e.target.value))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Mission #</label>
+          <input type="number" min={1} value={form.missionNumber} onChange={(e) => set('missionNumber', Number(e.target.value))} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-700 uppercase mb-1">First module</label>
+          <input value={form.module} onChange={(e) => set('module', e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="Module 1" />
+        </div>
+      </div>
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="flex items-center gap-3">
+        <button onClick={submit} disabled={saving} className="bg-gray-900 hover:bg-black text-white text-sm font-medium px-5 py-2.5 rounded-lg disabled:opacity-50">{saving ? 'Adding…' : 'Add & edit modules'}</button>
+        <button onClick={() => { setOpen(false); setError(''); }} className="text-sm text-gray-500">Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 export default function FrameworkDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -154,9 +224,11 @@ export default function FrameworkDetailPage() {
 
       <PackSettings framework={framework} onSaved={load} />
 
+      <AddMissionForm frameworkId={framework._id} onAdded={load} />
+
       {missions.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm p-12 text-center text-gray-500">
-          No missions yet. Import them from the Practice OS home page.
+          No missions yet — add one above, or import from the Bulk Upload tab.
         </div>
       ) : (
         weeks.map((week) => (

@@ -34,24 +34,32 @@ export async function POST(request) {
     await connectDB();
 
     const b = await request.json();
+    const frameworkId = (b.frameworkId || '').trim();
     const frameworkTitle = (b.framework || '').trim();
     const moduleTitle = (b.module || b.moduleName || '').trim();
     const missionText = (b.missionText || '').trim();
     const missionNumber = Number(b.missionNumber);
 
-    if (!frameworkTitle || !moduleTitle || !missionText) {
-      return NextResponse.json({ success: false, error: 'Framework, Module and Mission text are required.' }, { status: 400 });
+    if ((!frameworkId && !frameworkTitle) || !moduleTitle || !missionText) {
+      return NextResponse.json({ success: false, error: 'Builder Pack, Module and Mission text are required.' }, { status: 400 });
     }
     if (!Number.isFinite(missionNumber)) {
       return NextResponse.json({ success: false, error: 'Mission Number must be a number.' }, { status: 400 });
     }
 
-    // Upsert framework + module by name.
-    const framework = await Framework.findOneAndUpdate(
-      { slug: slugify(frameworkTitle) },
-      { $setOnInsert: { title: frameworkTitle, slug: slugify(frameworkTitle) } },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+    // Resolve the pack: prefer an explicit frameworkId (adding inside a known
+    // pack) so we never create a stray pack by name.
+    let framework;
+    if (frameworkId) {
+      framework = await Framework.findById(frameworkId);
+      if (!framework) return NextResponse.json({ success: false, error: 'Builder Pack not found.' }, { status: 400 });
+    } else {
+      framework = await Framework.findOneAndUpdate(
+        { slug: slugify(frameworkTitle) },
+        { $setOnInsert: { title: frameworkTitle, slug: slugify(frameworkTitle) } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    }
     const mod = await Module.findOneAndUpdate(
       { frameworkId: framework._id, title: moduleTitle },
       { $setOnInsert: { frameworkId: framework._id, title: moduleTitle } },
@@ -99,7 +107,17 @@ export async function POST(request) {
       dayNumber: doc.dayNumber,
       missionNumber: doc.missionNumber,
     };
-    await Mission.updateOne(key, { $set: doc }, { upsert: true });
+    // Seed one starter module on creation so the mission is playable; the admin
+    // adds/edits modules in the mission editor. Only set on insert.
+    const seedModule = {
+      title: moduleTitle || missionText.slice(0, 60) || 'Module 1',
+      order: 0,
+      xp: doc.reward.points,
+      steps: [],
+      inputs: [],
+      buttons: doc.buttons,
+    };
+    await Mission.updateOne(key, { $set: doc, $setOnInsert: { modules: [seedModule] } }, { upsert: true });
     const mission = await Mission.findOne(key).lean();
 
     return NextResponse.json({ success: true, mission, frameworkId: framework._id });

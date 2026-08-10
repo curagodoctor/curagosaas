@@ -47,7 +47,8 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: 'Invalid file type. Upload .xlsx or .xls file.' }, { status: 400 });
     }
 
-    const frameworkName = String(formData.get('frameworkName') || '').trim() || 'Practice OS';
+    const frameworkId = String(formData.get('frameworkId') || '').trim();
+    const frameworkName = String(formData.get('frameworkName') || '').trim();
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const ExcelJS = (await import('exceljs')).default;
@@ -131,37 +132,97 @@ export async function POST(request) {
       rows.push({ rowIndex, row, code, missionText, moduleName });
     });
 
-    // --- upsert framework (single, shared) ---
-    const fwSlug = slugify(frameworkName) || 'practice-os';
-    const framework = await Framework.findOneAndUpdate(
-      { slug: fwSlug },
-      { $setOnInsert: { title: frameworkName, slug: fwSlug } },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+    // --- resolve the target Builder Pack ---
+    // Prefer an explicit frameworkId (the pack chosen in the UI) so content lands
+    // in the RIGHT pack and we never silently create a stray "Practice OS" pack.
+    // Only fall back to name-based upsert if the caller passed a name and no id.
+    let framework;
+    if (frameworkId) {
+      framework = await Framework.findById(frameworkId);
+      if (!framework) {
+        return NextResponse.json({ success: false, error: 'Selected Builder Pack was not found. Refresh and choose a pack.' }, { status: 400 });
+      }
+    } else if (frameworkName) {
+      const fwSlug = slugify(frameworkName) || 'practice-os';
+      framework = await Framework.findOneAndUpdate(
+        { slug: fwSlug },
+        { $setOnInsert: { title: frameworkName, slug: fwSlug } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+    } else {
+      return NextResponse.json({ success: false, error: 'Choose a Builder Pack to import into before uploading.' }, { status: 400 });
+    }
 
-    // --- upsert modules + missions ---
-    const moduleCache = new Map(); // title -> module doc
+    // --- group rows into missions, then upsert each with its modules[] ---
+    // The product rule is ONE mission per day with MULTIPLE modules. In the sheet
+    // that means several rows share a Mission_ID (or a week+day) — one row per
+    // module. We group those rows and build the mission's modules[] from all of
+    // them, so multiple modules per mission actually import (and re-import).
+    const groups = new Map(); // key -> [rows in sheet order]
+    for (const r of rows) {
+      const gWeek = toInt(cellOf(r.row, 'weeknumber'), 1);
+      const gDay = toInt(cellOf(r.row, 'daynumber'), 1);
+      // A mission is ONE per Week+Day. Mission_ID in the template is per-MODULE
+      // (e.g. "GBP-D1-M1", "GBP-D1-M2"), so it must NOT drive grouping — otherwise
+      // each module row becomes its own mission. Group purely by Week+Day.
+      const key = `wd:${gWeek}:${gDay}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(r);
+    }
+
+    const moduleTitles = new Set();
     let created = 0;
     let updated = 0;
+    let totalModules = 0;
     let seq = 0;
 
-    for (const r of rows) {
+    // Build one embedded module from a single row.
+    const buildModuleFromRow = (row, order, fallbackTitle) => {
+      const rc = (key) => cellOf(row, key);
+      const modInputs = buildInputs([
+        { label: rc('input1'), compulsory: rc('input1compulsorynotcompulsory') },
+        { label: rc('input2'), compulsory: rc('input2compulsorynotcompulsory') },
+        { label: rc('input3'), compulsory: rc('input3compulsorynotcompulsory') },
+        { label: rc('input4'), compulsory: rc('input4compulsorynotcompulsory') },
+      ]);
+      const { buttons: modButtons } = buildButtonTriples([
+        { text: rc('primarybuttontext'), action: rc('primarybuttonaction'), link: rc('primarybuttonlink') },
+        { text: rc('secondarybuttontext'), action: rc('secondarybuttonaction'), link: rc('secondarybuttonlink') },
+        { text: rc('tertiarybuttontext'), action: rc('tertiarybuttonaction'), link: rc('tertiarybuttonlink') },
+      ]);
+      // Per-module education = this row's Documentation/Article + its Resources
+      // (Resources are keyed by Mission_ID, which is per-module in the template).
+      const moduleResources = (resourcesByMission.get(rc('missionid')) || [])
+        .slice()
+        .sort((a, b) => a.order - b.order)
+        .map(({ type, label, url }) => ({ type, label, url }));
+      const moduleEducation = [
+        ...buildDocEducation({ documentationUrl: rc('documentationurl'), articleUrl: rc('articleurl') }),
+        ...moduleResources,
+      ];
+      return {
+        title: rc('modulename') || rc('missionobjective') || fallbackTitle || `Module ${order + 1}`,
+        order,
+        xp: toInt(rc('xpreward'), 10),
+        videoUrl: rc('videolink'),
+        expectedOutcome: rc('expectedoutcome'),
+        prerequisites: rc('prerequisites'),
+        lecture: rc('briefdescription'),
+        education: moduleEducation,
+        steps: parseSubSteps(rc('stepbystepguide')),
+        aiPrompt: rc('promptoutputwithplaceholder'),
+        aiSystemPrompt: '',
+        buttons: modButtons,
+        inputs: modInputs.map((x) => ({ label: x.label, placeholder: '', required: !!x.required })),
+      };
+    };
+
+    for (const [, groupRows] of groups) {
       seq += 1;
       try {
-        const c = (key) => cellOf(r.row, key);
-
-        // Module (upsert by framework + title; default title when blank)
-        const moduleTitle = r.moduleName || 'General';
-        let mod = moduleCache.get(moduleTitle);
-        if (!mod) {
-          const order = toInt(c('modulenumber'), moduleCache.size);
-          mod = await Module.findOneAndUpdate(
-            { frameworkId: framework._id, title: moduleTitle },
-            { $setOnInsert: { frameworkId: framework._id, title: moduleTitle }, $set: { order } },
-            { upsert: true, new: true, setDefaultsOnInsert: true }
-          );
-          moduleCache.set(moduleTitle, mod);
-        }
+        // Representative row carries the mission-level fields.
+        const rep = groupRows.find((r) => r.missionText) || groupRows[0];
+        const c = (key) => cellOf(rep.row, key);
 
         const weekNumber = toInt(c('weeknumber'), 1);
         const dayNumber = toInt(c('daynumber'), 1);
@@ -169,32 +230,45 @@ export async function POST(request) {
           ?? toInt(c('daynumber'), null)
           ?? seq;
 
-        // Inputs (input-1..4 + compulsory columns)
+        // ALL modules for this mission, ordered by Module_Number (then sheet order).
+        const sortedRows = groupRows
+          .map((r, i) => ({ r, i, n: toInt(cellOf(r.row, 'modulenumber'), i + 1) }))
+          .sort((a, b) => (a.n - b.n) || (a.i - b.i))
+          .map((x) => x.r);
+        const modules = sortedRows.map((r, i) => buildModuleFromRow(r.row, i, rep.missionText));
+        totalModules += modules.length;
+
+        // Standalone module doc for the mission's moduleId (keeps the unique key).
+        const primaryModuleTitle = c('modulename') || 'General';
+        moduleTitles.add(primaryModuleTitle);
+        const mod = await Module.findOneAndUpdate(
+          { frameworkId: framework._id, title: primaryModuleTitle },
+          { $setOnInsert: { frameworkId: framework._id, title: primaryModuleTitle }, $set: { order: toInt(c('modulenumber'), 0) } },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+
+        // Mission-level fields from the representative row (per-module inputs live
+        // on each module above). evidence.required if ANY module has a required input.
         const inputs = buildInputs([
           { label: c('input1'), compulsory: c('input1compulsorynotcompulsory') },
           { label: c('input2'), compulsory: c('input2compulsorynotcompulsory') },
           { label: c('input3'), compulsory: c('input3compulsorynotcompulsory') },
           { label: c('input4'), compulsory: c('input4compulsorynotcompulsory') },
         ]);
-        const anyCompulsory = inputs.some((i) => i.required);
+        const anyCompulsory = modules.some((m) => m.inputs.some((i) => i.required));
 
-        // Buttons (primary / secondary / tertiary triples)
         const { buttons, actions } = buildButtonTriples([
           { text: c('primarybuttontext'), action: c('primarybuttonaction'), link: c('primarybuttonlink') },
           { text: c('secondarybuttontext'), action: c('secondarybuttonaction'), link: c('secondarybuttonlink') },
           { text: c('tertiarybuttontext'), action: c('tertiarybuttonaction'), link: c('tertiarybuttonlink') },
         ]);
 
-        // Education = Documentation/Article + Resources sheet rows (sorted by order)
-        const resourceEducation = (resourcesByMission.get(r.code) || [])
+        const resourceEducation = (resourcesByMission.get(rep.code) || [])
           .slice()
           .sort((a, b) => a.order - b.order)
           .map(({ type, label, url }) => ({ type, label, url }));
         const education = [
-          ...buildDocEducation({
-            documentationUrl: c('documentationurl'),
-            articleUrl: c('articleurl'),
-          }),
+          ...buildDocEducation({ documentationUrl: c('documentationurl'), articleUrl: c('articleurl') }),
           ...resourceEducation,
         ];
 
@@ -207,11 +281,11 @@ export async function POST(request) {
           weekNumber,
           dayNumber,
           missionNumber,
-          code: r.code,
+          code: rep.code,
           category: c('missioncategory'),
           scoreComponent: parseScoreComponent(c('missioncategory')),
           purpose: c('whythismatters'),
-          missionText: r.missionText,
+          missionText: rep.missionText,
           objective: c('missionobjective'),
           briefDescription: c('briefdescription'),
           lecture: c('briefdescription'),
@@ -225,10 +299,7 @@ export async function POST(request) {
           buttons,
           inputs,
           aiContext: { systemPrompt: c('promptoutputwithplaceholder'), model: '' },
-          evidence: {
-            required: anyCompulsory,
-            allowedTypes: ['image', 'url', 'text'],
-          },
+          evidence: { required: anyCompulsory, allowedTypes: ['image', 'url', 'text'] },
           reward: { points, badge: '', message: successMessage },
           successMessage,
           failureMessage: c('failuremessage'),
@@ -250,45 +321,26 @@ export async function POST(request) {
           },
         };
 
-        // Prefer keying by Mission_ID (code) within this framework; otherwise
-        // fall back to the {framework, module, week, day, missionNumber} unique key.
-        let existing = null;
-        if (r.code) existing = await Mission.findOne({ frameworkId: framework._id, code: r.code });
-        if (!existing) {
-          existing = await Mission.findOne({
-            frameworkId: framework._id,
-            moduleId: mod._id,
-            weekNumber,
-            dayNumber,
-            missionNumber,
-          });
-        }
+        // Upsert by the STABLE mission identity: Week + Day (one mission per day).
+        // We can't key on missionNumber — the renumber pass below rewrites it — nor
+        // on the per-module Mission_ID, so re-import matches on Week + Day.
+        const existing = await Mission.findOne({
+          frameworkId: framework._id,
+          weekNumber,
+          dayNumber,
+        });
 
+        // The sheet is the source of truth, so modules[] is written on both create
+        // and re-import — this is what makes multiple modules per mission stick.
         if (existing) {
-          // Don't overwrite admin-authored modules[] on re-import.
-          await Mission.updateOne({ _id: existing._id }, { $set: doc });
+          await Mission.updateOne({ _id: existing._id }, { $set: { ...doc, modules } });
           updated += 1;
         } else {
-          // New missions are module-native: seed a single module from the row's
-          // rich fields so the content lives in modules[] (editable in the admin).
-          const importedModule = {
-            title: c('missionobjective') || r.missionText || 'Complete this mission',
-            order: 0,
-            xp: points,
-            videoUrl: c('videolink'),
-            expectedOutcome: c('expectedoutcome'),
-            prerequisites: c('prerequisites'),
-            steps: parseSubSteps(c('stepbystepguide')),
-            aiPrompt: c('promptoutputwithplaceholder'),
-            aiSystemPrompt: '',
-            buttons,
-            inputs: inputs.map((i) => ({ label: i.label, placeholder: '', required: !!i.required })),
-          };
-          await Mission.create({ ...doc, modules: [importedModule] });
+          await Mission.create({ ...doc, modules });
           created += 1;
         }
       } catch (rowError) {
-        errors.push({ row: r.rowIndex, error: rowError.message });
+        errors.push({ row: groupRows[0].rowIndex, error: rowError.message });
       }
     }
 
@@ -312,7 +364,7 @@ export async function POST(request) {
       skipped: errors.length,
       total: rows.length + errors.length,
       frameworks: 1,
-      modules: moduleCache.size,
+      modules: totalModules,
       resources: Array.from(resourcesByMission.values()).reduce((n, l) => n + l.length, 0),
       errors: errors.slice(0, 20),
     });
