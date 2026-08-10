@@ -82,15 +82,28 @@ export default function HeaderSection({
       url: link.url,
     }));
 
+    // Collapse repeated labels — e.g. a hero_carousel AND a banner_image both map
+    // to "Home", which would otherwise show "Home" twice in the navbar.
+    const dedupeByLabel = (arr) => {
+      const seen = new Set();
+      return arr.filter((it) => {
+        const key = (it.text || it.label || "").trim().toLowerCase();
+        if (!key) return true;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    };
+
     if (navMode === "manual") {
-      return [
+      return dedupeByLabel([
         ...navLinks.map((link) => ({
           type: "link",
           text: link.text,
           url: link.url,
         })),
         ...extraItems,
-      ];
+      ]);
     }
 
     // Auto mode: build from pageSections
@@ -107,7 +120,7 @@ export default function HeaderSection({
 
     if (!useSmartGroups) {
       // Simple flat list
-      return [
+      return dedupeByLabel([
         ...visibleSections.map((section) => {
           const navInfo = SECTION_NAV_INFO[section.type];
           return {
@@ -117,7 +130,7 @@ export default function HeaderSection({
           };
         }),
         ...extraItems,
-      ];
+      ]);
     }
 
     // Smart grouping
@@ -187,7 +200,7 @@ export default function HeaderSection({
       }
     });
 
-    return [...items, ...extraItems];
+    return dedupeByLabel([...items, ...extraItems]);
   }, [navMode, navLinks, pageSections, autoNavConfig, extraNavLinks]);
 
   // Smooth scroll handler
