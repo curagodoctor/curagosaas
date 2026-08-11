@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect, useCallback } from 'react';
+import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import WorkspaceDrawer from '@/components/practice-os/WorkspaceDrawer';
@@ -15,6 +15,7 @@ function TrackView() {
   const [state, setState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(() => Date.now());
+  const [missionData, setMissionData] = useState(null); // { modules, day } for the current available mission (used by the inline intro + assistant)
 
   const withPack = useCallback((path) => `${path}${path.includes('?') ? '&' : '?'}pack=${packId}`, [packId]);
 
@@ -40,6 +41,21 @@ function TrackView() {
     return () => clearInterval(t);
   }, []);
 
+  // Fetch the current available mission's modules once — shared by the inline
+  // mission intro (module list) and the assistant in the rail.
+  const todayId = state?.today?.status === 'available' && !state?.allComplete ? state.today._id : null;
+  useEffect(() => {
+    if (!todayId) { setMissionData(null); return; }
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/practice-os/day/${todayId}`);
+        if (res.ok) { const d = await res.json(); if (alive && d.success) setMissionData({ modules: d.modules || [], day: d.day || null }); }
+      } catch { /* ignore */ }
+    })();
+    return () => { alive = false; };
+  }, [todayId]);
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>;
   }
@@ -62,7 +78,11 @@ function TrackView() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_260px] lg:grid-cols-[220px_minmax(0,1fr)_280px] gap-5 lg:gap-6">
+      {/* For the CURRENT available mission the whole mission intro lives on this
+          page (no second "Begin mission" click). The assistant lives at the
+          MODULE level (inside the focus session), not here. The right rail keeps
+          the context — "How CuraGo sees you", score, progress and this-week. */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_260px] lg:grid-cols-[200px_minmax(0,1fr)_280px] gap-5 lg:gap-6">
         <div className="hidden lg:block">
           <Spine days={days} totalDays={totalDays} withPack={withPack} />
         </div>
@@ -70,10 +90,10 @@ function TrackView() {
         <div className="min-w-0">
           {allComplete ? (
             <AllComplete daysCompleted={enrollment.daysCompleted} withPack={withPack} />
+          ) : today?.status === 'available' ? (
+            <MissionIntro day={today} full={missionData?.day} modules={missionData?.modules} loaded={missionData !== null} totalDays={totalDays} withPack={withPack} />
           ) : today?.status === 'locked' ? (
             <LockedDay day={today} nextUnlockAt={enrollment.nextUnlockAt} now={now} devBypass={state.devBypass} onUnlocked={load} canAdvance={state.canAdvance} />
-          ) : today ? (
-            <TaskCard day={today} totalDays={totalDays} withPack={withPack} />
           ) : (
             <div className="pos-card p-8 text-center text-[var(--muted)]">No missions available yet.</div>
           )}
@@ -102,22 +122,32 @@ export default function TrackPage() {
 // single "Progress" button so the header isn't cluttered with lookalike links.
 function ProgressMenu({ withPack }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(null); // computed from the button so the menu sits right under it
+  const btnRef = useRef(null);
   const items = [
     ['Your progress', withPack('/app/practice-os/score')],
     ['Journey & record', withPack('/app/practice-os/journey')],
     ['Report', withPack('/app/practice-os/report')],
   ];
+  const toggle = () => {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      // Fixed position anchored to the button (its right edge), so overflow-x-auto
+      // on the nav can't clip it AND it lands directly under "Progress".
+      setPos({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
+    }
+    setOpen((o) => !o);
+  };
   return (
     <div className="relative">
-      <button onClick={() => setOpen((o) => !o)} className="pos-link inline-flex items-center gap-1">
+      <button ref={btnRef} onClick={toggle} className="pos-link inline-flex items-center gap-1">
         Progress
         <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
       </button>
-      {open && (
+      {open && pos && (
         <>
           <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} />
-          {/* Fixed (not absolute) so the fixed-nav's overflow-x-auto can't clip it. */}
-          <div className="fixed right-4 sm:right-8 lg:right-12 top-[52px] z-[70] pos-card p-1 min-w-[180px]" style={{ boxShadow: '0 12px 32px rgba(16,26,19,.14)' }}>
+          <div className="fixed z-[70] pos-card p-1 min-w-[180px]" style={{ top: pos.top, right: pos.right, boxShadow: '0 12px 32px rgba(16,26,19,.14)' }}>
             {items.map(([label, href]) => (
               <Link key={label} href={href} onClick={() => setOpen(false)} className="block px-3 py-2 text-[13px] rounded-md hover:bg-[var(--rule-soft)]" style={{ color: 'var(--ink)' }}>
                 {label}
@@ -130,31 +160,78 @@ function ProgressMenu({ withPack }) {
   );
 }
 
-function TaskCard({ day, totalDays, withPack }) {
-  const theme = WEEK_THEMES[day.weekNumber] || 'Practice building';
+// The full mission intro, inline on the Day view — no more "Begin → Start" two-step.
+// Just the mission content (objective card, why, module list, chips + Start mission);
+// the assistant + context rail live in the right column of the track page.
+// "Start mission" opens the guided modules directly (?start=1 skips the focus intro).
+function MissionIntro({ day, full, modules = [], loaded, totalDays, withPack }) {
+  const d = { ...day, ...(full || {}) };   // prefer the fuller day object where present
+  const theme = WEEK_THEMES[d.weekNumber] || d.category || 'Practice building';
+  const mods = modules || [];
+  const missionXp = mods.reduce((s, m) => s + (m.xp || 0), 0) || d.reward?.points || d.points || 0;
+
   return (
-    <div className="pos-card p-7">
-      <p className="pos-label">Week {day.weekNumber} · {theme}</p>
-      <h1 className="text-[26px] md:text-[30px] font-semibold text-[var(--ink)] mt-2 leading-tight" style={{ letterSpacing: '-0.027em', maxWidth: '22ch' }}>
-        {day.title}
-      </h1>
-      {day.purpose && <p className="text-[16.5px] text-[var(--muted)] mt-4 leading-relaxed" style={{ maxWidth: '52ch' }}>{day.purpose}</p>}
+        <div className="pos-card p-4 md:p-5">
+          <div className="flex flex-wrap items-center gap-2 mb-2.5">
+            <span className="pos-label" style={{ background: 'var(--green)', color: '#fff', padding: '4px 11px', borderRadius: 99 }}>Mission {d.missionNumber}</span>
+            <span className="pos-label" style={{ background: 'var(--green-soft)', color: 'var(--green)', padding: '4px 11px', borderRadius: 99 }}>Today&apos;s mission</span>
+          </div>
 
-      <div className="flex flex-wrap items-center gap-2 mt-5">
-        <Chip>{day.estimatedMinutes || 35} min</Chip>
-        {day.points > 0 && day.scoreComponent !== 'none' && <Chip>+{day.points} {componentLabel(day.scoreComponent)}</Chip>}
-        <Chip>Mission {day.missionNumber} of {totalDays}</Chip>
-      </div>
+          <p className="pos-label">Week {d.weekNumber} · {theme}</p>
+          <h1 className="text-[18px] md:text-[21px] font-semibold text-[var(--ink)] mt-1.5 leading-tight" style={{ letterSpacing: '-0.02em' }}>
+            {d.title}
+          </h1>
 
-      {/* A mission can only be completed by opening it and stepping through its
-          modules — no finish-without-opening. */}
-      <div className="mt-7">
-        <Link href={withPack(`/app/practice-os/focus/${day._id}`)} className="pos-action pos-focusable inline-flex items-center gap-2" style={{ background: 'var(--orange)' }}>
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M7 5l12 7-12 7V5Z" fill="#fff" /></svg>
-          Begin mission
-        </Link>
-      </div>
-    </div>
+          <div className="flex flex-wrap items-center gap-1.5 mt-3">
+            <Chip>⏱ {d.estimatedMinutes || 35} min</Chip>
+            {d.difficulty && <Chip>◆ {d.difficulty}</Chip>}
+            {missionXp > 0 && <Chip>+{missionXp} XP</Chip>}
+            {d.points > 0 && d.scoreComponent && d.scoreComponent !== 'none' && <Chip>+{d.points} {componentLabel(d.scoreComponent)}</Chip>}
+            <Chip>Mission {d.missionNumber} of {totalDays}</Chip>
+            {modules.length > 0 && <Chip>{modules.length} {modules.length === 1 ? 'module' : 'modules'}</Chip>}
+          </div>
+
+          {/* The objective */}
+          {(d.missionText || d.objective) && (
+            <div className="rounded-xl p-4 mt-4" style={{ background: 'linear-gradient(150deg, var(--green), #05300f)', color: '#fff' }}>
+              <p className="pos-label mb-1" style={{ color: 'rgba(255,255,255,.65)' }}>The objective</p>
+              <p className="text-[15px] md:text-[16.5px] leading-snug" style={{ fontFamily: 'var(--font-serif, Georgia), serif', fontStyle: 'italic' }}>{d.missionText || d.objective}</p>
+            </div>
+          )}
+
+          {/* Why this matters */}
+          {(d.purpose || d.briefDescription) && (
+            <div className="mt-3">
+              <p className="pos-label mb-1">Why this matters</p>
+              <p className="text-[13.5px] text-[var(--muted)] leading-relaxed" style={{ maxWidth: '52ch' }}>{d.purpose || d.briefDescription}</p>
+            </div>
+          )}
+
+          {/* What you'll do — module list */}
+          {loaded && modules.length > 0 && (
+            <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--rule-soft)' }}>
+              <p className="pos-label mb-1.5">What you&apos;ll do — {modules.length} {modules.length === 1 ? 'module' : 'modules'}</p>
+              <div>
+                {modules.map((m, i) => (
+                  <div key={m.id} className="flex items-center gap-2.5 py-1">
+                    <span className="pos-num text-[13px] w-5 text-[var(--muted)]">{i + 1}</span>
+                    <span className="text-[13.5px] text-[var(--ink)] flex-1">{m.title}</span>
+                    {m.xp > 0 && <span className="text-[11.5px] text-[var(--muted)]">+{m.xp} XP</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {!loaded && <div className="mt-3 text-[13px] text-[var(--muted)]">Loading the modules…</div>}
+
+          <div className="mt-4">
+            <Link href={withPack(`/app/practice-os/focus/${d._id}?start=1`)} className="pos-action pos-focusable inline-flex items-center gap-2" style={{ background: 'var(--orange)' }}>
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M7 5l12 7-12 7V5Z" fill="#fff" /></svg>
+              Start mission
+            </Link>
+            <p className="text-[12px] text-[var(--muted)] mt-2">Starting opens the guided modules and your timer.</p>
+          </div>
+        </div>
   );
 }
 

@@ -77,6 +77,14 @@ const BookingSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Doctor',
   },
+  // Appointment-reminder tracking (WhatsApp via Wylto) — one morning reminder and
+  // one ~2h-before reminder per booking, so the cron never double-sends.
+  reminderMorningSentAt: {
+    type: Date,
+  },
+  reminder2hSentAt: {
+    type: Date,
+  },
 }, {
   timestamps: true,
 });

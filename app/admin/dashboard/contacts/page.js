@@ -290,6 +290,31 @@ function ContactsPageInner() {
     }
   };
 
+  const [reviewBusy, setReviewBusy] = useState(null); // contact _id currently being sent
+  const handleReviewRequest = async (contact) => {
+    if (contact.reviewRequestSentAt) return;
+    const confirmed = await showConfirm({
+      title: 'Send review request',
+      message: `Send the review-request WhatsApp flow to ${contact.name}? This can only be done once per contact.`,
+    });
+    if (!confirmed) return;
+    setReviewBusy(contact._id);
+    try {
+      const res = await fetch(`/api/doctor/contacts/${contact._id}/review-request`, { method: 'POST', credentials: 'include' });
+      const data = await res.json();
+      if (data.success) {
+        await showAlert({ title: 'Review request sent', message: `The review flow was triggered for ${contact.name}.`, type: 'success' });
+        fetchContacts(pagination.page);
+      } else {
+        await showAlert({ title: 'Could not send', message: data.error || 'Failed to send review request.', type: 'error' });
+      }
+    } catch {
+      await showAlert({ title: 'Error', message: 'Failed to send review request.', type: 'error' });
+    } finally {
+      setReviewBusy(null);
+    }
+  };
+
   const handleStatusChange = async (contactId, newStatus) => {
     try {
       await fetch(`/api/doctor/contacts/${contactId}`, {
@@ -535,6 +560,18 @@ function ContactsPageInner() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {contact.reviewRequestSentAt ? (
+                            <span className="text-[11px] text-green-600 font-medium" title={`Sent ${new Date(contact.reviewRequestSentAt).toLocaleDateString()}`}>✓ Review requested</span>
+                          ) : (
+                            <button
+                              onClick={() => handleReviewRequest(contact)}
+                              disabled={reviewBusy === contact._id}
+                              className="text-[11px] font-medium text-[#096b17] border border-[#096b17]/30 rounded-md px-2 py-1 hover:bg-[#096b17]/5 disabled:opacity-50"
+                              title="Send review-request WhatsApp (one-time)"
+                            >
+                              {reviewBusy === contact._id ? 'Sending…' : 'Request review'}
+                            </button>
+                          )}
                           <button
                             onClick={() => handleEdit(contact)}
                             className="p-1.5 text-gray-400 hover:text-[#096b17] transition-colors"
@@ -591,7 +628,12 @@ function ContactsPageInner() {
                   </div>
                   {contact.phone && <p className="text-sm text-gray-600">{contact.phone}</p>}
                   {contact.email && <p className="text-sm text-gray-600">{contact.email}</p>}
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex gap-2 mt-3 flex-wrap items-center">
+                    {contact.reviewRequestSentAt ? (
+                      <span className="text-xs text-green-600 font-medium">✓ Review requested</span>
+                    ) : (
+                      <button onClick={() => handleReviewRequest(contact)} disabled={reviewBusy === contact._id} className="text-xs text-[#096b17] border border-[#096b17]/30 rounded px-2 py-0.5 disabled:opacity-50">{reviewBusy === contact._id ? 'Sending…' : 'Request review'}</button>
+                    )}
                     <button onClick={() => handleEdit(contact)} className="text-xs text-[#096b17] hover:underline">Edit</button>
                     <button onClick={() => handleDelete(contact)} className="text-xs text-red-500 hover:underline">Delete</button>
                     {activeExecutions[contact._id?.toString()] ? (

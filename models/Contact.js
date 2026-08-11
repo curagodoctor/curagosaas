@@ -45,6 +45,12 @@ const ContactSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  // Set the first (and only) time a review-request WhatsApp flow is triggered for
+  // this contact — the button is one-click-forever per contact.
+  reviewRequestSentAt: {
+    type: Date,
+    default: null,
+  },
 }, {
   timestamps: true,
 });

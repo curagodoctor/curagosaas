@@ -8,6 +8,7 @@ import { createCalendarEvent } from "@/lib/googleCalendar";
 import connectDB from "@/lib/mongodb";
 import Doctor from "@/models/Doctor";
 import { sendBookingConfirmationToPatient, sendBookingNotificationToDoctor } from "@/lib/email";
+import { fireWyltoWebhook } from "@/lib/wylto";
 import { sendSMS } from "@/lib/twilio";
 
 // Verify Razorpay payment signature
@@ -168,44 +169,25 @@ export async function POST(request) {
       );
     }
 
-    // Send to webhook
+    // Appointment Booked — one WhatsApp confirmation to the patient AND the doctor.
     try {
-      const webhookResponse = await fetch("https://server.wylto.com/webhook/CMTvOkb2eV0fi8SCxd", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: reservation.name,
-          age: reservation.age,
-          gender: reservation.gender,
-          phoneNumber: reservation.whatsapp,
-          email: reservation.email,
-          whatsapp: reservation.whatsapp,
-          modeOfContact: reservation.mode,
-          mode: reservation.mode,
-          date: reservation.date,
-          time: reservation.time,
-          meetLink: calendarEvent.meetLink || "",
-          calendarLink: calendarEvent.htmlLink || "",
-          eventId: calendarEvent.eventId || "",
-          paymentId: razorpay_payment_id,
-          bookingTime: new Date().toISOString(),
-          paymentVerified: true,
-          status: "confirmed",
-          // Doctor info for routing
-          doctorPhone: doctorInfo.phone,
-          doctorName: doctorInfo.name,
-          doctorSubdomain: doctorInfo.subdomain,
-        }),
-      });
-
-      if (webhookResponse.ok) {
-        console.log("Webhook sent successfully");
-      } else {
-        console.error("Webhook failed:", await webhookResponse.text());
-      }
+      const context = {
+        date: reservation.date,
+        time: reservation.time,
+        mode: reservation.mode,
+        meetLink: calendarEvent.meetLink || '',
+        doctorName: doctorInfo.name,
+        patientName: reservation.name,
+      };
+      await Promise.all([
+        fireWyltoWebhook('appointmentBooked', { name: reservation.name, phoneNumber: reservation.whatsapp, ...context }),
+        doctorInfo.phone
+          ? fireWyltoWebhook('appointmentBooked', { name: doctorInfo.name, phoneNumber: doctorInfo.phone, ...context, patientPhone: reservation.whatsapp })
+          : Promise.resolve(),
+      ]);
     } catch (webhookError) {
-      console.error("Webhook error:", webhookError);
-      // Don't fail the booking if webhook fails
+      console.error('[Appointment booked webhook]', webhookError);
+      // Never fail the booking if the webhook fails.
     }
 
     // Send booking confirmation to patient (email + SMS)

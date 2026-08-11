@@ -9,6 +9,7 @@ import { createCalendarEvent } from "@/lib/googleCalendar";
 import { validatePhone } from "@/lib/validation";
 import { sendBookingConfirmationToPatient, sendBookingNotificationToDoctor } from "@/lib/email";
 import { sendSMS } from "@/lib/twilio";
+import { fireWyltoWebhook } from "@/lib/wylto";
 
 export async function POST(request) {
   try {
@@ -142,49 +143,25 @@ export async function POST(request) {
 
     await booking.save();
 
-    // Send to Wylto webhook for appointment confirmation message
+    // Appointment Booked — one WhatsApp confirmation to the patient AND the doctor.
     try {
-      // Format phone number with +91 prefix
-      const formattedPhone = bookingData.whatsapp.startsWith('+')
-        ? bookingData.whatsapp
-        : `+91${bookingData.whatsapp.replace(/^91/, '')}`;
-
-      const webhookResponse = await fetch("https://server.wylto.com/webhook/CMTvOkb2eV0fi8SCxd", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: bookingData.name,
-          phoneNumber: formattedPhone,
-          age: bookingData.age,
-          gender: bookingData.gender,
-          email: bookingData.email,
-          modeOfContact: bookingData.modeOfContact,
-          mode: bookingData.modeOfContact,
-          date: bookingData.date,
-          time: bookingData.time,
-          meetLink: calendarEvent.meetLink || "",
-          calendarLink: calendarEvent.htmlLink || "",
-          eventId: calendarEvent.eventId || "",
-          bookingTime: new Date().toISOString(),
-          bookingType: 'no_payment',
-          status: "confirmed",
-          pageSlug: bookingData.pageSlug,
-          pageName: bookingData.pageName,
-          // Doctor info for routing
-          doctorPhone: doctorInfo.phone,
-          doctorName: doctorInfo.name,
-          doctorSubdomain: doctorInfo.subdomain,
-        }),
-      });
-
-      if (webhookResponse.ok) {
-        console.log("Wylto webhook sent successfully for OTP booking");
-      } else {
-        console.error("Wylto webhook failed:", await webhookResponse.text());
-      }
+      const context = {
+        date: bookingData.date,
+        time: bookingData.time,
+        mode: bookingData.modeOfContact,
+        meetLink: calendarEvent.meetLink || '',
+        doctorName: doctorInfo.name,
+        patientName: bookingData.name,
+      };
+      await Promise.all([
+        fireWyltoWebhook('appointmentBooked', { name: bookingData.name, phoneNumber: bookingData.whatsapp, ...context }),
+        doctorInfo.phone
+          ? fireWyltoWebhook('appointmentBooked', { name: doctorInfo.name, phoneNumber: doctorInfo.phone, ...context, patientPhone: bookingData.whatsapp })
+          : Promise.resolve(),
+      ]);
     } catch (webhookError) {
-      console.error("Webhook error:", webhookError);
-      // Don't fail booking if webhook fails
+      console.error('[Appointment booked webhook]', webhookError);
+      // Never fail the booking if the webhook fails.
     }
 
     // Send booking confirmation to patient (email + SMS)
