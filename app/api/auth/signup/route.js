@@ -84,8 +84,16 @@ export async function POST(request) {
     // Check if email already exists
     const existingEmail = await Doctor.findOne({ email: email.toLowerCase() });
     if (existingEmail) {
+      // Be specific when the account was created with Google, so the doctor knows
+      // to use "Continue with Google" instead of guessing a password.
+      if (existingEmail.authProvider === 'google') {
+        return NextResponse.json(
+          { error: 'This email is registered with Google sign-in. Please use "Continue with Google" to log in.' },
+          { status: 400 }
+        );
+      }
       return NextResponse.json(
-        { error: 'An account with this email already exists' },
+        { error: 'An account with this email already exists. Please log in instead.' },
         { status: 400 }
       );
     }

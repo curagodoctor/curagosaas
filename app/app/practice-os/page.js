@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import WorkspaceDrawer from '@/components/practice-os/WorkspaceDrawer';
+import PosNav from '@/components/practice-os/PosNav';
 
 // The Control Center — the logged-in landing. Left: welcome + the doctor's
 // Builder Packs. Right: an aggregate progress rail (XP, streak, today's next
@@ -33,11 +35,6 @@ export default function ControlCenter() {
     })();
   }, [router]);
 
-  const logout = async () => {
-    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* ignore */ }
-    router.push('/login');
-  };
-
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>;
   }
@@ -59,20 +56,8 @@ export default function ControlCenter() {
 
   return (
     <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-6 max-w-[1240px] mx-auto">
-      {/* Fixed top nav with quick links */}
-      <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between gap-3 px-4 sm:px-8 lg:px-12 py-1.5" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--rule)' }}>
-        <Link href="/app/practice-os" className="flex items-center shrink-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/curago-logo.png" alt="CuraGo" className="h-9 sm:h-10 w-auto" />
-        </Link>
-        <div className="flex items-center gap-x-4 text-[13px] flex-nowrap overflow-x-auto whitespace-nowrap justify-end">
-          <Link href="/app/practice-os/schedule" className="pos-link">Schedule</Link>
-          <Link href="/app/practice-os/workspace" className="pos-link">Workspace</Link>
-          <Link href="/app/practice-os/leaderboard" className="pos-link">Leaderboard</Link>
-          <Link href="/app/practice-os/profile" className="pos-link">My profile</Link>
-          <button onClick={logout} className="pos-link shrink-0" style={{ color: 'var(--muted)' }}>Sign out</button>
-        </div>
-      </div>
+      {/* Shared top nav */}
+      <PosNav />
 
       {/* Welcome */}
       <p className="pos-label mb-2">Control Center</p>
@@ -164,6 +149,9 @@ export default function ControlCenter() {
           </div>
         </aside>
       </div>
+
+      {/* Notes/workspace, available on every screen */}
+      <WorkspaceDrawer />
     </div>
   );
 }

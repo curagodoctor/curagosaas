@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import WorkspaceDrawer from '@/components/practice-os/WorkspaceDrawer';
 import { SCORE_LABELS } from '../../_score';
 import { LeaderboardPrompt } from '../../_username';
 
@@ -41,7 +42,6 @@ function FocusSession() {
   const [paused, setPaused] = useState(false);
   const [inputVals, setInputVals] = useState({});      // { [moduleId]: { [inputId]: value } }
   const [inputError, setInputError] = useState('');    // required-input validation message
-  const [showVideo, setShowVideo] = useState(false);
   // Gathered on the final module only.
   const [reflection, setReflection] = useState({ confidence: 0, learning: '', challenge: '' });
   const [kpiValues, setKpiValues] = useState({});
@@ -83,6 +83,34 @@ function FocusSession() {
     const t = setInterval(() => setRemaining((r) => r - 1), 1000);
     return () => clearInterval(t);
   }, [phase, paused]);
+
+  // Persist a draft (inputs, timer, phase, position, reflection/KPIs) so a
+  // refresh or leaving mid-mission doesn't lose typed input or reset the timer.
+  const draftKey = `pos-focus-${id}`;
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (!day || restoredRef.current) return;
+    restoredRef.current = true;
+    try {
+      const raw = typeof window !== 'undefined' ? window.localStorage.getItem(draftKey) : null;
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d.inputVals) setInputVals(d.inputVals);
+        if (typeof d.remaining === 'number') setRemaining(d.remaining);
+        if (d.phase) setPhase(d.phase);
+        if (typeof d.index === 'number') setIndex(d.index);
+        if (d.reflection) setReflection(d.reflection);
+        if (d.kpiValues) setKpiValues(d.kpiValues);
+      }
+    } catch { /* ignore bad draft */ }
+  }, [day, draftKey]);
+
+  useEffect(() => {
+    if (!restoredRef.current || phase === 'celebrate') return;
+    try {
+      window.localStorage.setItem(draftKey, JSON.stringify({ inputVals, remaining, phase, index, reflection, kpiValues }));
+    } catch { /* storage full / disabled — ignore */ }
+  }, [inputVals, remaining, phase, index, reflection, kpiValues, draftKey]);
 
   const mod = modules[index] || null;
   const isLast = modules.length > 0 && index === modules.length - 1;
@@ -130,6 +158,7 @@ function FocusSession() {
     const data = await res.json();
 
     if (data.missionComplete) {
+      try { window.localStorage.removeItem(draftKey); } catch { /* ignore */ }
       setResult(data.completion);
       setFinalMinutes(actualMinutes);
       const st = await (await fetch(`/api/practice-os/state?pack=${packId}`)).json();
@@ -138,7 +167,6 @@ function FocusSession() {
       setPhase('celebrate');
     } else {
       setIndex((i) => i + 1);
-      setShowVideo(false);
     }
     if (typeof window !== 'undefined') window.scrollTo(0, 0);
     setSaving(false);
@@ -386,21 +414,9 @@ function FocusSession() {
               </div>
             )}
 
-            {/* Walkthrough video */}
+            {/* Walkthrough video — plays automatically as soon as the module opens. */}
             {mod.hasVideo && (
-              showVideo ? (
-                <div className="mb-4"><VideoPlayer url={mod.videoUrl} /></div>
-              ) : (
-                <button onClick={() => setShowVideo(true)} className="pos-card p-4 mb-4 w-full flex items-center gap-3 text-left hover:shadow-sm transition-shadow">
-                  <span className="w-11 h-11 rounded-xl shrink-0 flex items-center justify-center" style={{ background: 'var(--green)' }}>
-                    <svg className="w-4.5 h-4.5 text-white" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M8 5l11 7-11 7V5Z" fill="#fff" /></svg>
-                  </span>
-                  <span>
-                    <span className="block font-semibold text-[14px] text-[var(--ink)]">Watch the walkthrough</span>
-                    <span className="block text-[12px] text-[var(--muted)]">See it done first</span>
-                  </span>
-                </button>
-              )
+              <div className="mb-4"><VideoPlayer key={mod.id} url={mod.videoUrl} /></div>
             )}
 
             {/* Step-by-step */}
@@ -523,163 +539,6 @@ export default function FocusPage() {
   );
 }
 
-// A slide-over Workspace inside the mission — jot or open notes without leaving
-// the focus session. Uses the SAME /api/practice-os/documents backend as the
-// full Workspace page, so anything saved here shows up there too.
-function WorkspaceDrawer() {
-  const [open, setOpen] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const [docs, setDocs] = useState([]);
-  const [view, setView] = useState('list'); // 'list' | 'edit'
-  const [selId, setSelId] = useState(null);
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [status, setStatus] = useState('idle'); // idle | saving | saved
-  const saveTimer = useRef(null);
-  const lastSaved = useRef({ title: '', content: '' });
-
-  const loadDocs = useCallback(async () => {
-    const res = await fetch('/api/practice-os/documents');
-    if (!res.ok) { setLoaded(true); return; }
-    const data = await res.json();
-    if (data.success) setDocs(data.documents);
-    setLoaded(true);
-  }, []);
-
-  useEffect(() => { if (open && !loaded) loadDocs(); }, [open, loaded, loadDocs]);
-
-  const openNote = useCallback(async (id) => {
-    const res = await fetch(`/api/practice-os/documents/${id}`);
-    if (!res.ok) return;
-    const data = await res.json();
-    if (data.success) {
-      setSelId(id);
-      setTitle(data.document.title);
-      setContent(data.document.content || '');
-      lastSaved.current = { title: data.document.title, content: data.document.content || '' };
-      setStatus('idle');
-      setView('edit');
-    }
-  }, []);
-
-  const newNote = useCallback(async () => {
-    const res = await fetch('/api/practice-os/documents', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: 'Untitled', content: '' }),
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-    if (data.success) {
-      setSelId(data.document._id);
-      setTitle('Untitled');
-      setContent('');
-      lastSaved.current = { title: 'Untitled', content: '' };
-      setStatus('idle');
-      setView('edit');
-      loadDocs();
-    }
-  }, [loadDocs]);
-
-  const autosave = useCallback(async () => {
-    if (!selId) return;
-    if (title === lastSaved.current.title && content === lastSaved.current.content) return;
-    setStatus('saving');
-    try {
-      const res = await fetch(`/api/practice-os/documents/${selId}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content }),
-      });
-      const data = await res.json();
-      if (data.success) { lastSaved.current = { title, content }; setStatus('saved'); loadDocs(); }
-    } catch { setStatus('idle'); }
-  }, [selId, title, content, loadDocs]);
-
-  useEffect(() => {
-    if (view !== 'edit' || !selId) return;
-    if (title === lastSaved.current.title && content === lastSaved.current.content) return;
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => autosave(), 800);
-    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
-  }, [title, content, view, selId, autosave]);
-
-  const statusLabel = status === 'saving' ? 'Saving…' : status === 'saved' ? '✓ Saved' : 'Autosaves as you type';
-
-  return (
-    <>
-      {/* Floating toggle */}
-      {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          className="fixed z-40 bottom-5 right-5 text-white rounded-full shadow-lg inline-flex items-center gap-2 px-4 py-3 text-[14px] font-semibold"
-          style={{ background: 'var(--green)' }}
-          aria-label="Open workspace notes"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-          Notes
-        </button>
-      )}
-
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" style={{ background: 'rgba(16,26,19,.2)' }} onClick={() => setOpen(false)} />
-          <div
-            className="fixed z-50 top-0 right-0 h-full flex flex-col"
-            style={{ width: 'min(92vw, 380px)', background: 'var(--card)', borderLeft: '1px solid var(--rule)', boxShadow: '-12px 0 40px rgba(16,26,19,.14)' }}
-          >
-            <div className="flex items-center justify-between px-4 py-3 border-b shrink-0" style={{ borderColor: 'var(--rule)' }}>
-              <p className="pos-label">Workspace{view === 'edit' ? ' · note' : ''}</p>
-              <div className="flex items-center gap-3">
-                <Link href="/app/practice-os/workspace" className="pos-link text-[12px]" style={{ color: 'var(--muted)' }}>Open full</Link>
-                <button onClick={() => setOpen(false)} className="pos-link" style={{ color: 'var(--muted)' }} aria-label="Close">✕</button>
-              </div>
-            </div>
-
-            {view === 'list' ? (
-              <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                <button onClick={newNote} className="pos-action pos-focusable w-full mb-2" style={{ background: 'var(--green)' }}>+ New note</button>
-                {!loaded ? (
-                  <p className="text-[13px] text-[var(--muted)] text-center mt-6">Loading…</p>
-                ) : docs.length === 0 ? (
-                  <p className="text-[13px] text-[var(--muted)] text-center mt-6">No notes yet — jot your first one.</p>
-                ) : (
-                  docs.map((d) => (
-                    <button key={d._id} onClick={() => openNote(d._id)} className="pos-card text-left p-3 w-full block" style={{ borderColor: 'var(--rule)' }}>
-                      <div className="flex items-baseline justify-between gap-2">
-                        <p className="text-[14px] font-medium text-[var(--ink)] truncate">{d.title}</p>
-                        <span className="text-[10.5px] text-[var(--muted)] shrink-0">{new Date(d.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
-                      </div>
-                      {d.preview && <p className="text-[12px] text-[var(--muted)] line-clamp-1 mt-0.5">{d.preview}</p>}
-                    </button>
-                  ))
-                )}
-              </div>
-            ) : (
-              <div className="flex-1 flex flex-col p-4 min-h-0">
-                <button onClick={() => { setView('list'); loadDocs(); }} className="pos-link text-[13px] mb-3 self-start" style={{ color: 'var(--muted)' }}>← All notes</button>
-                <input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Untitled"
-                  className="w-full text-[17px] font-semibold text-[var(--ink)] bg-transparent outline-none mb-2"
-                  style={{ letterSpacing: '-0.01em' }}
-                />
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Jot a note while you work…"
-                  className="flex-1 w-full text-[14px] leading-relaxed text-[var(--ink)] bg-transparent outline-none resize-none border-t pt-3"
-                  style={{ borderColor: 'var(--rule-soft)' }}
-                />
-                <p className="text-[11px] mt-2 shrink-0" style={{ color: status === 'saved' ? 'var(--green)' : 'var(--muted)' }}>{statusLabel}</p>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-    </>
-  );
-}
-
 function Chip({ children, green }) {
   return (
     <span className="pos-label" style={{
@@ -761,9 +620,10 @@ function VideoPlayer({ url }) {
   return (
     <div className="rounded-xl overflow-hidden bg-black" style={{ aspectRatio: '16 / 9' }}>
       {yt ? (
-        <iframe src={yt} title="Walkthrough" className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+        // autoplay + rel=0 so the walkthrough starts as soon as the module opens.
+        <iframe src={`${yt}?autoplay=1&rel=0&modestbranding=1`} title="Walkthrough" className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
       ) : (
-        <video src={url} controls playsInline className="w-full h-full" />
+        <video src={url} controls autoPlay playsInline className="w-full h-full" />
       )}
     </div>
   );

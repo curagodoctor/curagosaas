@@ -14,6 +14,14 @@ const blogArticleSchema = new mongoose.Schema({
     trim: true,
   },
 
+  // Owner — scopes the article to a doctor (per-doctor blogs + the site's
+  // Resources library). Without this field the doctorId was silently dropped.
+  doctorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Doctor',
+    index: true,
+  },
+
   // SEO & Meta
   metaDescription: {
     type: String,
@@ -24,29 +32,23 @@ const blogArticleSchema = new mongoose.Schema({
     alt: String,
   },
 
-  // Author Info
+  // Author Info — filled from the doctor's real profile, no hardcoded defaults.
   author: {
-    name: {
-      type: String,
-      default: 'Dr. Yuvaraj T',
-    },
-    designation: {
-      type: String,
-      default: 'Surgical Gastroenterologist & Gold Medalist',
-    },
+    name: { type: String },
+    designation: { type: String },
     image: String,
   },
 
+  // Structured sections. All optional now — CuraGo is multi-specialty, so a
+  // simple post shouldn't be forced to fill surgical sections to save. Empty
+  // sections simply don't render.
   // Section 1: The Problem
   problemSection: {
     heading: {
       type: String,
       default: 'The Problem: Common Misconceptions & Symptoms',
     },
-    content: {
-      type: String,
-      required: true,
-    },
+    content: { type: String },
   },
 
   // Section 2: Clinical Deep Dive
@@ -55,10 +57,7 @@ const blogArticleSchema = new mongoose.Schema({
       type: String,
       default: 'Clinical Deep Dive: Why This Condition Needs Attention',
     },
-    content: {
-      type: String,
-      required: true,
-    },
+    content: { type: String },
   },
 
   // Section 3: Specialist Advantage
@@ -67,54 +66,38 @@ const blogArticleSchema = new mongoose.Schema({
       type: String,
       default: 'The Specialist Advantage: My Clinical Approach',
     },
-    content: {
-      type: String,
-      required: true,
-    },
+    content: { type: String },
+    // Optional stats — only meaningful for procedural/surgical specialties; no
+    // defaults, so non-surgical doctors don't get invented "surgeries performed".
     stats: {
-      surgeriesPerformed: {
-        type: Number,
-        default: 250,
-      },
-      proceduresSupervised: {
-        type: Number,
-        default: 300,
-      },
+      surgeriesPerformed: { type: Number },
+      proceduresSupervised: { type: Number },
     },
   },
 
-  // Section 4: Complex Cases
+  // Section 4: Complex Cases (optional)
   complexCasesSection: {
     heading: {
       type: String,
-      default: 'Complex Cases: Managing High-Risk Scenarios',
+      default: 'Complex Cases & When to Seek Specialist Care',
     },
-    content: {
-      type: String,
-      required: true,
-    },
+    content: { type: String },
   },
 
-  // Section 5: Surgical Audit
+  // Section 5: What to Expect (optional; formerly "Surgical Audit")
   surgicalAuditSection: {
     heading: {
       type: String,
-      default: 'The Surgical Audit: What to Expect During Your Consultation',
+      default: 'What to Expect During Your Consultation',
     },
-    content: {
-      type: String,
-      required: true,
-    },
+    content: { type: String },
     auditSteps: [
       {
         step: String,
         description: String,
       }
     ],
-    auditPrice: {
-      type: Number,
-      default: 150,
-    },
+    auditPrice: { type: Number },
   },
 
   // Section 6: FAQs
@@ -143,16 +126,10 @@ const blogArticleSchema = new mongoose.Schema({
   },
   publishedAt: Date,
 
-  // Local SEO
+  // Local SEO — from the doctor's own location, no hardcoded defaults.
   location: {
-    area: {
-      type: String,
-      default: 'Tilak Nagar',
-    },
-    city: {
-      type: String,
-      default: 'Mumbai',
-    },
+    area: { type: String },
+    city: { type: String },
   },
 
   // Analytics

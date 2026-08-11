@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import PosNav from '@/components/practice-os/PosNav';
 
 // Journey & record, combined (§18 + §4/§6). Two views of the same history:
 // "Timeline" — milestones, KPIs, achievements; "Record" — the day-by-day logbook.
@@ -51,10 +52,12 @@ function JourneyInner() {
   const done = (state.days || []).filter((d) => d.status === 'completed');
 
   return (
-    <div className="max-w-2xl mx-auto px-5 py-10">
-      <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm">← Back to today</Link>
+    <div className="max-w-2xl mx-auto px-5 pt-[64px] pb-10">
+      <PosNav breadcrumb={state.pack?.title} />
 
-      <div className="mt-8 mb-6">
+      <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm inline-block mt-6">← Back to today</Link>
+
+      <div className="mt-6 mb-6">
         <p className="pos-label mb-1">Your journey &amp; record</p>
         <h1 className="text-[26px] font-semibold text-[var(--ink)]" style={{ letterSpacing: '-0.02em' }}>Everything you&apos;ve built</h1>
         <p className="text-sm text-[var(--muted)] mt-2" style={{ maxWidth: '46ch' }}>
@@ -137,7 +140,7 @@ function TimelineView({ entries }) {
 // The day-by-day logbook (§4/§6) — no grading, skips are fine.
 function RecordView({ days, done }) {
   if (done.length === 0) {
-    return <div className="pos-card p-8 text-center text-[var(--muted)]">Nothing recorded yet. Finish today&apos;s task and it appears here.</div>;
+    return <div className="pos-card p-8 text-center text-[var(--muted)]">Nothing recorded yet. Finish today&apos;s mission and it appears here.</div>;
   }
   return (
     <>

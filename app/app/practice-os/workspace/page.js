@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import PosNav from '@/components/practice-os/PosNav';
 
 // Workspace — a private, per-doctor notes app (Notes/Notion style). Text is saved
 // by file name and grouped by day, autosaved as you type. Every document is
@@ -158,19 +158,8 @@ export default function WorkspacePage() {
   const statusLabel = status === 'saving' ? 'Saving…' : status === 'saved' ? 'All changes saved' : '';
 
   return (
-    <div className="w-full px-4 sm:px-8 lg:px-12 py-6 max-w-[1240px] mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 mb-7">
-        <div className="flex items-center gap-3 min-w-0">
-          <Link href="/app/practice-os" className="flex items-center shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/curago-logo.png" alt="CuraGo" className="h-9 sm:h-10 w-auto" />
-          </Link>
-          <span className="text-[var(--rule)]">/</span>
-          <span className="text-[13px] text-[var(--muted)]">Workspace</span>
-        </div>
-        <Link href="/app/practice-os" className="pos-link" style={{ color: 'var(--muted)' }}>← Back</Link>
-      </div>
+    <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-6 max-w-[1240px] mx-auto">
+      <PosNav breadcrumb="Workspace" />
 
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>

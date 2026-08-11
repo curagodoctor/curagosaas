@@ -4,6 +4,8 @@ import { getAdminFromCookie, requirePlatformAdmin } from '@/lib/platformAdminAut
 import Framework from '@/models/practice-os/Framework';
 import Module from '@/models/practice-os/Module';
 import Mission from '@/models/practice-os/Mission';
+import PracticeOsEnrollment from '@/models/practice-os/PracticeOsEnrollment';
+import UserMissionProgress from '@/models/practice-os/UserMissionProgress';
 
 // GET /api/platform/practice-os/frameworks/[id] — framework + its modules + missions.
 export async function GET(request, { params }) {
@@ -75,6 +77,10 @@ export async function DELETE(request, { params }) {
     await Promise.all([
       Mission.deleteMany({ frameworkId: id }),
       Module.deleteMany({ frameworkId: id }),
+      // Remove doctor enrollments + progress for this pack, so the reminder cron
+      // (which sends to active enrollments) stops emailing about a deleted pack.
+      PracticeOsEnrollment.deleteMany({ frameworkId: id }),
+      UserMissionProgress.deleteMany({ frameworkId: id }),
       Framework.findByIdAndDelete(id),
     ]);
 

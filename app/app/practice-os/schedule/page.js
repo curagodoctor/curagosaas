@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import PosNav from '@/components/practice-os/PosNav';
 
 // The Schedule screen — one card per owned+started pack that has a next task.
 // The doctor sees when their next task is scheduled and can move it, constrained
@@ -66,11 +66,6 @@ export default function SchedulePage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const logout = async () => {
-    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* ignore */ }
-    router.push('/login');
-  };
-
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>;
   }
@@ -78,18 +73,8 @@ export default function SchedulePage() {
   const schedulable = (packs || []).filter((p) => p.owned && p.started && p.nextUp);
 
   return (
-    <div className="w-full px-4 sm:px-8 lg:px-12 py-6 max-w-[900px] mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 mb-8">
-        <Link href="/app/practice-os" className="flex items-center shrink-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/curago-logo.png" alt="CuraGo" className="h-7 sm:h-8 w-auto" />
-        </Link>
-        <div className="flex items-center gap-x-4 gap-y-1 text-[13px] flex-wrap justify-end">
-          <Link href="/app/practice-os" className="pos-link">All packs</Link>
-          <button onClick={logout} className="pos-link" style={{ color: 'var(--muted)' }}>Sign out</button>
-        </div>
-      </div>
+    <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-6 max-w-[900px] mx-auto">
+      <PosNav breadcrumb="Schedule" />
 
       {/* Title */}
       <p className="pos-label mb-2">Your schedule</p>
@@ -97,13 +82,13 @@ export default function SchedulePage() {
         Your schedule
       </h1>
       <p className="text-[16px] text-[var(--muted)] mt-3 leading-relaxed" style={{ maxWidth: '54ch' }}>
-        Pick when your next task lands. You can move it to today, tomorrow, or the day after — one task at a time.
+        Pick when your next mission lands. You can move it to today, tomorrow, or the day after — one mission at a time.
       </p>
 
       <div className="mt-9 flex flex-col gap-5">
         {schedulable.length === 0 ? (
           <div className="pos-card p-10 text-center text-[var(--muted)]">
-            Nothing scheduled — finish a mission to schedule your next task.
+            Nothing scheduled — finish a mission to schedule your next one.
           </div>
         ) : (
           schedulable.map((pack) => (

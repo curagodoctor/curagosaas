@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import PosNav from '@/components/practice-os/PosNav';
 import { UsernamePicker } from '../_username';
 
 // Anonymous leaderboard — ranked by XP + streak + speed. Real names never shown.
@@ -27,10 +28,10 @@ export default function LeaderboardPage() {
   const onLeaderboard = me?.hasUsername;
 
   return (
-    <div className="max-w-2xl mx-auto px-5 py-10">
-      <button onClick={() => router.back()} className="pos-link text-sm">← Back</button>
+    <div className="max-w-2xl mx-auto px-5 pt-[64px] pb-10">
+      <PosNav breadcrumb="Leaderboard" />
 
-      <div className="my-6">
+      <div className="mt-8 mb-6">
         <p className="pos-label mb-1">Leaderboard</p>
         <h1 className="text-[26px] font-semibold text-[var(--ink)]" style={{ letterSpacing: '-0.02em' }}>Founding cohort</h1>
         <p className="text-sm text-[var(--muted)] mt-2" style={{ maxWidth: '52ch' }}>

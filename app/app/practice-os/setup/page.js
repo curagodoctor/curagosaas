@@ -27,12 +27,39 @@ function SetupInner() {
   const [days, setDays] = useState([]);
   const [busy, setBusy] = useState(false);
 
+  const [ready, setReady] = useState(false);            // profile + state loaded
+  const [prefilledComplete, setPrefilledComplete] = useState(false); // all required fields already on file
+  const [confirming, setConfirming] = useState(true);   // show the one-click confirm card
+
+  // Load the pack's day feed AND the doctor's existing global profile, so setup
+  // pre-fills what they already entered at signup / on the profile page instead of
+  // asking again. The profile is doctor-global and stores the same field keys.
   useEffect(() => {
     if (!packId) { router.replace('/app/practice-os'); return; }
-    fetch(`/api/practice-os/state?pack=${packId}`).then((r) => r.json()).then((d) => {
-      if (d.enrollment?.setupComplete) router.replace(`/app/practice-os/track?pack=${packId}`);
-      setDays(d.days || []);
-    });
+    let active = true;
+    (async () => {
+      const [stateD, profD] = await Promise.all([
+        fetch(`/api/practice-os/state?pack=${packId}`).then((r) => r.json()).catch(() => ({})),
+        fetch('/api/practice-os/profile').then((r) => r.json()).catch(() => ({})),
+      ]);
+      if (!active) return;
+      if (stateD.enrollment?.setupComplete) { router.replace(`/app/practice-os/track?pack=${packId}`); return; }
+      setDays(stateD.days || []);
+
+      const saved = profD.fields || {};
+      const nonEmpty = Object.entries(saved).filter(([, v]) => String(v ?? '').trim());
+      if (nonEmpty.length) setFields((prev) => ({ ...prev, ...Object.fromEntries(nonEmpty) }));
+      if (profD.summary) setSummary(profD.summary);
+      if (profD.cvUrl) setCvUrl(profD.cvUrl);
+      if (profD.intent) {
+        const savedIntent = Object.entries(profD.intent).filter(([, v]) => String(v ?? '').trim());
+        if (savedIntent.length) setIntent((s) => ({ ...s, ...Object.fromEntries(savedIntent) }));
+      }
+      // If every required field is already answered, offer a one-click confirm.
+      setPrefilledComplete(REQUIRED_FIELDS.every((k) => String(saved[k] ?? '').trim()));
+      setReady(true);
+    })();
+    return () => { active = false; };
   }, [router, packId]);
 
   const setField = (key, value) => { setFields((s) => ({ ...s, [key]: value })); setErrors((e) => ({ ...e, [key]: false })); };
@@ -68,10 +95,10 @@ function SetupInner() {
 
   const saveIntent = async () => {
     await fetch('/api/practice-os/setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: 'intent', ...intent }) });
-    setStep(3);
+    await goToSummary();
   };
 
-  // Step 3: optional CV — fills only fields left blank; never overwrites.
+  // Optional CV (now at the top of step 1) — fills only fields left blank; never overwrites.
   const uploadCv = async (file) => {
     setUploading(true); setCvNote('');
     const fd = new FormData(); fd.append('file', file); fd.append('kind', 'cv');
@@ -114,7 +141,7 @@ function SetupInner() {
       setSummary(d.summary || '');
     } catch { /* ignore */ }
     setSummarizing(false);
-    setStep(4);
+    setStep(3);
   };
 
   const finish = async () => {
@@ -123,18 +150,70 @@ function SetupInner() {
     router.push(`/app/practice-os/track?pack=${packId}`);
   };
 
+  if (!ready) {
+    return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>;
+  }
+
+  // Everything required is already on the doctor's profile — let them confirm and
+  // start in one click rather than re-typing. Values are shown, not skipped silently.
+  if (prefilledComplete && confirming) {
+    return (
+      <div className="max-w-xl mx-auto px-5 py-12">
+        <p className="pos-label mb-1">Setting up</p>
+        <h1 className="text-2xl font-semibold text-[var(--ink)] mb-2" style={{ letterSpacing: '-0.02em' }}>Your profile is ready</h1>
+        <p className="text-[var(--muted)] mb-6" style={{ maxWidth: '52ch' }}>
+          We already have your details from your CuraGo profile — nothing to re-enter. Confirm they look right and we&apos;ll open Day 1. You can edit anything from your profile later.
+        </p>
+
+        {summary && (
+          <div className="pos-card p-5 mb-6" style={{ borderLeft: '3px solid var(--green)' }}>
+            <p className="pos-label mb-1">How CuraGo sees you</p>
+            <p className="text-[15px] text-[var(--ink)] leading-relaxed">{summary}</p>
+          </div>
+        )}
+
+        <p className="pos-label mb-2">On file</p>
+        <div className="pos-card divide-y mb-6" style={{ borderColor: 'var(--rule)' }}>
+          {ALL_FIELDS.filter((f) => String(fields[f.key] ?? '').trim()).map((f) => (
+            <div key={f.key} className="flex gap-4 px-4 py-2.5" style={{ borderColor: 'var(--rule-soft)' }}>
+              <span className="pos-label flex-shrink-0" style={{ width: '38%' }}>{f.label}</span>
+              <span className="text-[13px] text-[var(--ink)] flex-1 whitespace-pre-wrap break-words">{fields[f.key]}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-5">
+          <button onClick={finish} disabled={busy} className="pos-action">{busy ? 'Opening Day 1…' : 'Looks good — start'}</button>
+          <button onClick={() => setConfirming(false)} className="pos-link text-sm">Edit my details</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-xl mx-auto px-5 py-12">
-      <p className="pos-label mb-1">Setting up · Step {step} of 4</p>
-      <div className="pos-meter mb-8"><span style={{ width: `${step * 25}%` }} /></div>
+      <p className="pos-label mb-1">Setting up · Step {step} of 3</p>
+      <div className="pos-meter mb-8"><span style={{ width: `${Math.round((step / 3) * 100)}%` }} /></div>
 
       {step === 1 && (
         <div>
           <h1 className="text-2xl font-semibold text-[var(--ink)] mb-2" style={{ letterSpacing: '-0.02em' }}>Tell us about your practice</h1>
-          <div className="pos-card p-4 mb-6" style={{ background: 'var(--green-soft)', borderColor: 'var(--green)' }}>
-            <p className="text-sm text-[var(--ink)]" style={{ maxWidth: '54ch' }}>
-              <b>Why this matters:</b> Everything CuraGo writes for you — your website, Google posts, Instagram captions, patient replies and reception script — is generated from this. It&apos;s saved to your profile and you can edit it anytime. Fields marked <span style={{ color: 'var(--orange)' }}>*</span> are required.
+          <div className="pos-card p-4 mb-5" style={{ background: 'var(--green-soft)', borderColor: 'var(--green)' }}>
+            <p className="text-sm text-[var(--ink)]" style={{ maxWidth: '56ch' }}>
+              <b>How to fill this & why it matters:</b> Answer in your own words, as accurately and completely as you can — everything CuraGo writes for you (your website, Google posts, Instagram captions, patient replies, reception script) is generated from this, so the more you give, the better it sounds. It&apos;s saved to your profile and you can edit it anytime. Fields marked <span style={{ color: 'var(--orange)' }}>*</span> are required.
             </p>
+          </div>
+
+          {/* CV upload FIRST (optional) — attach it and we auto-fill the form below. */}
+          <div className="pos-card p-4 mb-6">
+            <p className="text-sm font-medium text-[var(--ink)] mb-1">Have your CV? Upload it to auto-fill — optional</p>
+            <p className="text-[12px] text-[var(--muted)] mb-3" style={{ maxWidth: '54ch' }}>Attach your CV and we&apos;ll fill in everything we can below; you then just review and edit. Prefer to type it yourself? Skip this and fill the form.</p>
+            <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => e.target.files?.[0] && uploadCv(e.target.files[0])}
+              className="block w-full text-sm text-[var(--muted)] file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[var(--green-soft)] file:text-[var(--green)] cursor-pointer" />
+            {uploading && <p className="text-sm text-[var(--muted)] mt-2">Uploading…</p>}
+            {extracting && <p className="text-sm text-[var(--muted)] mt-2">Reading your CV…</p>}
+            {!uploading && !extracting && cvNote && <p className="text-sm text-[var(--green)] mt-2">✓ {cvNote}</p>}
+            <p className="text-[11px] text-[var(--muted)] mt-3">Your CV is personal data — stored securely, and you can delete it any time.</p>
           </div>
 
           <div className="space-y-8">
@@ -184,23 +263,6 @@ function SetupInner() {
       )}
 
       {step === 3 && (
-        <div>
-          <h1 className="text-2xl font-semibold text-[var(--ink)] mb-2" style={{ letterSpacing: '-0.02em' }}>Add your CV — optional</h1>
-          <p className="text-[var(--muted)] mb-5" style={{ maxWidth: '52ch' }}>Have your CV handy? Attach it and we&apos;ll fill in anything you left blank above. You can also skip this — it&apos;s not required.</p>
-          <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => e.target.files?.[0] && uploadCv(e.target.files[0])}
-            className="block w-full text-sm text-[var(--muted)] file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[var(--green-soft)] file:text-[var(--green)] cursor-pointer" />
-          {uploading && <p className="text-sm text-[var(--muted)] mt-3">Uploading…</p>}
-          {extracting && <p className="text-sm text-[var(--muted)] mt-3">Reading your CV…</p>}
-          {!uploading && !extracting && cvNote && <p className="text-sm text-[var(--green)] mt-3">✓ {cvNote}</p>}
-          <p className="text-[11px] text-[var(--muted)] mt-4">Your CV is personal data. It&apos;s stored securely and you can delete it any time.</p>
-          <div className="mt-7 flex items-center gap-5">
-            <button onClick={goToSummary} disabled={summarizing} className="pos-action">{summarizing ? 'Preparing your summary…' : (cvUrl ? 'Continue' : 'Skip & continue')}</button>
-            <button onClick={() => setStep(2)} className="pos-link text-sm">Back</button>
-          </div>
-        </div>
-      )}
-
-      {step === 4 && (
         <div>
           <h1 className="text-2xl font-semibold text-[var(--ink)] mb-2" style={{ letterSpacing: '-0.02em' }}>Here&apos;s how CuraGo sees you</h1>
           {summary ? (

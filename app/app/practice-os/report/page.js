@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import PosNav from '@/components/practice-os/PosNav';
 
 // The Month / Progress report (PRD §20, §23) — a ledger of real work done, never
 // promised results, ending with the doctor's own day-0 goal quoted back.
@@ -46,9 +47,12 @@ function ReportInner() {
     : '';
 
   return (
-    <div className="max-w-2xl mx-auto px-5 py-10">
+    <div className="max-w-2xl mx-auto px-5 pt-[64px] pb-10">
+      {/* Shared nav — hidden when printed */}
+      <div className="print:hidden"><PosNav /></div>
+
       {/* Controls — hidden when printed */}
-      <div className="flex items-center justify-between print:hidden">
+      <div className="flex items-center justify-between pt-6 print:hidden">
         <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm">← Back to today</Link>
         <button onClick={() => window.print()} className="pos-link text-sm pos-focusable">
           Print / Save as PDF

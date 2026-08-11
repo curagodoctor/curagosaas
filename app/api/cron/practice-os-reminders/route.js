@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import PracticeOsEnrollment from '@/models/practice-os/PracticeOsEnrollment';
+import Framework from '@/models/practice-os/Framework';
 import Doctor from '@/models/Doctor';
 import { sendPracticeOsReminderEmail } from '@/lib/email';
 import { sendSMS } from '@/lib/twilio';
@@ -37,7 +38,11 @@ export async function GET(request) {
 
     await connectDB();
 
-    const enrollments = await PracticeOsEnrollment.find({ status: 'active' });
+    const allActive = await PracticeOsEnrollment.find({ status: 'active' });
+    // Skip enrollments whose pack no longer exists — otherwise a deleted pack
+    // keeps emailing its doctors (handles orphans from packs deleted earlier).
+    const liveFwIds = new Set((await Framework.find({}).select('_id').lean()).map((f) => String(f._id)));
+    const enrollments = allActive.filter((e) => liveFwIds.has(String(e.frameworkId)));
 
     const now = new Date();
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://curago.in';

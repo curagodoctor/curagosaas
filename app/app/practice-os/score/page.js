@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import PosNav from '@/components/practice-os/PosNav';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { SCORE_WEIGHTS, SCORE_LABELS } from '../_score';
 
@@ -32,10 +33,12 @@ function ScoreInner() {
   });
 
   return (
-    <div className="max-w-xl mx-auto px-5 py-10">
-      <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm">← Back to today</Link>
+    <div className="max-w-xl mx-auto px-5 pt-[64px] pb-10">
+      <PosNav breadcrumb={state.pack?.title} />
 
-      <div className="text-center my-8">
+      <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm inline-block mt-6">← Back to today</Link>
+
+      <div className="text-center mt-6 mb-8">
         <p className="pos-label mb-1">Visibility Score</p>
         <div><span className="pos-num text-6xl text-[var(--green)]">{score?.total || 0}</span><span className="text-[var(--muted)]"> / 100</span></div>
         <p className="text-sm text-[var(--muted)] mt-2" style={{ maxWidth: '40ch', margin: '8px auto 0' }}>How findable and credible your practice is. Every point is something a patient can see.</p>

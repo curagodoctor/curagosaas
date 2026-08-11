@@ -3,6 +3,8 @@
 import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import WorkspaceDrawer from '@/components/practice-os/WorkspaceDrawer';
+import PosNav from '@/components/practice-os/PosNav';
 import { Spine, ContextRail, WEEK_THEMES } from '../_components';
 
 // The Day view for ONE pack — read via ?pack=<frameworkId>. One task, one reason.
@@ -48,7 +50,7 @@ function TrackView() {
 
   return (
     <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-6">
-      <TopBar pack={pack} withPack={withPack} />
+      <PosNav breadcrumb={pack?.title}><ProgressMenu withPack={withPack} /></PosNav>
 
       {daysAway >= 4 && !allComplete && (
         <div className="pos-card p-5 mb-6 border-l-4" style={{ borderLeftColor: 'var(--green)' }}>
@@ -62,7 +64,7 @@ function TrackView() {
 
       <div className="grid grid-cols-1 md:grid-cols-[1fr_260px] lg:grid-cols-[220px_minmax(0,1fr)_280px] gap-5 lg:gap-6">
         <div className="hidden lg:block">
-          <Spine days={days} totalDays={totalDays} />
+          <Spine days={days} totalDays={totalDays} withPack={withPack} />
         </div>
 
         <div className="min-w-0">
@@ -81,6 +83,9 @@ function TrackView() {
           <ContextRail score={score} performance={performance} aiCredits={aiCredits} upcomingAchievement={upcomingAchievement} summary={summary} enrollment={enrollment} days={days} withPack={withPack} />
         </div>
       </div>
+
+      {/* Notes/workspace, available on every screen */}
+      <WorkspaceDrawer />
     </div>
   );
 }
@@ -90,40 +95,6 @@ export default function TrackPage() {
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>}>
       <TrackView />
     </Suspense>
-  );
-}
-
-function TopBar({ pack, withPack }) {
-  const router = useRouter();
-  const logout = async () => {
-    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* ignore */ }
-    router.push('/login');
-  };
-  return (
-    <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between gap-3 px-4 sm:px-8 lg:px-12 py-1.5" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--rule)' }}>
-      <div className="flex items-center gap-3 min-w-0">
-        <Link href="/app/practice-os" className="flex items-center shrink-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/curago-logo.png" alt="CuraGo" className="h-9 sm:h-10 w-auto" />
-        </Link>
-        {pack?.title && (
-          <>
-            <span className="text-[var(--rule)]">/</span>
-            <Link href="/app/practice-os" className="text-[13px] text-[var(--muted)] hover:text-[var(--ink)] truncate hidden sm:inline">{pack.title}</Link>
-          </>
-        )}
-      </div>
-      <div className="flex items-center gap-x-4 text-[13px] flex-nowrap overflow-x-auto whitespace-nowrap justify-end">
-        <Link href="/app/practice-os" className="pos-link">All packs</Link>
-        <ProgressMenu withPack={withPack} />
-        <Link href="/app/practice-os/schedule" className="pos-link">Schedule</Link>
-        <Link href="/app/practice-os/workspace" className="pos-link">Workspace</Link>
-        <Link href={withPack('/app/practice-os/leaderboard')} className="pos-link">Leaderboard</Link>
-        <Link href="/app/practice-os/profile" className="pos-link">My profile</Link>
-        <Link href="/admin/dashboard" className="text-white px-3 py-1 rounded-[7px] font-semibold text-[12.5px] shrink-0" style={{ backgroundColor: 'var(--green)' }}>Website Builder</Link>
-        <button onClick={logout} className="pos-link" style={{ color: 'var(--muted)' }}>Sign out</button>
-      </div>
-    </div>
   );
 }
 
@@ -144,8 +115,9 @@ function ProgressMenu({ withPack }) {
       </button>
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 z-50 pos-card p-1 min-w-[180px]" style={{ boxShadow: '0 12px 32px rgba(16,26,19,.14)' }}>
+          <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} />
+          {/* Fixed (not absolute) so the fixed-nav's overflow-x-auto can't clip it. */}
+          <div className="fixed right-4 sm:right-8 lg:right-12 top-[52px] z-[70] pos-card p-1 min-w-[180px]" style={{ boxShadow: '0 12px 32px rgba(16,26,19,.14)' }}>
             {items.map(([label, href]) => (
               <Link key={label} href={href} onClick={() => setOpen(false)} className="block px-3 py-2 text-[13px] rounded-md hover:bg-[var(--rule-soft)]" style={{ color: 'var(--ink)' }}>
                 {label}
@@ -179,7 +151,7 @@ function TaskCard({ day, totalDays, withPack }) {
       <div className="mt-7">
         <Link href={withPack(`/app/practice-os/focus/${day._id}`)} className="pos-action pos-focusable inline-flex items-center gap-2" style={{ background: 'var(--orange)' }}>
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M7 5l12 7-12 7V5Z" fill="#fff" /></svg>
-          Begin task
+          Begin mission
         </Link>
       </div>
     </div>
@@ -210,7 +182,7 @@ function LockedDay({ day, nextUnlockAt, now, onUnlocked, canAdvance }) {
           <span className="pos-label">until it opens</span>
         </div>
         <p className="text-sm text-[var(--muted)] mt-3" style={{ maxWidth: '52ch' }}>
-          Tasks build on each other, and some need real time to work — Google verification takes days, review requests take days to come back. Doing five in one evening builds a checklist, not a practice.
+          Missions build on each other, and some need real time to work — Google verification takes days, review requests take days to come back. Doing five in one evening builds a checklist, not a practice.
         </p>
       </div>
 
@@ -227,7 +199,7 @@ function LockedDay({ day, nextUnlockAt, now, onUnlocked, canAdvance }) {
               }}
               className="pos-action pos-focusable"
             >
-              Do tomorrow&apos;s task today
+              Do tomorrow&apos;s mission today
             </button>
             <p className="text-[12px] text-[var(--muted)] mt-2">You can work one day ahead. After this, the next mission opens on the timer above.</p>
           </>

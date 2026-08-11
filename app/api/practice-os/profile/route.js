@@ -16,6 +16,7 @@ export async function GET(request) {
     return NextResponse.json({
       success: true,
       fields,
+      intent: profile.intent || {},
       summary: profile.credentials?.summary || '',
       hasCv: !!profile.credentials?.rawFileUrl,
       cvUrl: profile.credentials?.rawFileUrl || '',

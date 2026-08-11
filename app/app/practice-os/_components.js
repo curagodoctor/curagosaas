@@ -15,10 +15,12 @@ export const WEEK_THEMES = {
  * The 30-day spine. Treatment-chart grammar: green behind you, one orange mark
  * where you are, hairlines ahead. Locked day = paper, never orange.
  */
-export function Spine({ days, totalDays }) {
+export function Spine({ days, totalDays, withPack }) {
   const byWeek = {};
   for (const d of days) (byWeek[d.weekNumber || 1] ??= []).push(d);
   const weeks = Object.keys(byWeek).map(Number).sort((a, b) => a - b);
+  // Completed/skipped missions link to the Record so you can see what you did.
+  const recordHref = (d) => (withPack ? `${withPack('/app/practice-os/journey')}&view=record` : `/app/practice-os/journey?view=record`);
 
   return (
     <div className="sticky top-6">
@@ -32,27 +34,34 @@ export function Spine({ days, totalDays }) {
                 const done = d.status === 'completed';
                 const current = d.status === 'available';
                 const skipped = d.status === 'skipped';
-                return (
-                  <div key={d._id} className="flex items-center gap-2 py-0.5">
+                const clickable = done || skipped;
+                const inner = (
+                  <>
                     <span
-                      className="w-1.5 rounded-full shrink-0"
+                      className="w-1.5 rounded-full shrink-0 mt-1"
                       style={{
                         height: current ? 20 : done ? 13 : 7,
                         background: done ? 'var(--green)' : current ? 'var(--orange)' : 'var(--rule)',
                       }}
                     />
                     <span
-                      className="text-[12px] truncate"
+                      className="text-[12px] leading-snug"
                       style={{
-                        color: current ? 'var(--ink)' : done ? 'var(--ink)' : 'var(--muted)',
+                        color: current || done ? 'var(--ink)' : 'var(--muted)',
                         fontWeight: current ? 600 : 400,
                         textDecoration: skipped ? 'line-through' : 'none',
                         opacity: d.status === 'locked' ? 0.6 : 1,
                       }}
                     >
-                      {d.title}
+                      <span className="pos-num mr-1" style={{ color: 'var(--muted)' }}>{d.missionNumber}.</span>{d.title}
                     </span>
-                  </div>
+                  </>
+                );
+                const cls = `flex items-start gap-2 py-1 px-1 -mx-1 rounded-md ${clickable ? 'hover:bg-[var(--rule-soft)] transition-colors' : ''}`;
+                return clickable ? (
+                  <Link key={d._id} href={recordHref(d)} title={d.title} className={cls}>{inner}</Link>
+                ) : (
+                  <div key={d._id} title={d.title} className={cls}>{inner}</div>
                 );
               })}
             </div>
