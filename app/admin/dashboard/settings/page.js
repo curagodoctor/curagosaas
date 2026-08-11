@@ -519,39 +519,43 @@ export default function SettingsPage() {
                         <span className="w-6 h-6 bg-[#096b17] text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
                         <h4 className="font-medium text-gray-900">Add DNS records at your registrar</h4>
                       </div>
-                      <p className="text-sm text-gray-600 mb-3">
-                        Go to your domain registrar (GoDaddy, Namecheap, etc.) and add this record:
-                      </p>
-                      <div className="bg-gray-50 rounded-lg p-4 font-mono text-sm space-y-2">
-                        {domainInfo.customDomain.split('.').length > 2 ? (
+                      {(() => {
+                        const isApexDomain = domainInfo.customDomain.split('.').length === 2;
+                        const records = isApexDomain
+                          ? [
+                              { type: 'A', name: '@', value: '216.198.79.1', note: 'Your root domain' },
+                              { type: 'CNAME', name: 'www', value: 'cname.vercel-dns.com', note: 'For www — optional but recommended' },
+                            ]
+                          : [{ type: 'CNAME', name: domainInfo.customDomain.split('.')[0], value: 'cname.vercel-dns.com', note: '' }];
+                        return (
                           <>
-                            <div className="flex justify-between"><span className="text-gray-500">Type:</span><span className="font-semibold">CNAME</span></div>
-                            <div className="flex justify-between"><span className="text-gray-500">Name/Host:</span><span className="font-semibold">{domainInfo.customDomain.split('.')[0]}</span></div>
-                            <div className="flex justify-between"><span className="text-gray-500">Value:</span><span className="font-semibold">cname.vercel-dns.com</span></div>
+                            <p className="text-sm text-gray-600 mb-3">
+                              Go to your domain registrar (GoDaddy, Namecheap, Hostinger, etc.) and add {records.length > 1 ? 'these records' : 'this record'}. If an old A record or URL forwarding exists, delete it first.
+                            </p>
+                            <div className="space-y-3">
+                              {records.map((r, i) => (
+                                <div key={i} className="bg-gray-50 rounded-lg p-4 font-mono text-sm">
+                                  {r.note && <p className="text-[11px] text-gray-400 mb-2 font-sans">{r.note}</p>}
+                                  <div className="flex justify-between"><span className="text-gray-500">Type:</span><span className="font-semibold">{r.type}</span></div>
+                                  <div className="flex justify-between"><span className="text-gray-500">Name/Host:</span><span className="font-semibold">{r.name}</span></div>
+                                  <div className="flex justify-between"><span className="text-gray-500">Value:</span><span className="font-semibold">{r.value}</span></div>
+                                  <div className="flex justify-between"><span className="text-gray-500">TTL:</span><span className="font-semibold">3600 (or Auto)</span></div>
+                                  <button
+                                    type="button"
+                                    onClick={() => { navigator.clipboard.writeText(r.value); showAlert({ title: 'Copied', message: 'Value copied to clipboard', type: 'success' }); }}
+                                    className="mt-2 text-sm text-[#096b17] hover:underline font-sans"
+                                  >
+                                    Copy value
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-3">
+                              https (the padlock) turns on automatically within a few minutes after the records are correct — no extra step.
+                            </p>
                           </>
-                        ) : (
-                          <>
-                            <div className="flex justify-between"><span className="text-gray-500">Type:</span><span className="font-semibold">A</span></div>
-                            <div className="flex justify-between"><span className="text-gray-500">Name/Host:</span><span className="font-semibold">@</span></div>
-                            <div className="flex justify-between"><span className="text-gray-500">Value:</span><span className="font-semibold">76.76.21.21</span></div>
-                          </>
-                        )}
-                        <div className="flex justify-between"><span className="text-gray-500">TTL:</span><span className="font-semibold">3600 (or Auto)</span></div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const val = domainInfo.customDomain.split('.').length > 2 ? 'cname.vercel-dns.com' : '76.76.21.21';
-                          navigator.clipboard.writeText(val);
-                          showAlert({ title: 'Copied', message: 'Value copied to clipboard', type: 'success' });
-                        }}
-                        className="mt-2 text-sm text-[#096b17] hover:underline flex items-center gap-1"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                        Copy value
-                      </button>
+                        );
+                      })()}
                     </div>
 
                     {/* Step 3: Verify */}
@@ -572,7 +576,9 @@ export default function SettingsPage() {
                             const res = await fetch('/api/doctor/domain/verify', { method: 'POST', credentials: 'include' });
                             const data = await res.json();
                             setDomainStatus(data);
-                            if (data.verified || data.configured) {
+                            if (data.conflict?.length) {
+                              await showAlert({ title: 'Conflicting DNS record', message: `Your domain also points to ${data.conflict.join(', ')} (not Vercel). Delete that A record at your registrar and keep only the Vercel one — the site is unreliable until then.`, type: 'warning' });
+                            } else if (data.verified || data.configured) {
                               await showAlert({ title: 'Domain Verified!', message: `${domainInfo.customDomain} is now connected and live!`, type: 'success' });
                             } else {
                               await showAlert({ title: 'Not Ready Yet', message: 'DNS has not propagated yet. Please wait and try again later.', type: 'warning' });
@@ -589,14 +595,21 @@ export default function SettingsPage() {
                       </button>
 
                       {domainStatus && (
-                        <div className={`mt-3 flex items-center gap-2 ${domainStatus.verified || domainStatus.configured ? 'text-green-700' : 'text-yellow-700'}`}>
-                          <span className={`w-2.5 h-2.5 rounded-full ${domainStatus.verified || domainStatus.configured ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
-                          <span className="text-sm">
-                            {domainStatus.verified || domainStatus.configured
-                              ? 'Domain verified and connected!'
-                              : 'DNS not propagated yet. Try again in a few hours.'}
-                          </span>
-                        </div>
+                        domainStatus.conflict?.length ? (
+                          <div className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
+                            <p className="font-medium">Conflicting DNS record found</p>
+                            <p className="mt-1">Your domain also points to <span className="font-mono">{domainStatus.conflict.join(', ')}</span> (not Vercel). Delete that A record at your registrar — keep only the Vercel record above. The site will be unreliable until you do.</p>
+                          </div>
+                        ) : (
+                          <div className={`mt-3 flex items-center gap-2 ${domainStatus.verified || domainStatus.configured ? 'text-green-700' : 'text-yellow-700'}`}>
+                            <span className={`w-2.5 h-2.5 rounded-full ${domainStatus.verified || domainStatus.configured ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
+                            <span className="text-sm">
+                              {domainStatus.verified || domainStatus.configured
+                                ? 'Domain verified and connected!'
+                                : 'DNS not propagated yet. Try again in a few hours.'}
+                            </span>
+                          </div>
+                        )
                       )}
                     </div>
                   </>
