@@ -24,12 +24,15 @@ export default function BlogArticleEditorPage() {
     status: 'draft',
 
     problemSection: {
+      heading: '',
       content: '',
     },
     clinicalSection: {
+      heading: '',
       content: '',
     },
     specialistSection: {
+      heading: '',
       content: '',
       stats: {
         surgeriesPerformed: 250,
@@ -37,9 +40,11 @@ export default function BlogArticleEditorPage() {
       },
     },
     complexCasesSection: {
+      heading: '',
       content: '',
     },
     surgicalAuditSection: {
+      heading: '',
       content: '',
       auditSteps: [
         { step: 'Detailed Scan Review', description: '' },
@@ -49,6 +54,7 @@ export default function BlogArticleEditorPage() {
       auditPrice: 150,
     },
     faqSection: {
+      heading: '',
       faqs: [
         { question: '', answer: '' },
       ],
@@ -69,7 +75,16 @@ export default function BlogArticleEditorPage() {
 
       const data = await response.json();
       if (data.article) {
-        setFormData(data.article);
+        const a = data.article;
+        setFormData({
+          ...a,
+          problemSection: { ...a.problemSection, heading: a.problemSection?.heading || '' },
+          clinicalSection: { ...a.clinicalSection, heading: a.clinicalSection?.heading || '' },
+          specialistSection: { ...a.specialistSection, heading: a.specialistSection?.heading || '' },
+          complexCasesSection: { ...a.complexCasesSection, heading: a.complexCasesSection?.heading || '' },
+          surgicalAuditSection: { ...a.surgicalAuditSection, heading: a.surgicalAuditSection?.heading || '' },
+          faqSection: { ...a.faqSection, heading: a.faqSection?.heading || '' },
+        });
       }
       setLoading(false);
     } catch (error) {
@@ -437,9 +452,14 @@ export default function BlogArticleEditorPage() {
 
         {/* Section 1: The Problem */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
-            Section 1: The Problem: Common Misconceptions & Symptoms
-          </h2>
+          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Section heading</label>
+          <input
+            type="text"
+            value={formData.problemSection.heading}
+            onChange={(e) => handleNestedChange('problemSection', 'heading', e.target.value)}
+            placeholder="The Problem: Common Misconceptions & Symptoms"
+            className="w-full text-xl font-bold text-gray-800 px-3 py-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
           <p className="text-sm text-gray-600 mb-4">
             Connect with the patient's pain. Identify the specific symptom or myth this article is debunking.
           </p>
@@ -455,9 +475,14 @@ export default function BlogArticleEditorPage() {
 
         {/* Section 2: Clinical Deep Dive */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
-            Section 2: Clinical Deep Dive: Why This Condition Needs Attention
-          </h2>
+          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Section heading</label>
+          <input
+            type="text"
+            value={formData.clinicalSection.heading}
+            onChange={(e) => handleNestedChange('clinicalSection', 'heading', e.target.value)}
+            placeholder="Clinical Deep Dive: Why This Condition Needs Attention"
+            className="w-full text-xl font-bold text-gray-800 px-3 py-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
           <p className="text-sm text-gray-600 mb-4">
             Explain the pathology simply but professionally. Discuss risks of delay.
           </p>
@@ -473,9 +498,14 @@ export default function BlogArticleEditorPage() {
 
         {/* Section 3: Specialist Advantage */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
-            Section 3: The Specialist Advantage: My Clinical Approach
-          </h2>
+          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Section heading</label>
+          <input
+            type="text"
+            value={formData.specialistSection.heading}
+            onChange={(e) => handleNestedChange('specialistSection', 'heading', e.target.value)}
+            placeholder="The Specialist Advantage: My Clinical Approach"
+            className="w-full text-xl font-bold text-gray-800 px-3 py-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
           <p className="text-sm text-gray-600 mb-4">
             Highlight your Gold Medalist expertise and experience.
           </p>
@@ -528,9 +558,14 @@ export default function BlogArticleEditorPage() {
 
         {/* Section 4: Complex Cases */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
-            Section 4: Complex Cases: Managing High-Risk Scenarios
-          </h2>
+          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Section heading</label>
+          <input
+            type="text"
+            value={formData.complexCasesSection.heading}
+            onChange={(e) => handleNestedChange('complexCasesSection', 'heading', e.target.value)}
+            placeholder="Complex Cases: Managing High-Risk Scenarios"
+            className="w-full text-xl font-bold text-gray-800 px-3 py-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
           <p className="text-sm text-gray-600 mb-4">
             Build trust for difficult cases. Detail your capability in handling complications.
           </p>
@@ -546,9 +581,14 @@ export default function BlogArticleEditorPage() {
 
         {/* Section 5: Surgical Audit */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
-            Section 5: The Surgical Audit: What to Expect During Your Consultation
-          </h2>
+          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Section heading</label>
+          <input
+            type="text"
+            value={formData.surgicalAuditSection.heading}
+            onChange={(e) => handleNestedChange('surgicalAuditSection', 'heading', e.target.value)}
+            placeholder="The Surgical Audit: What to Expect During Your Consultation"
+            className="w-full text-xl font-bold text-gray-800 px-3 py-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
           <p className="text-sm text-gray-600 mb-4">
             Sell the ₹150 Audit. Explain what patients can expect.
           </p>
@@ -600,9 +640,14 @@ export default function BlogArticleEditorPage() {
 
         {/* Section 6: FAQs */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
-            Section 6: FAQs: Clear Answers for Patients
-          </h2>
+          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Section heading</label>
+          <input
+            type="text"
+            value={formData.faqSection.heading}
+            onChange={(e) => handleNestedChange('faqSection', 'heading', e.target.value)}
+            placeholder="FAQs: Clear Answers for Patients"
+            className="w-full text-xl font-bold text-gray-800 px-3 py-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
           <p className="text-sm text-gray-600 mb-4">
             Address common fears and concerns with 3 short, punchy Q&As.
           </p>

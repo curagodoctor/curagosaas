@@ -106,6 +106,25 @@ function ContactsPageInner() {
     }
   };
 
+  const handleStopWorkflow = async (contactId) => {
+    const exec = activeExecutions[contactId?.toString()];
+    if (!exec?._id) return;
+    const confirmed = await showConfirm({
+      title: 'Stop workflow',
+      message: `Stop "${exec.workflowId?.name || 'this workflow'}" for this contact? Any messages not yet sent will be cancelled. You can then start a different one.`,
+      type: 'danger',
+    });
+    if (!confirmed) return;
+    try {
+      const res = await fetch(`/api/doctor/workflows/executions/${exec._id}`, { method: 'DELETE', credentials: 'include' });
+      const data = await res.json();
+      if (data.success) fetchExecutions();
+      else await showAlert({ title: 'Error', message: data.error || 'Failed to stop workflow', type: 'error' });
+    } catch {
+      await showAlert({ title: 'Error', message: 'Failed to stop workflow', type: 'error' });
+    }
+  };
+
   const handleStartWorkflow = async (contactId, workflowId) => {
     // Check quota before starting
     if (quota) {
@@ -591,8 +610,11 @@ function ContactsPageInner() {
                             </svg>
                           </button>
                           {activeExecutions[contact._id?.toString()] ? (
-                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full" title={activeExecutions[contact._id?.toString()]?.workflowId?.name || 'Workflow running'}>
-                              {activeExecutions[contact._id?.toString()]?.workflowId?.name || 'Running'}
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full" title={activeExecutions[contact._id?.toString()]?.workflowId?.name || 'Workflow running'}>
+                                {activeExecutions[contact._id?.toString()]?.workflowId?.name || 'Running'}
+                              </span>
+                              <button onClick={() => handleStopWorkflow(contact._id)} className="text-[11px] text-red-500 hover:underline" title="Stop this workflow">Stop</button>
                             </span>
                           ) : (
                             <select
@@ -637,7 +659,10 @@ function ContactsPageInner() {
                     <button onClick={() => handleEdit(contact)} className="text-xs text-[#096b17] hover:underline">Edit</button>
                     <button onClick={() => handleDelete(contact)} className="text-xs text-red-500 hover:underline">Delete</button>
                     {activeExecutions[contact._id?.toString()] ? (
-                      <span className="text-xs text-blue-600">{activeExecutions[contact._id?.toString()]?.workflowId?.name || 'Running'}</span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="text-xs text-blue-600">{activeExecutions[contact._id?.toString()]?.workflowId?.name || 'Running'}</span>
+                        <button onClick={() => handleStopWorkflow(contact._id)} className="text-xs text-red-500 hover:underline">Stop</button>
+                      </span>
                     ) : workflows.length > 0 && (
                       <select
                         onChange={(e) => {
