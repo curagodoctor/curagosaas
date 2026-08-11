@@ -6,11 +6,10 @@ import { fireWyltoWebhook } from '@/lib/wylto';
 
 export const runtime = 'nodejs';
 
-// Sends WhatsApp appointment reminders (via Wylto) for TODAY's confirmed bookings:
-//   • a morning reminder once it's past 9:00 IST, and
-//   • a reminder ~2 hours before the appointment time,
-// each to BOTH the patient and the doctor, tracked so it never double-sends.
-// Run frequently (hourly / half-hourly) so the 2h-before window is caught.
+// Sends a single WhatsApp appointment reminder (via Wylto) each morning for
+// TODAY's confirmed bookings, to BOTH the patient and the doctor. Tracked so it
+// never double-sends. Runs once/day at ~9:00 IST (Vercel Hobby allows only daily
+// crons; a "2 hours before" reminder would need a frequent cron — Pro plan).
 export async function GET(request) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -41,7 +40,6 @@ export async function GET(request) {
     };
 
     let morningSent = 0;
-    let twoHourSent = 0;
 
     for (const b of bookings) {
       if (!b.time) continue;
@@ -51,25 +49,17 @@ export async function GET(request) {
       const docPhone = doc?.whatsappNumber || doc?.phone || '';
       const docName = doc?.displayName || doc?.name || '';
 
-      // Morning reminder — from 9:00 IST onward, only while the appointment is still ahead.
+      // One morning reminder per booking — from 9:00 IST onward, only while the
+      // appointment is still ahead.
       if (!b.reminderMorningSentAt && now >= morningGate && now < apptAt) {
         await sendBoth(b, docPhone, docName);
         b.reminderMorningSentAt = now;
         await b.save();
         morningSent++;
       }
-
-      // ~2 hours before the appointment.
-      const twoHoursBefore = new Date(apptAt.getTime() - 2 * 3600 * 1000);
-      if (!b.reminder2hSentAt && now >= twoHoursBefore && now < apptAt) {
-        await sendBoth(b, docPhone, docName);
-        b.reminder2hSentAt = now;
-        await b.save();
-        twoHourSent++;
-      }
     }
 
-    return NextResponse.json({ success: true, date: todayIST, total: bookings.length, morningSent, twoHourSent });
+    return NextResponse.json({ success: true, date: todayIST, total: bookings.length, morningSent });
   } catch (error) {
     console.error('[Appointment reminders]', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
