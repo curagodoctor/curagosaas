@@ -1,6 +1,7 @@
 import { resolveThemeId } from '@/lib/themes';
 import connectDB from '@/lib/mongodb';
 import BlogArticle from '@/models/BlogArticle';
+import BookingPage from '@/models/BookingPage';
 
 // Import section components (reuse existing booking page sections)
 import HeaderSection from '@/components/booking-page/sections/HeaderSection';
@@ -80,11 +81,36 @@ export default async function SiteBody({ doctor, bookingPage }) {
   // `doctor` is expected to be a plain (serialized) object.
   const doctorData = doctor;
 
+  await connectDB();
+
+  // Cross-page navigation: the doctor's OTHER published pages that opt into the
+  // navbar. Without this, creating a new page never appears in the nav (the
+  // section-based nav only links to anchors within the current page).
+  let pageNavLinks = [];
+  try {
+    const pages = await BookingPage.find({ doctorId: doctorData._id, status: 'published' })
+      .sort({ createdAt: 1 }) // first-created published page is the homepage ('/')
+      .select('slug title displayName showInNavbar displayOrder createdAt')
+      .lean();
+    // The first-created published page is the homepage ('/') — it's already
+    // reachable via the logo, so we DON'T add a redundant self-link for it.
+    // Only the doctor's OTHER (secondary) pages become cross-page nav links.
+    const homepageId = pages[0]?._id ? String(pages[0]._id) : null;
+    pageNavLinks = pages
+      .filter((p) => p.showInNavbar && String(p._id) !== homepageId)
+      .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+      .map((p) => ({
+        text: p.displayName || p.title || p.slug,
+        url: `/${p.slug}`,
+      }));
+  } catch {
+    pageNavLinks = [];
+  }
+
   // Only surface the Resources/Blog link when this doctor has published at least
   // one article. Scoped by doctorId so nothing from another doctor leaks in.
   let hasBlog = false;
   try {
-    await connectDB();
     hasBlog = (await BlogArticle.countDocuments({
       doctorId: doctorData._id,
       status: 'published',
@@ -92,7 +118,11 @@ export default async function SiteBody({ doctor, bookingPage }) {
   } catch {
     hasBlog = false;
   }
-  const extraNavLinks = hasBlog ? [{ text: 'Resources', url: '/blog' }] : [];
+
+  const extraNavLinks = [
+    ...pageNavLinks,
+    ...(hasBlog ? [{ text: 'Resources', url: '/blog' }] : []),
+  ];
 
   // Separate sticky buttons from regular sections
   const regularSections = bookingPage.sections.filter(

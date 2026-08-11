@@ -428,7 +428,7 @@ export default function PageBuilderEditor() {
     iconType: "custom",
     colorScheme: "blue",
     theme: "forest",
-    showInNavbar: false,
+    showInNavbar: true,
   });
 
   // Doctor data for preview URL
@@ -1120,6 +1120,42 @@ export default function PageBuilderEditor() {
                     <option value="draft">Draft</option>
                     <option value="published">Published</option>
                   </select>
+                </div>
+
+                <div className="pt-2 border-t border-gray-100">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pageData.showInNavbar !== false}
+                      onChange={(e) => updatePageMeta("showInNavbar", e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-300 text-[#096b17] focus:ring-[#096b17]"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Show this page in the site navigation bar</span>
+                  </label>
+                  {pageData.showInNavbar !== false && (
+                    <div className="mt-3 grid grid-cols-3 gap-3">
+                      <div className="col-span-2">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Nav label (optional)</label>
+                        <input
+                          type="text"
+                          value={pageData.displayName || ""}
+                          onChange={(e) => updatePageMeta("displayName", e.target.value)}
+                          placeholder={pageData.title || "Menu label"}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Order</label>
+                        <input
+                          type="number"
+                          value={pageData.displayOrder ?? 0}
+                          onChange={(e) => updatePageMeta("displayOrder", Number(e.target.value))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500 mt-2">Shorter labels look best. Lower order numbers appear first. Only published pages show in the nav.</p>
                 </div>
 
                 <div className="pt-2 border-t border-gray-100">

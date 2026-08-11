@@ -104,7 +104,7 @@ const BookingPageSchema = new mongoose.Schema({
   },
   showInNavbar: {
     type: Boolean,
-    default: false,
+    default: true, // new pages appear in the site nav by default; toggle off to hide
   },
   status: {
     type: String,
