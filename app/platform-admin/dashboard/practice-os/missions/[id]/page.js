@@ -6,7 +6,6 @@ import Link from 'next/link';
 
 const LABEL = 'block text-sm font-medium text-gray-700 mb-1';
 const INPUT = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500';
-const EVIDENCE_TYPES = ['image', 'pdf', 'document', 'url', 'text'];
 
 export default function MissionEditorPage() {
   const { id } = useParams();
@@ -148,10 +147,6 @@ export default function MissionEditorPage() {
           </div>
           <div><label className={LABEL}>Estimated minutes</label><input type="number" className={INPUT} value={m.estimatedMinutes ?? 35} onChange={(e) => set({ estimatedMinutes: Number(e.target.value) })} /></div>
         </div>
-        <div className="mt-4">
-          <label className={LABEL}>Sub-steps (one per line)</label>
-          <textarea rows={3} className={INPUT} value={(m.subSteps || []).join('\n')} onChange={(e) => set({ subSteps: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) })} />
-        </div>
       </Section>
 
       {/* Modules */}
@@ -160,82 +155,6 @@ export default function MissionEditorPage() {
           The rich work-units the doctor steps through in the workspace. The mission completes when all its modules are done.
         </p>
         <ModulesEditor modules={m.modules || []} onChange={(modules) => set({ modules })} />
-      </Section>
-
-      {/* Lecture */}
-      <Section title="Lecture">
-        <label className={LABEL}>Lecture text (short, 3–5 min read — optional)</label>
-        <textarea rows={3} className={INPUT} value={m.lecture || ''} onChange={(e) => set({ lecture: e.target.value })} />
-        <div className="mt-4">
-          <label className={LABEL}>Lecture video</label>
-          <VideoUpload value={m.lectureVideoUrl || ''} onChange={(url) => set({ lectureVideoUrl: url })} />
-        </div>
-      </Section>
-
-      {/* Education */}
-      <Section title="Education Resources">
-        <ArrayEditor
-          items={m.education}
-          onChange={(education) => set({ education })}
-          empty={{ type: 'link', label: '', url: '' }}
-          render={(item, upd) => (
-            <div className="grid grid-cols-12 gap-2 items-start">
-              <select className={`${INPUT} col-span-3`} value={item.type} onChange={(e) => upd({ type: e.target.value })}>
-                {['video', 'pdf', 'link', 'checklist', 'template'].map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <input className={`${INPUT} col-span-3`} placeholder="Label" value={item.label} onChange={(e) => upd({ label: e.target.value })} />
-              <div className="col-span-6">
-                <input className={INPUT} placeholder="URL" value={item.url} onChange={(e) => upd({ url: e.target.value })} />
-                {item.type === 'video' && (
-                  <div className="mt-2"><VideoUpload value={item.url} onChange={(url) => upd({ url })} compact /></div>
-                )}
-              </div>
-            </div>
-          )}
-        />
-      </Section>
-
-      {/* Buttons */}
-      <Section title="Action Buttons">
-        <ArrayEditor
-          items={m.buttons}
-          onChange={(buttons) => set({ buttons })}
-          empty={{ label: '', url: '' }}
-          render={(item, upd) => (
-            <div className="grid grid-cols-2 gap-2">
-              <input className={INPUT} placeholder="Label" value={item.label} onChange={(e) => upd({ label: e.target.value })} />
-              <input className={INPUT} placeholder="URL" value={item.url} onChange={(e) => upd({ url: e.target.value })} />
-            </div>
-          )}
-        />
-      </Section>
-
-      {/* AI */}
-      <Section title="AI Assistant">
-        <label className={LABEL}>System Prompt (scope this mission&apos;s assistant)</label>
-        <textarea rows={4} className={INPUT} value={m.aiContext?.systemPrompt || ''} onChange={(e) => set({ aiContext: { ...m.aiContext, systemPrompt: e.target.value } })} />
-      </Section>
-
-      {/* Evidence */}
-      <Section title="Evidence">
-        <label className="flex items-center gap-2 text-sm text-gray-700 mb-3">
-          <input type="checkbox" checked={m.evidence?.required} onChange={(e) => set({ evidence: { ...m.evidence, required: e.target.checked } })} />
-          Evidence required to complete
-        </label>
-        <div className="flex flex-wrap gap-3">
-          {EVIDENCE_TYPES.map((t) => (
-            <label key={t} className="flex items-center gap-1.5 text-sm text-gray-600">
-              <input type="checkbox"
-                checked={m.evidence?.allowedTypes?.includes(t)}
-                onChange={(e) => {
-                  const cur = new Set(m.evidence?.allowedTypes || []);
-                  e.target.checked ? cur.add(t) : cur.delete(t);
-                  set({ evidence: { ...m.evidence, allowedTypes: [...cur] } });
-                }} />
-              {t}
-            </label>
-          ))}
-        </div>
       </Section>
 
       {/* KPIs */}
@@ -254,14 +173,17 @@ export default function MissionEditorPage() {
         />
       </Section>
 
-      {/* Reward + unlock */}
-      <Section title="Reward & Unlock">
+      {/* Reward (Visibility Score + celebration) */}
+      <Section title="Reward">
         <div className="grid grid-cols-2 gap-4">
-          <div><label className={LABEL}>XP Points</label><input type="number" className={INPUT} value={m.reward?.points ?? 0} onChange={(e) => set({ reward: { ...m.reward, points: Number(e.target.value) } })} /></div>
-          <div><label className={LABEL}>Badge</label><input className={INPUT} value={m.reward?.badge || ''} onChange={(e) => set({ reward: { ...m.reward, badge: e.target.value } })} /></div>
+          <div>
+            <label className={LABEL}>Visibility Score points</label>
+            <input type="number" className={INPUT} value={m.reward?.points ?? 0} onChange={(e) => set({ reward: { ...m.reward, points: Number(e.target.value) } })} />
+            <p className="mt-1 text-xs text-gray-500">Added to the mission&apos;s Visibility Score component (set above) when completed. Not the per-module XP.</p>
+          </div>
+          <div><label className={LABEL}>Badge (celebration)</label><input className={INPUT} value={m.reward?.badge || ''} onChange={(e) => set({ reward: { ...m.reward, badge: e.target.value } })} /></div>
         </div>
         <div className="mt-4"><label className={LABEL}>Celebration Message</label><input className={INPUT} value={m.reward?.message || ''} onChange={(e) => set({ reward: { ...m.reward, message: e.target.value } })} /></div>
-        <div className="mt-4 w-40"><label className={LABEL}>Unlock Delay (days)</label><input type="number" className={INPUT} value={m.unlockDelayDays} onChange={(e) => set({ unlockDelayDays: Number(e.target.value) })} /></div>
       </Section>
 
       {/* Manual unlock */}
