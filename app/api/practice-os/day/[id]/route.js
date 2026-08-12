@@ -3,7 +3,7 @@ import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor, assertPackAccess } from '@/lib/practice-os/access';
 import UserMissionProgress from '@/models/practice-os/UserMissionProgress';
 import Mission from '@/models/practice-os/Mission';
-import { completeDay, completeModule, skipDay, getDay, getOrCreateEnrollment, setNextSchedule } from '@/lib/practice-os/engine';
+import { completeDay, completeModule, skipDay, getDay, getOrCreateEnrollment, setNextSchedule, saveMissionDraft } from '@/lib/practice-os/engine';
 
 // GET /api/practice-os/day/[id] — a single day (for the Focus session).
 export async function GET(request, { params }) {
@@ -50,6 +50,13 @@ export async function POST(request, { params }) {
         { upsert: true, setDefaultsOnInsert: true }
       );
       return NextResponse.json({ success: true });
+    }
+
+    // Persist the live cross-device Focus draft (inputs, ticked steps, module
+    // position, timer) so laptop and phone stay in sync. (#17, #18)
+    if (body.action === 'save-draft') {
+      const r = await saveMissionDraft(doctor._id, id, body.draft || {});
+      return NextResponse.json({ success: true, ...r });
     }
 
     if (body.action === 'record') {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import RichTextEditor from './RichTextEditor';
 
 // A slide-over Workspace available on every Practice OS screen — jot or open
 // notes without leaving what you're doing. Uses the same /api/practice-os/documents
@@ -142,13 +143,16 @@ export default function WorkspaceDrawer() {
                   className="w-full text-[17px] font-semibold text-[var(--ink)] bg-transparent outline-none mb-2"
                   style={{ letterSpacing: '-0.01em' }}
                 />
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Jot a note while you work…"
-                  className="flex-1 w-full text-[14px] leading-relaxed text-[var(--ink)] bg-transparent outline-none resize-none border-t pt-3"
-                  style={{ borderColor: 'var(--rule-soft)' }}
-                />
+                <div className="flex-1 min-h-0 overflow-y-auto border-t pt-3" style={{ borderColor: 'var(--rule-soft)' }}>
+                  <RichTextEditor
+                    value={content}
+                    onChange={setContent}
+                    resetKey={selId}
+                    placeholder="Jot a note while you work…"
+                    className="w-full text-[14px] leading-relaxed text-[var(--ink)]"
+                    style={{ minHeight: '200px' }}
+                  />
+                </div>
                 <p className="text-[11px] mt-2 shrink-0" style={{ color: status === 'saved' ? 'var(--green)' : 'var(--muted)' }}>{statusLabel}</p>
               </div>
             )}

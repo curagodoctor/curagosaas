@@ -66,7 +66,7 @@ function UnlockPack() {
         order_id: orderData.order.id,
         amount: orderData.order.amount,
         currency: orderData.order.currency,
-        name: 'CuraGo Practice OS',
+        name: 'CuraGo — Zero To Practice Builder',
         description: info?.pack?.title || 'Builder pack',
         prefill: orderData.prefill,
         theme: { color: '#096B17' },

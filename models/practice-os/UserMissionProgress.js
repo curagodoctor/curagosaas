@@ -58,6 +58,23 @@ const UserMissionProgressSchema = new mongoose.Schema({
   },
   // Admin manual-unlock override flag.
   manuallyUnlocked: { type: Boolean, default: false },
+  // Live, cross-device draft of an in-progress Focus session (unsaved inputs,
+  // ticked steps, current module, and the timer) so the mission looks the same on
+  // laptop and phone and the timer stays consistent. Cleared on completion. (#17,#18)
+  draft: {
+    inputVals: { type: mongoose.Schema.Types.Mixed, default: null }, // { [moduleId]: { [inputId]: value } }
+    stepChecks: { type: mongoose.Schema.Types.Mixed, default: null },
+    reflection: { type: mongoose.Schema.Types.Mixed, default: null },
+    kpiValues: { type: mongoose.Schema.Types.Mixed, default: null },
+    index: { type: Number, default: 0 },      // current module position
+    // Timer: seconds remaining at `timerUpdatedAt`, and whether it was running.
+    // Elapsed wall-clock since then is subtracted on load so the countdown is the
+    // same on any device.
+    remaining: { type: Number, default: null },
+    running: { type: Boolean, default: false },
+    timerUpdatedAt: { type: Date, default: null },
+    updatedAt: { type: Date, default: null },
+  },
 }, { timestamps: true });
 
 UserMissionProgressSchema.index({ doctorId: 1, missionId: 1 }, { unique: true });

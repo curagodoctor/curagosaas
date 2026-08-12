@@ -23,6 +23,25 @@ function monthLabel(d) {
   return new Date(d).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 }
 
+// The record's `notes` is stored as "Label: value" lines joined by newlines. Parse
+// them back into labelled fields so the record reads as a tidy list instead of one
+// run-on line (the raw newlines collapse in HTML). Lines without a label become
+// plain text. (#21)
+function parseRecordNotes(notes) {
+  if (!notes) return [];
+  return String(notes)
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const idx = line.indexOf(': ');
+      // A short label before ": " is treated as a field name; anything longer is
+      // just a sentence that happens to contain a colon.
+      if (idx > 0 && idx < 60) return { label: line.slice(0, idx), value: line.slice(idx + 2) };
+      return { label: 'Note', value: line };
+    });
+}
+
 function JourneyInner() {
   const router = useRouter();
   const params = useSearchParams();
@@ -158,16 +177,38 @@ function RecordView({ days, done }) {
           }
           if (d.status !== 'completed') return null;
           const rec = d.record || {};
+          const fields = parseRecordNotes(rec.notes);
+          const hasBody = fields.length > 0 || rec.freeText || rec.links?.length || rec.screenshots?.length;
           return (
             <div key={d._id} className="pos-card p-5">
               <div className="flex justify-between items-baseline gap-3">
                 <p className="font-medium text-[var(--ink)]">Day {d.missionNumber} · {d.title}</p>
                 {d.completedAt && <span className="pos-label shrink-0">{new Date(d.completedAt).toLocaleDateString()}</span>}
               </div>
-              {rec.notes && <p className="text-sm text-[var(--muted)] mt-2">{rec.notes}</p>}
+
+              {/* Each recorded item as a clean label → value row, instead of one
+                  run-on line where the newlines collapse. (#21) */}
+              {fields.length > 0 && (
+                <dl className="mt-3 space-y-2.5">
+                  {fields.map((f, i) => (
+                    <div key={i}>
+                      <dt className="pos-label mb-0.5">{f.label}</dt>
+                      <dd className="text-[14px] text-[var(--ink)] leading-relaxed break-words">{f.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              {rec.freeText && <p className="text-[14px] text-[var(--muted)] mt-3 leading-relaxed whitespace-pre-wrap">{rec.freeText}</p>}
+
               {rec.links?.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  {rec.links.map((l, i) => <a key={i} href={l} target="_blank" rel="noreferrer" className="block text-[13px] text-[var(--green)] truncate">{l}</a>)}
+                <div className="mt-3 pt-3 border-t space-y-1.5" style={{ borderColor: 'var(--rule-soft)' }}>
+                  <p className="pos-label">Links</p>
+                  {rec.links.map((l, i) => (
+                    <a key={i} href={l} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[13px] text-[var(--green)] truncate hover:underline">
+                      <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                      <span className="truncate">{l}</span>
+                    </a>
+                  ))}
                 </div>
               )}
               {rec.screenshots?.length > 0 && (
@@ -176,6 +217,7 @@ function RecordView({ days, done }) {
                   {rec.screenshots.map((s, i) => <img key={i} src={s} alt="" className="w-16 h-16 rounded-lg object-cover border" style={{ borderColor: 'var(--rule)' }} />)}
                 </div>
               )}
+              {!hasBody && <p className="text-[13px] text-[var(--muted)] mt-2">Completed — nothing was noted for this day.</p>}
             </div>
           );
         })}

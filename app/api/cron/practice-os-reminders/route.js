@@ -41,7 +41,7 @@ export async function GET(request) {
     const allActive = await PracticeOsEnrollment.find({ status: 'active' });
     // Skip enrollments whose pack no longer exists — otherwise a deleted pack
     // keeps emailing its doctors (handles orphans from packs deleted earlier).
-    const liveFwIds = new Set((await Framework.find({}).select('_id').lean()).map((f) => String(f._id)));
+    const liveFwIds = new Set((await Framework.find({ deletedAt: null }).select('_id').lean()).map((f) => String(f._id)));
     const enrollments = allActive.filter((e) => liveFwIds.has(String(e.frameworkId)));
 
     const now = new Date();
@@ -83,7 +83,7 @@ export async function GET(request) {
             heading: 'Your programme is still here whenever you are',
             body: `You've finished ${enrollment.daysCompleted} of 30 days, and everything you built is still working for your patients. When you have thirty minutes, your next day is ready — start with just step one. If anything is getting in the way, reply to this message and we'll sort it out together.`,
             ctaLabel: 'Open your next day',
-            sms: `Curago Practice OS: You've done ${enrollment.daysCompleted} of 30 days and it's all still working. Your next day is ready whenever you have 30 minutes — start with step one. ${ctaUrl}`,
+            sms: `Zero To Practice Builder: You've done ${enrollment.daysCompleted} of 30 days and it's all still working. Your next day is ready whenever you have 30 minutes — start with step one. ${ctaUrl}`,
             markRescued: true,
           };
         } else if (daysInactive >= 3) {
@@ -92,7 +92,7 @@ export async function GET(request) {
             heading: 'Your next day is ready',
             body: `You're on day ${enrollment.currentDayNumber} of 30. Your next task is waiting whenever you have thirty minutes — one small step moves it forward.`,
             ctaLabel: 'Start your next day',
-            sms: `Curago Practice OS: Your next day (day ${enrollment.currentDayNumber} of 30) is ready whenever you have 30 minutes. ${ctaUrl}`,
+            sms: `Zero To Practice Builder: Your next day (day ${enrollment.currentDayNumber} of 30) is ready whenever you have 30 minutes. ${ctaUrl}`,
           };
         } else if (todaysMissionReady && daysInactive >= 1) {
           reminder = {
@@ -100,7 +100,7 @@ export async function GET(request) {
             heading: "Today's task is ready",
             body: `Day ${enrollment.currentDayNumber} of 30 is unlocked and waiting. It should take about thirty minutes — a good time to pick it up.`,
             ctaLabel: 'Start today',
-            sms: `Curago Practice OS: Day ${enrollment.currentDayNumber} of 30 is ready — about 30 minutes. ${ctaUrl}`,
+            sms: `Zero To Practice Builder: Day ${enrollment.currentDayNumber} of 30 is ready — about 30 minutes. ${ctaUrl}`,
           };
         }
 

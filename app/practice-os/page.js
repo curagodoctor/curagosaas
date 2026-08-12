@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
 export const metadata = {
-  title: 'Practice OS — Build your practice, one mission a day | CuraGo',
-  description: 'CuraGo Practice OS is an execution platform for doctors. Complete one guided mission every day — with education, an AI assistant, evidence tracking, and progress scoring — to systematically build your medical practice.',
+  title: 'Zero To Practice Builder — Build your practice, one mission a day | CuraGo',
+  description: 'CuraGo Zero To Practice Builder is an execution platform for doctors. Complete one guided mission every day — with education, an AI assistant, evidence tracking, and progress scoring — to systematically build your medical practice.',
 };
 
 const FEATURES = [
@@ -26,17 +26,17 @@ export default function PracticeOSProductPage() {
       {/* Hero */}
       <section className="bg-gradient-to-b from-emerald-50 to-white">
         <div className="max-w-3xl mx-auto px-4 py-20 text-center">
-          <span className="inline-block text-[11px] font-bold text-[#096b17] bg-[#096b17]/10 px-3 py-1 rounded-full uppercase tracking-wide mb-5">CuraGo Practice OS</span>
+          <span className="inline-block text-[11px] font-bold text-[#096b17] bg-[#096b17]/10 px-3 py-1 rounded-full uppercase tracking-wide mb-5">CuraGo Zero To Practice Builder</span>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
             Build your practice, one guided mission a day.
           </h1>
           <p className="text-lg text-gray-600 mt-5">
-            Practice OS is not a course. It&apos;s an execution platform — it educates, guides, tracks, and holds you
+            Zero To Practice Builder is not a course. It&apos;s an execution platform — it educates, guides, tracks, and holds you
             accountable until your practice is established.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/login?entry=practice-os" className="inline-flex items-center justify-center gap-2 bg-[#096b17] hover:bg-[#075110] text-white px-8 py-4 rounded-xl font-semibold text-lg transition-colors">
-              Get Practice OS
+              Get Zero To Practice Builder
             </Link>
             <a href="#how" className="inline-flex items-center justify-center gap-2 border border-gray-300 text-gray-700 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-50">
               How it works
@@ -62,9 +62,9 @@ export default function PracticeOSProductPage() {
       <section className="bg-[#096b17]">
         <div className="max-w-3xl mx-auto px-4 py-16 text-center">
           <h2 className="text-3xl font-bold text-white">Ready to start executing?</h2>
-          <p className="text-emerald-100 mt-3">Sign in, unlock Practice OS, and complete your first mission today.</p>
+          <p className="text-emerald-100 mt-3">Sign in, unlock Zero To Practice Builder, and complete your first mission today.</p>
           <Link href="/login?entry=practice-os" className="inline-flex items-center gap-2 bg-white text-[#096b17] px-8 py-4 rounded-xl font-semibold text-lg mt-7 hover:bg-emerald-50 transition-colors">
-            Get Practice OS
+            Get Zero To Practice Builder
           </Link>
         </div>
       </section>

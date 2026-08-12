@@ -215,7 +215,7 @@ export default function FrameworkDetailPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/dashboard/practice-os" className="text-sm text-blue-600 hover:underline">← Back to Practice OS</Link>
+        <Link href="/dashboard/practice-os" className="text-sm text-blue-600 hover:underline">← Back to Zero To Practice Builder</Link>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

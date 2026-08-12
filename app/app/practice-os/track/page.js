@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import WorkspaceDrawer from '@/components/practice-os/WorkspaceDrawer';
@@ -15,7 +15,7 @@ function TrackView() {
   const [state, setState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(() => Date.now());
-  const [missionData, setMissionData] = useState(null); // { modules, day } for the current available mission (used by the inline intro + assistant)
+  const [missionData, setMissionData] = useState(null); // { modules, day, progress } for the current available mission (used by the inline intro + assistant)
 
   const withPack = useCallback((path) => `${path}${path.includes('?') ? '&' : '?'}pack=${packId}`, [packId]);
 
@@ -50,7 +50,7 @@ function TrackView() {
     (async () => {
       try {
         const res = await fetch(`/api/practice-os/day/${todayId}`);
-        if (res.ok) { const d = await res.json(); if (alive && d.success) setMissionData({ modules: d.modules || [], day: d.day || null }); }
+        if (res.ok) { const d = await res.json(); if (alive && d.success) setMissionData({ modules: d.modules || [], day: d.day || null, progress: d.progress || null }); }
       } catch { /* ignore */ }
     })();
     return () => { alive = false; };
@@ -66,7 +66,7 @@ function TrackView() {
 
   return (
     <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-6">
-      <PosNav breadcrumb={pack?.title}><ProgressMenu withPack={withPack} /></PosNav>
+      <PosNav breadcrumb={pack?.title} />
 
       {daysAway >= 4 && !allComplete && (
         <div className="pos-card p-5 mb-6 border-l-4" style={{ borderLeftColor: 'var(--green)' }}>
@@ -91,7 +91,7 @@ function TrackView() {
           {allComplete ? (
             <AllComplete daysCompleted={enrollment.daysCompleted} withPack={withPack} />
           ) : today?.status === 'available' ? (
-            <MissionIntro day={today} full={missionData?.day} modules={missionData?.modules} loaded={missionData !== null} totalDays={totalDays} withPack={withPack} />
+            <MissionIntro day={today} full={missionData?.day} modules={missionData?.modules} progress={missionData?.progress} loaded={missionData !== null} totalDays={totalDays} withPack={withPack} />
           ) : today?.status === 'locked' ? (
             <LockedDay day={today} nextUnlockAt={enrollment.nextUnlockAt} now={now} devBypass={state.devBypass} onUnlocked={load} canAdvance={state.canAdvance} />
           ) : (
@@ -118,63 +118,25 @@ export default function TrackPage() {
   );
 }
 
-// Groups the four analytics views (Progress / Journey / Report / Record) under a
-// single "Progress" button so the header isn't cluttered with lookalike links.
-function ProgressMenu({ withPack }) {
-  const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState(null); // computed from the button so the menu sits right under it
-  const btnRef = useRef(null);
-  const items = [
-    ['Your progress', withPack('/app/practice-os/score')],
-    ['Journey & record', withPack('/app/practice-os/journey')],
-    ['Report', withPack('/app/practice-os/report')],
-  ];
-  const toggle = () => {
-    if (!open && btnRef.current) {
-      const r = btnRef.current.getBoundingClientRect();
-      // Fixed position anchored to the button (its right edge), so overflow-x-auto
-      // on the nav can't clip it AND it lands directly under "Progress".
-      setPos({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
-    }
-    setOpen((o) => !o);
-  };
-  return (
-    <div className="relative">
-      <button ref={btnRef} onClick={toggle} className="pos-link inline-flex items-center gap-1">
-        Progress
-        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
-      </button>
-      {open && pos && (
-        <>
-          <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} />
-          <div className="fixed z-[70] pos-card p-1 min-w-[180px]" style={{ top: pos.top, right: pos.right, boxShadow: '0 12px 32px rgba(16,26,19,.14)' }}>
-            {items.map(([label, href]) => (
-              <Link key={label} href={href} onClick={() => setOpen(false)} className="block px-3 py-2 text-[13px] rounded-md hover:bg-[var(--rule-soft)]" style={{ color: 'var(--ink)' }}>
-                {label}
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
 // The full mission intro, inline on the Day view — no more "Begin → Start" two-step.
 // Just the mission content (objective card, why, module list, chips + Start mission);
 // the assistant + context rail live in the right column of the track page.
 // "Start mission" opens the guided modules directly (?start=1 skips the focus intro).
-function MissionIntro({ day, full, modules = [], loaded, totalDays, withPack }) {
+function MissionIntro({ day, full, modules = [], progress, loaded, totalDays, withPack }) {
   const d = { ...day, ...(full || {}) };   // prefer the fuller day object where present
   const theme = WEEK_THEMES[d.weekNumber] || d.category || 'Practice building';
   const mods = modules || [];
   const missionXp = mods.reduce((s, m) => s + (m.xp || 0), 0) || d.reward?.points || d.points || 0;
+  // Already worked some modules but not finished → resuming, not starting fresh. (#15)
+  const doneCount = progress?.completedModuleIds?.length || 0;
+  const resuming = doneCount > 0 && (mods.length === 0 || doneCount < mods.length);
 
   return (
         <div className="pos-card p-4 md:p-5">
           <div className="flex flex-wrap items-center gap-2 mb-2.5">
             <span className="pos-label" style={{ background: 'var(--green)', color: '#fff', padding: '4px 11px', borderRadius: 99 }}>Mission {d.missionNumber}</span>
             <span className="pos-label" style={{ background: 'var(--green-soft)', color: 'var(--green)', padding: '4px 11px', borderRadius: 99 }}>Today&apos;s mission</span>
+            {resuming && <span className="pos-label" style={{ background: 'var(--orange-soft, rgba(242,106,27,.08))', color: 'var(--orange)', padding: '4px 11px', borderRadius: 99 }}>In progress · {doneCount}/{mods.length}</span>}
           </div>
 
           <p className="pos-label">Week {d.weekNumber} · {theme}</p>
@@ -227,9 +189,9 @@ function MissionIntro({ day, full, modules = [], loaded, totalDays, withPack }) 
           <div className="mt-4">
             <Link href={withPack(`/app/practice-os/focus/${d._id}?start=1`)} className="pos-action pos-focusable inline-flex items-center gap-2" style={{ background: 'var(--orange)' }}>
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M7 5l12 7-12 7V5Z" fill="#fff" /></svg>
-              Start mission
+              {resuming ? 'Continue mission' : 'Start mission'}
             </Link>
-            <p className="text-[12px] text-[var(--muted)] mt-2">Starting opens the guided modules and your timer.</p>
+            <p className="text-[12px] text-[var(--muted)] mt-2">{resuming ? 'Pick up where you left off — your progress is saved.' : 'Starting opens the guided modules and your timer.'}</p>
           </div>
         </div>
   );

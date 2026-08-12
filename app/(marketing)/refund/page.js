@@ -6,7 +6,7 @@ import Link from 'next/link';
 export const metadata = {
   title: 'Refund & Cancellation Policy · CuraGo',
   description:
-    'How refunds and cancellations work across CuraGo products — the Zero to Practice ebook and masterclass, Practice OS, and the CuraGo website builder.',
+    'How refunds and cancellations work across CuraGo products — the Zero to Practice ebook and masterclass, Zero To Practice Builder, and the CuraGo website builder.',
 };
 
 const LEGAL_CSS = `
@@ -57,7 +57,7 @@ export default function RefundPage() {
         <p>This policy applies to the CuraGo product family:</p>
         <ul>
           <li><strong>Zero to Practice</strong> — the ebook, the masterclass, and the bundle. Digital downloads and streamed video.</li>
-          <li><strong>Practice OS</strong> — a guided programme and builder packs delivered inside the CuraGo platform.</li>
+          <li><strong>Zero To Practice Builder</strong> — a guided programme and builder packs delivered inside the CuraGo platform.</li>
           <li><strong>CuraGo website builder (SaaS)</strong> — the free tier and any paid plans.</li>
         </ul>
         <p>
@@ -68,10 +68,10 @@ export default function RefundPage() {
         <h2>2. The refund window</h2>
         <div className="card">
           <p style={{ margin: 0 }}>
-            For a paid digital purchase (ebook, masterclass, bundle, or a Practice OS pack), you may request
+            For a paid digital purchase (ebook, masterclass, bundle, or a Zero To Practice Builder pack), you may request
             a refund within <strong>7 days of purchase</strong>, provided you have not substantially accessed
             or downloaded the content — for example, you have not downloaded the ebook or watched a
-            meaningful part of the masterclass, and you have not progressed past the early setup of Practice OS.
+            meaningful part of the masterclass, and you have not progressed past the early setup of Zero To Practice Builder.
           </p>
           <p className="note" style={{ margin: '12px 0 0' }}>
             Note: the 7-day window and the &quot;unaccessed&quot; condition are the current default and are the
@@ -90,7 +90,7 @@ export default function RefundPage() {
         <h2>4. What is not refundable</h2>
         <ul>
           <li>Digital content that has already been downloaded, or video that has been substantially watched.</li>
-          <li>A Practice OS programme that you have progressed meaningfully into (beyond initial setup).</li>
+          <li>A Zero To Practice Builder programme that you have progressed meaningfully into (beyond initial setup).</li>
           <li>Requests made after the 7-day window has closed.</li>
           <li>Free-tier usage of the CuraGo website builder (nothing was charged).</li>
           <li>Charges arising from your own error where the product was delivered as described — though we will always try to help.</li>

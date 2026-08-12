@@ -28,7 +28,8 @@ export async function GET(request) {
       title: d.title,
       createdAt: d.createdAt,
       updatedAt: d.updatedAt,
-      preview: (d.content || '').slice(0, 140),
+      // Notes may be rich text (HTML) — strip tags/entities for the list preview.
+      preview: (d.content || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 140),
     }));
     return NextResponse.json({ success: true, documents });
   } catch (error) {

@@ -57,7 +57,7 @@ export default function PrivacyPage() {
         <div className="card">
           <p style={{ margin: 0 }}>
             CuraGo (&quot;CuraGo&quot;, &quot;we&quot;, &quot;us&quot;) provides a website builder,
-            appointment booking, and the Practice OS programme for doctors in India. This policy covers
+            appointment booking, and the Zero To Practice Builder programme for doctors in India. This policy covers
             all of these products and our marketing website. By using CuraGo, you agree to the practices
             described here.
           </p>
@@ -67,7 +67,7 @@ export default function PrivacyPage() {
         <p>We collect only what we need to run the service you asked for:</p>
         <ul>
           <li><strong>Account details</strong> — your name, email address, phone number, and password (stored in hashed form). If you sign in with Google, we receive your name, email, and profile photo from Google.</li>
-          <li><strong>Practice information</strong> — clinic name, specialty, qualifications, registration number, services, photos, and any content you add to your CuraGo website. If you upload a CV for Practice OS, we extract qualification and specialty details from it; the raw file and the extracted fields are stored separately, and you can delete either.</li>
+          <li><strong>Practice information</strong> — clinic name, specialty, qualifications, registration number, services, photos, and any content you add to your CuraGo website. If you upload a CV for Zero To Practice Builder, we extract qualification and specialty details from it; the raw file and the extracted fields are stored separately, and you can delete either.</li>
           <li><strong>Booking data</strong> — appointment details created through your CuraGo site. Where patients book with you, limited patient contact details may pass through our systems on your behalf.</li>
           <li><strong>Payment information</strong> — processed by our payment partner, Razorpay. We do not store your full card or bank details on our servers; we retain only a transaction reference and status.</li>
           <li><strong>Usage and device data</strong> — pages visited, actions taken, IP address, browser type, and similar technical logs used to keep the service secure and working.</li>
@@ -79,7 +79,7 @@ export default function PrivacyPage() {
           <li>Create and operate your account and clinic website.</li>
           <li>Process bookings and send related notifications (email or WhatsApp) that you or your patients expect.</li>
           <li>Take payment and issue receipts.</li>
-          <li>Provide the Practice OS programme, including progress tracking and reminders you opt into.</li>
+          <li>Provide the Zero To Practice Builder programme, including progress tracking and reminders you opt into.</li>
           <li>Provide support, fix problems, and improve the product.</li>
           <li>Send you service and account messages. We send marketing messages only where you have agreed to receive them, and you can opt out at any time.</li>
           <li>Meet legal, tax, and regulatory obligations.</li>

@@ -6,7 +6,7 @@ import Link from 'next/link';
 export const metadata = {
   title: 'Terms of Service · CuraGo',
   description:
-    'The terms that govern your use of CuraGo — the website builder, booking, and the Practice OS programme.',
+    'The terms that govern your use of CuraGo — the website builder, booking, and the Zero To Practice Builder programme.',
 };
 
 const LEGAL_CSS = `
@@ -53,7 +53,7 @@ export default function TermsPage() {
 
         <h2>1. Who we are</h2>
         <p>
-          CuraGo provides a website builder, appointment booking, and the Practice OS programme for doctors
+          CuraGo provides a website builder, appointment booking, and the Zero To Practice Builder programme for doctors
           in India. One CuraGo account gives you access across these products.
         </p>
 

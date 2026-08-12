@@ -46,8 +46,10 @@ export default function ControlCenter() {
   const overallPct = started.length
     ? Math.round(started.reduce((s, p) => s + (p.progress?.percent || 0), 0) / started.length)
     : 0;
-  // Today's mission = the next-up from the first started pack that has one.
-  const activePack = started.find((p) => p.nextUp) || null;
+  // Today's mission = the next-up mission for EVERY started pack that has one,
+  // so a doctor running multiple packs sees each pack's next mission, not just
+  // the first. (#29)
+  const todaysMissions = started.filter((p) => p.nextUp);
   // Upcoming scheduled missions across packs, soonest first.
   const scheduled = started
     .filter((p) => p.scheduledFor && p.nextUp)
@@ -71,8 +73,9 @@ export default function ControlCenter() {
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8 mt-9">
-        {/* Main — the packs */}
-        <div className="min-w-0">
+        {/* Main — the packs. On mobile the rail's actionable boxes (today's
+            mission, progress) sit ABOVE this instead of buried at the bottom. (#22) */}
+        <div className="min-w-0 order-2 lg:order-1">
           <h2 className="text-[16px] font-semibold text-[var(--ink)] mb-4" style={{ letterSpacing: '-0.01em' }}>Builder Packs</h2>
           {(!packs || packs.length === 0) ? (
             <div className="pos-card p-10 text-center text-[var(--muted)]">No packs are available yet. Check back soon.</div>
@@ -84,7 +87,7 @@ export default function ControlCenter() {
         </div>
 
         {/* Rail — aggregate progress */}
-        <aside className="min-w-0">
+        <aside className="min-w-0 order-1 lg:order-2">
           <div className="lg:sticky lg:top-6 space-y-4">
             {/* Website Builder — the other product, surfaced as an appealing card
                 (replaces the old nav button). */}
@@ -129,15 +132,21 @@ export default function ControlCenter() {
               </div>
             </div>
 
-            {/* Today's mission */}
-            {activePack && activePack.nextUp && (
+            {/* Today's mission — one per started pack */}
+            {todaysMissions.length > 0 && (
               <div className="pos-card p-5" style={{ background: 'linear-gradient(150deg, #fff, var(--green-soft))', borderColor: 'var(--green)' }}>
-                <p className="pos-label mb-1" style={{ color: 'var(--orange)' }}>Today · Day {activePack.nextUp.dayNumber}</p>
-                <p className="font-semibold text-[15px] text-[var(--ink)] leading-snug">{activePack.nextUp.title}</p>
-                <p className="text-[12px] text-[var(--muted)] mt-1 mb-4">{activePack.title}</p>
-                <Link href={`/app/practice-os/track?pack=${activePack.id}`} className="pos-action pos-focusable block text-center" style={{ background: 'var(--green)' }}>
-                  Open today&apos;s mission
-                </Link>
+                <p className="pos-label mb-3" style={{ color: 'var(--orange)' }}>{todaysMissions.length === 1 ? "Today's mission" : "Today's missions"}</p>
+                <div className="space-y-4">
+                  {todaysMissions.map((p, i) => (
+                    <div key={p.id} className={i > 0 ? 'pt-4 border-t' : ''} style={i > 0 ? { borderColor: 'var(--rule-soft)' } : undefined}>
+                      <p className="text-[11px] text-[var(--muted)] mb-0.5">{p.title} · Day {p.nextUp.dayNumber}</p>
+                      <p className="font-semibold text-[15px] text-[var(--ink)] leading-snug mb-3">{p.nextUp.title}</p>
+                      <Link href={`/app/practice-os/track?pack=${p.id}`} className="pos-action pos-focusable block text-center" style={{ background: 'var(--green)' }}>
+                        Open mission
+                      </Link>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -243,9 +252,9 @@ function PackCard({ pack }) {
       {summary && <p className="text-[15px] text-[var(--muted)] mt-3 leading-relaxed" style={{ maxWidth: '48ch' }}>{summary}</p>}
 
       <div className="flex flex-wrap gap-x-6 gap-y-2 mt-5">
-        <Stat n={counts.modules} label={counts.modules === 1 ? 'module' : 'modules'} />
-        <Stat n={counts.missions} label={counts.missions === 1 ? 'mission' : 'missions'} />
         <Stat n={counts.days} label={counts.days === 1 ? 'day' : 'days'} />
+        <Stat n={counts.missions} label={counts.missions === 1 ? 'mission' : 'missions'} />
+        <Stat n={counts.modules} label={counts.modules === 1 ? 'module' : 'modules'} />
       </div>
 
       {outcomes.length > 0 && (

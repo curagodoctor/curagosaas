@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Markdown from './Markdown';
 
 // Per-module chat assistant — full conversation with history + context (PRD §8).
 // 1 credit per message; scoped to the current module. Shared by the focus workspace
@@ -12,6 +13,7 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [pendingNewSession, setPendingNewSession] = useState(false);
+  const [typing, setTyping] = useState(null); // { full, shown } — reveals the reply as it "streams"
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -30,7 +32,21 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle }) {
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, busy]);
+  }, [messages, busy, typing]);
+
+  // Reveal the assistant reply progressively (a lightweight "streaming" feel over
+  // the single-shot API response), then commit it to the message list.
+  useEffect(() => {
+    if (!typing) return;
+    if (typing.shown.length >= typing.full.length) {
+      setMessages((m) => [...m, { role: 'assistant', content: typing.full }]);
+      setTyping(null);
+      return;
+    }
+    const step = Math.max(2, Math.ceil(typing.full.length / 180)); // finish in ~2s regardless of length
+    const t = setTimeout(() => setTyping((s) => (s ? { ...s, shown: s.full.slice(0, s.shown.length + step) } : s)), 16);
+    return () => clearTimeout(t);
+  }, [typing]);
 
   const credits = meta?.creditsRemaining;
   const noCredits = credits === 0;
@@ -56,7 +72,7 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle }) {
       const data = await res.json();
       if (data.success) {
         setPendingNewSession(false);
-        setMessages((m) => [...m, { role: 'assistant', content: data.text }]);
+        setTyping({ full: data.text || '', shown: '' });
         setMeta((mt) => ({ ...mt, creditsRemaining: data.creditsRemaining }));
       } else {
         setError(data.error || 'Something went wrong.');
@@ -90,13 +106,22 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle }) {
         )}
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[14px] whitespace-pre-wrap leading-relaxed"
+            <div className="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[14px] leading-relaxed"
               style={{ background: m.role === 'user' ? 'var(--green)' : 'var(--rule-soft)', color: m.role === 'user' ? '#fff' : 'var(--ink)' }}>
-              {m.content}
+              {m.role === 'user'
+                ? <span className="whitespace-pre-wrap">{m.content}</span>
+                : <Markdown text={m.content} />}
             </div>
           </div>
         ))}
-        {busy && (
+        {typing && (
+          <div className="flex justify-start">
+            <div className="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[14px] leading-relaxed" style={{ background: 'var(--rule-soft)', color: 'var(--ink)' }}>
+              <Markdown text={typing.shown} />
+            </div>
+          </div>
+        )}
+        {busy && !typing && (
           <div className="flex justify-start">
             <div className="rounded-2xl px-3.5 py-2.5 text-[14px] text-[var(--muted)]" style={{ background: 'var(--rule-soft)' }}>Thinking…</div>
           </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import PosNav from '@/components/practice-os/PosNav';
+import RichTextEditor from '@/components/practice-os/RichTextEditor';
 
 // Workspace — a private, per-doctor notes app (Notes/Notion style). Text is saved
 // by file name and grouped by day, autosaved as you type. Every document is
@@ -37,7 +38,8 @@ function groupByDay(docs) {
   return groups;
 }
 function wordCount(s) {
-  const t = (s || '').trim();
+  // Notes are rich text (HTML) — count words in the visible text only.
+  const t = (s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').trim();
   return t ? t.split(/\s+/).length : 0;
 }
 
@@ -250,14 +252,16 @@ export default function WorkspacePage() {
                 {statusLabel && <span className="ml-auto inline-flex items-center gap-1" style={{ color: status === 'saved' ? 'var(--green)' : 'var(--muted)' }}>{status === 'saved' && '✓ '}{statusLabel}</span>}
               </div>
 
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Start writing…"
-                rows={18}
-                className="w-full text-[15px] leading-relaxed text-[var(--ink)] bg-transparent outline-none resize-y border-t pt-4"
-                style={{ borderColor: 'var(--rule-soft)', minHeight: '360px' }}
-              />
+              <div className="border-t pt-4" style={{ borderColor: 'var(--rule-soft)' }}>
+                <RichTextEditor
+                  value={content}
+                  onChange={setContent}
+                  resetKey={selected._id}
+                  placeholder="Start writing…"
+                  className="w-full text-[15px] leading-relaxed text-[var(--ink)]"
+                  style={{ minHeight: '360px' }}
+                />
+              </div>
 
               <div className="flex items-center mt-4 pt-4 border-t" style={{ borderColor: 'var(--rule-soft)' }}>
                 <button onClick={remove} className="pos-link text-[13px]" style={{ color: 'var(--orange)' }}>Delete note</button>

@@ -73,6 +73,12 @@ const FrameworkSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  // Soft delete: when set, the pack is hidden from doctors and the reminder cron
+  // but kept (with its missions/modules/enrollments) so it can be restored. (#26)
+  deletedAt: {
+    type: Date,
+    default: null,
+  },
 }, { timestamps: true });
 
 FrameworkSchema.index({ slug: 1 }, { unique: true });

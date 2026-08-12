@@ -27,6 +27,36 @@ function fillVars(text, vars) {
     (vars[k] != null && String(vars[k]).trim() ? String(vars[k]).trim() : ''));
 }
 
+// ---- Cross-device Focus draft helpers (#17, #18) ----
+// A server draft is only usable if it actually holds something.
+function normalizeDraft(d) {
+  if (!d) return null;
+  const hasContent = d.inputVals || d.stepChecks || d.reflection || d.kpiValues
+    || typeof d.remaining === 'number' || typeof d.index === 'number';
+  if (!hasContent) return null;
+  return { ...d, _stamp: d.timerUpdatedAt || d.updatedAt || null };
+}
+// This device's local mirror (used only when the server has no draft yet).
+function readLocalDraft(id) {
+  try {
+    const raw = window.localStorage.getItem(`pos-focus-${id}`);
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    return { ...d, _stamp: d.ts ? new Date(d.ts).toISOString() : null };
+  } catch { return null; }
+}
+// Reconstruct the countdown: seconds remaining at the last save, minus the
+// wall-clock elapsed since (only if it was running), so the timer is the same on
+// any device without saving every second.
+function reconstructRemaining(draft, fallbackSeconds) {
+  let rem = typeof draft.remaining === 'number' ? draft.remaining : fallbackSeconds;
+  if (draft.running && draft._stamp) {
+    const elapsed = Math.floor((Date.now() - new Date(draft._stamp).getTime()) / 1000);
+    if (Number.isFinite(elapsed) && elapsed > 0) rem -= elapsed;
+  }
+  return rem;
+}
+
 // The mission workspace — step through the mission's modules one at a time.
 // Finishing the last module completes the mission and shows the celebration.
 function FocusSession() {
@@ -43,6 +73,7 @@ function FocusSession() {
   const [remaining, setRemaining] = useState(0);       // countdown seconds; negative = overtime
   const [paused, setPaused] = useState(false);
   const [inputVals, setInputVals] = useState({});      // { [moduleId]: { [inputId]: value } }
+  const [stepChecks, setStepChecks] = useState({});    // { [moduleId]: { [stepIndex]: true } }
   const [inputError, setInputError] = useState('');    // required-input validation message
   // Gathered on the final module only.
   const [reflection, setReflection] = useState({ confidence: 0, learning: '', challenge: '' });
@@ -61,16 +92,38 @@ function FocusSession() {
       const res = await fetch(`/api/practice-os/day/${id}`);
       const data = await res.json();
       if (data.success) {
+        // Finished (or skipped) on another device? Don't allow re-editing — the
+        // server is the source of truth, so send them back to the pack. (#17)
+        if (data.progress?.status === 'completed' || data.progress?.status === 'skipped') {
+          router.replace(`/app/practice-os/track?pack=${packId}`);
+          return;
+        }
         setDay(data.day);
-        setRemaining((data.day.estimatedMinutes || 35) * 60);   // countdown starts from the estimate
         const mods = data.modules || [];
         setModules(mods);
         const done = new Set(data.progress?.completedModuleIds || []);
         const firstIncomplete = mods.findIndex((m) => !done.has(m.id));
+        // Module position ALWAYS follows server completion — a module finished on
+        // another device is never shown as editable here. (#17)
         setIndex(firstIncomplete === -1 ? Math.max(0, mods.length - 1) : firstIncomplete);
+
+        // The cross-device draft: prefer the server's, fall back to this device's
+        // local mirror if the server has none yet. (#17, #18)
+        const estSeconds = (data.day.estimatedMinutes || 35) * 60;
+        const sd = normalizeDraft(data.progress?.draft) || readLocalDraft(id);
+        if (sd) {
+          if (sd.inputVals) setInputVals(sd.inputVals);
+          if (sd.stepChecks) setStepChecks(sd.stepChecks);
+          if (sd.reflection) setReflection(sd.reflection);
+          if (sd.kpiValues) setKpiValues(sd.kpiValues);
+          setRemaining(reconstructRemaining(sd, estSeconds));
+        } else {
+          setRemaining(estSeconds);   // countdown starts from the estimate
+        }
+        restoredRef.current = true;
         // Resume straight into the workspace if they've already started this mission,
-        // or if the track sent us here with ?start=1 (the intro already lives there).
-        if (done.size > 0 || startNow) setPhase('work');
+        // if the track sent us here with ?start=1, or if a draft exists.
+        if (done.size > 0 || startNow || sd) setPhase('work');
       }
       if (!startedRef.current) {
         startedRef.current = true;
@@ -87,34 +140,49 @@ function FocusSession() {
     return () => clearInterval(t);
   }, [phase, paused]);
 
-  // Persist a draft (inputs, timer, phase, position, reflection/KPIs) so a
-  // refresh or leaving mid-mission doesn't lose typed input or reset the timer.
-  const draftKey = `pos-focus-${id}`;
+  // Cross-device draft (inputs, ticked steps, module position, timer). Restored in
+  // the load effect above from the SERVER (falling back to this device's local
+  // mirror), then pushed back to the server so laptop & phone stay in sync. (#17,#18)
   const restoredRef = useRef(false);
-  useEffect(() => {
-    if (!day || restoredRef.current) return;
-    restoredRef.current = true;
-    try {
-      const raw = typeof window !== 'undefined' ? window.localStorage.getItem(draftKey) : null;
-      if (raw) {
-        const d = JSON.parse(raw);
-        if (d.inputVals) setInputVals(d.inputVals);
-        if (typeof d.remaining === 'number') setRemaining(d.remaining);
-        // ?start=1 means the intro was already shown on the track — never fall back to it.
-        if (d.phase && !(startNow && d.phase === 'intro')) setPhase(d.phase);
-        if (typeof d.index === 'number') setIndex(d.index);
-        if (d.reflection) setReflection(d.reflection);
-        if (d.kpiValues) setKpiValues(d.kpiValues);
-      }
-    } catch { /* ignore bad draft */ }
-  }, [day, draftKey, startNow]);
+  const latest = useRef({});
+  latest.current = { inputVals, stepChecks, reflection, kpiValues, index, remaining, paused };
 
+  const pushDraft = useCallback(() => {
+    if (!restoredRef.current) return;
+    const s = latest.current;
+    const draft = {
+      inputVals: s.inputVals, stepChecks: s.stepChecks, reflection: s.reflection,
+      kpiValues: s.kpiValues, index: s.index, remaining: s.remaining, running: !s.paused,
+    };
+    // Local mirror (offline fallback), stamped so the timer can be reconstructed.
+    try { window.localStorage.setItem(`pos-focus-${id}`, JSON.stringify({ ...draft, ts: Date.now() })); } catch { /* ignore */ }
+    fetch(`/api/practice-os/day/${id}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'save-draft', draft }), keepalive: true,
+    }).catch(() => { /* ignore transient network errors */ });
+  }, [id]);
+
+  // Save shortly after any meaningful change.
   useEffect(() => {
-    if (!restoredRef.current || phase === 'celebrate') return;
-    try {
-      window.localStorage.setItem(draftKey, JSON.stringify({ inputVals, remaining, phase, index, reflection, kpiValues }));
-    } catch { /* storage full / disabled — ignore */ }
-  }, [inputVals, remaining, phase, index, reflection, kpiValues, draftKey]);
+    if (!restoredRef.current || phase !== 'work') return;
+    const t = setTimeout(pushDraft, 1200);
+    return () => clearTimeout(t);
+  }, [inputVals, stepChecks, reflection, kpiValues, index, paused, phase, pushDraft]);
+
+  // Heartbeat so a running timer stays fresh on the server (reconstructed on the
+  // other device), and a final save when the tab is hidden/closed.
+  useEffect(() => {
+    if (phase !== 'work') return;
+    const beat = setInterval(pushDraft, 12000);
+    const onHide = () => { if (document.visibilityState === 'hidden') pushDraft(); };
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', pushDraft);
+    return () => {
+      clearInterval(beat);
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', pushDraft);
+    };
+  }, [phase, pushDraft]);
 
   const mod = modules[index] || null;
   const isLast = modules.length > 0 && index === modules.length - 1;
@@ -122,6 +190,14 @@ function FocusSession() {
   const setInput = (moduleId, inputId, v) => {
     setInputError('');
     setInputVals((s) => ({ ...s, [moduleId]: { ...(s[moduleId] || {}), [inputId]: v } }));
+  };
+
+  const toggleStep = (moduleId, i) => {
+    setStepChecks((s) => {
+      const mod = { ...(s[moduleId] || {}) };
+      if (mod[i]) delete mod[i]; else mod[i] = true;
+      return { ...s, [moduleId]: mod };
+    });
   };
 
   const finishModule = useCallback(async () => {
@@ -162,7 +238,7 @@ function FocusSession() {
     const data = await res.json();
 
     if (data.missionComplete) {
-      try { window.localStorage.removeItem(draftKey); } catch { /* ignore */ }
+      try { window.localStorage.removeItem(`pos-focus-${id}`); } catch { /* ignore */ }
       setResult(data.completion);
       setFinalMinutes(actualMinutes);
       const st = await (await fetch(`/api/practice-os/state?pack=${packId}`)).json();
@@ -428,19 +504,10 @@ function FocusSession() {
               <div className="mb-4"><VideoPlayer key={mod.id} url={mod.videoUrl} /></div>
             )}
 
-            {/* Step-by-step */}
+            {/* Step-by-step — a numbered checklist: ticking a step gives a sense of
+                progress and keeps the doctor from jumping ahead. (#19) */}
             {mod.steps?.length > 0 && (
-              <div className="pos-card p-5 mb-4">
-                <p className="pos-label mb-3">Step-by-step</p>
-                <div className="space-y-3">
-                  {mod.steps.map((step, i) => (
-                    <div key={i} className="flex gap-3 items-start">
-                      <span className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-semibold text-white" style={{ background: 'var(--green)' }}>{i + 1}</span>
-                      <p className="text-[14px] text-[var(--ink)] leading-relaxed pt-0.5">{step}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <StepChecklist steps={mod.steps} sessionVars={sessionVars} checked={stepChecks[mod.id] || {}} onToggle={(i) => toggleStep(mod.id, i)} />
             )}
 
             {/* Education / reference material for this module */}
@@ -555,6 +622,52 @@ function Chip({ children, green }) {
       color: green ? 'var(--green)' : 'var(--muted)',
       padding: '6px 12px', borderRadius: 8,
     }}>{children}</span>
+  );
+}
+
+// Step-by-step rendered as a numbered checklist. Ticking a step strikes it through
+// and fills the progress bar — a sense of completion without punishing skips.
+// {{variables}} entered earlier this session are filled inline. (#19, #30)
+function StepChecklist({ steps, sessionVars, checked, onToggle }) {
+  const doneCount = steps.reduce((n, _, i) => n + (checked[i] ? 1 : 0), 0);
+  const pct = Math.round((doneCount / steps.length) * 100);
+  return (
+    <div className="pos-card p-5 mb-4">
+      <div className="flex items-center justify-between mb-3">
+        <p className="pos-label">Step-by-step</p>
+        <span className="text-[11px] text-[var(--muted)]"><span className="pos-num">{doneCount}</span>/{steps.length} done</span>
+      </div>
+      <div className="pos-meter mb-4"><span style={{ width: `${pct}%` }} /></div>
+      <div className="space-y-1.5">
+        {steps.map((step, i) => {
+          const on = !!checked[i];
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => onToggle(i)}
+              className="w-full flex gap-3 items-start text-left rounded-lg p-2 -mx-2 transition-colors hover:bg-[var(--rule-soft)]"
+            >
+              <span
+                className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[12px] font-semibold border transition-colors"
+                style={{
+                  background: on ? 'var(--green)' : 'transparent',
+                  borderColor: on ? 'var(--green)' : 'var(--rule)',
+                  color: on ? '#fff' : 'var(--muted)',
+                }}
+              >
+                {on ? (
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                ) : (i + 1)}
+              </span>
+              <span className="text-[14px] leading-relaxed pt-0.5" style={{ color: on ? 'var(--muted)' : 'var(--ink)', textDecoration: on ? 'line-through' : 'none' }}>
+                {fillVars(step, sessionVars)}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

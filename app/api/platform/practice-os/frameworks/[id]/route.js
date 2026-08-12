@@ -41,6 +41,16 @@ export async function PATCH(request, { params }) {
 
     const { id } = await params;
     const body = await request.json();
+
+    // Restore a soft-deleted pack: clear deletedAt and reactivate it. (#26)
+    if (body.restore) {
+      const restored = await Framework.findByIdAndUpdate(
+        id, { $set: { deletedAt: null, isActive: true } }, { new: true }
+      );
+      if (!restored) return NextResponse.json({ success: false, error: 'Framework not found' }, { status: 404 });
+      return NextResponse.json({ success: true, framework: restored });
+    }
+
     const allowed = ['title', 'description', 'category', 'coverImage', 'order', 'isActive',
       'tagline', 'summary', 'outcomes', 'priceInInr', 'isPublished'];
     const update = {};
@@ -66,7 +76,11 @@ export async function PATCH(request, { params }) {
   }
 }
 
-// DELETE /api/platform/practice-os/frameworks/[id] — delete framework + cascade.
+// DELETE /api/platform/practice-os/frameworks/[id]
+//  - default: SOFT delete — hide the pack (and stop reminders) but keep its
+//    content + enrollments so it can be restored. (#26)
+//  - ?permanent=true: HARD delete + cascade (only meant for an already-deleted
+//    pack you want gone for good).
 export async function DELETE(request, { params }) {
   try {
     const { authenticated } = await requirePlatformAdmin();
@@ -74,17 +88,28 @@ export async function DELETE(request, { params }) {
     await connectDB();
 
     const { id } = await params;
-    await Promise.all([
-      Mission.deleteMany({ frameworkId: id }),
-      Module.deleteMany({ frameworkId: id }),
-      // Remove doctor enrollments + progress for this pack, so the reminder cron
-      // (which sends to active enrollments) stops emailing about a deleted pack.
-      PracticeOsEnrollment.deleteMany({ frameworkId: id }),
-      UserMissionProgress.deleteMany({ frameworkId: id }),
-      Framework.findByIdAndDelete(id),
-    ]);
+    const permanent = new URL(request.url).searchParams.get('permanent') === 'true';
 
-    return NextResponse.json({ success: true });
+    if (permanent) {
+      await Promise.all([
+        Mission.deleteMany({ frameworkId: id }),
+        Module.deleteMany({ frameworkId: id }),
+        PracticeOsEnrollment.deleteMany({ frameworkId: id }),
+        UserMissionProgress.deleteMany({ frameworkId: id }),
+        Framework.findByIdAndDelete(id),
+      ]);
+      return NextResponse.json({ success: true, permanent: true });
+    }
+
+    // Soft delete — deletedAt + isActive:false + unpublish hides it from doctors
+    // and the reminder cron (which filters deletedAt:null), but nothing is lost.
+    const framework = await Framework.findByIdAndUpdate(
+      id,
+      { $set: { deletedAt: new Date(), isActive: false, isPublished: false } },
+      { new: true }
+    );
+    if (!framework) return NextResponse.json({ success: false, error: 'Framework not found' }, { status: 404 });
+    return NextResponse.json({ success: true, softDeleted: true });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     console.error('[Practice OS Framework DELETE]', error);

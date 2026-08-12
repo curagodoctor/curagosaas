@@ -40,7 +40,7 @@ export default function PracticeOSPage() {
     <div className="space-y-6">
       {/* Command Center banner */}
       <div className="bg-white rounded-xl shadow-sm p-6 border-b border-gray-100">
-        <h1 className="text-2xl font-bold text-gray-900">Practice OS — Command Center</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Zero To Practice Builder — Command Center</h1>
         <p className="text-gray-500 text-sm mt-1">
           Upload a full curriculum from Excel, and manage your Builder Packs — pricing, publishing, missions and per-doctor progress.
         </p>
@@ -62,7 +62,7 @@ export default function PracticeOSPage() {
 
       {tab === 'import' && <BulkUpload frameworks={frameworks} onImported={loadFrameworks} />}
       {tab === 'curriculum' && (
-        <CurriculumTab frameworks={frameworks} loading={loading} onNew={() => setShowNew(true)} />
+        <CurriculumTab frameworks={frameworks} loading={loading} onNew={() => setShowNew(true)} onChanged={loadFrameworks} />
       )}
       {tab === 'knowledge' && <KnowledgeBaseTab frameworks={frameworks} />}
       {tab === 'analytics' && <AnalyticsTab />}
@@ -396,54 +396,105 @@ function KbGroup({ label, list, onEdit, onRemove }) {
 }
 
 /* ---------------- Curriculum (frameworks) ---------------- */
-function CurriculumTab({ frameworks, loading, onNew }) {
+function CurriculumTab({ frameworks, loading, onNew, onChanged }) {
   const router = useRouter();
+  const active = frameworks.filter((f) => !f.deletedAt);
+  const deleted = frameworks.filter((f) => f.deletedAt);
+
+  const restore = async (fw) => {
+    await fetch(`/api/platform/practice-os/frameworks/${fw._id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ restore: true }),
+    });
+    onChanged?.();
+  };
+  const purge = async (fw) => {
+    if (!window.confirm(`Permanently delete "${fw.title}" and ALL its content? This cannot be undone.`)) return;
+    await fetch(`/api/platform/practice-os/frameworks/${fw._id}?permanent=true`, { method: 'DELETE' });
+    onChanged?.();
+  };
+
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between p-4 border-b border-gray-100">
-        <h2 className="font-semibold text-gray-900">Builder Packs</h2>
-        <button onClick={onNew} className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm font-medium">New Builder Pack</button>
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <h2 className="font-semibold text-gray-900">Builder Packs</h2>
+          <div className="flex items-center gap-2">
+            <a
+              href="/api/platform/practice-os/frameworks/export"
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium inline-flex items-center gap-1.5"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
+              Export to Excel
+            </a>
+            <button onClick={onNew} className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm font-medium">New Builder Pack</button>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Builder Pack</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Missions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {loading ? (
+                [...Array(3)].map((_, i) => (
+                  <tr key={i} className="animate-pulse"><td className="px-6 py-4" colSpan={5}><div className="h-4 bg-gray-100 rounded w-1/3" /></td></tr>
+                ))
+              ) : active.length === 0 ? (
+                <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">No builder packs yet. Use <strong>Bulk Upload</strong> to import one.</td></tr>
+              ) : (
+                active.map((fw) => (
+                  <tr
+                    key={fw._id}
+                    onClick={() => router.push(`/dashboard/practice-os/frameworks/${fw._id}`)}
+                    className="hover:bg-gray-50 cursor-pointer"
+                  >
+                    <td className="px-6 py-4 text-blue-600 font-medium">{fw.title}</td>
+                    <td className="px-6 py-4 text-gray-600">{fw.category || '—'}</td>
+                    <td className="px-6 py-4 text-gray-600">{fw.missionCount}</td>
+                    <td className="px-6 py-4 text-gray-600">{(fw.priceInInr || 0) > 0 ? `₹${Number(fw.priceInInr).toLocaleString('en-IN')}` : 'Free'}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${fw.isPublished ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
+                        {fw.isPublished ? 'Published' : 'Draft'}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Builder Pack</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Missions</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {loading ? (
-              [...Array(3)].map((_, i) => (
-                <tr key={i} className="animate-pulse"><td className="px-6 py-4" colSpan={5}><div className="h-4 bg-gray-100 rounded w-1/3" /></td></tr>
-              ))
-            ) : frameworks.length === 0 ? (
-              <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">No builder packs yet. Use <strong>Bulk Upload</strong> to import one.</td></tr>
-            ) : (
-              frameworks.map((fw) => (
-                <tr
-                  key={fw._id}
-                  onClick={() => router.push(`/dashboard/practice-os/frameworks/${fw._id}`)}
-                  className="hover:bg-gray-50 cursor-pointer"
-                >
-                  <td className="px-6 py-4 text-blue-600 font-medium">{fw.title}</td>
-                  <td className="px-6 py-4 text-gray-600">{fw.category || '—'}</td>
-                  <td className="px-6 py-4 text-gray-600">{fw.missionCount}</td>
-                  <td className="px-6 py-4 text-gray-600">{(fw.priceInInr || 0) > 0 ? `₹${Number(fw.priceInInr).toLocaleString('en-IN')}` : 'Free'}</td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${fw.isPublished ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
-                      {fw.isPublished ? 'Published' : 'Draft'}
-                    </span>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+
+      {/* Deleted packs — restorable (content + enrolments were kept). (#26) */}
+      {deleted.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-900">Deleted packs</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Hidden from doctors. Restore to bring a pack back exactly as it was, or delete it permanently.</p>
+          </div>
+          <ul className="divide-y divide-gray-200">
+            {deleted.map((fw) => (
+              <li key={fw._id} className="px-6 py-4 flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="font-medium text-gray-900 truncate">{fw.title}</p>
+                  <p className="text-xs text-gray-500">{fw.missionCount} missions · deleted {fw.deletedAt ? new Date(fw.deletedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button onClick={() => restore(fw)} className="px-3 py-1.5 border border-green-600 text-green-700 rounded-lg hover:bg-green-50 text-sm font-medium">Restore</button>
+                  <button onClick={() => purge(fw)} className="px-3 py-1.5 text-red-600 hover:underline text-sm">Delete forever</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
@@ -674,7 +725,7 @@ function DoctorsTab() {
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="p-4 border-b border-gray-100">
         <h2 className="font-semibold text-gray-900">Enrolled Doctors</h2>
-        <p className="text-sm text-gray-500">Click a doctor to see their full Practice OS record.</p>
+        <p className="text-sm text-gray-500">Click a doctor to see their full Zero To Practice Builder record.</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">

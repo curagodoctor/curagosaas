@@ -48,7 +48,14 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: 'Domain is required' }, { status: 400 });
     }
 
-    const cleanDomain = domain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+    // Normalise: strip scheme, trailing slash, and a leading "www." so we always
+    // store/serve the registrable apex (the www variant is registered separately
+    // by addDomain and redirects to the apex).
+    const cleanDomain = domain
+      .trim().toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/\/+$/, '')
+      .replace(/^www\./, '');
 
     // Basic domain validation
     if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(cleanDomain)) {
