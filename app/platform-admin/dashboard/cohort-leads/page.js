@@ -13,6 +13,7 @@ const STATUSES = ['new', 'reviewing', 'onboarded', 'declined'];
 const QLABEL = Object.fromEntries(QUESTIONS.map((q) => [q.id, q.title]));
 
 export default function CohortLeadsPage() {
+  const [tab, setTab] = useState('leads'); // 'leads' | 'waitlist'
   const [data, setData] = useState(null);
   const [result, setResult] = useState('');
   const [status, setStatus] = useState('');
@@ -37,11 +38,22 @@ export default function CohortLeadsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Cohort Leads</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Fit-assessment submissions from the &ldquo;See if it&apos;s the right fit&rdquo; flow.</p>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Cohort Leads</h1>
+        <p className="text-gray-500 text-sm mt-0.5">Fit-assessment submissions, plus the older landing-page waitlist emails.</p>
+        <div className="flex gap-2 mt-4 border-b border-gray-100">
+          {[['leads', 'Fit assessment'], ['waitlist', 'Waitlist emails']].map(([id, label]) => (
+            <button key={id} onClick={() => setTab(id)} className={`pb-3 px-2 text-sm font-medium border-b-2 transition-colors ${tab === id ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-400 hover:text-gray-600'}`}>
+              {label}
+            </button>
+          ))}
         </div>
+      </div>
+
+      {tab === 'waitlist' && <WaitlistPanel />}
+
+      {tab === 'leads' && <>
+      <div className="flex justify-end">
         <a href={`/api/platform/cohort-leads?format=csv${result ? `&result=${result}` : ''}${status ? `&status=${status}` : ''}`} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">
           Export CSV
         </a>
@@ -148,6 +160,49 @@ export default function CohortLeadsPage() {
             </tbody>
           </table>
         </div>
+      </div>
+      </>}
+    </div>
+  );
+}
+
+// The older landing-page waitlist emails (captured before the fit-assessment flow).
+function WaitlistPanel() {
+  const [data, setData] = useState(null);
+  useEffect(() => {
+    fetch('/api/platform/waitlist').then((r) => r.json()).then((j) => { if (j.success) setData(j); }).catch(() => setData({ entries: [], total: 0 }));
+  }, []);
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <p className="text-sm text-gray-500">{data ? `${data.total} email${data.total === 1 ? '' : 's'} captured` : 'Loading…'}</p>
+        <a href="/api/platform/waitlist?format=csv" className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium">Export CSV</a>
+      </div>
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-5 py-3">Email</th>
+              <th className="px-5 py-3">Name</th>
+              <th className="px-5 py-3">Source</th>
+              <th className="px-5 py-3">Joined</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {!data ? (
+              <tr><td colSpan={4} className="px-5 py-10 text-center text-gray-400">Loading…</td></tr>
+            ) : data.entries.length === 0 ? (
+              <tr><td colSpan={4} className="px-5 py-12 text-center text-gray-500">No waitlist emails captured.</td></tr>
+            ) : data.entries.map((e) => (
+              <tr key={e._id} className="hover:bg-gray-50">
+                <td className="px-5 py-3 text-sm text-gray-900 font-medium">{e.email}</td>
+                <td className="px-5 py-3 text-sm text-gray-600">{e.name || '—'}</td>
+                <td className="px-5 py-3 text-xs text-gray-500">{e.source}</td>
+                <td className="px-5 py-3 text-xs text-gray-500">{e.createdAt ? new Date(e.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
