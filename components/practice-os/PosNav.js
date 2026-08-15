@@ -30,12 +30,12 @@ function PosNavInner({ breadcrumb }) {
 
   const links = (
     <>
-      <Link href="/app/practice-os" onClick={close} className="pos-link">All packs</Link>
+      <Link href="/app/zero-to-practice-builder" onClick={close} className="pos-link">All packs</Link>
       <ProgressMenu packId={packId} withPack={withPack} onNavigate={close} />
-      <Link href={withPack('/app/practice-os/schedule')} onClick={close} className="pos-link">Schedule</Link>
-      <Link href={withPack('/app/practice-os/workspace')} onClick={close} className="pos-link">Workspace</Link>
-      <Link href={withPack('/app/practice-os/leaderboard')} onClick={close} className="pos-link">Leaderboard</Link>
-      <Link href={withPack('/app/practice-os/profile')} onClick={close} className="pos-link">My profile</Link>
+      <Link href={withPack('/app/zero-to-practice-builder/schedule')} onClick={close} className="pos-link">Schedule</Link>
+      <Link href={withPack('/app/zero-to-practice-builder/workspace')} onClick={close} className="pos-link">Workspace</Link>
+      <Link href={withPack('/app/zero-to-practice-builder/leaderboard')} onClick={close} className="pos-link">Leaderboard</Link>
+      <Link href={withPack('/app/zero-to-practice-builder/profile')} onClick={close} className="pos-link">My profile</Link>
     </>
   );
 
@@ -43,7 +43,7 @@ function PosNavInner({ breadcrumb }) {
     <div className="fixed top-0 left-0 right-0 z-40 px-4 sm:px-8 lg:px-12 py-1.5" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--rule)' }}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <Link href="/app/practice-os" onClick={close} className="flex items-center shrink-0">
+          <Link href="/app/zero-to-practice-builder" onClick={close} className="flex items-center shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/curago-logo.png" alt="CuraGo" className="h-9 sm:h-10 w-auto" />
           </Link>
@@ -103,13 +103,13 @@ function ProgressMenu({ packId, withPack, onNavigate }) {
 
   if (!packId) {
     // No pack in context — send them to pick one; progress is per-pack.
-    return <Link href="/app/practice-os" onClick={onNavigate} className="pos-link">Progress</Link>;
+    return <Link href="/app/zero-to-practice-builder" onClick={onNavigate} className="pos-link">Progress</Link>;
   }
 
   const items = [
-    ['Your progress', withPack('/app/practice-os/score')],
-    ['Journey & record', withPack('/app/practice-os/journey')],
-    ['Report', withPack('/app/practice-os/report')],
+    ['Your progress', withPack('/app/zero-to-practice-builder/score')],
+    ['Journey & record', withPack('/app/zero-to-practice-builder/journey')],
+    ['Report', withPack('/app/zero-to-practice-builder/report')],
   ];
   const toggle = () => {
     if (!open && btnRef.current) {

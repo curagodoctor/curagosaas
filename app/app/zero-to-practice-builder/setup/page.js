@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { SECTIONS, ALL_FIELDS, REQUIRED_FIELDS, Field } from '../_profile-fields';
+import { SECTIONS, ALL_FIELDS, Field, fieldsOf, requiredOf } from '../_profile-fields';
 import { UsernamePicker } from '../_username';
 
 // Day-0 setup: Profile form (mandatory) → intent → CV (optional, last) → AI summary.
@@ -12,6 +12,10 @@ function SetupInner() {
   const params = useSearchParams();
   const packId = params.get('pack');
   const [step, setStep] = useState(1);
+  // Admin-managed field sections (defaults until the merged config loads). (#39)
+  const [sections, setSections] = useState(SECTIONS);
+  const allFields = fieldsOf(sections);
+  const requiredFields = requiredOf(sections);
   const [fields, setFields] = useState(() => Object.fromEntries(ALL_FIELDS.map((f) => [f.key, ''])));
   const [errors, setErrors] = useState({});
   const [intent, setIntent] = useState({ whyPractice: '', triedBefore: '', sixMonths: '', freeTime: 'evening' });
@@ -35,16 +39,25 @@ function SetupInner() {
   // pre-fills what they already entered at signup / on the profile page instead of
   // asking again. The profile is doctor-global and stores the same field keys.
   useEffect(() => {
-    if (!packId) { router.replace('/app/practice-os'); return; }
+    if (!packId) { router.replace('/app/zero-to-practice-builder'); return; }
     let active = true;
     (async () => {
-      const [stateD, profD] = await Promise.all([
+      const [stateD, profD, fieldsD] = await Promise.all([
         fetch(`/api/practice-os/state?pack=${packId}`).then((r) => r.json()).catch(() => ({})),
         fetch('/api/practice-os/profile').then((r) => r.json()).catch(() => ({})),
+        fetch('/api/practice-os/profile-fields').then((r) => r.json()).catch(() => ({})),
       ]);
       if (!active) return;
-      if (stateD.enrollment?.setupComplete) { router.replace(`/app/practice-os/track?pack=${packId}`); return; }
+      if (stateD.enrollment?.setupComplete) { router.replace(`/app/zero-to-practice-builder/track?pack=${packId}`); return; }
       setDays(stateD.days || []);
+
+      // Apply the admin-managed field config (falls back to defaults on failure).
+      const mergedSections = fieldsD.success && fieldsD.sections?.length ? fieldsD.sections : SECTIONS;
+      setSections(mergedSections);
+      const mergedFields = fieldsOf(mergedSections);
+      const mergedRequired = requiredOf(mergedSections);
+      // Ensure the form state has a slot for every (possibly custom) field.
+      setFields((prev) => { const next = { ...prev }; for (const f of mergedFields) if (!(f.key in next)) next[f.key] = ''; return next; });
 
       const saved = profD.fields || {};
       const nonEmpty = Object.entries(saved).filter(([, v]) => String(v ?? '').trim());
@@ -56,7 +69,7 @@ function SetupInner() {
         if (savedIntent.length) setIntent((s) => ({ ...s, ...Object.fromEntries(savedIntent) }));
       }
       // If every required field is already answered, offer a one-click confirm.
-      setPrefilledComplete(REQUIRED_FIELDS.every((k) => String(saved[k] ?? '').trim()));
+      setPrefilledComplete(mergedRequired.every((k) => String(saved[k] ?? '').trim()));
       setReady(true);
     })();
     return () => { active = false; };
@@ -70,7 +83,7 @@ function SetupInner() {
   });
 
   const saveCredentials = async () => {
-    const extracted = ALL_FIELDS
+    const extracted = allFields
       .filter((f) => (fields[f.key] || '').trim())
       .map((f) => ({ field: f.key, value: fields[f.key].trim(), confidence: confidences[f.key] ?? 1, confirmed: true }));
     await fetch('/api/practice-os/setup', {
@@ -82,10 +95,10 @@ function SetupInner() {
   // Step 1 → validate mandatory, save, continue.
   const submitProfile = async () => {
     const missing = {};
-    for (const key of REQUIRED_FIELDS) if (!(fields[key] || '').trim()) missing[key] = true;
+    for (const key of requiredFields) if (!(fields[key] || '').trim()) missing[key] = true;
     if (Object.keys(missing).length) {
       setErrors(missing);
-      const firstSec = SECTIONS.find((s) => s.fields.some((f) => missing[f.key]));
+      const firstSec = sections.find((s) => s.fields.some((f) => missing[f.key]));
       document.getElementById(`sec-${firstSec?.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
@@ -147,7 +160,7 @@ function SetupInner() {
   const finish = async () => {
     setBusy(true);
     await fetch('/api/practice-os/setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: 'complete', packId }) });
-    router.push(`/app/practice-os/track?pack=${packId}`);
+    router.push(`/app/zero-to-practice-builder/track?pack=${packId}`);
   };
 
   if (!ready) {
@@ -174,7 +187,7 @@ function SetupInner() {
 
         <p className="pos-label mb-2">On file</p>
         <div className="pos-card divide-y mb-6" style={{ borderColor: 'var(--rule)' }}>
-          {ALL_FIELDS.filter((f) => String(fields[f.key] ?? '').trim()).map((f) => (
+          {allFields.filter((f) => String(fields[f.key] ?? '').trim()).map((f) => (
             <div key={f.key} className="flex gap-4 px-4 py-2.5" style={{ borderColor: 'var(--rule-soft)' }}>
               <span className="pos-label flex-shrink-0" style={{ width: '38%' }}>{f.label}</span>
               <span className="text-[13px] text-[var(--ink)] flex-1 whitespace-pre-wrap break-words">{fields[f.key]}</span>
@@ -217,7 +230,7 @@ function SetupInner() {
           </div>
 
           <div className="space-y-8">
-            {SECTIONS.map((sec) => (
+            {sections.map((sec) => (
               <div key={sec.id} id={`sec-${sec.id}`}>
                 <p className="pos-label" style={{ color: 'var(--green)' }}>{sec.title}</p>
                 {sec.note && <p className="text-[11px] text-[var(--muted)] mt-1 mb-3" style={{ maxWidth: '52ch' }}>{sec.note}</p>}

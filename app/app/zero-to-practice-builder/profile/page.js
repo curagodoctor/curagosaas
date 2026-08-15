@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import PosNav from '@/components/practice-os/PosNav';
-import { SECTIONS, ALL_FIELDS, REQUIRED_FIELDS, Field } from '../_profile-fields';
+import { SECTIONS, Field, fieldsOf, requiredOf } from '../_profile-fields';
 import { UsernamePicker } from '../_username';
 
 // Editable doctor profile — the same fields captured at Day-0, changeable anytime.
 // Saving regenerates the AI summary that the assistant writes from.
 export default function ProfilePage() {
   const router = useRouter();
+  const [sections, setSections] = useState(SECTIONS);   // admin-managed field config (#39)
   const [fields, setFields] = useState(null);
   const [summary, setSummary] = useState('');
   const [errors, setErrors] = useState({});
@@ -22,11 +23,16 @@ export default function ProfilePage() {
 
   useEffect(() => {
     (async () => {
-      const res = await fetch('/api/practice-os/profile');
+      const [res, fieldsRes] = await Promise.all([
+        fetch('/api/practice-os/profile'),
+        fetch('/api/practice-os/profile-fields').then((r) => r.json()).catch(() => ({})),
+      ]);
       if (res.status === 401) { router.push('/login?entry=practice-os'); return; }
-      if (res.status === 402) { router.push('/app/practice-os/unlock'); return; }
+      if (res.status === 402) { router.push('/app/zero-to-practice-builder/unlock'); return; }
       const d = await res.json();
-      const base = Object.fromEntries(ALL_FIELDS.map((f) => [f.key, '']));
+      const mergedSections = fieldsRes.success && fieldsRes.sections?.length ? fieldsRes.sections : SECTIONS;
+      setSections(mergedSections);
+      const base = Object.fromEntries(fieldsOf(mergedSections).map((f) => [f.key, '']));
       setFields({ ...base, ...(d.fields || {}) });
       setSummary(d.summary || '');
       setHasCv(!!d.hasCv);
@@ -77,7 +83,7 @@ export default function ProfilePage() {
 
   const save = async () => {
     const missing = {};
-    for (const key of REQUIRED_FIELDS) if (!(fields[key] || '').trim()) missing[key] = true;
+    for (const key of requiredOf(sections)) if (!(fields[key] || '').trim()) missing[key] = true;
     if (Object.keys(missing).length) { setErrors(missing); setMsg('Please fill the required fields.'); return; }
     setSaving(true); setMsg('');
     try {
@@ -157,7 +163,7 @@ export default function ProfilePage() {
       </div>
 
       <div className="space-y-8">
-        {SECTIONS.map((sec) => (
+        {sections.map((sec) => (
           <div key={sec.id} id={`sec-${sec.id}`}>
             <p className="pos-label" style={{ color: 'var(--green)' }}>{sec.title}</p>
             <div className="space-y-4 mt-3">

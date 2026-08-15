@@ -11,7 +11,7 @@ function RecordRedirect() {
   const packId = params.get('pack');
   useEffect(() => {
     const q = packId ? `?pack=${packId}&view=record` : '?view=record';
-    router.replace(`/app/practice-os/journey${q}`);
+    router.replace(`/app/zero-to-practice-builder/journey${q}`);
   }, [packId, router]);
   return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>;
 }

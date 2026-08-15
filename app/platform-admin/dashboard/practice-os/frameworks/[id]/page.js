@@ -9,6 +9,7 @@ import Link from 'next/link';
 // price, unless free) to appear in the catalog and be purchasable.
 function PackSettings({ framework, onSaved }) {
   const [form, setForm] = useState({
+    title: framework.title || '',
     tagline: framework.tagline || '',
     summary: framework.summary || '',
     category: framework.category || '',
@@ -25,6 +26,7 @@ function PackSettings({ framework, onSaved }) {
       const res = await fetch(`/api/platform/practice-os/frameworks/${framework._id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          title: form.title,
           tagline: form.tagline,
           summary: form.summary,
           category: form.category,
@@ -50,6 +52,11 @@ function PackSettings({ framework, onSaved }) {
           {form.isPublished ? 'Published — visible to doctors' : 'Draft — hidden from catalog'}
         </span>
       </div>
+
+      <label className="block">
+        <span className="text-xs font-medium text-gray-500 uppercase">Pack title</span>
+        <input value={form.title} onChange={(e) => set('title', e.target.value)} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="e.g. Get Found on Google" />
+      </label>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <label className="block">
@@ -195,6 +202,20 @@ export default function FrameworkDetailPage() {
     load();
   };
 
+  // Rearrange two adjacent missions by swapping their ordering keys (day +
+  // mission #). The curriculum sorts by week → day → mission #, so swapping both
+  // reliably swaps their position. (#32)
+  const reorderMission = async (list, index, dir) => {
+    const target = index + dir;
+    if (target < 0 || target >= list.length) return;
+    const a = list[index], b = list[target];
+    await Promise.all([
+      fetch(`/api/platform/practice-os/missions/${a._id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dayNumber: b.dayNumber, missionNumber: b.missionNumber }) }),
+      fetch(`/api/platform/practice-os/missions/${b._id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dayNumber: a.dayNumber, missionNumber: a.missionNumber }) }),
+    ]);
+    load();
+  };
+
   if (loading) {
     return <div className="flex justify-center py-24"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" /></div>;
   }
@@ -223,9 +244,18 @@ export default function FrameworkDetailPage() {
           <h1 className="text-2xl font-bold text-gray-900">{framework.title}</h1>
           <p className="text-gray-500">{framework.category || 'No category'} · {modules.length} modules · {missions.length} missions</p>
         </div>
-        <button onClick={handleDeleteFramework} className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 text-sm font-medium">
-          Delete Builder Pack
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href={`/api/platform/practice-os/frameworks/${id}/export`}
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium inline-flex items-center gap-1.5"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
+            Export to Excel
+          </a>
+          <button onClick={handleDeleteFramework} className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 text-sm font-medium">
+            Delete Builder Pack
+          </button>
+        </div>
       </div>
 
       <PackSettings framework={framework} onSaved={load} />
@@ -255,13 +285,23 @@ export default function FrameworkDetailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {byWeek[week].sort((a, b) => a.dayNumber - b.dayNumber).map((m) => (
+                {(() => {
+                  const rows = byWeek[week].slice().sort((a, b) => (a.dayNumber - b.dayNumber) || (a.missionNumber - b.missionNumber));
+                  return rows.map((m, idx) => (
                   <tr
                     key={m._id}
                     onClick={() => router.push(`/dashboard/practice-os/missions/${m._id}`)}
                     className="hover:bg-gray-50 cursor-pointer"
                   >
-                    <td className="px-6 py-3 text-gray-500">{m.missionNumber}</td>
+                    <td className="px-6 py-3 text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <div className="flex flex-col">
+                          <button type="button" onClick={(e) => { e.stopPropagation(); reorderMission(rows, idx, -1); }} disabled={idx === 0} className="text-gray-400 hover:text-blue-600 disabled:opacity-30 leading-none" title="Move up">▲</button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); reorderMission(rows, idx, 1); }} disabled={idx === rows.length - 1} className="text-gray-400 hover:text-blue-600 disabled:opacity-30 leading-none" title="Move down">▼</button>
+                        </div>
+                        <span>{m.missionNumber}</span>
+                      </div>
+                    </td>
                     <td className="px-6 py-3 text-gray-600">Day {m.dayNumber}</td>
                     <td className="px-6 py-3 text-gray-600">{moduleName(m.moduleId)}</td>
                     <td className="px-6 py-3 text-blue-600 font-medium">
@@ -285,7 +325,8 @@ export default function FrameworkDetailPage() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                  ));
+                })()}
               </tbody>
             </table>
           </div>

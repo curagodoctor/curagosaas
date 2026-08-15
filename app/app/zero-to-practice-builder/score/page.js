@@ -15,7 +15,7 @@ function ScoreInner() {
   const [state, setState] = useState(null);
   const [kpiSeries, setKpiSeries] = useState([]);
   useEffect(() => {
-    if (!packId) { router.replace('/app/practice-os'); return; }
+    if (!packId) { router.replace('/app/zero-to-practice-builder'); return; }
     fetch(`/api/practice-os/state?pack=${packId}`).then((r) => r.json()).then(setState);
     fetch(`/api/practice-os/kpis?pack=${packId}`).then((r) => r.json()).then((d) => setKpiSeries(d.success ? d.series : []));
   }, [packId, router]);
@@ -36,7 +36,7 @@ function ScoreInner() {
     <div className="max-w-xl mx-auto px-5 pt-[64px] pb-10">
       <PosNav breadcrumb={state.pack?.title} />
 
-      <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm inline-block mt-6">← Back to today</Link>
+      <Link href={`/app/zero-to-practice-builder/track?pack=${packId}`} className="pos-link text-sm inline-block mt-6">← Back to today</Link>
 
       <div className="text-center mt-6 mb-8">
         <p className="pos-label mb-1">Visibility Score</p>

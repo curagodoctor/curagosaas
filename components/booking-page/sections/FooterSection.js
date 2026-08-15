@@ -4,11 +4,11 @@ import { trackButtonClick } from "@/lib/tracking";
 
 export default function FooterSection({
   sectionId,
-  companyName = "CuraGo",
-  tagline = "Your Health, Our Priority",
-  address = "SRV Hospital, Tilak Nagar, Chembur, Mumbai",
-  phone = "+91 7021227203",
-  email = "team@curago.in",
+  companyName = "",
+  tagline = "",
+  address = "",
+  phone = "",
+  email = "",
   showSocialLinks = true,
   facebookUrl = "",
   instagramUrl = "",

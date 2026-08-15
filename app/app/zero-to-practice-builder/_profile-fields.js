@@ -1,64 +1,20 @@
 'use client';
 
-// Shared doctor-profile field definitions + field renderer, used by both Day-0
-// setup and the editable "My Profile" page. The professional section is the part
-// a CV can pre-fill; practice & voice are manual. `required` marks mandatory fields.
-export const SECTIONS = [
-  {
-    id: 'pro',
-    title: 'Professional profile',
-    note: 'Pre-filled from your CV where we could read it — confirm each. We never invent a credential.',
-    fields: [
-      { key: 'doctor_name', label: 'Full name', required: true },
-      { key: 'designation', label: 'Current designation', required: true },
-      { key: 'specialty', label: 'Specialty', required: true },
-      { key: 'subspecialty', label: 'Subspecialty' },
-      { key: 'qualifications', label: 'Primary qualifications', multiline: true, required: true },
-      { key: 'additional_qualifications', label: 'Fellowships / additional qualifications', multiline: true },
-      { key: 'years_experience', label: 'Years of experience', type: 'number', required: true },
-      { key: 'expertise', label: 'Areas of expertise', multiline: true, required: true },
-      { key: 'diseases', label: 'Common diseases treated', multiline: true, required: true },
-      { key: 'procedures', label: 'Common procedures', multiline: true },
-      { key: 'usp', label: 'Unique strength (USP)', multiline: true },
-      { key: 'interests', label: 'Areas of interest', multiline: true },
-      { key: 'languages', label: 'Languages spoken', required: true },
-      { key: 'awards', label: 'Awards', multiline: true },
-      { key: 'publications', label: 'Publications', multiline: true },
-      { key: 'registration', label: 'Registration number' },
-      { key: 'age', label: 'Age', type: 'number' },
-      { key: 'gender', label: 'Gender', type: 'select', options: ['', 'Male', 'Female', 'Prefer not to say'], required: true },
-    ],
-  },
-  {
-    id: 'practice',
-    title: 'Practice information',
-    note: 'Where and how patients reach you — used for your Google profile, website and reception script.',
-    fields: [
-      { key: 'clinic_name', label: 'Clinic name' },
-      { key: 'clinic_address', label: 'Clinic address', multiline: true, required: true },
-      { key: 'city', label: 'City' },
-      { key: 'state', label: 'State' },
-      { key: 'pin_code', label: 'PIN code' },
-      { key: 'consultation_timings', label: 'Consultation timings', multiline: true, required: true },
-      { key: 'consultation_fee', label: 'Consultation fee' },
-      { key: 'appointment_number', label: 'Appointment number', required: true },
-      { key: 'whatsapp_number', label: 'WhatsApp number' },
-    ],
-  },
-  {
-    id: 'voice',
-    title: 'Voice & personality',
-    note: 'This shapes how your AI assistant writes across every page and post.',
-    fields: [
-      { key: 'writing_style', label: 'Writing style', type: 'select', options: ['', 'Formal', 'Conversational', 'Friendly', 'Academic', 'Premium'] },
-      { key: 'doctor_personality', label: 'How should patients describe you?', type: 'tags', options: ['Calm and approachable', 'Highly knowledgeable', 'Honest and straightforward', 'Friendly and empathetic', 'Evidence-based', 'Reassuring', 'Minimalist and practical'] },
-      { key: 'custom_instructions', label: 'Anything else for your AI assistant', multiline: true, big: true },
-    ],
-  },
-];
+// Shared doctor-profile field renderer, used by both Day-0 setup and the editable
+// "My Profile" page. The field DEFINITIONS live in a server-safe module so the
+// admin merge API can share them; the effective list may be customised by admin.
+import { DEFAULT_SECTIONS } from '@/lib/practice-os/profile-fields-defaults';
+
+// Default (built-in) sections. Pages fetch the admin-merged list at runtime and
+// fall back to these if the fetch fails, so onboarding never breaks.
+export const SECTIONS = DEFAULT_SECTIONS;
 
 export const ALL_FIELDS = SECTIONS.flatMap((s) => s.fields);
 export const REQUIRED_FIELDS = ALL_FIELDS.filter((f) => f.required).map((f) => f.key);
+
+// Flatten any sections shape (default or admin-merged) into helper arrays.
+export function fieldsOf(sections) { return sections.flatMap((s) => s.fields); }
+export function requiredOf(sections) { return fieldsOf(sections).filter((f) => f.required).map((f) => f.key); }
 
 // A single profile field — renders input / textarea / number / select / tag chips.
 export function Field({ f, value, confidence, error, onChange, onToggleTag }) {
@@ -68,6 +24,7 @@ export function Field({ f, value, confidence, error, onChange, onToggleTag }) {
       <label className="pos-label">
         {f.label}{f.required && <span style={{ color: 'var(--orange)' }}> *</span>}
       </label>
+      {f.hint && <p className="text-[11.5px] text-[var(--muted)] mt-0.5 leading-snug">{f.hint}</p>}
 
       {f.type === 'select' ? (
         <select value={value || ''} onChange={(e) => onChange(e.target.value)} className="w-full pos-card p-2.5 text-sm mt-1" style={error ? { borderColor: '#dc2626' } : undefined}>

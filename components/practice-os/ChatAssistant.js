@@ -14,7 +14,18 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle }) {
   const [error, setError] = useState('');
   const [pendingNewSession, setPendingNewSession] = useState(false);
   const [typing, setTyping] = useState(null); // { full, shown } — reveals the reply as it "streams"
+  const [expanded, setExpanded] = useState(false);
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Auto-grow the input as the doctor types (prompts can be long), capped so it
+  // never eats the whole panel.
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(expanded ? 300 : 160, el.scrollHeight)}px`;
+  }, [input, expanded]);
 
   useEffect(() => {
     (async () => {
@@ -86,7 +97,7 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle }) {
   }
 
   return (
-    <div className="pos-card flex flex-col overflow-hidden" style={{ height: 'min(70vh, 650px)' }}>
+    <div className={`pos-card flex flex-col overflow-hidden ${expanded ? 'fixed inset-3 sm:inset-6 z-[80]' : ''}`} style={expanded ? { boxShadow: '0 20px 60px rgba(16,26,19,.25)' } : { height: 'min(70vh, 650px)' }}>
       <div className="flex items-center justify-between px-4 py-3 border-b shrink-0" style={{ borderColor: 'var(--rule)' }}>
         <div>
           <p className="pos-label">Mission assistant</p>
@@ -95,6 +106,13 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle }) {
         <div className="flex items-center gap-3 shrink-0">
           <button onClick={newChat} disabled={busy || !canStartNew} className="pos-link text-[12px] disabled:opacity-40" title="Start a fresh conversation">+ New chat</button>
           {typeof credits === 'number' && <span className="pos-label" style={{ color: 'var(--muted)' }}>{credits}/{meta?.dailyLimit || 10}</span>}
+          <button onClick={() => setExpanded((e) => !e)} className="pos-link text-[12px] inline-flex items-center" title={expanded ? 'Shrink' : 'Expand'} aria-label={expanded ? 'Shrink' : 'Expand'}>
+            {expanded ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 9L4 4m0 0v4m0-4h4m7 5l5-5m0 0v4m0-4h-4M9 15l-5 5m0 0v-4m0 4h4m7-5l5 5m0 0v-4m0 4h-4" /></svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+            )}
+          </button>
         </div>
       </div>
 
@@ -134,14 +152,15 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle }) {
         {noCredits && <p className="text-[12px] text-[var(--muted)] mb-2 px-1">You&apos;ve used today&apos;s credits — they reset tomorrow.</p>}
         <div className="flex items-end gap-2">
           <textarea
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-            placeholder="Ask about this module…"
-            rows={1}
+            placeholder="Ask about this module… (Shift+Enter for a new line)"
+            rows={2}
             disabled={busy || noCredits}
-            className="flex-1 pos-card px-3 py-2 text-sm resize-none"
-            style={{ maxHeight: 120 }}
+            className="flex-1 pos-card px-3 py-2 text-sm resize-y"
+            style={{ maxHeight: expanded ? 300 : 160 }}
           />
           <button onClick={send} disabled={busy || noCredits || !input.trim()} className="pos-action pos-focusable disabled:opacity-50 shrink-0">Send</button>
         </div>

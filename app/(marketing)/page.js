@@ -184,7 +184,7 @@ const BODY = `<div style="font-family:var(--sans)">
         Most doctors don't struggle because they aren't skilled. They struggle because patients never discover them. <strong style="color:#fff;font-weight:600"><br>28 days, one task a day</strong> — from zero digital presence to a real, discoverable practice.
       </p>
       <div data-reveal="" data-reveal-delay="200" style="display:flex;flex-wrap:wrap;align-items:center;gap:16px">
-        <a href="#cohort" style="background:var(--orange);color:#fff;font-weight:700;font-size:16px;padding:16px 28px;border-radius:13px;box-shadow:0 10px 30px rgba(232,114,46,.4)">Join the first cohort of Zero to Practice Builder</a>
+        <a href="/join-cohort" style="background:var(--orange);color:#fff;font-weight:700;font-size:16px;padding:16px 28px;border-radius:13px;box-shadow:0 10px 30px rgba(232,114,46,.4)">Join the first cohort of Zero to Practice Builder</a>
       </div>
       <span style="display:inline-block;margin-top:12px;font-family:var(--mono);font-size:12.5px;color:var(--leaf-2)">₹5000/-, limited to 10 doctors</span>
       <div data-reveal="" data-reveal-delay="260" style="display:flex;flex-wrap:wrap;gap:26px;margin-top:40px;padding-top:26px;border-top:1px solid rgba(255,255,255,.14)">
@@ -307,45 +307,6 @@ const BODY = `<div style="font-family:var(--sans)">
         <p style="font-size:16px;color:var(--ink-70);margin:0;line-height:1.6">You open the app to exactly one thing — today's mission. No dashboard to configure, no plan to make.</p>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- ============ SECTION 5&6 — VIDEOS ============ -->
-<section style="background:var(--forest-2);color:#fff;padding:clamp(56px,8vw,104px) clamp(16px,4vw,40px)">
-  <div style="max-width:1160px;margin:0 auto">
-    <div data-reveal="" style="text-align:center;margin-bottom:44px">
-      <div style="font-family:var(--mono);font-size:12px;letter-spacing:.2em;color:var(--leaf-2);margin-bottom:14px">SEE IT FOR YOURSELF</div>
-      <h2 style="font-size:clamp(28px,4vw,46px);letter-spacing:-.025em;margin:0;font-weight:800">Watch, then decide.</h2>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px">
-      <div data-reveal="" data-reveal-delay="0" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:20px;overflow:hidden">
-        <div style="aspect-ratio:16/9;background:linear-gradient(135deg,#0E6B25,#083b13);display:grid;place-items:center;position:relative;border-bottom:1px solid rgba(255,255,255,.1)">
-          <div style="width:74px;height:74px;border-radius:50%;background:var(--orange);display:grid;place-items:center;box-shadow:0 10px 30px rgba(232,114,46,.5);cursor:pointer">
-            <span style="border-left:20px solid #fff;border-top:12px solid transparent;border-bottom:12px solid transparent;margin-left:5px"></span>
-          </div>
-          <span style="position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;background:rgba(0,0,0,.35);padding:5px 10px;border-radius:8px">EXPLAINER · 3–5 MIN</span>
-          <span style="position:absolute;bottom:14px;right:14px;font-family:var(--mono);font-size:11px;background:rgba(0,0,0,.35);padding:5px 10px;border-radius:8px">04:12</span>
-        </div>
-        <div style="padding:24px 26px">
-          <h3 style="font-size:22px;font-weight:800;margin:0 0 8px;letter-spacing:-.01em">Why this exists</h3>
-          <p style="color:rgba(255,255,255,.72);font-size:15px;margin:0;line-height:1.55">The thinking behind Practice Builder and why decision-removal beats another course.</p>
-        </div>
-      </div>
-      <div data-reveal="" data-reveal-delay="100" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:20px;overflow:hidden">
-        <div style="aspect-ratio:16/9;background:linear-gradient(135deg,#0E6B25,#083b13);display:grid;place-items:center;position:relative;border-bottom:1px solid rgba(255,255,255,.1)">
-          <div style="width:74px;height:74px;border-radius:50%;background:var(--orange);display:grid;place-items:center;box-shadow:0 10px 30px rgba(232,114,46,.5);cursor:pointer">
-            <span style="border-left:20px solid #fff;border-top:12px solid transparent;border-bottom:12px solid transparent;margin-left:5px"></span>
-          </div>
-          <span style="position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;background:rgba(0,0,0,.35);padding:5px 10px;border-radius:8px">DEMO · 10 MIN</span>
-          <span style="position:absolute;bottom:14px;right:14px;font-family:var(--mono);font-size:11px;background:rgba(0,0,0,.35);padding:5px 10px;border-radius:8px">10:06</span>
-        </div>
-        <div style="padding:24px 26px">
-          <h3 style="font-size:22px;font-weight:800;margin:0 0 8px;letter-spacing:-.01em">Inside the dashboard</h3>
-          <p style="color:rgba(255,255,255,.72);font-size:15px;margin:0;line-height:1.55">A full walkthrough — mission, workspace, Builder Pack, reference and the AI, end to end.</p>
-        </div>
-      </div>
-    </div>
-    <p data-reveal="" style="text-align:center;font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.45);margin-top:26px">video placeholders — final explainer &amp; demo drop in here</p>
   </div>
 </section>
 

@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import AIToken from '@/models/AIToken';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
 import { generateWebsiteSections, editSection, generateBlogArticle } from '@/lib/aiGenerate';
+import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 
 const TOKEN_COSTS = {
   generate: 5,
@@ -39,19 +40,32 @@ export async function POST(request) {
     let result;
 
     switch (action) {
-      case 'generate':
+      case 'generate': {
         if (!formData) {
           return NextResponse.json({ success: false, error: 'formData is required for generate action' }, { status: 400 });
         }
+        // Pull the doctor's real clinic details from their Practice OS profile so
+        // the generated site includes address, city, timings, etc. (#5)
+        const profile = await getDoctorProfileFields(doctor._id).catch(() => ({}));
         result = await generateWebsiteSections(formData, {
           name: doctor.name,
           displayName: doctor.displayName,
-          specialization: doctor.specialization,
-          qualification: doctor.qualification,
-          phone: doctor.phone,
+          specialization: doctor.specialization || profile.specialty,
+          qualification: doctor.qualification || profile.qualifications,
+          phone: doctor.phone || profile.appointment_number,
           email: doctor.email,
+          clinicName: profile.clinic_name,
+          clinicAddress: profile.clinic_address,
+          city: profile.city,
+          state: profile.state,
+          timings: profile.consultation_timings,
+          consultationFee: profile.consultation_fee,
+          whatsapp: profile.whatsapp_number,
+          procedures: profile.procedures,
+          expertise: profile.expertise,
         });
         break;
+      }
 
       case 'edit':
         if (!sectionConfig || !prompt || !sectionType) {

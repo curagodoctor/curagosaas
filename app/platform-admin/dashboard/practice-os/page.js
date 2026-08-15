@@ -11,6 +11,7 @@ const TABS = [
   { id: 'import', label: 'Bulk Upload' },
   { id: 'curriculum', label: 'Builder Packs' },
   { id: 'knowledge', label: 'Knowledge Base' },
+  { id: 'profileFields', label: 'Profile Fields' },
   { id: 'analytics', label: 'Analytics' },
   { id: 'doctors', label: 'Doctors' },
 ];
@@ -65,6 +66,7 @@ export default function PracticeOSPage() {
         <CurriculumTab frameworks={frameworks} loading={loading} onNew={() => setShowNew(true)} onChanged={loadFrameworks} />
       )}
       {tab === 'knowledge' && <KnowledgeBaseTab frameworks={frameworks} />}
+      {tab === 'profileFields' && <ProfileFieldsTab />}
       {tab === 'analytics' && <AnalyticsTab />}
       {tab === 'doctors' && <DoctorsTab />}
 
@@ -495,6 +497,170 @@ function CurriculumTab({ frameworks, loading, onNew, onChanged }) {
           </ul>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ---------------- Profile Fields (admin-managed) ---------------- */
+function ProfileFieldsTab() {
+  const [data, setData] = useState(null);
+  const [editing, setEditing] = useState(null); // field config being edited/created
+  const [busy, setBusy] = useState(false);
+  const SECTION_LABELS = { pro: 'Professional profile', practice: 'Practice information', voice: 'Voice & personality' };
+
+  const load = useCallback(async () => {
+    const res = await fetch('/api/platform/practice-os/profile-fields');
+    const json = await res.json();
+    if (json.success) setData(json);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const cfgByKey = new Map((data?.configs || []).map((c) => [c.key, c]));
+
+  const save = async (field) => {
+    setBusy(true);
+    try {
+      await fetch('/api/platform/practice-os/profile-fields', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(field),
+      });
+      setEditing(null);
+      await load();
+    } finally { setBusy(false); }
+  };
+  const removeCfg = async (key) => {
+    if (!window.confirm('Remove this customisation? A custom field is deleted; an overridden default reverts to built-in.')) return;
+    await fetch(`/api/platform/practice-os/profile-fields?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
+    await load();
+  };
+  const toggleHide = async (f, section) => {
+    const cfg = cfgByKey.get(f.key) || { key: f.key, label: f.label, hint: f.hint || '', section, required: !!f.required };
+    await save({ ...cfg, hidden: !cfg.hidden });
+  };
+
+  if (!data) return <div className="bg-white rounded-xl shadow-sm p-8 text-center text-gray-500">Loading fields…</div>;
+
+  const defaultKeys = new Set(data.defaults.flatMap((s) => s.fields.map((f) => f.key)));
+  const customConfigs = (data.configs || []).filter((c) => !defaultKeys.has(c.key));
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-semibold text-gray-900">Profile fields</h2>
+            <p className="text-sm text-gray-500 mt-0.5">The questions doctors fill in setup &amp; My Profile. Edit the built-in fields, hide ones you don&apos;t need, or add your own. Custom fields become <span className="font-mono">{'{{key}}'}</span> tokens automatically.</p>
+          </div>
+          <button onClick={() => setEditing({ key: '', label: '', hint: '', type: 'text', options: '', required: false, section: 'pro' })} className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 text-sm font-medium whitespace-nowrap">+ Add field</button>
+        </div>
+      </div>
+
+      {/* Built-in defaults, grouped by section, with override/hide controls */}
+      {data.defaults.map((sec) => (
+        <div key={sec.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="px-6 py-3 bg-gray-50 border-b border-gray-100"><h3 className="font-semibold text-gray-900 text-sm">{sec.title}</h3></div>
+          <ul className="divide-y divide-gray-100">
+            {sec.fields.map((f) => {
+              const cfg = cfgByKey.get(f.key);
+              const hidden = cfg?.hidden;
+              return (
+                <li key={f.key} className={`px-6 py-3 flex items-center justify-between gap-4 ${hidden ? 'opacity-50' : ''}`}>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900">{cfg?.label || f.label} <span className="font-mono text-xs text-gray-400">{'{{'}{f.key}{'}}'}</span>{(cfg?.required ?? f.required) && <span className="text-red-500"> *</span>}{cfg && !hidden && <span className="ml-2 text-[11px] text-blue-600">edited</span>}{hidden && <span className="ml-2 text-[11px] text-gray-500">hidden</span>}</p>
+                    {(cfg?.hint || f.hint) && <p className="text-xs text-gray-500 truncate">{cfg?.hint || f.hint}</p>}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button onClick={() => setEditing({ key: f.key, label: cfg?.label || f.label, hint: cfg?.hint ?? f.hint ?? '', type: f.type || 'text', options: (f.options || []).join(', '), required: cfg?.required ?? !!f.required, section: sec.id, isDefault: true })} className="text-sm text-blue-600 hover:underline">Edit</button>
+                    <button onClick={() => toggleHide(f, sec.id)} className="text-sm text-gray-500 hover:underline">{hidden ? 'Show' : 'Hide'}</button>
+                    {cfg && <button onClick={() => removeCfg(f.key)} className="text-sm text-gray-400 hover:text-red-500" title="Revert to built-in">Reset</button>}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+
+      {/* Custom (admin-added) fields */}
+      {customConfigs.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="px-6 py-3 bg-gray-50 border-b border-gray-100"><h3 className="font-semibold text-gray-900 text-sm">Your custom fields</h3></div>
+          <ul className="divide-y divide-gray-100">
+            {customConfigs.map((c) => (
+              <li key={c.key} className="px-6 py-3 flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900">{c.label || c.key} <span className="font-mono text-xs text-gray-400">{'{{'}{c.key}{'}}'}</span>{c.required && <span className="text-red-500"> *</span>}</p>
+                  <p className="text-xs text-gray-500">{SECTION_LABELS[c.section] || c.section} · {c.type}{c.hint ? ` · ${c.hint}` : ''}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button onClick={() => setEditing({ ...c, options: (c.options || []).join(', ') })} className="text-sm text-blue-600 hover:underline">Edit</button>
+                  <button onClick={() => removeCfg(c.key)} className="text-sm text-gray-400 hover:text-red-500">Delete</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {editing && <ProfileFieldModal field={editing} busy={busy} onClose={() => setEditing(null)} onSave={save} />}
+    </div>
+  );
+}
+
+function ProfileFieldModal({ field, busy, onClose, onSave }) {
+  const [f, setF] = useState(field);
+  const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
+  const needsOptions = f.type === 'select' || f.type === 'tags';
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <h3 className="font-semibold text-gray-900">{field.isDefault ? 'Edit field' : (field.key ? 'Edit custom field' : 'Add custom field')}</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block col-span-2">
+            <span className="text-xs font-medium text-gray-500 uppercase">Key (token) {field.isDefault && '· fixed'}</span>
+            <input value={f.key} disabled={field.isDefault} onChange={(e) => set('key', e.target.value)} placeholder="e.g. instagram_handle" className={`${INPUT} ${field.isDefault ? 'bg-gray-100 text-gray-500' : ''}`} />
+          </label>
+          <label className="block col-span-2">
+            <span className="text-xs font-medium text-gray-500 uppercase">Label (shown to doctor)</span>
+            <input value={f.label} onChange={(e) => set('label', e.target.value)} className={INPUT} />
+          </label>
+          <label className="block col-span-2">
+            <span className="text-xs font-medium text-gray-500 uppercase">Hint (line under the label)</span>
+            <input value={f.hint} onChange={(e) => set('hint', e.target.value)} className={INPUT} />
+          </label>
+          {!field.isDefault && (
+            <>
+              <label className="block">
+                <span className="text-xs font-medium text-gray-500 uppercase">Type</span>
+                <select value={f.type} onChange={(e) => set('type', e.target.value)} className={INPUT}>
+                  {['text', 'textarea', 'number', 'select', 'tags'].map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-xs font-medium text-gray-500 uppercase">Section</span>
+                <select value={f.section} onChange={(e) => set('section', e.target.value)} className={INPUT}>
+                  <option value="pro">Professional profile</option>
+                  <option value="practice">Practice information</option>
+                  <option value="voice">Voice &amp; personality</option>
+                </select>
+              </label>
+              {needsOptions && (
+                <label className="block col-span-2">
+                  <span className="text-xs font-medium text-gray-500 uppercase">Options (comma-separated)</span>
+                  <input value={f.options} onChange={(e) => set('options', e.target.value)} placeholder="Option A, Option B" className={INPUT} />
+                </label>
+              )}
+            </>
+          )}
+          <label className="flex items-center gap-2 col-span-2 mt-1">
+            <input type="checkbox" checked={!!f.required} onChange={(e) => set('required', e.target.checked)} />
+            <span className="text-sm text-gray-700">Required</span>
+          </label>
+        </div>
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <button onClick={onClose} className="text-sm text-gray-500">Cancel</button>
+          <button onClick={() => onSave(f)} disabled={busy || !String(f.key).trim()} className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium disabled:opacity-50">{busy ? 'Saving…' : 'Save'}</button>
+        </div>
+      </div>
     </div>
   );
 }

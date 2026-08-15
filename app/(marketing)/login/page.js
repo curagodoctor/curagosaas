@@ -65,7 +65,7 @@ function LoginPageInner() {
       }
       // Land on the unified workspace (matches Google sign-in), not straight into
       // the website-builder admin. Practice-OS entrants go into that product.
-      router.push(entry === 'practice-os' ? '/app/practice-os' : '/app');
+      router.push(entry === 'practice-os' ? '/app/zero-to-practice-builder' : '/app');
     } catch (error) {
       setErrors({ submit: error.message });
     } finally {

@@ -28,15 +28,15 @@ function UnlockPack() {
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState('');
 
-  const done = useCallback(() => router.replace(`/app/practice-os/track?pack=${packId}`), [router, packId]);
+  const done = useCallback(() => router.replace(`/app/zero-to-practice-builder/track?pack=${packId}`), [router, packId]);
 
   const load = useCallback(async () => {
-    if (!packId) { router.replace('/app/practice-os'); return; }
+    if (!packId) { router.replace('/app/zero-to-practice-builder'); return; }
     try {
       const res = await fetch(`/api/practice-os/purchase/order?pack=${packId}`);
       if (res.status === 401) { router.push('/login?entry=practice-os'); return; }
       const data = await res.json();
-      if (!data.success) { router.replace('/app/practice-os'); return; }
+      if (!data.success) { router.replace('/app/zero-to-practice-builder'); return; }
       if (data.alreadyOwned) { done(); return; }
       setInfo(data);
     } finally {
@@ -115,7 +115,7 @@ function UnlockPack() {
 
   return (
     <div className="max-w-2xl mx-auto px-5 py-12">
-      <Link href="/app/practice-os" className="flex items-center gap-2 mb-10">
+      <Link href="/app/zero-to-practice-builder" className="flex items-center gap-2 mb-10">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/curago-logo.png" alt="CuraGo" className="h-7 sm:h-8 w-auto" />
       </Link>
@@ -184,7 +184,7 @@ function UnlockPack() {
         )}
       </div>
 
-      <Link href="/app/practice-os" className="pos-link text-sm inline-block mt-6">← Back to all packs</Link>
+      <Link href="/app/zero-to-practice-builder" className="pos-link text-sm inline-block mt-6">← Back to all packs</Link>
     </div>
   );
 }

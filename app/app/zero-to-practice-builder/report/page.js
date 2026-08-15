@@ -15,11 +15,11 @@ function ReportInner() {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    if (!packId) { router.replace('/app/practice-os'); return; }
+    if (!packId) { router.replace('/app/zero-to-practice-builder'); return; }
     try {
       const res = await fetch(`/api/practice-os/report?pack=${packId}`);
       if (res.status === 401) { router.push('/login?entry=practice-os'); return; }
-      if (res.status === 402) { router.push('/app/practice-os/unlock'); return; }
+      if (res.status === 402) { router.push('/app/zero-to-practice-builder/unlock'); return; }
       const data = await res.json();
       if (!data.success) return;
       setReport(data.report);
@@ -53,7 +53,7 @@ function ReportInner() {
 
       {/* Controls — hidden when printed */}
       <div className="flex items-center justify-between pt-6 print:hidden">
-        <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm">← Back to today</Link>
+        <Link href={`/app/zero-to-practice-builder/track?pack=${packId}`} className="pos-link text-sm">← Back to today</Link>
         <button onClick={() => window.print()} className="pos-link text-sm pos-focusable">
           Print / Save as PDF
         </button>

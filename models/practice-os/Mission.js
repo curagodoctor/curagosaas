@@ -66,9 +66,11 @@ const ModuleSchema = new mongoose.Schema({
   education: { type: [ResourceSchema], default: [] },
   // The numbered step-by-step for this module.
   steps: { type: [String], default: [] },
-  // A ready-to-copy AI prompt shown in the workspace (distinct from the chat
-  // assistant's hidden system prompt).
+  // Ready-to-copy AI prompt(s) shown in the workspace (distinct from the chat
+  // assistant's hidden system prompt). `aiPrompts` is the multi-prompt array; the
+  // legacy single `aiPrompt` is kept for back-compat and treated as the first.
   aiPrompt: { type: String, trim: true, default: '' },
+  aiPrompts: { type: [String], default: [] },
   // Optional per-module override for the chat assistant's system prompt.
   aiSystemPrompt: { type: String, trim: true, default: '' },
   buttons: { type: [ButtonSchema], default: [] },

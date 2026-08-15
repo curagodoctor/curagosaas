@@ -109,7 +109,7 @@ export default function WorkspaceDrawer() {
             <div className="flex items-center justify-between px-4 py-3 border-b shrink-0" style={{ borderColor: 'var(--rule)' }}>
               <p className="pos-label">Workspace{view === 'edit' ? ' · note' : ''}</p>
               <div className="flex items-center gap-3">
-                <Link href="/app/practice-os/workspace" className="pos-link text-[12px]" style={{ color: 'var(--muted)' }}>Open full</Link>
+                <Link href="/app/zero-to-practice-builder/workspace" className="pos-link text-[12px]" style={{ color: 'var(--muted)' }}>Open full</Link>
                 <button onClick={() => setOpen(false)} className="pos-link" style={{ color: 'var(--muted)' }} aria-label="Close">✕</button>
               </div>
             </div>

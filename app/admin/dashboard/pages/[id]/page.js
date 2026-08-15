@@ -320,7 +320,7 @@ const SECTION_TYPES = [
     description: "Page footer with contact and links",
     defaultConfig: {
       companyName: "",
-      tagline: "Your Health, Our Priority",
+      tagline: "",
       address: "",
       phone: "",
       email: "",

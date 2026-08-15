@@ -72,6 +72,19 @@ export default function ControlCenter() {
           : <>Pick a builder pack below. Each is a guided programme that produces a real asset — not a certificate.</>}
       </p>
 
+      {/* No pack yet → offer the same right-fit assessment as signup/landing. */}
+      {owned.length === 0 && (
+        <Link
+          href="/join-cohort?source=control-center"
+          className="inline-flex items-center gap-2.5 rounded-xl px-4 py-3 mt-5 transition-colors hover:shadow-sm"
+          style={{ background: 'var(--green-soft, rgba(9,107,23,.08))', border: '1px solid var(--green)' }}
+        >
+          <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--green)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <span className="text-[14.5px] font-medium text-[var(--ink)]">See if you&apos;re a right fit for Practice Builder</span>
+          <span className="text-[var(--green)] font-semibold">→</span>
+        </Link>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8 mt-9">
         {/* Main — the packs. On mobile the rail's actionable boxes (today's
             mission, progress) sit ABOVE this instead of buried at the bottom. (#22) */}
@@ -110,6 +123,22 @@ export default function ControlCenter() {
               </div>
             </Link>
 
+            {/* Quick links — jump straight to the tools from the Control Center. */}
+            <div className="pos-card p-2">
+              {[
+                ['Website Builder', '/admin/dashboard', 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'],
+                ['Workspace', '/app/zero-to-practice-builder/workspace', 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'],
+                ['Schedule', '/app/zero-to-practice-builder/schedule', 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'],
+                ['My profile', '/app/zero-to-practice-builder/profile', 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
+                ['Leaderboard', '/app/zero-to-practice-builder/leaderboard', 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'],
+              ].map(([label, href, d]) => (
+                <Link key={href} href={href} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-[var(--rule-soft)] transition-colors text-[14px] text-[var(--ink)]">
+                  <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--green)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d={d} /></svg>
+                  {label}
+                </Link>
+              ))}
+            </div>
+
             <p className="pos-label">Your progress</p>
 
             {/* XP + streak */}
@@ -141,7 +170,7 @@ export default function ControlCenter() {
                     <div key={p.id} className={i > 0 ? 'pt-4 border-t' : ''} style={i > 0 ? { borderColor: 'var(--rule-soft)' } : undefined}>
                       <p className="text-[11px] text-[var(--muted)] mb-0.5">{p.title} · Day {p.nextUp.dayNumber}</p>
                       <p className="font-semibold text-[15px] text-[var(--ink)] leading-snug mb-3">{p.nextUp.title}</p>
-                      <Link href={`/app/practice-os/track?pack=${p.id}`} className="pos-action pos-focusable block text-center" style={{ background: 'var(--green)' }}>
+                      <Link href={`/app/zero-to-practice-builder/track?pack=${p.id}`} className="pos-action pos-focusable block text-center" style={{ background: 'var(--green)' }}>
                         Open mission
                       </Link>
                     </div>
@@ -184,7 +213,7 @@ function ScheduledCard({ scheduled }) {
     <div className="pos-card p-5">
       <div className="flex items-center justify-between mb-3">
         <p className="pos-label">Scheduled</p>
-        <Link href="/app/practice-os/schedule" className="pos-link text-[12px]">Manage</Link>
+        <Link href="/app/zero-to-practice-builder/schedule" className="pos-link text-[12px]">Manage</Link>
       </div>
       <div className="space-y-3">
         {scheduled.map((s) => (
@@ -209,7 +238,7 @@ function LeaderboardCard({ lb }) {
     return (
       <div className="pos-card p-5">
         <p className="pos-label mb-2">Leaderboard</p>
-        <p className="text-[13px] text-[var(--muted)]">Pick a name in <Link href="/app/practice-os/profile" className="pos-link">your profile</Link> to join the cohort leaderboard.</p>
+        <p className="text-[13px] text-[var(--muted)]">Pick a name in <Link href="/app/zero-to-practice-builder/profile" className="pos-link">your profile</Link> to join the cohort leaderboard.</p>
       </div>
     );
   }
@@ -217,7 +246,7 @@ function LeaderboardCard({ lb }) {
     <div className="pos-card p-5">
       <div className="flex items-center justify-between mb-3">
         <p className="pos-label">Leaderboard</p>
-        <Link href="/app/practice-os/leaderboard" className="pos-link text-[12px]">See all</Link>
+        <Link href="/app/zero-to-practice-builder/leaderboard" className="pos-link text-[12px]">See all</Link>
       </div>
       <div className="space-y-2">
         {top.map((e) => (
@@ -301,7 +330,7 @@ function PackCard({ pack }) {
               <span className="w-2 h-2 rounded-full inline-block" style={{ background: 'var(--green)' }} />
               {started ? 'In progress' : 'Ready to start'}
             </span>
-            <Link href={`/app/practice-os/track?pack=${pack.id}`} className="pos-action pos-focusable">
+            <Link href={`/app/zero-to-practice-builder/track?pack=${pack.id}`} className="pos-action pos-focusable">
               {started ? 'Continue' : 'Start pack'}
             </Link>
           </>
@@ -311,7 +340,7 @@ function PackCard({ pack }) {
               <span className="pos-num text-2xl text-[var(--ink)]">₹{Number(priceInInr).toLocaleString('en-IN')}</span>
               <span className="text-[12px] text-[var(--muted)]">one-time</span>
             </div>
-            <Link href={`/app/practice-os/unlock?pack=${pack.id}`} className="pos-action pos-focusable">
+            <Link href={`/app/zero-to-practice-builder/unlock?pack=${pack.id}`} className="pos-action pos-focusable">
               Get this pack
             </Link>
           </>

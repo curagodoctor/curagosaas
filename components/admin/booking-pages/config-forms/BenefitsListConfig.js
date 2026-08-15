@@ -2,6 +2,13 @@
 
 import { useState } from "react";
 
+// A quick-pick set of icons for benefit / why-us items (still free-text below).
+const ICON_CHOICES = [
+  "✓", "⭐", "🏆", "⚡", "🛡️", "❤️", "🩺", "💊", "🏥", "⏱️",
+  "📅", "📞", "💬", "🔬", "🧬", "💉", "🩹", "🦷", "👁️", "🫀",
+  "🧠", "🦴", "👨‍⚕️", "👩‍⚕️", "📋", "🌟", "🤝", "💡", "🔒", "✅",
+];
+
 export default function BenefitsListConfig({ config, onChange, slug }) {
   const [editingIndex, setEditingIndex] = useState(null);
   const [formData, setFormData] = useState({ icon: "✓", title: "", description: "" });
@@ -162,6 +169,19 @@ export default function BenefitsListConfig({ config, onChange, slug }) {
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Icon</label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {ICON_CHOICES.map((ic) => (
+                  <button
+                    key={ic}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, icon: ic })}
+                    className={`w-9 h-9 rounded-lg border text-lg flex items-center justify-center hover:bg-gray-50 ${formData.icon === ic ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                    title={ic}
+                  >
+                    {ic}
+                  </button>
+                ))}
+              </div>
               <input
                 type="text"
                 value={formData.icon}
@@ -169,7 +189,7 @@ export default function BenefitsListConfig({ config, onChange, slug }) {
                 placeholder="✓"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
-              <p className="text-xs text-gray-500 mt-1">Emoji or symbol (e.g., ✓, ⚡, 🏆)</p>
+              <p className="text-xs text-gray-500 mt-1">Pick one above, or type any emoji / symbol.</p>
             </div>
 
             <div>

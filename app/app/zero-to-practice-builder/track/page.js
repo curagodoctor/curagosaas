@@ -20,15 +20,15 @@ function TrackView() {
   const withPack = useCallback((path) => `${path}${path.includes('?') ? '&' : '?'}pack=${packId}`, [packId]);
 
   const load = useCallback(async () => {
-    if (!packId) { router.replace('/app/practice-os'); return; }
+    if (!packId) { router.replace('/app/zero-to-practice-builder'); return; }
     try {
       const res = await fetch(`/api/practice-os/state?pack=${packId}`);
       if (res.status === 401) { router.push('/login?entry=practice-os'); return; }
-      if (res.status === 402) { router.push(`/app/practice-os/unlock?pack=${packId}`); return; }
-      if (res.status === 404) { router.replace('/app/practice-os'); return; }
+      if (res.status === 402) { router.push(`/app/zero-to-practice-builder/unlock?pack=${packId}`); return; }
+      if (res.status === 404) { router.replace('/app/zero-to-practice-builder'); return; }
       const data = await res.json();
       if (!data.success) return;
-      if (!data.enrollment.setupComplete) { router.push(`/app/practice-os/setup?pack=${packId}`); return; }
+      if (!data.enrollment.setupComplete) { router.push(`/app/zero-to-practice-builder/setup?pack=${packId}`); return; }
       setState(data);
     } finally {
       setLoading(false);
@@ -187,7 +187,7 @@ function MissionIntro({ day, full, modules = [], progress, loaded, totalDays, wi
           {!loaded && <div className="mt-3 text-[13px] text-[var(--muted)]">Loading the modules…</div>}
 
           <div className="mt-4">
-            <Link href={withPack(`/app/practice-os/focus/${d._id}?start=1`)} className="pos-action pos-focusable inline-flex items-center gap-2" style={{ background: 'var(--orange)' }}>
+            <Link href={withPack(`/app/zero-to-practice-builder/focus/${d._id}?start=1`)} className="pos-action pos-focusable inline-flex items-center gap-2" style={{ background: 'var(--orange)' }}>
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M7 5l12 7-12 7V5Z" fill="#fff" /></svg>
               {resuming ? 'Continue mission' : 'Start mission'}
             </Link>
@@ -258,7 +258,7 @@ function AllComplete({ daysCompleted, withPack }) {
       <p className="pos-label">This pack</p>
       <h1 className="text-[30px] font-semibold text-[var(--ink)] mt-2">You&apos;ve finished all <span className="pos-num">{daysCompleted}</span> missions.</h1>
       <p className="text-[var(--muted)] mt-3">Everything you built is yours and keeps running. See the full record of your work.</p>
-      <Link href={withPack('/app/practice-os/record')} className="pos-action inline-block mt-6">See your record</Link>
+      <Link href={withPack('/app/zero-to-practice-builder/record')} className="pos-action inline-block mt-6">See your record</Link>
     </div>
   );
 }

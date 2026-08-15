@@ -3,6 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useModal } from '@/contexts/ModalContext';
+import { BLOG_PAGE_TYPES, blocksForType, LOCATION_BLOCK_HEADING } from '@/lib/blogPageTypes';
+
+// Turn an existing article's legacy fixed sections into editable blocks, so old
+// posts open in the new modular editor without losing content.
+function legacySectionsToBlocks(a) {
+  const secs = [a?.problemSection, a?.clinicalSection, a?.specialistSection, a?.complexCasesSection, a?.surgicalAuditSection];
+  return secs
+    .filter((s) => s && (s.heading?.trim() || s.content?.trim()))
+    .map((s) => ({ heading: s.heading || '', content: s.content || '' }));
+}
 
 export default function BlogArticleEditorPage() {
   const router = useRouter();
@@ -22,6 +32,11 @@ export default function BlogArticleEditorPage() {
     category: '',
     tags: [],
     status: 'draft',
+
+    // Modular structure (new).
+    pageType: '',
+    blocks: [],
+    locationBlock: { heading: '', content: '' },
 
     problemSection: {
       heading: '',
@@ -78,6 +93,10 @@ export default function BlogArticleEditorPage() {
         const a = data.article;
         setFormData({
           ...a,
+          pageType: a.pageType || '',
+          // Prefer the new blocks; migrate legacy sections for old articles.
+          blocks: (a.blocks && a.blocks.length) ? a.blocks : legacySectionsToBlocks(a),
+          locationBlock: { heading: a.locationBlock?.heading || '', content: a.locationBlock?.content || '' },
           problemSection: { ...a.problemSection, heading: a.problemSection?.heading || '' },
           clinicalSection: { ...a.clinicalSection, heading: a.clinicalSection?.heading || '' },
           specialistSection: { ...a.specialistSection, heading: a.specialistSection?.heading || '' },
@@ -107,6 +126,33 @@ export default function BlogArticleEditorPage() {
       ...prev,
       [section]: { ...prev[section], [field]: value },
     }));
+  };
+
+  // --- Modular content blocks ---
+  const setBlocks = (blocks) => setFormData((prev) => ({ ...prev, blocks }));
+  const updateBlock = (index, field, value) => {
+    setBlocks(formData.blocks.map((b, i) => (i === index ? { ...b, [field]: value } : b)));
+  };
+  const addBlock = () => setBlocks([...formData.blocks, { heading: '', content: '' }]);
+  const removeBlock = (index) => setBlocks(formData.blocks.filter((_, i) => i !== index));
+  const moveBlock = (index, dir) => {
+    const t = index + dir;
+    if (t < 0 || t >= formData.blocks.length) return;
+    const next = formData.blocks.slice();
+    [next[index], next[t]] = [next[t], next[index]];
+    setBlocks(next);
+  };
+  // Apply a page type's suggested headings. Only overwrites blocks when they're
+  // empty (or the author confirms), so it never wipes real content by accident.
+  const applyPageType = (typeId) => {
+    handleChange('pageType', typeId);
+    if (!typeId) return;
+    const suggested = blocksForType(typeId);
+    const hasContent = formData.blocks.some((b) => b.heading?.trim() || b.content?.trim());
+    if (!hasContent) { setBlocks(suggested); return; }
+    if (window.confirm('Replace the current blocks with this page type’s suggested headings? Your text in existing blocks will be cleared.')) {
+      setBlocks(suggested);
+    }
   };
 
   const handleFAQChange = (index, field, value) => {
@@ -450,195 +496,88 @@ export default function BlogArticleEditorPage() {
           </div>
         </div>
 
-        {/* Section 1: The Problem */}
+        {/* Page type — picks the intent and suggests the H2 headings */}
         <div className="bg-white rounded-lg shadow p-6">
-          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Section heading</label>
-          <input
-            type="text"
-            value={formData.problemSection.heading}
-            onChange={(e) => handleNestedChange('problemSection', 'heading', e.target.value)}
-            placeholder="The Problem: Common Misconceptions & Symptoms"
-            className="w-full text-xl font-bold text-gray-800 px-3 py-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          <p className="text-sm text-gray-600 mb-4">
-            Connect with the patient's pain. Identify the specific symptom or myth this article is debunking.
-          </p>
-          <textarea
-            value={formData.problemSection.content}
-            onChange={(e) => handleNestedChange('problemSection', 'content', e.target.value)}
-            required
-            rows={6}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Explain the common misconceptions and symptoms patients experience..."
-          />
-        </div>
-
-        {/* Section 2: Clinical Deep Dive */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Section heading</label>
-          <input
-            type="text"
-            value={formData.clinicalSection.heading}
-            onChange={(e) => handleNestedChange('clinicalSection', 'heading', e.target.value)}
-            placeholder="Clinical Deep Dive: Why This Condition Needs Attention"
-            className="w-full text-xl font-bold text-gray-800 px-3 py-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          <p className="text-sm text-gray-600 mb-4">
-            Explain the pathology simply but professionally. Discuss risks of delay.
-          </p>
-          <textarea
-            value={formData.clinicalSection.content}
-            onChange={(e) => handleNestedChange('clinicalSection', 'content', e.target.value)}
-            required
-            rows={6}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Explain the medical condition and why it requires specialist attention..."
-          />
-        </div>
-
-        {/* Section 3: Specialist Advantage */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Section heading</label>
-          <input
-            type="text"
-            value={formData.specialistSection.heading}
-            onChange={(e) => handleNestedChange('specialistSection', 'heading', e.target.value)}
-            placeholder="The Specialist Advantage: My Clinical Approach"
-            className="w-full text-xl font-bold text-gray-800 px-3 py-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          <p className="text-sm text-gray-600 mb-4">
-            Highlight your Gold Medalist expertise and experience.
-          </p>
-          <textarea
-            value={formData.specialistSection.content}
-            onChange={(e) => handleNestedChange('specialistSection', 'content', e.target.value)}
-            required
-            rows={6}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Explain your unique approach and why a specialist opinion is necessary..."
-          />
-
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Surgeries Performed
-              </label>
-              <input
-                type="number"
-                value={formData.specialistSection.stats.surgeriesPerformed}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  specialistSection: {
-                    ...prev.specialistSection,
-                    stats: { ...prev.specialistSection.stats, surgeriesPerformed: parseInt(e.target.value) }
-                  }
-                }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Procedures Supervised
-              </label>
-              <input
-                type="number"
-                value={formData.specialistSection.stats.proceduresSupervised}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  specialistSection: {
-                    ...prev.specialistSection,
-                    stats: { ...prev.specialistSection.stats, proceduresSupervised: parseInt(e.target.value) }
-                  }
-                }))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Section 4: Complex Cases */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Section heading</label>
-          <input
-            type="text"
-            value={formData.complexCasesSection.heading}
-            onChange={(e) => handleNestedChange('complexCasesSection', 'heading', e.target.value)}
-            placeholder="Complex Cases: Managing High-Risk Scenarios"
-            className="w-full text-xl font-bold text-gray-800 px-3 py-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          <p className="text-sm text-gray-600 mb-4">
-            Build trust for difficult cases. Detail your capability in handling complications.
-          </p>
-          <textarea
-            value={formData.complexCasesSection.content}
-            onChange={(e) => handleNestedChange('complexCasesSection', 'content', e.target.value)}
-            required
-            rows={6}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Describe how you handle high-risk and complex cases..."
-          />
-        </div>
-
-        {/* Section 5: Surgical Audit */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Section heading</label>
-          <input
-            type="text"
-            value={formData.surgicalAuditSection.heading}
-            onChange={(e) => handleNestedChange('surgicalAuditSection', 'heading', e.target.value)}
-            placeholder="The Surgical Audit: What to Expect During Your Consultation"
-            className="w-full text-xl font-bold text-gray-800 px-3 py-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          <p className="text-sm text-gray-600 mb-4">
-            Sell the ₹150 Audit. Explain what patients can expect.
-          </p>
-          <textarea
-            value={formData.surgicalAuditSection.content}
-            onChange={(e) => handleNestedChange('surgicalAuditSection', 'content', e.target.value)}
-            required
-            rows={6}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Explain the surgical audit process and its value..."
-          />
-
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Audit Price (₹)
-            </label>
-            <input
-              type="number"
-              value={formData.surgicalAuditSection.auditPrice}
-              onChange={(e) => handleNestedChange('surgicalAuditSection', 'auditPrice', parseInt(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div className="mt-4 space-y-3">
-            <label className="block text-sm font-medium text-gray-700">
-              Audit Steps
-            </label>
-            {formData.surgicalAuditSection.auditSteps.map((step, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-3">
-                <input
-                  type="text"
-                  value={step.step}
-                  onChange={(e) => handleAuditStepChange(index, 'step', e.target.value)}
-                  placeholder="Step name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2"
-                />
-                <textarea
-                  value={step.description}
-                  onChange={(e) => handleAuditStepChange(index, 'description', e.target.value)}
-                  placeholder="Step description"
-                  rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                />
-              </div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Page type</label>
+          <p className="text-sm text-gray-600 mb-3">Pick what this page is about — we&apos;ll suggest the right H2 headings, which you can fully edit, reorder or remove.</p>
+          <div className="flex flex-wrap gap-2">
+            {BLOG_PAGE_TYPES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => applyPageType(t.id)}
+                title={t.description}
+                className={`px-3 py-2 rounded-lg border text-sm font-medium ${formData.pageType === t.id ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+              >
+                {t.label}
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Section 6: FAQs */}
+        {/* Content blocks — the modular body */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-800">Content blocks</h2>
+            <span className="text-sm text-gray-500">{formData.blocks.length} block{formData.blocks.length === 1 ? '' : 's'}</span>
+          </div>
+          {formData.blocks.length === 0 && (
+            <p className="text-sm text-gray-500 mb-3">No blocks yet — pick a page type above, or add one manually.</p>
+          )}
+          <div className="space-y-4">
+            {formData.blocks.map((b, index) => (
+              <div key={index} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-medium text-gray-400">H2 · Block {index + 1}</span>
+                  <div className="ml-auto flex items-center gap-1">
+                    <button type="button" onClick={() => moveBlock(index, -1)} disabled={index === 0} className="px-2 text-gray-400 hover:text-blue-600 disabled:opacity-30" title="Move up">↑</button>
+                    <button type="button" onClick={() => moveBlock(index, 1)} disabled={index === formData.blocks.length - 1} className="px-2 text-gray-400 hover:text-blue-600 disabled:opacity-30" title="Move down">↓</button>
+                    <button type="button" onClick={() => removeBlock(index)} className="px-2 text-red-500 hover:text-red-700 text-sm" title="Remove block">Remove</button>
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  value={b.heading}
+                  onChange={(e) => updateBlock(index, 'heading', e.target.value)}
+                  placeholder="Section heading (H2)"
+                  className="w-full text-lg font-semibold text-gray-800 px-3 py-2 mb-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <textarea
+                  value={b.content}
+                  onChange={(e) => updateBlock(index, 'content', e.target.value)}
+                  rows={5}
+                  placeholder="Write this section…"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            ))}
+            <button type="button" onClick={addBlock} className="w-full py-2 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors">
+              + Add block
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-3">Tip: use <span className="font-mono">{'{{doctor_name}}'}</span> and <span className="font-mono">{'{{city}}'}</span> in a heading or body — they fill from the doctor&apos;s profile.</p>
+        </div>
+
+        {/* Clinic location block (optional) */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Clinic location block (optional)</label>
+          <input
+            type="text"
+            value={formData.locationBlock.heading}
+            onChange={(e) => handleNestedChange('locationBlock', 'heading', e.target.value)}
+            placeholder={LOCATION_BLOCK_HEADING}
+            className="w-full text-xl font-bold text-gray-800 px-3 py-2 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+          <textarea
+            value={formData.locationBlock.content}
+            onChange={(e) => handleNestedChange('locationBlock', 'content', e.target.value)}
+            rows={4}
+            placeholder="Clinic address, directions, consultation hours, and how to book an appointment…"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* FAQs */}
         <div className="bg-white rounded-lg shadow p-6">
           <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Section heading</label>
           <input

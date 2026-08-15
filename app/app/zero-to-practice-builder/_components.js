@@ -20,17 +20,25 @@ export function Spine({ days, totalDays, withPack }) {
   for (const d of days) (byWeek[d.weekNumber || 1] ??= []).push(d);
   const weeks = Object.keys(byWeek).map(Number).sort((a, b) => a - b);
   // Completed/skipped missions link to the Record so you can see what you did.
-  const recordHref = (d) => (withPack ? `${withPack('/app/practice-os/journey')}&view=record` : `/app/practice-os/journey?view=record`);
+  const recordHref = (d) => (withPack ? `${withPack('/app/zero-to-practice-builder/journey')}&view=record` : `/app/zero-to-practice-builder/journey?view=record`);
 
   return (
     <div className="sticky top-6">
+      <style>{`
+        @keyframes pos-fade-down { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+        .pos-fade-down { animation: pos-fade-down .4s ease both; }
+        @media (prefers-reduced-motion: reduce) { .pos-fade-down { animation: none; } }
+      `}</style>
       <p className="pos-label mb-3">Your {totalDays || days.length} missions</p>
       <div className="space-y-4">
-        {weeks.map((w) => (
+        {weeks.map((w, wi) => {
+          const base = weeks.slice(0, wi).reduce((n, ww) => n + byWeek[ww].length, 0);
+          return (
           <div key={w}>
             <p className="pos-label mb-1.5" style={{ fontSize: '9.5px' }}>Week {w} · {WEEK_THEMES[w] || ''}</p>
             <div className="space-y-0.5">
-              {byWeek[w].map((d) => {
+              {byWeek[w].map((d, di) => {
+                const staggerDelay = `${(base + di) * 35}ms`;
                 const done = d.status === 'completed';
                 const current = d.status === 'available';
                 const skipped = d.status === 'skipped';
@@ -57,16 +65,17 @@ export function Spine({ days, totalDays, withPack }) {
                     </span>
                   </>
                 );
-                const cls = `flex items-start gap-2 py-1 px-1 -mx-1 rounded-md ${clickable ? 'hover:bg-[var(--rule-soft)] transition-colors' : ''}`;
+                const cls = `pos-fade-down flex items-start gap-2 py-1 px-1 -mx-1 rounded-md ${clickable ? 'hover:bg-[var(--rule-soft)] transition-colors' : ''}`;
                 return clickable ? (
-                  <Link key={d._id} href={recordHref(d)} title={d.title} className={cls}>{inner}</Link>
+                  <Link key={d._id} href={recordHref(d)} title={d.title} className={cls} style={{ animationDelay: staggerDelay }}>{inner}</Link>
                 ) : (
-                  <div key={d._id} title={d.title} className={cls}>{inner}</div>
+                  <div key={d._id} title={d.title} className={cls} style={{ animationDelay: staggerDelay }}>{inner}</div>
                 );
               })}
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -90,7 +99,7 @@ export function ContextRail({ score, performance, aiCredits, upcomingAchievement
         <div className="pos-card p-5">
           <p className="pos-label mb-2">How CuraGo sees you</p>
           <p className="text-[13px] text-[var(--ink)] leading-relaxed">{summary}</p>
-          <Link href="/app/practice-os/profile" className="pos-link text-[12px] inline-block mt-2">Edit profile →</Link>
+          <Link href="/app/zero-to-practice-builder/profile" className="pos-link text-[12px] inline-block mt-2">Edit profile →</Link>
         </div>
       )}
 

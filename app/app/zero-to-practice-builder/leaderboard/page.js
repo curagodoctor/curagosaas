@@ -13,7 +13,7 @@ export default function LeaderboardPage() {
   const load = useCallback(async () => {
     const res = await fetch('/api/practice-os/leaderboard');
     if (res.status === 401) { router.push('/login?entry=practice-os'); return; }
-    if (res.status === 402) { router.push('/app/practice-os/unlock'); return; }
+    if (res.status === 402) { router.push('/app/zero-to-practice-builder/unlock'); return; }
     setData(await res.json());
   }, [router]);
 

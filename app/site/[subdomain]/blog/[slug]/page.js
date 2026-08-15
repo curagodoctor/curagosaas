@@ -99,9 +99,23 @@ export default async function DoctorBlogArticlePage({ params }) {
 
   const doctorName = doctor.displayName || doctor.name;
   const authorName = article.author?.name || doctorName;
-  const spec = article.specialistSection;
-  const audit = article.surgicalAuditSection;
   const faqs = article.faqSection?.faqs?.filter((f) => f.question && f.answer) || [];
+
+  // Fill {{doctor_name}} / {{city}} tokens used in modular blog copy.
+  const vars = { doctor_name: doctorName || '', city: article.location?.city || doctor.city || '' };
+  const fill = (t) => String(t || '').replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, k) => (vars[k] != null ? String(vars[k]) : ''));
+
+  // Modular content blocks; fall back to the legacy fixed sections for older
+  // articles so existing published blogs keep rendering unchanged.
+  const legacyBlocks = [article.problemSection, article.clinicalSection, article.specialistSection, article.complexCasesSection, article.surgicalAuditSection]
+    .filter((s) => s && s.content && s.content.trim())
+    .map((s) => ({ heading: s.heading || '', content: s.content }));
+  const blocks = (article.blocks && article.blocks.length)
+    ? article.blocks.filter((b) => (b.heading && b.heading.trim()) || (b.content && b.content.trim()))
+    : legacyBlocks;
+  const locationBlock = article.locationBlock && (article.locationBlock.heading?.trim() || article.locationBlock.content?.trim())
+    ? article.locationBlock
+    : null;
 
   return (
     <div className="min-h-screen bg-white">
@@ -155,112 +169,46 @@ export default async function DoctorBlogArticlePage({ params }) {
       {/* Article Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         <div className="space-y-10">
-          {article.problemSection?.content && (
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 pb-2 border-b-2 border-[#096b17]">
-                {article.problemSection.heading || 'Overview'}
-              </h2>
-              <div className="text-gray-700 leading-relaxed whitespace-pre-line">
-                {article.problemSection.content}
-              </div>
-            </section>
-          )}
-
-          {article.clinicalSection?.content && (
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 pb-2 border-b-2 border-[#096b17]">
-                {article.clinicalSection.heading}
-              </h2>
-              <div className="text-gray-700 leading-relaxed whitespace-pre-line">
-                {article.clinicalSection.content}
-              </div>
-            </section>
-          )}
-
-          {spec?.content && (
-            <section className="bg-[#096b17]/5 rounded-lg p-6 border-l-4 border-[#096b17]">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                {spec.heading}
-              </h2>
-              <div className="text-gray-700 leading-relaxed whitespace-pre-line mb-6">
-                {spec.content}
-              </div>
-
-              {(spec.stats?.surgeriesPerformed || spec.stats?.proceduresSupervised) && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white rounded-lg p-4 text-center border border-[#096b17]/20">
-                    <div className="text-3xl font-bold text-[#096b17] mb-1">
-                      {spec.stats?.surgeriesPerformed || 0}+
-                    </div>
-                    <div className="text-sm text-gray-600 font-medium">Surgeries Performed</div>
-                  </div>
-                  <div className="bg-white rounded-lg p-4 text-center border border-[#096b17]/20">
-                    <div className="text-3xl font-bold text-[#096b17] mb-1">
-                      {spec.stats?.proceduresSupervised || 0}+
-                    </div>
-                    <div className="text-sm text-gray-600 font-medium">Procedures Supervised</div>
-                  </div>
-                </div>
+          {/* Modular content blocks (falls back to legacy sections) */}
+          {blocks.map((b, index) => (
+            <section key={index}>
+              {b.heading && b.heading.trim() && (
+                <h2 className="text-2xl font-bold text-gray-900 mb-4 pb-2 border-b-2 border-[#096b17]">
+                  {fill(b.heading)}
+                </h2>
               )}
-            </section>
-          )}
-
-          {article.complexCasesSection?.content && (
-            <section>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 pb-2 border-b-2 border-[#096b17]">
-                {article.complexCasesSection.heading}
-              </h2>
               <div className="text-gray-700 leading-relaxed whitespace-pre-line">
-                {article.complexCasesSection.content}
+                {fill(b.content)}
               </div>
             </section>
-          )}
+          ))}
 
-          {audit?.content && (
+          {/* Clinic location block */}
+          {locationBlock && (
             <section className="bg-gray-50 rounded-lg p-6 border border-gray-200">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                {audit.heading}
+                {fill(locationBlock.heading) || 'Clinic Location & Consultation Information'}
               </h2>
-              <div className="text-gray-700 leading-relaxed whitespace-pre-line mb-6">
-                {audit.content}
+              <div className="text-gray-700 leading-relaxed whitespace-pre-line">
+                {fill(locationBlock.content)}
               </div>
-
-              {audit.auditSteps && audit.auditSteps.length > 0 && (
-                <div className="space-y-3">
-                  {audit.auditSteps.map((step, index) => (
-                    <div key={index} className="bg-white rounded-lg p-4 border border-gray-200">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-8 h-8 bg-[#096b17] text-white rounded-full flex items-center justify-center font-bold text-sm">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 mb-1">{step.step}</h4>
-                          {step.description && (
-                            <p className="text-sm text-gray-600">{step.description}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </section>
           )}
 
           {faqs.length > 0 && (
             <section>
               <h2 className="text-2xl font-bold text-gray-900 mb-4 pb-2 border-b-2 border-[#096b17]">
-                {article.faqSection?.heading || 'FAQs'}
+                {article.faqSection?.heading || 'Frequently Asked Questions'}
               </h2>
               <div className="space-y-4">
                 {faqs.map((faq, index) => (
                   <div key={index} className="border border-gray-200 rounded-lg p-5">
                     <h3 className="font-semibold text-gray-900 mb-2 flex items-start gap-2">
                       <span className="text-[#096b17] flex-shrink-0">Q{index + 1}.</span>
-                      <span>{faq.question}</span>
+                      <span>{fill(faq.question)}</span>
                     </h3>
                     <div className="pl-6 text-gray-700 leading-relaxed whitespace-pre-line text-sm">
-                      {faq.answer}
+                      {fill(faq.answer)}
                     </div>
                   </div>
                 ))}

@@ -51,14 +51,14 @@ function JourneyInner() {
   const [state, setState] = useState(null);
 
   useEffect(() => {
-    if (!packId) { router.replace('/app/practice-os'); return; }
+    if (!packId) { router.replace('/app/zero-to-practice-builder'); return; }
     (async () => {
       const [jRes, sRes] = await Promise.all([
         fetch(`/api/practice-os/journey?pack=${packId}`),
         fetch(`/api/practice-os/state?pack=${packId}`),
       ]);
       if (jRes.status === 401) { router.push('/login?entry=practice-os'); return; }
-      if (jRes.status === 402) { router.push('/app/practice-os/unlock'); return; }
+      if (jRes.status === 402) { router.push('/app/zero-to-practice-builder/unlock'); return; }
       const jData = await jRes.json();
       setEntries(jData.success ? jData.entries : []);
       const sData = await sRes.json();
@@ -74,7 +74,7 @@ function JourneyInner() {
     <div className="max-w-2xl mx-auto px-5 pt-[64px] pb-10">
       <PosNav breadcrumb={state.pack?.title} />
 
-      <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm inline-block mt-6">← Back to today</Link>
+      <Link href={`/app/zero-to-practice-builder/track?pack=${packId}`} className="pos-link text-sm inline-block mt-6">← Back to today</Link>
 
       <div className="mt-6 mb-6">
         <p className="pos-label mb-1">Your journey &amp; record</p>

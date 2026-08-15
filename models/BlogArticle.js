@@ -39,6 +39,26 @@ const blogArticleSchema = new mongoose.Schema({
     image: String,
   },
 
+  // Modular structure (new): the author picks a page type, which suggests a set
+  // of editable H2 headings rendered as ordered content blocks. Falls back to the
+  // legacy fixed sections below when an article has no blocks (back-compat).
+  pageType: {
+    type: String,
+    enum: ['', 'disease', 'treatment', 'procedure', 'location', 'symptom'],
+    default: '',
+  },
+  blocks: [
+    {
+      heading: { type: String, default: '' },
+      content: { type: String, default: '' },
+    },
+  ],
+  // Optional clinic-location block (patient-facing address / consultation info).
+  locationBlock: {
+    heading: { type: String, default: '' },
+    content: { type: String, default: '' },
+  },
+
   // Structured sections. All optional now — CuraGo is multi-specialty, so a
   // simple post shouldn't be forced to fill surgical sections to save. Empty
   // sections simply don't render.

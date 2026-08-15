@@ -275,6 +275,7 @@ function ModulesEditor({ modules = [], onChange }) {
         education: [],
         steps: [],
         aiPrompt: '',
+        aiPrompts: [],
         aiSystemPrompt: '',
         buttons: [],
         inputs: [],
@@ -343,8 +344,25 @@ function ModulesEditor({ modules = [], onChange }) {
           </div>
 
           <div className="mt-3">
-            <label className={LABEL}>AI prompt (ready-to-copy, shown to the doctor)</label>
-            <textarea rows={3} className={INPUT} value={mod.aiPrompt || ''} onChange={(e) => updateMod(i, { aiPrompt: e.target.value })} />
+            <label className={LABEL}>AI prompts (ready-to-copy, shown to the doctor)</label>
+            <p className="text-xs text-gray-500 mb-2">Add one or more. Each prompt shows as its own copy card in the mission.</p>
+            {(() => {
+              const prompts = (mod.aiPrompts && mod.aiPrompts.length) ? mod.aiPrompts : (mod.aiPrompt ? [mod.aiPrompt] : ['']);
+              const setPrompts = (arr) => updateMod(i, { aiPrompts: arr, aiPrompt: arr[0] || '' });
+              return (
+                <div className="space-y-2">
+                  {prompts.map((p, pi) => (
+                    <div key={pi} className="flex items-start gap-2">
+                      <textarea rows={3} className={`${INPUT} flex-1`} value={p} placeholder={`Prompt ${pi + 1}`} onChange={(e) => setPrompts(prompts.map((x, xi) => (xi === pi ? e.target.value : x)))} />
+                      {prompts.length > 1 && (
+                        <button type="button" onClick={() => setPrompts(prompts.filter((_, xi) => xi !== pi))} className="p-2 text-gray-400 hover:text-red-500" title="Remove prompt">✕</button>
+                      )}
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => setPrompts([...prompts, ''])} className="text-sm text-blue-600 hover:underline">+ Add prompt</button>
+                </div>
+              );
+            })()}
           </div>
 
           <div className="mt-3">

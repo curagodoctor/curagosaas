@@ -87,7 +87,7 @@ function FocusSession() {
   const startedRef = useRef(false);
 
   useEffect(() => {
-    if (!packId) { router.replace('/app/practice-os'); return; }
+    if (!packId) { router.replace('/app/zero-to-practice-builder'); return; }
     (async () => {
       const res = await fetch(`/api/practice-os/day/${id}`);
       const data = await res.json();
@@ -95,7 +95,7 @@ function FocusSession() {
         // Finished (or skipped) on another device? Don't allow re-editing — the
         // server is the source of truth, so send them back to the pack. (#17)
         if (data.progress?.status === 'completed' || data.progress?.status === 'skipped') {
-          router.replace(`/app/practice-os/track?pack=${packId}`);
+          router.replace(`/app/zero-to-practice-builder/track?pack=${packId}`);
           return;
         }
         setDay(data.day);
@@ -258,7 +258,7 @@ function FocusSession() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'set-schedule', dayOffset: commit.dayOffset, window: commit.window, exactTime: commit.exactTime }),
     });
-    router.push(`/app/practice-os/track?pack=${packId}`);
+    router.push(`/app/zero-to-practice-builder/track?pack=${packId}`);
   };
 
   if (!day || !mod) {
@@ -271,7 +271,7 @@ function FocusSession() {
     return (
       <div className="min-h-screen px-4 sm:px-6 lg:px-10 py-6">
         <div className="max-w-6xl mx-auto">
-          <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm">← Back to pack</Link>
+          <Link href={`/app/zero-to-practice-builder/track?pack=${packId}`} className="pos-link text-sm">← Back to pack</Link>
           <p className="pos-label mt-3 mb-2">{day.category || 'Practice building'} · Day {day.missionNumber}</p>
 
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6 lg:gap-8">
@@ -439,14 +439,16 @@ function FocusSession() {
       if (v != null && String(v).trim()) sessionVars[f.variable] = v;
     }
   }
-  const promptForDisplay = fillVars(mod.aiPrompt, sessionVars);
+  // Ready-to-copy prompts (multi). Legacy single prompt falls back into the array.
+  const promptList = (mod.aiPrompts && mod.aiPrompts.length ? mod.aiPrompts : (mod.aiPrompt ? [mod.aiPrompt] : []))
+    .map((p) => fillVars(p, sessionVars));
 
   return (
     <div className="min-h-screen px-4 sm:px-6 lg:px-10 py-6">
       <div className="max-w-6xl mx-auto">
         {/* Top: exit + module progress */}
         <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-          <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm">← Exit mission</Link>
+          <Link href={`/app/zero-to-practice-builder/track?pack=${packId}`} className="pos-link text-sm">← Exit mission</Link>
           <div className="flex-1 min-w-[180px] max-w-[520px]">
             <div className="flex justify-between text-[11px] text-[var(--muted)] mb-1">
               <span>Module <span className="pos-num">{index + 1}/{modules.length}</span></span>
@@ -525,8 +527,11 @@ function FocusSession() {
               </div>
             )}
 
-            {/* Ready-to-copy AI prompt (with the doctor's real variables filled in) */}
-            {mod.aiPrompt && <AiPromptCard prompt={promptForDisplay} />}
+            {/* Ready-to-copy AI prompt(s) — one card per prompt, with the doctor's
+                real variables filled in. */}
+            {promptList.map((p, i) => (
+              <AiPromptCard key={i} prompt={p} index={promptList.length > 1 ? i + 1 : 0} total={promptList.length} />
+            ))}
 
             {/* Action buttons — {{variables}} in the URL/label are filled from the
                 doctor's values (server-side, plus anything typed this session). */}
@@ -582,7 +587,7 @@ function FocusSession() {
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.08 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35zM12 2a10 10 0 00-8.6 15.05L2 22l5.1-1.34A10 10 0 1012 2z" /></svg>
                 Request assistance
               </a>
-              <Link href={`/app/practice-os/track?pack=${packId}`} className="pos-link text-sm">Leave for now</Link>
+              <Link href={`/app/zero-to-practice-builder/track?pack=${packId}`} className="pos-link text-sm">Leave for now</Link>
             </div>
           </div>
 
@@ -629,18 +634,40 @@ function Chip({ children, green }) {
 // Step-by-step rendered as a numbered checklist. Ticking a step strikes it through
 // and fills the progress bar — a sense of completion without punishing skips.
 // {{variables}} entered earlier this session are filled inline. (#19, #30)
+// A step line that is a Markdown heading (## …) or wholly bold (**…**) is a
+// section header, not an action — render it as a sub-heading, never a checkbox. (#44)
+function stepHeading(step) {
+  const s = String(step || '').trim();
+  const md = /^#{1,6}\s+(.*)$/.exec(s);
+  if (md) return md[1].trim();
+  const bold = /^\*\*(.+)\*\*$/.exec(s);
+  if (bold) return bold[1].trim();
+  return null;
+}
+
 function StepChecklist({ steps, sessionVars, checked, onToggle }) {
-  const doneCount = steps.reduce((n, _, i) => n + (checked[i] ? 1 : 0), 0);
-  const pct = Math.round((doneCount / steps.length) * 100);
+  // Only real (non-heading) steps count toward progress.
+  const total = steps.reduce((n, s) => n + (stepHeading(s) ? 0 : 1), 0);
+  const doneCount = steps.reduce((n, s, i) => n + (!stepHeading(s) && checked[i] ? 1 : 0), 0);
+  const pct = total ? Math.round((doneCount / total) * 100) : 0;
+  // Number only the actionable steps (headings don't get a number).
+  let stepNo = 0;
   return (
     <div className="pos-card p-5 mb-4">
       <div className="flex items-center justify-between mb-3">
         <p className="pos-label">Step-by-step</p>
-        <span className="text-[11px] text-[var(--muted)]"><span className="pos-num">{doneCount}</span>/{steps.length} done</span>
+        <span className="text-[11px] text-[var(--muted)]"><span className="pos-num">{doneCount}</span>/{total} done</span>
       </div>
       <div className="pos-meter mb-4"><span style={{ width: `${pct}%` }} /></div>
       <div className="space-y-1.5">
         {steps.map((step, i) => {
+          const heading = stepHeading(step);
+          if (heading) {
+            return (
+              <p key={i} className="pos-label pt-3 pb-0.5" style={{ color: 'var(--ink)' }}>{fillVars(heading, sessionVars)}</p>
+            );
+          }
+          stepNo += 1;
           const on = !!checked[i];
           return (
             <button
@@ -659,7 +686,7 @@ function StepChecklist({ steps, sessionVars, checked, onToggle }) {
               >
                 {on ? (
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                ) : (i + 1)}
+                ) : stepNo}
               </span>
               <span className="text-[14px] leading-relaxed pt-0.5" style={{ color: on ? 'var(--muted)' : 'var(--ink)', textDecoration: on ? 'line-through' : 'none' }}>
                 {fillVars(step, sessionVars)}
@@ -673,7 +700,7 @@ function StepChecklist({ steps, sessionVars, checked, onToggle }) {
 }
 
 // A ready-to-use AI prompt the doctor can copy into any AI tool (distinct from the chat).
-function AiPromptCard({ prompt }) {
+function AiPromptCard({ prompt, index = 0, total = 1 }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try { await navigator.clipboard?.writeText(prompt); } catch { /* ignore */ }
@@ -683,7 +710,7 @@ function AiPromptCard({ prompt }) {
   return (
     <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--ink)' }}>
       <div className="flex items-center justify-between mb-2">
-        <p className="pos-label" style={{ color: 'var(--leaf, #8Fe6ae)' }}>AI prompt · ready to use</p>
+        <p className="pos-label" style={{ color: 'var(--leaf, #8Fe6ae)' }}>{index ? `AI prompt ${index} of ${total} · ready to use` : 'AI prompt · ready to use'}</p>
         <button onClick={copy} className="text-[12px] font-medium text-white/90 hover:text-white inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5" style={{ background: 'rgba(255,255,255,.12)' }}>
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
           {copied ? 'Copied!' : 'Copy'}

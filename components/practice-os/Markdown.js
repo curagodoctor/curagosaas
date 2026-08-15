@@ -42,35 +42,53 @@ export default function Markdown({ text, className = '' }) {
   const src = String(text ?? '').replace(/\r\n/g, '\n');
   const lines = src.split('\n');
   const blocks = [];
-  let list = null;   // { ordered, items: [] }
+  let list = null;         // { ordered, items: [{ text, num }] }
+  let pendingBlank = false; // a blank line seen; only breaks the list if a non-list line follows
 
   const flushList = () => {
     if (!list) return;
-    const items = list.items.map((it, i) => <li key={i}>{renderInline(it, `li${blocks.length}-${i}`)}</li>);
+    // Preserve the author's own numbers with an explicit value on each item, and
+    // set the list `start`, so a single continuous ordered list never restarts at
+    // 1 even if the model separated items with blank lines. (#4)
+    const items = list.items.map((it, i) => (
+      <li key={i} value={list.ordered ? it.num : undefined}>{renderInline(it.text, `li${blocks.length}-${i}`)}</li>
+    ));
     blocks.push(list.ordered
-      ? <ol key={`b${blocks.length}`} className="list-decimal pl-5 space-y-1 my-1.5">{items}</ol>
+      ? <ol key={`b${blocks.length}`} start={list.items[0]?.num || 1} className="list-decimal pl-5 space-y-1 my-1.5">{items}</ol>
       : <ul key={`b${blocks.length}`} className="list-disc pl-5 space-y-1 my-1.5">{items}</ul>);
     list = null;
   };
 
   for (const raw of lines) {
     const line = raw.replace(/\s+$/, '');
-    if (!line.trim()) { flushList(); continue; }
+    if (!line.trim()) { pendingBlank = true; continue; }
 
     const h = /^(#{1,4})\s+(.*)$/.exec(line);
     if (h) {
-      flushList();
+      flushList(); pendingBlank = false;
       const lvl = h[1].length;
       const size = lvl <= 1 ? 'text-[16px]' : lvl === 2 ? 'text-[15px]' : 'text-[14px]';
       blocks.push(<p key={`b${blocks.length}`} className={`font-semibold ${size} mt-2 mb-1`} style={{ color: 'var(--ink)' }}>{renderInline(h[2], `h${blocks.length}`)}</p>);
       continue;
     }
-    const ol = /^\s*\d+[.)]\s+(.*)$/.exec(line);
-    if (ol) { if (!list || !list.ordered) { flushList(); list = { ordered: true, items: [] }; } list.items.push(ol[1]); continue; }
+    const ol = /^\s*(\d+)[.)]\s+(.*)$/.exec(line);
+    if (ol) {
+      // A blank line between ordered items is ignored — keep one continuous list.
+      if (!list || !list.ordered) { flushList(); list = { ordered: true, items: [] }; }
+      list.items.push({ text: ol[2], num: Number(ol[1]) });
+      pendingBlank = false;
+      continue;
+    }
     const ul = /^\s*[-*+]\s+(.*)$/.exec(line);
-    if (ul) { if (!list || list.ordered) { flushList(); list = { ordered: false, items: [] }; } list.items.push(ul[1]); continue; }
+    if (ul) {
+      if (!list || list.ordered) { flushList(); list = { ordered: false, items: [] }; }
+      list.items.push({ text: ul[1] });
+      pendingBlank = false;
+      continue;
+    }
 
-    flushList();
+    // A normal line: end any list, then render a paragraph.
+    flushList(); pendingBlank = false;
     blocks.push(<p key={`b${blocks.length}`} className="my-1 leading-relaxed">{renderInline(line, `p${blocks.length}`)}</p>);
   }
   flushList();

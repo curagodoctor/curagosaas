@@ -4,5 +4,5 @@ import { redirect } from 'next/navigation';
 // straight into Practice OS; the Website Builder is reachable from the Practice
 // OS top nav ("Website Builder"). See CLAUDE.md — one login, two products.
 export default function AppIndex() {
-  redirect('/app/practice-os');
+  redirect('/app/zero-to-practice-builder');
 }
