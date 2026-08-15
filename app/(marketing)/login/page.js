@@ -108,14 +108,14 @@ function LoginPageInner() {
           <div className="max-w-md text-white">
             <h2 className="serif text-[44px] leading-[1.05] mb-6">Welcome back, Doctor.</h2>
             <p className="text-xl mb-8" style={{ color: 'var(--green-lite)' }}>
-              Access your clinic dashboard and manage appointments, website, and patient bookings.
+              Your Zero to Practice Builder, your website and your practice — all in one place.
             </p>
 
             <div className="space-y-6">
               {[
-                { t: 'Manage Your Website', d: 'Update content, services, and clinic information', p: 'M4 6h16M4 10h16M4 14h10M4 18h6' },
-                { t: 'View Appointments', d: 'Track and manage patient bookings', p: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-                { t: 'Set Availability', d: 'Configure your consultation slots', p: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+                { t: 'Continue your Zero to Practice Builder', d: 'Pick up the next step in your programme, right where you left off.', p: 'M5 4h14v16l-7-4-7 4z' },
+                { t: 'Manage your practice', d: 'Update your website, services and clinic details.', p: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+                { t: 'Appointments & availability', d: 'Track bookings and set your consultation slots.', p: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
               ].map((f) => (
                 <div key={f.t} className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/15">
@@ -129,21 +129,6 @@ function LoginPageInner() {
                   </div>
                 </div>
               ))}
-            </div>
-
-            <div className="mt-12 p-6 bg-white/10 rounded-2xl">
-              <p className="text-white/90 italic mb-3">
-                &ldquo;CuraGo has transformed how I manage my practice online. Highly recommended for fellow doctors!&rdquo;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ backgroundColor: 'var(--green-lite)', color: 'var(--green-deep)' }}>
-                  PS
-                </div>
-                <div>
-                  <p className="font-semibold">Dr. Priya Sharma</p>
-                  <p className="text-white/70 text-sm">Cardiologist, Mumbai</p>
-                </div>
-              </div>
             </div>
           </div>
         </div>

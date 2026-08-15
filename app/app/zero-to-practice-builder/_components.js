@@ -19,6 +19,13 @@ export function Spine({ days, totalDays, withPack }) {
   const byWeek = {};
   for (const d of days) (byWeek[d.weekNumber || 1] ??= []).push(d);
   const weeks = Object.keys(byWeek).map(Number).sort((a, b) => a - b);
+  // Upcoming (locked) missions fade out gradually: the next one is lightly faded,
+  // the one after fainter, the rest just faded — so focus lands on today.
+  const currentFlatIndex = days.findIndex((d) => d.status === 'available');
+  const lockedOpacity = (flatIndex) => {
+    const ahead = currentFlatIndex >= 0 ? flatIndex - currentFlatIndex : 99;
+    return ahead <= 1 ? 0.68 : ahead === 2 ? 0.48 : ahead === 3 ? 0.38 : 0.3;
+  };
   // Completed/skipped missions link to the Record so you can see what you did.
   const recordHref = (d) => (withPack ? `${withPack('/app/zero-to-practice-builder/journey')}&view=record` : `/app/zero-to-practice-builder/journey?view=record`);
 
@@ -38,11 +45,13 @@ export function Spine({ days, totalDays, withPack }) {
             <p className="pos-label mb-1.5" style={{ fontSize: '9.5px' }}>Week {w} · {WEEK_THEMES[w] || ''}</p>
             <div className="space-y-0.5">
               {byWeek[w].map((d, di) => {
-                const staggerDelay = `${(base + di) * 35}ms`;
+                const flatIndex = base + di;
+                const staggerDelay = `${flatIndex * 35}ms`;
                 const done = d.status === 'completed';
                 const current = d.status === 'available';
                 const skipped = d.status === 'skipped';
                 const clickable = done || skipped;
+                const rowOpacity = d.status === 'locked' ? lockedOpacity(flatIndex) : 1;
                 const inner = (
                   <>
                     <span
@@ -58,7 +67,6 @@ export function Spine({ days, totalDays, withPack }) {
                         color: current || done ? 'var(--ink)' : 'var(--muted)',
                         fontWeight: current ? 600 : 400,
                         textDecoration: skipped ? 'line-through' : 'none',
-                        opacity: d.status === 'locked' ? 0.6 : 1,
                       }}
                     >
                       <span className="pos-num mr-1" style={{ color: 'var(--muted)' }}>{d.missionNumber}.</span>{d.title}
@@ -67,9 +75,9 @@ export function Spine({ days, totalDays, withPack }) {
                 );
                 const cls = `pos-fade-down flex items-start gap-2 py-1 px-1 -mx-1 rounded-md ${clickable ? 'hover:bg-[var(--rule-soft)] transition-colors' : ''}`;
                 return clickable ? (
-                  <Link key={d._id} href={recordHref(d)} title={d.title} className={cls} style={{ animationDelay: staggerDelay }}>{inner}</Link>
+                  <Link key={d._id} href={recordHref(d)} title={d.title} className={cls} style={{ animationDelay: staggerDelay, opacity: rowOpacity }}>{inner}</Link>
                 ) : (
-                  <div key={d._id} title={d.title} className={cls} style={{ animationDelay: staggerDelay }}>{inner}</div>
+                  <div key={d._id} title={d.title} className={cls} style={{ animationDelay: staggerDelay, opacity: rowOpacity }}>{inner}</div>
                 );
               })}
             </div>

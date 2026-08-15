@@ -242,17 +242,16 @@ function SignupPageInner() {
         {/* Left Side - Branding */}
         <div className="hidden lg:flex lg:w-5/12 items-center justify-center p-12" style={{ backgroundColor: 'var(--green-deep)' }}>
           <div className="max-w-md text-white">
-            <h2 className="serif text-[44px] leading-[1.05] mb-6">Launch your clinic website today.</h2>
+            <h2 className="serif text-[44px] leading-[1.05] mb-6">Start the Zero to Practice Builder.</h2>
             <p className="text-xl mb-8" style={{ color: 'var(--green-lite)' }}>
-              Join 500+ doctors who trust CuraGo for their online presence.
+              One free account to build the practice patients can find — the guided Builder, plus your own clinic website.
             </p>
 
             <div className="space-y-6">
               {[
-                { t: 'Your Own Subdomain', d: 'Get drpriya.curago.in — live instantly', p: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9' },
-                { t: 'Professional Clinic Website', d: 'Beautiful, mobile-friendly site for your practice', p: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-                { t: 'WhatsApp Integration', d: 'Direct patient communication', p: 'M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z' },
-                { t: 'Free Forever Plan', d: 'No credit card required to start', p: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+                { t: 'The Zero to Practice Builder', d: 'A guided programme that walks you through getting found, chosen and booked — one step a day, done inside the platform.', p: 'M5 4h14v16l-7-4-7 4z' },
+                { t: 'Your free clinic website', d: 'A beautiful, mobile-friendly site on your own subdomain — live in minutes, free to start.', p: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+                { t: 'Upgrade when you need more', d: 'Start free, then add WhatsApp automation, online payments and other integrations on a paid plan — only if you want them.', p: 'M12 2l2.4 5 5.6.6-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.6z' },
               ].map((f) => (
                 <div key={f.t} className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/15">
@@ -266,21 +265,6 @@ function SignupPageInner() {
                   </div>
                 </div>
               ))}
-            </div>
-
-            <div className="mt-10 p-6 bg-white/10 rounded-2xl">
-              <p className="text-white/90 italic mb-3">
-                &ldquo;Within 2 days of launching my CuraGo website, I started receiving online appointment requests!&rdquo;
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ backgroundColor: 'var(--green-lite)', color: 'var(--green-deep)' }}>
-                  RK
-                </div>
-                <div>
-                  <p className="font-semibold">Dr. Rajesh Kumar</p>
-                  <p className="text-white/70 text-sm">Orthopedic Surgeon, Delhi</p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -300,18 +284,36 @@ function SignupPageInner() {
               <p style={{ color: 'var(--muted)' }}>Get your professional clinic website live in minutes</p>
             </div>
 
-            {/* Right-fit assessment entry — same flow as the landing cohort CTA. */}
-            <Link
-              href="/join-cohort?source=signup"
-              className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 mb-6 transition-colors"
-              style={{ background: 'var(--green-soft, rgba(9,107,23,.08))', border: '1px solid var(--rule)' }}
-            >
-              <span className="flex items-center gap-2.5 min-w-0">
-                <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--green)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span className="text-[14px] font-medium text-[var(--ink,#101A13)]">See if you&apos;re a right fit for Practice Builder</span>
-              </span>
-              <span className="text-[var(--green)] font-semibold shrink-0">→</span>
-            </Link>
+            {/* Right-fit assessment — prominent so doctors take the 2-minute check
+                before creating an account. Same flow as the landing cohort CTA. */}
+            <div className="rounded-2xl p-5 mb-6" style={{ background: 'linear-gradient(150deg, #FFF6EF, #FFEFE2)', border: '1.5px solid var(--orange, #F26A1B)', boxShadow: '0 8px 24px rgba(242,106,27,.15)' }}>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full shrink-0" style={{ background: 'var(--orange, #F26A1B)' }}>
+                  <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                </span>
+                <span className="text-[11px] font-mono uppercase tracking-widest" style={{ color: 'var(--orange, #F26A1B)' }}>Before you sign up</span>
+              </div>
+              <p className="text-[16px] font-semibold leading-snug mb-1" style={{ color: 'var(--ink, #101A13)' }}>
+                Not sure if it&apos;s for you? Take the 2-minute fit check first.
+              </p>
+              <p className="text-[13.5px] mb-4" style={{ color: 'var(--muted, #5E6B5F)' }}>
+                A few quick questions tell you whether the Practice Builder cohort is the right fit — before you commit.
+              </p>
+              <Link
+                href="/join-cohort?source=signup"
+                className="flex items-center justify-center gap-2 w-full text-white font-semibold text-[15px] px-6 py-3.5 rounded-xl transition-transform hover:scale-[1.01]"
+                style={{ background: 'var(--orange, #F26A1B)', boxShadow: '0 8px 22px rgba(242,106,27,.35)' }}
+              >
+                See if Practice Builder is the right fit for you
+                <span>→</span>
+              </Link>
+            </div>
+
+            <div className="flex items-center gap-3 mb-6">
+              <span className="flex-1 h-px" style={{ background: 'var(--rule, #DDE4D9)' }} />
+              <span className="text-[12px]" style={{ color: 'var(--muted, #5E6B5F)' }}>or create your account</span>
+              <span className="flex-1 h-px" style={{ background: 'var(--rule, #DDE4D9)' }} />
+            </div>
 
             <div className="rounded-2xl p-8" style={{ backgroundColor: 'var(--card)', border: '1px solid var(--rule)', boxShadow: '0 1px 3px rgba(16,26,19,.05)' }}>
               {/* Continue with Google — fastest path, no subdomain needed */}

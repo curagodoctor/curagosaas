@@ -184,9 +184,9 @@ const BODY = `<div style="font-family:var(--sans)">
         Most doctors don't struggle because they aren't skilled. They struggle because patients never discover them. <strong style="color:#fff;font-weight:600"><br>28 days, one task a day</strong> — from zero digital presence to a real, discoverable practice.
       </p>
       <div data-reveal="" data-reveal-delay="200" style="display:flex;flex-wrap:wrap;align-items:center;gap:16px">
-        <a href="/join-cohort" style="background:var(--orange);color:#fff;font-weight:700;font-size:16px;padding:16px 28px;border-radius:13px;box-shadow:0 10px 30px rgba(232,114,46,.4)">Join the first cohort of Zero to Practice Builder</a>
+        <a href="/join-cohort" style="background:var(--orange);color:#fff;font-weight:700;font-size:16px;padding:16px 28px;border-radius:13px;box-shadow:0 10px 30px rgba(232,114,46,.4)">See if it's the right fit for you</a>
       </div>
-      <span style="display:inline-block;margin-top:12px;font-family:var(--mono);font-size:12.5px;color:var(--leaf-2)">₹5000/-, limited to 10 doctors</span>
+      <span style="display:inline-block;margin-top:12px;font-family:var(--mono);font-size:12.5px;color:var(--leaf-2)">₹5000 + GST · limited to 10 doctors</span>
       <div data-reveal="" data-reveal-delay="260" style="display:flex;flex-wrap:wrap;gap:26px;margin-top:40px;padding-top:26px;border-top:1px solid rgba(255,255,255,.14)">
         <div><div style="font-size:26px;font-weight:800;letter-spacing:-.02em">28</div><div style="font-size:12.5px;color:rgba(255,255,255,.6)">days, one mission each</div></div>
         <div><div style="font-size:26px;font-weight:800;letter-spacing:-.02em">around 60<span style="font-size:15px;font-weight:600;">mins</span></div><div style="font-size:12.5px;color:rgba(255,255,255,.6)">a day, between OPD &amp; dinner</div></div>
@@ -265,7 +265,7 @@ const BODY = `<div style="font-family:var(--sans)">
       <p style="font-size:clamp(18px,1.8vw,24px);max-width:640px;margin:0 auto;color:rgba(255,255,255,.85);line-height:1.4">Build the complete digital foundation of your practice in 28 days.</p>
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:clamp(28px,4vw,52px);align-items:center">
-      <div data-reveal="" style="flex:1 1 500px;min-width:300px">${DASHBOARD}</div>
+      <div data-reveal="" style="flex:1 1 500px;min-width:300px"><img src="/day28-assets.png" alt="Everything you build — organised in your dashboard" style="width:100%;height:auto;border-radius:16px;box-shadow:0 30px 70px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);display:block" /></div>
       <div data-reveal="" data-reveal-delay="120" style="flex:1 1 360px;min-width:280px">
         <div style="font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--leaf-2);margin-bottom:20px">BY DAY 28 YOU'LL HAVE</div>
         <div style="display:grid;grid-template-columns:1fr;gap:2px">
@@ -439,16 +439,13 @@ const BODY = `<div style="font-family:var(--sans)">
     <div data-reveal="" data-reveal-delay="100" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:26px;padding:clamp(30px,4vw,52px);max-width:520px;margin:0 auto;box-shadow:0 30px 80px rgba(0,0,0,.35)">
       <div style="display:flex;align-items:baseline;justify-content:center;gap:10px;margin-bottom:8px">
         <span style="font-size:clamp(48px,9vw,76px);font-weight:800;letter-spacing:-.03em;line-height:1">₹5,000</span>
-        <span style="font-family:var(--mono);font-size:13px;color:var(--leaf-2)">founding price</span>
+        <span style="font-family:var(--mono);font-size:13px;color:var(--leaf-2)">+ GST · founding price</span>
       </div>
       <div style="display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-bottom:26px">
         <span style="font-family:var(--mono);font-size:13px;color:rgba(255,255,255,.55)">Next cohort <s style="text-decoration-line:none">₹10,000</s></span>
         <span style="font-family:var(--mono);font-size:13px;color:rgba(255,255,255,.55)">Full launch <s style="text-decoration-line:none">₹20,000</s></span>
       </div>
-      <div style="display:flex;gap:10px;background:rgba(0,0,0,.25);border-radius:14px;padding:8px;flex-wrap:wrap">
-        <input type="email" placeholder="Your email" style="flex:1 1 200px;min-width:0;background:transparent;border:none;outline:none;color:#fff;font-size:16px;padding:12px 14px;font-family:var(--sans)">
-        <button class="btn" style="background:var(--orange);color:#fff;font-weight:700;font-size:15.5px;padding:14px 24px;border:none;border-radius:11px;cursor:pointer;font-family:var(--sans)">Join the waitlist</button>
-      </div>
+      <a href="/join-cohort" style="display:block;background:var(--orange);color:#fff;font-weight:700;font-size:16px;padding:16px 24px;border-radius:12px;text-align:center;box-shadow:0 10px 30px rgba(232,114,46,.4)">See if it's the right fit for you</a>
       <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:18px">
         <div style="display:flex;gap:3px">
           <span style="width:10px;height:10px;border-radius:3px;background:var(--orange)"></span>
@@ -584,9 +581,8 @@ const BODY = `<div style="font-family:var(--sans)">
   <div style="max-width:760px;margin:0 auto">
     <h2 data-reveal="" style="font-size:clamp(36px,6vw,72px);line-height:1;letter-spacing:-.03em;margin:0 0 20px;font-weight:800">Be in the results by <span style="font-family:var(--serif);font-style:italic;font-weight:400;color:var(--leaf-2)">next month.</span></h2>
     <p data-reveal="" data-reveal-delay="80" style="font-size:clamp(17px,1.6vw,20px);color:rgba(255,255,255,.8);margin:0 auto 36px;max-width:560px">Join the founding cohort and build your practice one day at a time — or start today with the book.</p>
-    <div data-reveal="" data-reveal-delay="140" style="display:flex;gap:10px;background:rgba(0,0,0,.25);border-radius:16px;padding:8px;max-width:520px;margin:0 auto;flex-wrap:wrap">
-      <input type="email" placeholder="Your email" style="flex:1 1 200px;min-width:0;background:transparent;border:none;outline:none;color:#fff;font-size:16px;padding:14px 16px;font-family:var(--sans)">
-      <button class="btn" style="background:var(--orange);color:#fff;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px;border:none;cursor:pointer;font-family:var(--sans)">Join the waitlist</button>
+    <div data-reveal="" data-reveal-delay="140" style="max-width:520px;margin:0 auto">
+      <a href="/join-cohort" style="display:block;background:var(--orange);color:#fff;font-weight:700;font-size:16px;padding:16px 28px;border-radius:12px;text-align:center;box-shadow:0 10px 30px rgba(232,114,46,.4)">See if it's the right fit for you</a>
     </div>
   </div>
 </section>

@@ -80,7 +80,7 @@ export default function ControlCenter() {
           style={{ background: 'var(--green-soft, rgba(9,107,23,.08))', border: '1px solid var(--green)' }}
         >
           <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--green)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          <span className="text-[14.5px] font-medium text-[var(--ink)]">See if you&apos;re a right fit for Practice Builder</span>
+          <span className="text-[14.5px] font-medium text-[var(--ink)]">See if Practice Builder is the right fit for you</span>
           <span className="text-[var(--green)] font-semibold">→</span>
         </Link>
       )}
@@ -123,18 +123,39 @@ export default function ControlCenter() {
               </div>
             </Link>
 
-            {/* Quick links — jump straight to the tools from the Control Center. */}
-            <div className="pos-card p-2">
+            {/* Open Workspace — a prominent card matching the Website Builder one. */}
+            <Link
+              href="/app/zero-to-practice-builder/workspace"
+              className="pos-card p-5 block hover:shadow-md transition-shadow group"
+              style={{ borderColor: 'var(--green)' }}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="pos-label" style={{ color: 'var(--green)' }}>Your notes</p>
+                  <p className="font-semibold text-[16px] mt-1 leading-snug text-[var(--ink)]">Open Workspace</p>
+                  <p className="text-[12.5px] mt-1.5 leading-relaxed text-[var(--muted)]">
+                    Jot and organise your notes as you build — private to you.
+                  </p>
+                </div>
+                <span className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-transform group-hover:translate-x-0.5" style={{ background: 'var(--green-soft, rgba(9,107,23,.08))' }}>
+                  <svg className="w-4 h-4" style={{ color: 'var(--green)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                </span>
+              </div>
+            </Link>
+
+            {/* The remaining tools as independent, prominent buttons. */}
+            <div className="grid grid-cols-1 gap-2.5">
               {[
-                ['Website Builder', '/admin/dashboard', 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'],
-                ['Workspace', '/app/zero-to-practice-builder/workspace', 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'],
                 ['Schedule', '/app/zero-to-practice-builder/schedule', 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'],
                 ['My profile', '/app/zero-to-practice-builder/profile', 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
                 ['Leaderboard', '/app/zero-to-practice-builder/leaderboard', 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'],
               ].map(([label, href, d]) => (
-                <Link key={href} href={href} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-[var(--rule-soft)] transition-colors text-[14px] text-[var(--ink)]">
-                  <svg className="w-4 h-4 shrink-0" style={{ color: 'var(--green)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d={d} /></svg>
-                  {label}
+                <Link key={href} href={href} className="pos-card flex items-center gap-3 px-4 py-3.5 hover:shadow-md transition-shadow group">
+                  <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--green-soft, rgba(9,107,23,.08))' }}>
+                    <svg className="w-[18px] h-[18px]" style={{ color: 'var(--green)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d={d} /></svg>
+                  </span>
+                  <span className="text-[14.5px] font-medium text-[var(--ink)] flex-1">{label}</span>
+                  <svg className="w-4 h-4 text-[var(--muted)] transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                 </Link>
               ))}
             </div>
@@ -338,7 +359,7 @@ function PackCard({ pack }) {
           <>
             <div className="flex items-baseline gap-1.5">
               <span className="pos-num text-2xl text-[var(--ink)]">₹{Number(priceInInr).toLocaleString('en-IN')}</span>
-              <span className="text-[12px] text-[var(--muted)]">one-time</span>
+              <span className="text-[12px] text-[var(--muted)]">+ GST · one-time</span>
             </div>
             <Link href={`/app/zero-to-practice-builder/unlock?pack=${pack.id}`} className="pos-action pos-focusable">
               Get this pack

@@ -50,9 +50,13 @@ function readLocalDraft(id) {
 // any device without saving every second.
 function reconstructRemaining(draft, fallbackSeconds) {
   let rem = typeof draft.remaining === 'number' ? draft.remaining : fallbackSeconds;
+  // Add back only the SHORT gap since the last heartbeat (saved every ~12s while
+  // the tab is open). A larger gap means the tab was closed — that time isn't work
+  // time, so we cap it. Otherwise reopening after a day would show hundreds of
+  // minutes of phantom "overtime" (e.g. +1483:39).
   if (draft.running && draft._stamp) {
     const elapsed = Math.floor((Date.now() - new Date(draft._stamp).getTime()) / 1000);
-    if (Number.isFinite(elapsed) && elapsed > 0) rem -= elapsed;
+    if (Number.isFinite(elapsed) && elapsed > 0) rem -= Math.min(elapsed, 30);
   }
   return rem;
 }
