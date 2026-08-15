@@ -193,8 +193,8 @@ const BODY = `<div style="font-family:var(--sans)">
         <div><div style="font-size:26px;font-weight:800;letter-spacing:-.02em">7</div><div style="font-size:12.5px;color:rgba(255,255,255,.6)">assets you keep forever</div></div>
       </div>
     </div>
-    <div data-reveal="" data-reveal-delay="120" style="flex:1 1 420px;min-width:290px;animation:floaty 7s ease-in-out infinite">
-      ${DASHBOARD}
+    <div data-reveal="" data-reveal-delay="120" style="flex:1 1 480px;min-width:290px;animation:floaty 7s ease-in-out infinite">
+      <img src="/dashboard-preview.png" alt="Zero to Practice Builder — your control center" style="width:100%;height:auto;border-radius:16px;box-shadow:0 30px 70px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);display:block" />
     </div>
   </div>
 </section>
