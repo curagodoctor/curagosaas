@@ -46,9 +46,15 @@ export default function Questionnaire({ source = 'landing' }) {
   };
 
   const next = async () => {
-    if (q.required && !answered(q)) { setError('Please answer to continue.'); return; }
+    // Every question needs an answer except the multi-select and long-text ones —
+    // so nobody can skip the qualifiers and land on a false "strong fit".
+    const mustAnswer = q.required || ['single', 'scale', 'text', 'email', 'tel'].includes(q.type);
+    if (mustAnswer && !answered(q)) { setError('Please answer to continue.'); return; }
     if (q.type === 'email' && answers[q.id] && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(answers[q.id])) {
       setError('Please enter a valid email.'); return;
+    }
+    if (q.type === 'tel' && (String(answers[q.id] || '').replace(/\D/g, '').length < 10)) {
+      setError('Please enter a valid phone number (at least 10 digits).'); return;
     }
     maybeTrackStart();
     if (isLast) return submit();
@@ -112,8 +118,10 @@ function QuestionInput({ q, value, onChange, onEnter }) {
     return (
       <input
         type={q.type === 'email' ? 'email' : q.type === 'tel' ? 'tel' : 'text'}
+        inputMode={q.type === 'tel' ? 'tel' : undefined}
         value={value || ''}
-        onChange={(e) => onChange(e.target.value)}
+        // Phone accepts only digits and +, - , space — no letters.
+        onChange={(e) => onChange(q.type === 'tel' ? e.target.value.replace(/[^\d+\-\s]/g, '') : e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') onEnter(); }}
         autoFocus
         placeholder={q.type === 'email' ? 'you@example.com' : q.type === 'tel' ? '+91 …' : 'Type your answer'}
@@ -190,13 +198,42 @@ function Result({ outcome, email, name }) {
     maybe: { dot: '#f2c317', label: 'Founder review', title: 'You may benefit from the Builder — your situation needs a little more context.' },
     not_fit: { dot: '#e0503f', label: 'Not the best cohort fit right now', title: 'The 28-day cohort may not be the best fit for you right now.' },
   }[outcome.result];
+  const meaning = {
+    strong_fit: "You have the time, the intent and the willingness to execute — so you're set up to get real value from the 28-day cohort. Joining now locks the founding price.",
+    maybe: "You could get real value, but one or two things are worth a short conversation so we can be sure the cohort is the right format for you right now.",
+    not_fit: 'The 28-day cohort may not give you enough value at this stage — usually down to time, execution capacity, or where your practice is right now. That is not a no to the software or to building your practice.',
+  }[outcome.result];
+  const positives = outcome.flags?.positive || [];
+  const concerns = [...(outcome.flags?.hard || []), ...(outcome.flags?.maybe || [])];
 
   return (
-    <div className="w-full max-w-lg text-center">
+    <div className="w-full max-w-xl text-center">
       <span className="inline-flex items-center gap-2 text-[12px] font-mono tracking-widest mb-4" style={{ color: 'rgba(255,255,255,.6)' }}>
         <span className="w-3 h-3 rounded-full" style={{ background: meta.dot }} /> {meta.label.toUpperCase()}
       </span>
-      <h1 className="text-[24px] sm:text-[30px] font-bold leading-tight mb-4" style={{ letterSpacing: '-0.02em' }}>{meta.title}</h1>
+      <h1 className="text-[24px] sm:text-[30px] font-bold leading-tight mb-5" style={{ letterSpacing: '-0.02em' }}>{meta.title}</h1>
+
+      {/* What we noticed + what it means — every observation shown, not just one. */}
+      <div className="text-left rounded-2xl p-5 mb-6" style={{ background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)' }}>
+        <p className="text-[11px] font-mono uppercase tracking-widest mb-3" style={{ color: '#8fe6ae' }}>What we noticed about your practice</p>
+        <ul className="space-y-2 mb-5">
+          {positives.map((t, i) => (
+            <li key={`p${i}`} className="flex items-start gap-2.5 text-[13.5px] leading-snug" style={{ color: 'rgba(255,255,255,.85)' }}>
+              <span className="mt-0.5" style={{ color: '#3fbf5f' }}>✓</span><span>{t}</span>
+            </li>
+          ))}
+          {concerns.map((t, i) => (
+            <li key={`c${i}`} className="flex items-start gap-2.5 text-[13.5px] leading-snug" style={{ color: 'rgba(255,255,255,.72)' }}>
+              <span className="mt-0.5" style={{ color: outcome.result === 'not_fit' ? '#e0503f' : '#f2c317' }}>•</span><span>{t}</span>
+            </li>
+          ))}
+          {positives.length === 0 && concerns.length === 0 && (
+            <li className="text-[13.5px]" style={{ color: 'rgba(255,255,255,.6)' }}>Based on your answers.</li>
+          )}
+        </ul>
+        <p className="text-[11px] font-mono uppercase tracking-widest mb-1.5" style={{ color: '#8fe6ae' }}>What that means for you</p>
+        <p className="text-[14px] leading-relaxed" style={{ color: 'rgba(255,255,255,.85)' }}>{meaning}</p>
+      </div>
 
       {outcome.result === 'strong_fit' && (
         <>
@@ -216,8 +253,7 @@ function Result({ outcome, email, name }) {
 
       {outcome.result === 'maybe' && (
         <>
-          <p className="text-[15px] mb-2" style={{ color: 'rgba(255,255,255,.7)' }}>Dr Yuvaraj will help determine whether the cohort is the right format for you.</p>
-          {outcome.reason && <p className="text-[13px] mb-7" style={{ color: 'rgba(255,255,255,.45)' }}>Note: {outcome.reason}</p>}
+          <p className="text-[15px] mb-7" style={{ color: 'rgba(255,255,255,.7)' }}>Dr Yuvaraj will help determine whether the cohort is the right format for you.</p>
           <div className="flex flex-col gap-3">
             <a href={CONTACT_WA} target="_blank" rel="noopener noreferrer" className="font-semibold text-[16px] px-6 py-4 rounded-xl" style={{ background: '#F26A1B', color: '#fff' }}>
               Schedule a call with Dr Yuvaraj →
@@ -231,11 +267,7 @@ function Result({ outcome, email, name }) {
 
       {outcome.result === 'not_fit' && (
         <>
-          <p className="text-[15px] mb-2" style={{ color: 'rgba(255,255,255,.7)' }}>
-            This doesn&apos;t mean you can&apos;t use the software or build your practice — it simply means you may not get enough value from the cohort format at this stage.
-          </p>
-          {outcome.reason && <p className="text-[13px] mb-6" style={{ color: 'rgba(255,255,255,.45)' }}>Main reason: {outcome.reason}</p>}
-          <p className="text-[14px] mb-7" style={{ color: 'rgba(255,255,255,.7)' }}>If you still strongly want to proceed, that&apos;s your choice.</p>
+          <p className="text-[14px] mb-7" style={{ color: 'rgba(255,255,255,.7)' }}>If you&apos;d still like to go ahead, you&apos;re welcome to.</p>
           <div className="flex flex-col gap-3">
             <button onClick={() => go('/signup?entry=practice-os', 'builder_only')} className="font-semibold text-[15px] px-6 py-4 rounded-xl" style={{ background: '#F26A1B', color: '#fff' }}>
               Explore the software / sign up anyway →

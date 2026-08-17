@@ -21,7 +21,9 @@ export function Spine({ days, totalDays, withPack }) {
   const weeks = Object.keys(byWeek).map(Number).sort((a, b) => a - b);
   // Upcoming (locked) missions fade out gradually: the next one is lightly faded,
   // the one after fainter, the rest just faded — so focus lands on today.
-  const currentFlatIndex = days.findIndex((d) => d.status === 'available');
+  const currentFlatIndex = days.findIndex((d) => d.isCurrent) >= 0
+    ? days.findIndex((d) => d.isCurrent)
+    : days.findIndex((d) => d.status === 'available');
   const lockedOpacity = (flatIndex) => {
     const ahead = currentFlatIndex >= 0 ? flatIndex - currentFlatIndex : 99;
     return ahead <= 1 ? 0.68 : ahead === 2 ? 0.48 : ahead === 3 ? 0.38 : 0.3;
@@ -48,10 +50,12 @@ export function Spine({ days, totalDays, withPack }) {
                 const flatIndex = base + di;
                 const staggerDelay = `${flatIndex * 35}ms`;
                 const done = d.status === 'completed';
-                const current = d.status === 'available';
+                // The current mission is highlighted even if it's locked (waiting
+                // for the midnight reset), so it never disappears from the sidebar.
+                const current = d.isCurrent || d.status === 'available';
                 const skipped = d.status === 'skipped';
                 const clickable = done || skipped;
-                const rowOpacity = d.status === 'locked' ? lockedOpacity(flatIndex) : 1;
+                const rowOpacity = (d.status === 'locked' && !current) ? lockedOpacity(flatIndex) : 1;
                 const inner = (
                   <>
                     <span
