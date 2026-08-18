@@ -6,10 +6,10 @@ import { fireWyltoWebhook } from '@/lib/wylto';
 
 export const runtime = 'nodejs';
 
-// Sends a single WhatsApp appointment reminder (via Wylto) each morning for
-// TODAY's confirmed bookings, to BOTH the patient and the doctor. Tracked so it
-// never double-sends. Runs once/day at ~9:00 IST (Vercel Hobby allows only daily
-// crons; a "2 hours before" reminder would need a frequent cron — Pro plan).
+// A single WhatsApp appointment reminder (via Wylto) each morning for TODAY's
+// confirmed bookings, sent to BOTH the patient and the doctor. Tracked so it never
+// double-sends. Runs once/day at ~9:00 IST — Vercel Hobby only allows daily crons,
+// so this is the one reminder per booking.
 export async function GET(request) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -49,8 +49,7 @@ export async function GET(request) {
       const docPhone = doc?.whatsappNumber || doc?.phone || '';
       const docName = doc?.displayName || doc?.name || '';
 
-      // One morning reminder per booking — from 9:00 IST onward, only while the
-      // appointment is still ahead.
+      // One reminder per booking — from 9:00 IST onward, while the appointment is ahead.
       if (!b.reminderMorningSentAt && now >= morningGate && now < apptAt) {
         await sendBoth(b, docPhone, docName);
         b.reminderMorningSentAt = now;
