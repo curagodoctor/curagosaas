@@ -15,6 +15,7 @@ export default function SettingsPage() {
     qualification: '',
     bio: '',
     whatsappNumber: '',
+    googleReviewLink: '',
     phone: '',
     licenseNumber: '',
     timezone: 'Asia/Kolkata',
@@ -23,6 +24,9 @@ export default function SettingsPage() {
   });
   const [domainInfo, setDomainInfo] = useState({ subdomain: '', customDomain: null });
   const [domainInput, setDomainInput] = useState('');
+  const [subdomainInput, setSubdomainInput] = useState('');
+  const [subdomainSaving, setSubdomainSaving] = useState(false);
+  const [subdomainMsg, setSubdomainMsg] = useState(null);
   const [domainStatus, setDomainStatus] = useState(null);
   const [domainLoading, setDomainLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -121,6 +125,7 @@ export default function SettingsPage() {
           qualification: data.doctor.qualification || '',
           bio: data.doctor.bio || '',
           whatsappNumber: data.doctor.whatsappNumber || '',
+          googleReviewLink: data.doctor.googleReviewLink || '',
           phone: data.doctor.phone || '',
           licenseNumber: data.doctor.licenseNumber || '',
           timezone: data.doctor.timezone || 'Asia/Kolkata',
@@ -131,6 +136,7 @@ export default function SettingsPage() {
           subdomain: data.doctor.subdomain || '',
           customDomain: data.doctor.customDomain || null,
         });
+        setSubdomainInput(data.doctor.subdomain || '');
       }
       setLoading(false);
     } catch (error) {
@@ -336,6 +342,23 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Google Review Link
+                </label>
+                <input
+                  type="url"
+                  name="googleReviewLink"
+                  value={formData.googleReviewLink}
+                  onChange={handleChange}
+                  placeholder="https://g.page/r/..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  Set this once. It&apos;s used automatically as <span className="font-mono">{'{{reviewLink}}'}</span> in every review-request message, workflow and WhatsApp flow — no need to set it per contact.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Phone Number (Account)
                 </label>
                 <input
@@ -426,6 +449,61 @@ export default function SettingsPage() {
                 ) : (
                   <p className="text-gray-500 text-sm">No subdomain configured</p>
                 )}
+              </div>
+
+              {/* Edit subdomain */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Website address (subdomain)</h3>
+                <p className="text-sm text-gray-500 mb-3">Change your <span className="font-mono">yourname.curago.in</span> address.</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={subdomainInput}
+                    onChange={(e) => { setSubdomainInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')); setSubdomainMsg(null); }}
+                    placeholder="yourname"
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none text-sm"
+                    maxLength={30}
+                  />
+                  <span className="text-gray-500 font-mono text-sm whitespace-nowrap">.curago.in</span>
+                  <button
+                    type="button"
+                    disabled={subdomainSaving || !subdomainInput.trim() || subdomainInput === domainInfo.subdomain}
+                    onClick={async () => {
+                      const s = subdomainInput.trim().toLowerCase();
+                      const ok = await new Promise((resolve) => {
+                        showAlert({
+                          title: 'Change website address?',
+                          message: `Your site will move to ${s}.curago.in. The old address (${domainInfo.subdomain || 'none'}.curago.in) will stop working. Continue?`,
+                          type: 'warning',
+                        }).then(() => resolve(true)).catch(() => resolve(false));
+                      });
+                      if (!ok) return;
+                      setSubdomainSaving(true); setSubdomainMsg(null);
+                      try {
+                        const res = await fetch('/api/doctor/subdomain', {
+                          method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+                          body: JSON.stringify({ subdomain: s }),
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          setDomainInfo((prev) => ({ ...prev, subdomain: data.subdomain }));
+                          setSubdomainMsg({ type: 'ok', text: `Updated — your site is now at ${data.subdomain}.curago.in` });
+                        } else {
+                          setSubdomainMsg({ type: 'err', text: data.error || 'Could not update the subdomain.' });
+                        }
+                      } catch {
+                        setSubdomainMsg({ type: 'err', text: 'Something went wrong.' });
+                      } finally { setSubdomainSaving(false); }
+                    }}
+                    className="px-4 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {subdomainSaving ? 'Saving…' : 'Update'}
+                  </button>
+                </div>
+                {subdomainMsg && (
+                  <p className={`mt-2 text-sm ${subdomainMsg.type === 'ok' ? 'text-green-600' : 'text-red-600'}`}>{subdomainMsg.text}</p>
+                )}
+                <p className="mt-2 text-xs text-gray-400">Lowercase letters, numbers and hyphens only. Changing it re-points your site immediately; the old address stops working.</p>
               </div>
 
               {/* Connect Custom Domain */}

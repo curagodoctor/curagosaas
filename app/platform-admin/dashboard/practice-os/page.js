@@ -763,7 +763,7 @@ function AnalyticsTab() {
         <StatCard label="Active (7d)" value={data.activeUsers} />
         <StatCard label="Setup Pending" value={data.setupPending} />
         <StatCard label="Completed" value={data.completed} />
-        <StatCard label="Avg Days Completed" value={data.avgDaysCompleted} sub="of 30" />
+        <StatCard label="Avg Days Completed" value={data.avgDaysCompleted} sub="of 28" />
         <StatCard label="Avg Performance" value={data.avgPerformance} sub="overall score" />
         <StatCard label="Avg Streak" value={data.avgStreak} sub="days" />
         <StatCard label="Avg Completion Time" value={`${data.avgCompletionMinutes}m`} sub="per mission" />

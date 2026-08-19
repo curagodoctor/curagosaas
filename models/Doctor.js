@@ -109,6 +109,13 @@ const DoctorSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  // Set once by the doctor; used as the default {{reviewLink}} across workflows,
+  // templates and the review-request webhook (no need to set it per contact).
+  googleReviewLink: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   wyltoWebhookId: {
     type: String,
     trim: true

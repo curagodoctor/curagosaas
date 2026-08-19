@@ -32,7 +32,12 @@ export async function POST(request, { params }) {
       return NextResponse.json({ success: false, error: 'This contact has no phone number.' }, { status: 400 });
     }
 
-    const result = await fireWyltoWebhook('reviewRequest', { name: contact.name, phoneNumber: contact.phone });
+    const result = await fireWyltoWebhook('reviewRequest', {
+      name: contact.name,
+      phoneNumber: contact.phone,
+      // Doctor's one-time review link (falls back to a per-contact one if set).
+      reviewLink: doctor.googleReviewLink || contact.googleReviewLink || '',
+    });
     if (!result.success) {
       return NextResponse.json({ success: false, error: 'Could not trigger the review request. Please try again.' }, { status: 502 });
     }

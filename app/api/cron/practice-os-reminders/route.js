@@ -5,6 +5,7 @@ import Framework from '@/models/practice-os/Framework';
 import Doctor from '@/models/Doctor';
 import { sendPracticeOsReminderEmail } from '@/lib/email';
 import { sendSMS } from '@/lib/twilio';
+import { fireWyltoWebhook } from '@/lib/wylto';
 
 export const runtime = 'nodejs';
 
@@ -81,26 +82,26 @@ export async function GET(request) {
           reminder = {
             subject: 'Picking up where you left off',
             heading: 'Your programme is still here whenever you are',
-            body: `You've finished ${enrollment.daysCompleted} of 30 days, and everything you built is still working for your patients. When you have thirty minutes, your next day is ready — start with just step one. If anything is getting in the way, reply to this message and we'll sort it out together.`,
+            body: `You've finished ${enrollment.daysCompleted} of 28 days, and everything you built is still working for your patients. When you have thirty minutes, your next day is ready — start with just step one. If anything is getting in the way, reply to this message and we'll sort it out together.`,
             ctaLabel: 'Open your next day',
-            sms: `Zero To Practice Builder: You've done ${enrollment.daysCompleted} of 30 days and it's all still working. Your next day is ready whenever you have 30 minutes — start with step one. ${ctaUrl}`,
+            sms: `Zero To Practice Builder: You've done ${enrollment.daysCompleted} of 28 days and it's all still working. Your next day is ready whenever you have 30 minutes — start with step one. ${ctaUrl}`,
             markRescued: true,
           };
         } else if (daysInactive >= 3) {
           reminder = {
             subject: 'Your next day is ready',
             heading: 'Your next day is ready',
-            body: `You're on day ${enrollment.currentDayNumber} of 30. Your next task is waiting whenever you have thirty minutes — one small step moves it forward.`,
+            body: `You're on day ${enrollment.currentDayNumber} of 28. Your next task is waiting whenever you have thirty minutes — one small step moves it forward.`,
             ctaLabel: 'Start your next day',
-            sms: `Zero To Practice Builder: Your next day (day ${enrollment.currentDayNumber} of 30) is ready whenever you have 30 minutes. ${ctaUrl}`,
+            sms: `Zero To Practice Builder: Your next day (day ${enrollment.currentDayNumber} of 28) is ready whenever you have 30 minutes. ${ctaUrl}`,
           };
         } else if (todaysMissionReady && daysInactive >= 1) {
           reminder = {
             subject: "Today's task is ready",
             heading: "Today's task is ready",
-            body: `Day ${enrollment.currentDayNumber} of 30 is unlocked and waiting. It should take about thirty minutes — a good time to pick it up.`,
+            body: `Day ${enrollment.currentDayNumber} of 28 is unlocked and waiting. It should take about thirty minutes — a good time to pick it up.`,
             ctaLabel: 'Start today',
-            sms: `Zero To Practice Builder: Day ${enrollment.currentDayNumber} of 30 is ready — about 30 minutes. ${ctaUrl}`,
+            sms: `Zero To Practice Builder: Day ${enrollment.currentDayNumber} of 28 is ready — about 30 minutes. ${ctaUrl}`,
           };
         }
 
@@ -130,6 +131,21 @@ export async function GET(request) {
             await sendSMS(phone, reminder.sms);
           } catch (smsError) {
             console.error(`[PracticeOS Reminders] SMS failed for ${enrollment._id}:`, smsError);
+          }
+        }
+
+        // WhatsApp — daily "finish today's module" nudge via Wylto.
+        const waPhone = doctor.whatsappNumber || doctor.phone;
+        if (waPhone) {
+          try {
+            await fireWyltoWebhook('moduleReminder', {
+              name: doctor.displayName || doctor.name,
+              phoneNumber: waPhone,
+              dayNumber: enrollment.currentDayNumber,
+              daysCompleted: enrollment.daysCompleted,
+            });
+          } catch (waError) {
+            console.error(`[PracticeOS Reminders] WhatsApp failed for ${enrollment._id}:`, waError);
           }
         }
 

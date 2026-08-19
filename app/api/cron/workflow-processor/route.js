@@ -96,7 +96,7 @@ export async function GET(request) {
             const variables = {
               name: contact.name || '',
               phone: contact.phone || '',
-              reviewLink: workflow.googleReviewLink || contact.googleReviewLink || '',
+              reviewLink: workflow.googleReviewLink || contact.googleReviewLink || doctor.googleReviewLink || '',
               clinicName: clinic?.name || doctor.displayName || doctor.name,
               doctorName: doctor.displayName || doctor.name,
             };

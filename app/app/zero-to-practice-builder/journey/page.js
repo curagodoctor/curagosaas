@@ -164,7 +164,7 @@ function RecordView({ days, done }) {
   return (
     <>
       <p className="text-[13px] text-[var(--muted)] mb-4">
-        <span className="pos-num text-[var(--ink)]">{done.length}</span> {done.length === 1 ? 'day' : 'days'} of work built. At Day 30 this is your completion record.
+        <span className="pos-num text-[var(--ink)]">{done.length}</span> {done.length === 1 ? 'day' : 'days'} of work built. At Day 28 this is your completion record.
       </p>
       <div className="space-y-3">
         {days.map((d) => {
