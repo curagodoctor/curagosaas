@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
+import Contact from '@/models/Contact';
 import { getCurrentDoctor } from '@/lib/doctorAuth';
 
 // GET - Get doctor settings
@@ -119,6 +120,16 @@ export async function PUT(request) {
       return NextResponse.json(
         { error: 'Doctor not found' },
         { status: 404 }
+      );
+    }
+
+    // The Google review link is stamped onto each contact at creation (set once).
+    // When it changes here, propagate the new value to all of this doctor's
+    // contacts so they stay in sync — there is no per-contact override anymore.
+    if (updates.googleReviewLink !== undefined) {
+      await Contact.updateMany(
+        { doctorId: doctor._id },
+        { $set: { googleReviewLink: updates.googleReviewLink?.trim() || undefined } }
       );
     }
 

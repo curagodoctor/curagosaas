@@ -34,7 +34,7 @@ function ContactsPageInner() {
   const [newStatus, setNewStatus] = useState({ label: '', color: '#6B7280' });
 
   const [formData, setFormData] = useState({
-    name: '', phone: '', email: '', status: 'new', notes: '', googleReviewLink: '',
+    name: '', phone: '', email: '', status: 'new', notes: '',
   });
 
   const fetchContacts = useCallback(async (page = 1) => {
@@ -278,7 +278,7 @@ function ContactsPageInner() {
       if (data.success) {
         setShowAddModal(false);
         setEditingContact(null);
-        setFormData({ name: '', phone: '', email: '', status: 'new', notes: '', googleReviewLink: '' });
+        setFormData({ name: '', phone: '', email: '', status: 'new', notes: '' });
         fetchContacts(pagination.page);
       } else {
         await showAlert({ title: 'Error', message: data.error, type: 'error' });
@@ -356,7 +356,6 @@ function ContactsPageInner() {
       email: contact.email || '',
       status: contact.status || 'new',
       notes: contact.notes || '',
-      googleReviewLink: contact.googleReviewLink || '',
     });
     setShowAddModal(true);
   };
@@ -441,7 +440,7 @@ function ContactsPageInner() {
           <button
             onClick={() => {
               setEditingContact(null);
-              setFormData({ name: '', phone: '', email: '', status: 'new', notes: '', googleReviewLink: '' });
+              setFormData({ name: '', phone: '', email: '', status: 'new', notes: '' });
               setShowAddModal(true);
             }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] transition-colors"
@@ -823,16 +822,6 @@ function ContactsPageInner() {
                     ))}
                   </select>
                 )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Google Review Link</label>
-                <input
-                  type="url"
-                  value={formData.googleReviewLink}
-                  onChange={e => setFormData(prev => ({ ...prev, googleReviewLink: e.target.value }))}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
-                  placeholder="https://g.page/r/..."
-                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>

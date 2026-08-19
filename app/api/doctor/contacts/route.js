@@ -96,7 +96,9 @@ export async function POST(request) {
       tags: tags || [],
       source: 'manual',
       notes: notes || undefined,
-      googleReviewLink: googleReviewLink?.trim() || undefined,
+      // Stamp the practice's Google review link onto the contact at creation
+      // (set once in Settings). Explicit per-contact value still wins if passed.
+      googleReviewLink: googleReviewLink?.trim() || doctor.googleReviewLink || undefined,
     });
 
     return NextResponse.json({ success: true, contact }, { status: 201 });

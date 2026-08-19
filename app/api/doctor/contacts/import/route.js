@@ -75,6 +75,8 @@ export async function POST(request) {
         status,
         notes: notes || undefined,
         source: 'import',
+        // Stamp the practice's Google review link (set once in Settings).
+        googleReviewLink: doctor.googleReviewLink || undefined,
       });
     });
 
