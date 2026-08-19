@@ -5,6 +5,7 @@ import MessageTemplate from '@/models/MessageTemplate';
 import Clinic from '@/models/Clinic';
 import MessageQuota from '@/models/MessageQuota';
 import Subscription from '@/models/Subscription';
+import { hasActiveEntitlement } from '@/lib/entitlements';
 import { sendMessage, resolveVariables } from '@/lib/messaging';
 
 export async function GET(request) {
@@ -43,7 +44,7 @@ export async function GET(request) {
         }
 
         // Check subscription is still active
-        const isSubscribed = await Subscription.isActive(doctor._id);
+        const isSubscribed = await hasActiveEntitlement(doctor._id);
         if (!isSubscribed) {
           execution.status = 'paused';
           execution.logs.push({ stepIndex: execution.currentStepIndex, channel: 'unknown', status: 'skipped', sentAt: new Date(), error: 'Subscription expired' });

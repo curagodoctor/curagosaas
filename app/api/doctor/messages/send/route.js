@@ -6,7 +6,7 @@ import MessageQuota from '@/models/MessageQuota';
 import Clinic from '@/models/Clinic';
 import Subscription from '@/models/Subscription';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
-import { requireFeatureOr403, FEATURES } from '@/lib/entitlements';
+import { requireFeatureOr403, FEATURES, hasActiveEntitlement } from '@/lib/entitlements';
 import { sendBulkMessages } from '@/lib/messaging';
 
 export async function POST(request) {
@@ -18,7 +18,7 @@ export async function POST(request) {
     if (locked) return locked;
 
     // Check subscription is active
-    const isSubscribed = await Subscription.isActive(doctor._id);
+    const isSubscribed = await hasActiveEntitlement(doctor._id);
     if (!isSubscribed) {
       return NextResponse.json({
         success: false,
