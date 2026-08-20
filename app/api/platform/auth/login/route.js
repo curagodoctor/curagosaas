@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import {
-  validateAdminCredentials,
-  generateAdminToken,
-  setAdminCookie,
-} from '@/lib/platformAdminAuth';
+import connectDB from '@/lib/mongodb';
+import { validateAdminCredentials } from '@/lib/platformAdminAuth';
+import PlatformAdminOtp from '@/models/PlatformAdminOtp';
+import { sendPlatformAdminOtpEmail } from '@/lib/email';
 
+// Step 1 of 2: verify email + password, then email a one-time code.
+// No session cookie is issued here — that only happens after OTP verification.
 export async function POST(request) {
   try {
     const { email, password } = await request.json();
@@ -16,8 +17,8 @@ export async function POST(request) {
       );
     }
 
-    // Validate credentials against environment variables
-    const isValid = validateAdminCredentials(email, password);
+    // Validate credentials against the admin accounts in the DB
+    const isValid = await validateAdminCredentials(email, password);
 
     if (!isValid) {
       return NextResponse.json(
@@ -26,17 +27,25 @@ export async function POST(request) {
       );
     }
 
-    // Generate token and set cookie
-    const token = generateAdminToken(email);
-    await setAdminCookie(token);
+    await connectDB();
+
+    // Issue + email a one-time code. We do NOT reveal the code in the response.
+    const { code } = await PlatformAdminOtp.issue(email);
+    const sent = await sendPlatformAdminOtpEmail(email.toLowerCase(), code);
+
+    if (!sent?.success) {
+      console.error('Failed to send admin OTP email:', sent?.error);
+      return NextResponse.json(
+        { error: 'Could not send your verification code. Please try again.' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      message: 'Login successful',
-      admin: {
-        email: email.toLowerCase(),
-        role: 'platform_admin',
-      },
+      otpRequired: true,
+      email: email.toLowerCase(),
+      message: 'A verification code has been sent to your email.',
     });
   } catch (error) {
     console.error('Platform admin login error:', error);
