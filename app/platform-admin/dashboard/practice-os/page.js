@@ -947,25 +947,31 @@ function DoctorsTab() {
 // Grant or remove a doctor's Builder Pack access (no payment needed). Grant is
 // non-destructive and reversible; Remove drops the paid entitlement but keeps
 // their progress (free packs stay accessible regardless).
-function AccessManager({ doctorId, packs, ownedPackIds, onChange }) {
+function AccessManager({ doctorId, packs, ownedPackIds, ghostPurchases = [], onChange }) {
   const [pack, setPack] = useState(packs[0]?.id || '');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   const owned = new Set(ownedPackIds);
 
-  const act = async (action) => {
-    if (!pack) return;
+  const post = async (body, successMsg) => {
     setBusy(true); setMsg('');
     try {
       const res = await fetch(`/api/platform/practice-os/users/${doctorId}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, frameworkId: pack }),
+        body: JSON.stringify(body),
       });
       const d = await res.json();
-      if (d.success) { setMsg(action === 'grant' ? 'Access granted.' : 'Access removed.'); await onChange?.(); }
+      if (d.success) { setMsg(successMsg); await onChange?.(); }
       else setMsg(d.error || 'Failed.');
     } catch { setMsg('Something went wrong.'); }
     finally { setBusy(false); }
+  };
+
+  const act = (action) => { if (pack) post({ action, frameworkId: pack }, action === 'grant' ? 'Access granted.' : 'Access removed.'); };
+  const clearGhost = (g) => post({ action: 'revoke-purchase', purchaseId: g.id }, 'Ghost entitlement removed.');
+  const removeAll = () => {
+    if (!confirm('Remove ALL pack entitlements for this doctor? Progress is kept; free packs stay accessible.')) return;
+    post({ action: 'revoke-all' }, 'All pack access removed.');
   };
 
   return (
@@ -985,8 +991,29 @@ function AccessManager({ doctorId, packs, ownedPackIds, onChange }) {
         </select>
         <button onClick={() => act('grant')} disabled={busy || !pack} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50">Grant</button>
         <button onClick={() => act('revoke')} disabled={busy || !pack} className="px-4 py-2 border border-red-300 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 disabled:opacity-50">Remove</button>
+        {(ownedPackIds.length > 0 || ghostPurchases.length > 0) && (
+          <button onClick={removeAll} disabled={busy} className="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 disabled:opacity-50">Remove all</button>
+        )}
         {msg && <span className="text-sm text-gray-600">{msg}</span>}
       </div>
+
+      {ghostPurchases.length > 0 && (
+        <div className="mt-4 border-t border-amber-200 pt-3">
+          <p className="text-xs font-medium text-amber-700 mb-2">
+            Ghost entitlements — purchases for a deleted / missing pack. These still count toward the Website Builder bundle. Clear them:
+          </p>
+          <div className="space-y-1.5">
+            {ghostPurchases.map((g) => (
+              <div key={g.id} className="flex items-center justify-between gap-2 bg-amber-50 rounded-md px-3 py-2">
+                <span className="text-xs text-amber-800 font-mono">
+                  {g.frameworkId ? `pack ${g.frameworkId} (deleted)` : 'no pack (legacy)'} · ₹{g.amountInInr}
+                </span>
+                <button onClick={() => clearGhost(g)} disabled={busy} className="px-2.5 py-1 border border-red-300 text-red-600 rounded-md text-xs font-medium hover:bg-red-50 disabled:opacity-50">Remove</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1056,7 +1083,7 @@ function DoctorDetailModal({ doctorId, onClose }) {
               </div>
 
               {/* Pack access — grant / remove from backend */}
-              <AccessManager doctorId={doctorId} packs={data.packs || []} ownedPackIds={data.ownedPackIds || []} onChange={load} />
+              <AccessManager doctorId={doctorId} packs={data.packs || []} ownedPackIds={data.ownedPackIds || []} ghostPurchases={data.ghostPurchases || []} onChange={load} />
 
               {/* Performance */}
               {data.performance && (

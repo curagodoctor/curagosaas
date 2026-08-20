@@ -11,7 +11,7 @@ import JourneyTimeline from '@/models/practice-os/JourneyTimeline';
 import Framework from '@/models/practice-os/Framework';
 import PracticeOsPurchase from '@/models/practice-os/PracticeOsPurchase';
 import { requirePlatformAdmin } from '@/lib/platformAdminAuth';
-import { grantPracticeOsAccess, revokePracticeOsAccess } from '@/lib/practice-os/grant';
+import { grantPracticeOsAccess, revokePracticeOsAccess, revokePurchaseById, revokeAllPracticeOsAccess } from '@/lib/practice-os/grant';
 
 export const runtime = 'nodejs';
 
@@ -68,9 +68,26 @@ export async function GET(request, { params }) {
     // Access management: all packs + which the doctor currently owns (paid).
     const [allPacks, purchases] = await Promise.all([
       Framework.find({ isActive: true }).select('title priceInInr isPublished').sort({ order: 1, createdAt: 1 }).lean(),
-      PracticeOsPurchase.find({ doctorId: id, status: 'completed' }).select('frameworkId').lean(),
+      PracticeOsPurchase.find({ doctorId: id, status: 'completed' }).select('frameworkId amountInInr createdAt').lean(),
     ]);
     const ownedPackIds = purchases.map((p) => String(p.frameworkId)).filter(Boolean);
+
+    // Ghost entitlements: completed purchases whose pack no longer exists (hard
+    // deleted) or that never had a pack. These aren't selectable by frameworkId
+    // in the Remove dropdown, so surface them for one-click cleanup.
+    const purchasedFwIds = purchases.map((p) => p.frameworkId).filter(Boolean);
+    const existingFw = purchasedFwIds.length
+      ? await Framework.find({ _id: { $in: purchasedFwIds } }).select('_id').lean()
+      : [];
+    const existingFwIds = new Set(existingFw.map((f) => String(f._id)));
+    const ghostPurchases = purchases
+      .filter((p) => !p.frameworkId || !existingFwIds.has(String(p.frameworkId)))
+      .map((p) => ({
+        id: String(p._id),
+        frameworkId: p.frameworkId ? String(p.frameworkId) : null,
+        amountInInr: p.amountInInr || 0,
+        createdAt: p.createdAt || null,
+      }));
 
     return NextResponse.json({
       success: true,
@@ -82,6 +99,7 @@ export async function GET(request, { params }) {
       journey,
       packs: allPacks.map((p) => ({ id: String(p._id), title: p.title, priceInInr: p.priceInInr || 0, isPublished: !!p.isPublished })),
       ownedPackIds,
+      ghostPurchases,
     });
   } catch (error) {
     console.error('[Practice OS user detail GET]', error);
@@ -97,7 +115,20 @@ export async function POST(request, { params }) {
     if (!authenticated) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     await connectDB();
     const { id } = await params;
-    const { action, frameworkId } = await request.json();
+    const { action, frameworkId, purchaseId } = await request.json();
+
+    // Clear a specific ghost/deleted-pack purchase by its id.
+    if (action === 'revoke-purchase') {
+      if (!purchaseId) return NextResponse.json({ success: false, error: 'Missing purchase' }, { status: 400 });
+      await revokePurchaseById(id, purchaseId);
+      return NextResponse.json({ success: true, revoked: true });
+    }
+    // Remove every pack entitlement for this doctor.
+    if (action === 'revoke-all') {
+      await revokeAllPracticeOsAccess(id);
+      return NextResponse.json({ success: true, revoked: true });
+    }
+
     if (!frameworkId) return NextResponse.json({ success: false, error: 'Missing pack' }, { status: 400 });
 
     if (action === 'grant') {
