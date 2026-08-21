@@ -23,6 +23,7 @@ const SectionSchema = new mongoose.Schema({
   key: { type: String, required: true },
   heading: { type: String, default: '' },
   body: { type: String, default: '' },
+  imageUrl: { type: String, default: '' },   // optional per-section image (public URL)
 }, { _id: false });
 
 const NewsletterSchema = new mongoose.Schema({
@@ -34,11 +35,21 @@ const NewsletterSchema = new mongoose.Schema({
   ctaLabel: { type: String, default: '', trim: true },
   ctaUrl: { type: String, default: '', trim: true },
 
+  // Media
+  heroImage: { type: String, default: '' },   // top banner (public URL)
+  pdfUrl: { type: String, default: '' },       // attached/linked PDF (public URL)
+  pdfLabel: { type: String, default: 'Download the guide' },
+
   sections: { type: [SectionSchema], default: [] },
 
   segments: { type: [String], default: ['doctors', 'cohort', 'waitlist'] },
 
-  status: { type: String, enum: ['draft', 'sending', 'sent'], default: 'draft', index: true },
+  // Delivery options
+  replyTo: { type: String, default: '' },      // where replies to "One Question" go
+  showReadTime: { type: Boolean, default: true },
+  scheduledFor: { type: Date },                // set → status 'scheduled'
+
+  status: { type: String, enum: ['draft', 'scheduled', 'sending', 'sent'], default: 'draft', index: true },
 
   // Send results (immediate-send model).
   stats: {

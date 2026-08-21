@@ -42,6 +42,11 @@ export async function PATCH(request, { params }) {
     if (typeof body.intro === 'string') nl.intro = body.intro;
     if (typeof body.ctaLabel === 'string') nl.ctaLabel = body.ctaLabel;
     if (typeof body.ctaUrl === 'string') nl.ctaUrl = body.ctaUrl;
+    if (typeof body.heroImage === 'string') nl.heroImage = body.heroImage;
+    if (typeof body.pdfUrl === 'string') nl.pdfUrl = body.pdfUrl;
+    if (typeof body.pdfLabel === 'string') nl.pdfLabel = body.pdfLabel;
+    if (typeof body.replyTo === 'string') nl.replyTo = body.replyTo;
+    if (typeof body.showReadTime === 'boolean') nl.showReadTime = body.showReadTime;
     if (Array.isArray(body.segments)) {
       nl.segments = body.segments.filter((s) => NEWSLETTER_SEGMENTS.includes(s));
     }
@@ -49,8 +54,15 @@ export async function PATCH(request, { params }) {
       // Keep template order + keys; only accept known keys.
       const incoming = new Map(body.sections.filter((s) => SECTION_KEYS.has(s.key)).map((s) => [s.key, s]));
       nl.sections = NEWSLETTER_SECTIONS.map((meta) => {
-        const s = incoming.get(meta.key) || nl.sections.find((x) => x.key === meta.key) || {};
-        return { key: meta.key, heading: (s.heading ?? meta.label) || meta.label, body: s.body ?? '' };
+        const cur = nl.sections.find((x) => x.key === meta.key) || {};
+        const s = incoming.get(meta.key);
+        if (!s) return { key: meta.key, heading: cur.heading || meta.label, body: cur.body || '', imageUrl: cur.imageUrl || '' };
+        return {
+          key: meta.key,
+          heading: (s.heading ?? cur.heading ?? meta.label) || meta.label,
+          body: s.body ?? cur.body ?? '',
+          imageUrl: s.imageUrl ?? cur.imageUrl ?? '',
+        };
       });
     }
     await nl.save();

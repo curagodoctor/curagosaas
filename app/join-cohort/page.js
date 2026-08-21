@@ -78,9 +78,12 @@ function JoinCohortFlow() {
   );
 }
 
-// A single autoplaying video with a "proceed" CTA that unlocks when it ends.
+// A single autoplaying video with a "proceed" CTA that unlocks only when the
+// video actually finishes. No skipping: the "Skip" link is gone and the seek bar
+// can't be dragged forward past what's genuinely been watched (rewind is fine).
 function VideoStep({ src, eyebrow, title, proceedLabel, onProceed }) {
   const videoRef = useRef(null);
+  const maxWatched = useRef(0);   // furthest point reached by normal playback
   const [ended, setEnded] = useState(false);
   const [needsTap, setNeedsTap] = useState(false); // autoplay-with-sound blocked
 
@@ -98,6 +101,25 @@ function VideoStep({ src, eyebrow, title, proceedLabel, onProceed }) {
     videoRef.current?.play().catch(() => setNeedsTap(true));
   };
 
+  // Advance the watched marker only in small, playback-sized steps. A large jump
+  // means a forward seek — never let it move the marker.
+  const onTimeUpdate = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.currentTime > maxWatched.current && v.currentTime - maxWatched.current < 1.2) {
+      maxWatched.current = v.currentTime;
+    }
+  };
+
+  // If the user drags/keys ahead of what they've watched, snap back.
+  const onSeeking = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.currentTime > maxWatched.current + 0.4) {
+      v.currentTime = maxWatched.current;
+    }
+  };
+
   return (
     <div className="w-full max-w-4xl">
       <p className="text-[12px] font-mono tracking-widest mb-2" style={{ color: '#8fe6ae' }}>{eyebrow.toUpperCase()}</p>
@@ -111,7 +133,12 @@ function VideoStep({ src, eyebrow, title, proceedLabel, onProceed }) {
           autoPlay
           playsInline
           controls
+          controlsList="nodownload noplaybackrate"
+          disablePictureInPicture
+          onContextMenu={(e) => e.preventDefault()}
           preload="auto"
+          onTimeUpdate={onTimeUpdate}
+          onSeeking={onSeeking}
           onEnded={() => setEnded(true)}
         />
         {needsTap && (
@@ -131,23 +158,16 @@ function VideoStep({ src, eyebrow, title, proceedLabel, onProceed }) {
 
       <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
         <p className="text-[13px]" style={{ color: 'rgba(255,255,255,.55)' }}>
-          {ended ? 'Video finished — you can continue.' : 'Watch the video, then continue below.'}
+          {ended ? 'Video finished — you can continue.' : 'Watch the full video to continue. You can’t skip ahead.'}
         </p>
-        <div className="flex items-center gap-4">
-          {!ended && (
-            <button onClick={onProceed} className="text-[13px] underline" style={{ color: 'rgba(255,255,255,.5)' }}>
-              Skip
-            </button>
-          )}
-          <button
-            onClick={onProceed}
-            disabled={!ended}
-            className="font-semibold text-[15px] px-6 py-3 rounded-xl transition-opacity"
-            style={{ background: '#F26A1B', color: '#fff', opacity: ended ? 1 : 0.45, cursor: ended ? 'pointer' : 'not-allowed', boxShadow: ended ? '0 10px 30px rgba(232,114,46,.4)' : 'none' }}
-          >
-            {proceedLabel}
-          </button>
-        </div>
+        <button
+          onClick={onProceed}
+          disabled={!ended}
+          className="font-semibold text-[15px] px-6 py-3 rounded-xl transition-opacity"
+          style={{ background: '#F26A1B', color: '#fff', opacity: ended ? 1 : 0.45, cursor: ended ? 'pointer' : 'not-allowed', boxShadow: ended ? '0 10px 30px rgba(232,114,46,.4)' : 'none' }}
+        >
+          {proceedLabel}
+        </button>
       </div>
     </div>
   );

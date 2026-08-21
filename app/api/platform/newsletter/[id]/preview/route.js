@@ -1,6 +1,7 @@
 import connectDB from '@/lib/mongodb';
 import { requirePlatformAdmin } from '@/lib/platformAdminAuth';
 import Newsletter from '@/models/Newsletter';
+import NewsletterSettings from '@/models/NewsletterSettings';
 import { renderNewsletterHtml } from '@/lib/newsletter/template';
 
 export const runtime = 'nodejs';
@@ -15,6 +16,7 @@ export async function GET(request, { params }) {
   const nl = await Newsletter.findById(id).lean();
   if (!nl) return new Response('Not found', { status: 404 });
 
-  const html = renderNewsletterHtml(nl, { recipientName: 'Dr. Sharma', unsubscribeUrl: '#' });
+  const settings = (await NewsletterSettings.get())?.toObject?.() || {};
+  const html = renderNewsletterHtml(nl, { recipientName: 'Dr. Sharma', unsubscribeUrl: '#', settings });
   return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 }
