@@ -359,7 +359,7 @@ function Composer({ id, onBack }) {
       {/* Scheduled banner */}
       {nl.status === 'scheduled' && (
         <div className="mt-5 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800 flex items-center justify-between gap-3">
-          <span>Scheduled for <strong>{new Date(nl.scheduledFor).toLocaleString('en-IN')}</strong> (sends within the hour).</span>
+          <span>Scheduled for <strong>{new Date(nl.scheduledFor).toLocaleString('en-IN')}</strong> (sends at the next daily run, ~6am IST).</span>
           <button onClick={cancelSchedule} disabled={busy} className="text-xs px-2.5 py-1 border border-amber-300 rounded-md hover:bg-amber-100">Cancel</button>
         </div>
       )}

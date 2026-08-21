@@ -7,8 +7,9 @@ export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 // Runs on a schedule (see vercel.json). Sends any newsletter whose scheduledFor
-// has passed. Precision is to the cron interval (hourly) — a newsletter scheduled
-// for 2:30pm goes out on the next top-of-hour run.
+// has passed. On Vercel Hobby crons may only run once per day, so this fires
+// daily (~6am IST) — a scheduled newsletter goes out on the next daily run after
+// its scheduledFor time. (Immediate "Send now" doesn't use this cron.)
 export async function GET(request) {
   try {
     const authHeader = request.headers.get('authorization');
