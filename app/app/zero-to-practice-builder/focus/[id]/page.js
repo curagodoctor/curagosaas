@@ -400,7 +400,7 @@ function FocusSession() {
                   </button>
                 ))}
               </div>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {WINDOWS.map((w) => (
                   <button key={w.id} onClick={() => setCommit((c) => ({ ...c, window: w.id }))}
                     className="rounded-lg py-2 text-center border transition-colors"

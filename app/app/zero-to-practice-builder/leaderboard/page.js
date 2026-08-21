@@ -65,14 +65,14 @@ export default function LeaderboardPage() {
 
       {/* Table */}
       <div className="pos-card overflow-hidden">
-        <div className="grid grid-cols-[44px_1fr_60px_60px_70px] gap-2 px-4 py-2.5 text-[11px] uppercase tracking-wide" style={{ background: 'var(--rule-soft)', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>
+        <div className="grid grid-cols-[30px_1fr_40px_46px_52px] sm:grid-cols-[44px_1fr_60px_60px_70px] gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 text-[11px] uppercase tracking-wide" style={{ background: 'var(--rule-soft)', color: 'var(--muted)', fontFamily: 'var(--mono)' }}>
           <span>#</span><span>Name</span><span className="text-right">XP</span><span className="text-right">Streak</span><span className="text-right">Points</span>
         </div>
         {entries.length === 0 ? (
           <div className="px-4 py-8 text-center text-sm text-[var(--muted)]">No one on the board yet — be the first.</div>
         ) : (
           entries.map((e) => (
-            <div key={e.rank} className="grid grid-cols-[44px_1fr_60px_60px_70px] gap-2 px-4 py-2.5 items-center border-t text-[14px]"
+            <div key={e.rank} className="grid grid-cols-[30px_1fr_40px_46px_52px] sm:grid-cols-[44px_1fr_60px_60px_70px] gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 items-center border-t text-[14px]"
               style={{ borderColor: 'var(--rule-soft)', background: e.isMe ? 'var(--green-soft)' : 'transparent' }}>
               <span className="pos-num text-[var(--muted)]">{e.rank}</span>
               <span className="text-[var(--ink)] font-medium truncate">{e.username}{e.isMe && <span className="text-[11px] text-[var(--green)]"> · you</span>}</span>
