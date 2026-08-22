@@ -4,6 +4,7 @@ import Contact from '@/models/Contact';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
 import { requireFeatureOr403, FEATURES } from '@/lib/entitlements';
 import { fireWyltoWebhook } from '@/lib/wylto';
+import { getClinicName } from '@/lib/clinicName';
 
 export const runtime = 'nodejs';
 
@@ -32,9 +33,14 @@ export async function POST(request, { params }) {
       return NextResponse.json({ success: false, error: 'This contact has no phone number.' }, { status: 400 });
     }
 
+    const doctorName = doctor.displayName || doctor.name || '';
+    const clinicName = (await getClinicName(doctor._id)) || doctorName;
     const result = await fireWyltoWebhook('reviewRequest', {
       name: contact.name,
       phoneNumber: contact.phone,
+      patientName: contact.name,
+      doctorName,
+      clinicName,
       // Doctor's one-time review link (falls back to a per-contact one if set).
       reviewLink: doctor.googleReviewLink || contact.googleReviewLink || '',
     });

@@ -10,6 +10,7 @@ import { validatePhone } from "@/lib/validation";
 import { sendBookingConfirmationToPatient, sendBookingNotificationToDoctor } from "@/lib/email";
 import { sendSMS } from "@/lib/twilio";
 import { fireWyltoWebhook } from "@/lib/wylto";
+import { getClinicName } from "@/lib/clinicName";
 
 export async function POST(request) {
   try {
@@ -148,9 +149,12 @@ export async function POST(request) {
       const context = {
         date: bookingData.date,
         time: bookingData.time,
+        appointmentDate: bookingData.date,
+        appointmentTime: bookingData.time,
         mode: bookingData.modeOfContact,
         meetLink: calendarEvent.meetLink || '',
         doctorName: doctorInfo.name,
+        clinicName: (await getClinicName(doctorId)) || doctorInfo.name,
         patientName: bookingData.name,
       };
       await Promise.all([

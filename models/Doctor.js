@@ -49,6 +49,14 @@ const DoctorSchema = new mongoose.Schema({
     trim: true,
     maxlength: [100, 'Display name cannot exceed 100 characters']
   },
+  // Clinic / practice name — used in patient WhatsApp messages (booking
+  // confirmation, reminder, review request). Falls back to displayName if unset.
+  clinicName: {
+    type: String,
+    trim: true,
+    default: '',
+    maxlength: [120, 'Clinic name cannot exceed 120 characters']
+  },
   specialization: {
     type: String,
     trim: true

@@ -16,6 +16,7 @@ export async function GET(request) {
     return NextResponse.json({
       doctor: {
         displayName: doctor.displayName,
+        clinicName: doctor.clinicName || "",
         specialization: doctor.specialization,
         qualification: doctor.qualification,
         bio: doctor.bio,
@@ -57,6 +58,7 @@ export async function PUT(request) {
     // Only allow updating specific fields
     const allowedFields = [
       'displayName',
+      'clinicName',
       'specialization',
       'qualification',
       'bio',
@@ -137,6 +139,7 @@ export async function PUT(request) {
       message: 'Settings updated successfully',
       doctor: {
         displayName: updatedDoctor.displayName,
+        clinicName: updatedDoctor.clinicName || "",
         specialization: updatedDoctor.specialization,
         qualification: updatedDoctor.qualification,
         bio: updatedDoctor.bio,

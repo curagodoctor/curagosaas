@@ -11,6 +11,7 @@ export default function SettingsPage() {
 
   const [formData, setFormData] = useState({
     displayName: '',
+    clinicName: '',
     specialization: '',
     qualification: '',
     bio: '',
@@ -121,6 +122,7 @@ export default function SettingsPage() {
       if (data.doctor) {
         setFormData({
           displayName: data.doctor.displayName || '',
+          clinicName: data.doctor.clinicName || '',
           specialization: data.doctor.specialization || '',
           qualification: data.doctor.qualification || '',
           bio: data.doctor.bio || '',
@@ -248,6 +250,23 @@ export default function SettingsPage() {
                 />
                 <p className="mt-1 text-sm text-gray-500">
                   This name will be displayed on your clinic website
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Clinic / Practice Name
+                </label>
+                <input
+                  type="text"
+                  name="clinicName"
+                  value={formData.clinicName}
+                  onChange={handleChange}
+                  placeholder="e.g. Sunrise Gastro Clinic"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  Used in patient WhatsApp messages (booking, reminder, review request). Defaults to your display name if left blank.
                 </p>
               </div>
 

@@ -9,6 +9,7 @@ import connectDB from "@/lib/mongodb";
 import Doctor from "@/models/Doctor";
 import { sendBookingConfirmationToPatient, sendBookingNotificationToDoctor } from "@/lib/email";
 import { fireWyltoWebhook } from "@/lib/wylto";
+import { getClinicName } from "@/lib/clinicName";
 import { sendSMS } from "@/lib/twilio";
 
 // Verify Razorpay payment signature
@@ -174,9 +175,12 @@ export async function POST(request) {
       const context = {
         date: reservation.date,
         time: reservation.time,
+        appointmentDate: reservation.date,
+        appointmentTime: reservation.time,
         mode: reservation.mode,
         meetLink: calendarEvent.meetLink || '',
         doctorName: doctorInfo.name,
+        clinicName: (await getClinicName(reservation.doctorId)) || doctorInfo.name,
         patientName: reservation.name,
       };
       await Promise.all([

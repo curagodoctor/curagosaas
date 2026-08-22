@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import Booking from '@/models/Booking';
 import Doctor from '@/models/Doctor';
 import { fireWyltoWebhook } from '@/lib/wylto';
+import { getClinicNames } from '@/lib/clinicName';
 
 export const runtime = 'nodejs';
 
@@ -30,9 +31,18 @@ export async function GET(request) {
       ? await Doctor.find({ _id: { $in: doctorIds } }).select('displayName name whatsappNumber phone').lean()
       : [];
     const docById = new Map(doctors.map((d) => [String(d._id), d]));
+    const clinicByDoctor = await getClinicNames(doctorIds);
 
     const sendBoth = async (b, docPhone, docName) => {
-      const ctx = { date: b.date, time: b.time, doctorName: docName, patientName: b.name };
+      const ctx = {
+        date: b.date,
+        time: b.time,
+        appointmentDate: b.date,
+        appointmentTime: b.time,
+        doctorName: docName,
+        clinicName: clinicByDoctor.get(String(b.doctorId)) || docName,
+        patientName: b.name,
+      };
       await Promise.all([
         fireWyltoWebhook('appointmentReminder', { name: b.name, phoneNumber: b.whatsapp, ...ctx }),
         docPhone ? fireWyltoWebhook('appointmentReminder', { name: docName, phoneNumber: docPhone, ...ctx, patientPhone: b.whatsapp }) : Promise.resolve(),
