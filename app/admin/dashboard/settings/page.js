@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useModal } from '@/contexts/ModalContext';
-import ClinicsManager from '@/components/admin/ClinicsManager';
 
 export default function SettingsPage() {
   const { showAlert, showConfirm } = useModal();
@@ -213,7 +212,6 @@ export default function SettingsPage() {
     { id: 'profile', label: 'Profile' },
     { id: 'contact', label: 'Contact & WhatsApp' },
     { id: 'practice', label: 'Practice Info' },
-    { id: 'clinics', label: 'Clinics' },
     { id: 'domain', label: 'Domain & DNS' },
     { id: 'analytics', label: 'Analytics & Tracking' },
     { id: 'subscription', label: 'Subscription' },
@@ -456,8 +454,6 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Clinics Tab */}
-          {activeTab === 'clinics' && <ClinicsManager />}
 
           {/* Domain & DNS Tab */}
           {activeTab === 'domain' && (

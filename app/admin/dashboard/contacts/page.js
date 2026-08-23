@@ -844,14 +844,22 @@ function ContactsPageInner() {
                         className="px-3 py-2 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50">Add clinic</button>
                     </div>
                   ) : (
-                    <select
-                      value={formData.clinicId}
-                      onChange={e => setFormData(prev => ({ ...prev, clinicId: e.target.value }))}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] outline-none bg-white"
-                    >
-                      <option value="">No clinic</option>
-                      {clinics.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
-                    </select>
+                    <>
+                      <select
+                        value={formData.clinicId}
+                        onChange={e => setFormData(prev => ({ ...prev, clinicId: e.target.value }))}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] outline-none bg-white"
+                      >
+                        <option value="">No clinic</option>
+                        {clinics.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                      </select>
+                      {(() => {
+                        const c = clinics.find(x => x._id === formData.clinicId);
+                        return c?.phone ? (
+                          <p className="mt-1.5 text-xs text-gray-500">Clinic phone: <span className="font-medium text-gray-700">{c.phone}</span></p>
+                        ) : null;
+                      })()}
+                    </>
                   )}
                 </div>
                 <div>
