@@ -539,17 +539,29 @@ function FocusSession() {
 
             {/* Action buttons — {{variables}} in the URL/label are filled from the
                 doctor's values (server-side, plus anything typed this session). */}
-            {mod.buttons?.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-4">
-                {mod.buttons.map((b, i) => (
-                  <a key={i} href={fillVars(b.url, sessionVars)} target="_blank" rel="noopener noreferrer" className="pos-card px-4 py-2.5 text-[13.5px] font-medium text-[var(--ink)] hover:shadow-sm transition-shadow inline-flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full" style={{ background: 'var(--green)' }} />
-                    {fillVars(b.label, sessionVars)}
-                    <svg className="w-3.5 h-3.5 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                  </a>
-                ))}
-              </div>
-            )}
+            {mod.buttons?.length > 0 && (() => {
+              // Resolve {{variables}} in each button's URL/label. Skip a button
+              // whose URL is a placeholder the doctor hasn't filled yet (empty),
+              // so no dead links show. Ensure a scheme so it opens externally.
+              const resolved = mod.buttons
+                .map((b) => {
+                  let url = fillVars(b.url, sessionVars).trim();
+                  if (url && !/^https?:\/\//i.test(url) && !/^(mailto:|tel:)/i.test(url)) url = `https://${url}`;
+                  return { url, label: fillVars(b.label, sessionVars) };
+                })
+                .filter((b) => b.url);
+              return resolved.length > 0 ? (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {resolved.map((b, i) => (
+                    <a key={i} href={b.url} target="_blank" rel="noopener noreferrer" className="pos-card px-4 py-2.5 text-[13.5px] font-medium text-[var(--ink)] hover:shadow-sm transition-shadow inline-flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full" style={{ background: 'var(--green)' }} />
+                      {b.label}
+                      <svg className="w-3.5 h-3.5 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    </a>
+                  ))}
+                </div>
+              ) : null;
+            })()}
 
             {/* Add to your record — its own distinct box (CLAUDE.md §4: "Your record", not "evidence"). */}
             {mod.inputs?.length > 0 && (

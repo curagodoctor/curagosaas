@@ -372,6 +372,10 @@ function ModulesEditor({ modules = [], onChange }) {
 
           <div className="mt-3">
             <label className={LABEL}>Action buttons</label>
+            <p className="text-xs text-gray-500 mb-1.5">
+              URL can be a link or a <span className="font-mono">{'{{profile_field}}'}</span> token — it&apos;s replaced per doctor with what they entered in My Profile.
+              e.g. <span className="font-mono">{'{{gbp_link}}'}</span>, <span className="font-mono">{'{{drive_link}}'}</span>, <span className="font-mono">{'{{clinic_name}}'}</span>.
+            </p>
             <ArrayEditor
               items={mod.buttons || []}
               onChange={(buttons) => updateMod(i, { buttons })}
@@ -379,7 +383,7 @@ function ModulesEditor({ modules = [], onChange }) {
               render={(item, upd) => (
                 <div className="grid grid-cols-2 gap-2">
                   <input className={INPUT} placeholder="Label" value={item.label} onChange={(e) => upd({ label: e.target.value })} />
-                  <input className={INPUT} placeholder="URL" value={item.url} onChange={(e) => upd({ url: e.target.value })} />
+                  <input className={INPUT} placeholder="https://…  or  {{gbp_link}}" value={item.url} onChange={(e) => upd({ url: e.target.value })} />
                 </div>
               )}
             />

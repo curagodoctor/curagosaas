@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor } from '@/lib/practice-os/access';
 import { getOrCreateProfile, generateDoctorSummary } from '@/lib/practice-os/profile';
+import Doctor from '@/models/Doctor';
 
 export const runtime = 'nodejs';
 
@@ -40,6 +41,17 @@ export async function PUT(request) {
     profile.credentials = profile.credentials || {};
     profile.credentials.extracted = extracted;
     await profile.save();                                  // persist before the summary reads it
+
+    // Keep the shared booking fields in sync: if the doctor filled clinic name /
+    // WhatsApp here, mirror them to the canonical Doctor record so the booking
+    // flow + WhatsApp webhooks use the same values. (One source of truth.)
+    const docUpdates = {};
+    if (String(fields?.clinic_name ?? '').trim()) docUpdates.clinicName = String(fields.clinic_name).trim();
+    const wa = String(fields?.whatsapp_number ?? '').replace(/\D/g, '').slice(-10);
+    if (wa.length === 10) docUpdates.whatsappNumber = wa;
+    if (Object.keys(docUpdates).length) {
+      await Doctor.updateOne({ _id: doctor._id }, { $set: docUpdates });
+    }
 
     const summary = await generateDoctorSummary(doctor._id);
     profile.credentials.summary = summary;
