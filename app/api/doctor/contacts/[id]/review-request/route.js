@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Contact from '@/models/Contact';
+import Clinic from '@/models/Clinic';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
 import { requireFeatureOr403, FEATURES } from '@/lib/entitlements';
-import { fireWyltoWebhook } from '@/lib/wylto';
+import { fireWyltoWebhook, toE164 } from '@/lib/wylto';
 import { getClinicName } from '@/lib/clinicName';
 
 export const runtime = 'nodejs';
@@ -34,13 +35,28 @@ export async function POST(request, { params }) {
     }
 
     const doctorName = doctor.displayName || doctor.name || '';
-    const clinicName = (await getClinicName(doctor._id)) || doctorName;
+    // Prefer the clinic the contact was seen at; fall back to the doctor's clinic name.
+    const clinicName = contact.clinicName || (await getClinicName(doctor._id)) || doctorName;
+
+    // Clinic phone: use the specific clinic's phone if the contact has one, else the doctor's.
+    let clinicPhone = '';
+    if (contact.clinicId) {
+      const clinic = await Clinic.findOne({ _id: contact.clinicId, doctorId: doctor._id }).select('phone').lean();
+      clinicPhone = toE164(clinic?.phone || doctor.whatsappNumber || doctor.phone || '');
+    } else {
+      clinicPhone = toE164(doctor.whatsappNumber || doctor.phone || '');
+    }
+
     const result = await fireWyltoWebhook('reviewRequest', {
       name: contact.name,
       phoneNumber: contact.phone,
       patientName: contact.name,
       doctorName,
       clinicName,
+      clinicPhone,
+      // The date the doctor recorded consulting this patient.
+      consultedDate: contact.consultedDate || '',
+      appointmentDate: contact.consultedDate || '',
       // Doctor's one-time review link (falls back to a per-contact one if set).
       reviewLink: doctor.googleReviewLink || contact.googleReviewLink || '',
     });

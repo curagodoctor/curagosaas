@@ -37,7 +37,10 @@ export default function BookingFormSection({
   const [reservation, setReservation] = useState(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
 
-  // Dynamic consultation modes
+  // Clinics (each has its own consultation modes) + the currently chosen one.
+  const [clinics, setClinics] = useState([]);
+  const [selectedClinicId, setSelectedClinicId] = useState("");
+  // Dynamic consultation modes (of the selected clinic)
   const [consultationModes, setConsultationModes] = useState([]);
   const [isLoadingModes, setIsLoadingModes] = useState(true);
 
@@ -62,6 +65,8 @@ export default function BookingFormSection({
     whatsapp: "",
     modeOfContact: "",
     modeId: "",
+    clinicId: "",
+    clinicName: "",
   });
 
   // Fetch consultation modes on mount
@@ -166,27 +171,41 @@ export default function BookingFormSection({
 
       const response = await fetch(`/api/consultation-modes?${params.toString()}`);
       const data = await response.json();
-      if (data.success && data.modes.length > 0) {
-        // TEMP: Online booking is disabled for now — resume in future.
-        // Hide any "online" mode so only in-clinic booking is offered. To
-        // re-enable, remove this filter (and the flag in /api/consultation-modes).
-        const modes = data.modes.filter(
-          (m) => !/online/i.test(m.name || '') && !/online/i.test(m.displayName || '')
-        );
-        if (modes.length === 0) return;
-        setConsultationModes(modes);
-        // Auto-select first mode
-        setFormData(prev => ({
-          ...prev,
-          modeOfContact: modes[0].name,
-          modeId: modes[0]._id,
-        }));
+      // New shape: clinics[] each with modes[]. The API already hides "online"
+      // modes and drops clinics with no bookable modes.
+      const clinicList = (data.clinics || []).filter((c) => (c.modes || []).length > 0);
+      if (clinicList.length > 0) {
+        setClinics(clinicList);
+        // Auto-select the first clinic + its first mode.
+        applyClinic(clinicList[0]);
       }
     } catch (error) {
       console.error("Error fetching consultation modes:", error);
     } finally {
       setIsLoadingModes(false);
     }
+  };
+
+  // Set the active clinic: swap in its modes and select the first one.
+  const applyClinic = (clinic) => {
+    if (!clinic) return;
+    setSelectedClinicId(clinic._id);
+    setConsultationModes(clinic.modes || []);
+    const first = (clinic.modes || [])[0];
+    setFormData((prev) => ({
+      ...prev,
+      clinicId: clinic._id || "",
+      clinicName: clinic.name || "",
+      modeOfContact: first ? first.name : "",
+      modeId: first ? first._id : "",
+    }));
+    setSelectedSlot(null);
+    setShowSlots(false);
+  };
+
+  const selectClinic = (clinicId) => {
+    const clinic = clinics.find((c) => c._id === clinicId);
+    if (clinic) applyClinic(clinic);
   };
 
   const fetchDates = async () => {
@@ -254,6 +273,8 @@ export default function BookingFormSection({
           whatsapp: formData.whatsapp,
           modeOfContact: formData.modeOfContact,
           modeId: formData.modeId,
+          clinicId: formData.clinicId || undefined,
+          clinicName: formData.clinicName || undefined,
           date: selectedDate,
           time: selectedSlot.time,
           pageSlug: trackingContext.pageSlug,
@@ -405,6 +426,8 @@ export default function BookingFormSection({
             whatsapp: formData.whatsapp,
             modeOfContact: formData.modeOfContact,
             modeId: formData.modeId,
+          clinicId: formData.clinicId || undefined,
+          clinicName: formData.clinicName || undefined,
             pageName: trackingContext.pageName,
             pageSlug: trackingContext.pageSlug,
             referrer: document.referrer || 'direct',
@@ -456,6 +479,8 @@ export default function BookingFormSection({
       trackFormSubmit("Booking Form", {
         mode: formData.modeOfContact,
         modeId: formData.modeId,
+          clinicId: formData.clinicId || undefined,
+          clinicName: formData.clinicName || undefined,
         date: selectedDate,
         time: selectedSlot.label,
         paymentMode: paymentMode,
@@ -478,6 +503,8 @@ export default function BookingFormSection({
           ...formData,
           mode: formData.modeOfContact,
           modeId: formData.modeId,
+          clinicId: formData.clinicId || undefined,
+          clinicName: formData.clinicName || undefined,
           date: selectedDate,
           time: selectedSlot.time,
         }),
@@ -499,6 +526,8 @@ export default function BookingFormSection({
             time: selectedSlot.label,
             mode: formData.modeOfContact,
             modeId: formData.modeId,
+          clinicId: formData.clinicId || undefined,
+          clinicName: formData.clinicName || undefined,
           })
         );
       } else {
@@ -657,7 +686,36 @@ export default function BookingFormSection({
               </div>
             </div>
 
-            {/* Mode of Consultation - Dynamic */}
+            {/* Clinic selector — shown when the doctor has more than one clinic. */}
+            {clinics.length > 1 && (
+              <div>
+                <label className="block text-sm font-semibold text-primary-900 mb-2">
+                  Select Clinic *
+                </label>
+                <div className="flex flex-col gap-3">
+                  {clinics.map((clinic) => (
+                    <button
+                      key={clinic._id || 'default'}
+                      type="button"
+                      onClick={() => selectClinic(clinic._id)}
+                      className={`py-2.5 px-4 rounded-lg text-sm font-semibold transition-all duration-300 border-2 text-left ${
+                        selectedClinicId === clinic._id
+                          ? "bg-primary-600 text-white border-primary-600 shadow-md"
+                          : "bg-white text-primary-700 border-primary-200 hover:border-primary-400"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3m6-14h6m-6 4h6m-2 4h2" /></svg>
+                        <span>{clinic.name}</span>
+                      </div>
+                      {clinic.city && <p className="text-xs mt-0.5 opacity-75">{clinic.city}</p>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Mode of Consultation - Dynamic (of the selected clinic) */}
             <div>
               <label className="block text-sm font-semibold text-primary-900 mb-2">
                 Mode of Consultation *

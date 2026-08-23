@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentDoctor } from '@/lib/doctorAuth';
 import connectDB from '@/lib/mongodb';
 import ConsultationMode from '@/models/ConsultationMode';
+import Clinic from '@/models/Clinic';
 
 // GET - Get all consultation modes for the doctor
 export async function GET(request) {
@@ -13,8 +14,13 @@ export async function GET(request) {
 
     await connectDB();
 
-    const modes = await ConsultationMode.find({ doctorId: doctor._id })
-      .sort({ sortOrder: 1 });
+    // Optionally scope to one clinic.
+    const { searchParams } = new URL(request.url);
+    const clinicId = searchParams.get('clinicId');
+    const query = { doctorId: doctor._id };
+    if (clinicId) query.clinicId = clinicId;
+
+    const modes = await ConsultationMode.find(query).sort({ sortOrder: 1 });
 
     return NextResponse.json({
       success: true,
@@ -39,7 +45,7 @@ export async function POST(request) {
 
     await connectDB();
 
-    const { name, displayName, description, color } = await request.json();
+    const { name, displayName, description, color, clinicId } = await request.json();
 
     if (!name || !displayName) {
       return NextResponse.json(
@@ -47,28 +53,38 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+    if (!clinicId) {
+      return NextResponse.json({ error: 'A clinic is required for a mode' }, { status: 400 });
+    }
+    // Validate the clinic belongs to this doctor.
+    const clinic = await Clinic.findOne({ _id: clinicId, doctorId: doctor._id }).select('_id');
+    if (!clinic) {
+      return NextResponse.json({ error: 'Clinic not found' }, { status: 400 });
+    }
 
-    // Check for duplicate name
+    // Check for duplicate name within the same clinic.
     const existing = await ConsultationMode.findOne({
       doctorId: doctor._id,
+      clinicId: clinic._id,
       name: name.toLowerCase(),
     });
 
     if (existing) {
       return NextResponse.json(
-        { error: 'A mode with this name already exists' },
+        { error: 'A mode with this name already exists in this clinic' },
         { status: 400 }
       );
     }
 
-    // Get next sort order
-    const maxSort = await ConsultationMode.findOne({ doctorId: doctor._id })
+    // Get next sort order (within the clinic)
+    const maxSort = await ConsultationMode.findOne({ doctorId: doctor._id, clinicId: clinic._id })
       .sort({ sortOrder: -1 })
       .select('sortOrder');
     const sortOrder = (maxSort?.sortOrder || 0) + 1;
 
     const mode = await ConsultationMode.create({
       doctorId: doctor._id,
+      clinicId: clinic._id,
       name: name.toLowerCase(),
       displayName,
       description: description || '',

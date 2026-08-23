@@ -41,6 +41,25 @@ const ContactSchema = new mongoose.Schema({
     type: String,
     maxlength: 2000,
   },
+  // Which of the doctor's clinics this contact was seen at. clinicName is
+  // denormalized so it survives even if the clinic is later renamed/removed.
+  clinicId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Clinic',
+    default: null,
+  },
+  clinicName: {
+    type: String,
+    trim: true,
+    default: '',
+  },
+  // Date the patient was consulted (YYYY-MM-DD). Used in the review-request
+  // WhatsApp message instead of a looked-up appointment date.
+  consultedDate: {
+    type: String,
+    trim: true,
+    default: '',
+  },
   googleReviewLink: {
     type: String,
     trim: true,

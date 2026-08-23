@@ -4,6 +4,20 @@ import { useState, useEffect, useCallback } from 'react';
 import { useModal } from '@/contexts/ModalContext';
 import FeatureGate from '@/components/FeatureGate';
 
+// Indian phone helpers — all phone inputs show a fixed +91 prefix and store only
+// the 10 local digits, stripping any +91/91/0 the user pastes.
+function digits10(v) {
+  let d = String(v || '').replace(/\D/g, '');
+  if (d.length > 10 && d.startsWith('91')) d = d.slice(2);   // drop country code
+  if (d.length === 11 && d.startsWith('0')) d = d.slice(1);  // drop trunk 0
+  return d.slice(-10);
+}
+// Build the stored/sent value from a local number.
+function toE164In(v) {
+  const d = digits10(v);
+  return d ? `+91${d}` : '';
+}
+
 export default function ContactsPage() {
   return (
     <FeatureGate feature="contacts" title="Contacts">
@@ -34,8 +48,11 @@ function ContactsPageInner() {
   const [newStatus, setNewStatus] = useState({ label: '', color: '#6B7280' });
 
   const [formData, setFormData] = useState({
-    name: '', phone: '', email: '', status: 'new', notes: '',
+    name: '', phone: '', email: '', status: 'new', notes: '', clinicId: '', consultedDate: '',
   });
+  const [clinics, setClinics] = useState([]);
+  const [showNewClinic, setShowNewClinic] = useState(false);
+  const [newClinic, setNewClinic] = useState({ name: '', phone: '' });
 
   const fetchContacts = useCallback(async (page = 1) => {
     try {
@@ -65,6 +82,38 @@ function ContactsPageInner() {
       if (data.success) setStatuses(data.statuses);
     } catch (error) {
       console.error('Error fetching statuses:', error);
+    }
+  };
+
+  const fetchClinics = async () => {
+    try {
+      const res = await fetch('/api/doctor/clinics', { credentials: 'include' });
+      const data = await res.json();
+      if (data.success) setClinics(data.clinics || []);
+    } catch (error) {
+      console.error('Error fetching clinics:', error);
+    }
+  };
+
+  // Add a clinic inline from the contact form, then select it.
+  const addClinicInline = async () => {
+    if (!newClinic.name.trim()) return;
+    try {
+      const res = await fetch('/api/doctor/clinics', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ name: newClinic.name.trim(), phone: newClinic.phone ? `+91${digits10(newClinic.phone)}` : '' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setClinics(prev => [...prev, data.clinic]);
+        setFormData(prev => ({ ...prev, clinicId: data.clinic._id }));
+        setNewClinic({ name: '', phone: '' });
+        setShowNewClinic(false);
+      } else {
+        await showAlert({ title: 'Error', message: data.error || 'Failed to add clinic', type: 'error' });
+      }
+    } catch {
+      await showAlert({ title: 'Error', message: 'Failed to add clinic', type: 'error' });
     }
   };
 
@@ -184,6 +233,7 @@ function ContactsPageInner() {
     };
 
     fetchStatuses();
+    fetchClinics();
     fetchQuota();
     fetchWorkflows();
     fetchExecutions();
@@ -271,14 +321,16 @@ function ContactsPageInner() {
         method,
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(formData),
+        // Phone stored/sent in +91XXXXXXXXXX form.
+        body: JSON.stringify({ ...formData, phone: toE164In(formData.phone) }),
       });
 
       const data = await res.json();
       if (data.success) {
         setShowAddModal(false);
         setEditingContact(null);
-        setFormData({ name: '', phone: '', email: '', status: 'new', notes: '' });
+        setShowNewClinic(false);
+        setFormData({ name: '', phone: '', email: '', status: 'new', notes: '', clinicId: '', consultedDate: '' });
         fetchContacts(pagination.page);
       } else {
         await showAlert({ title: 'Error', message: data.error, type: 'error' });
@@ -350,12 +402,15 @@ function ContactsPageInner() {
 
   const handleEdit = (contact) => {
     setEditingContact(contact);
+    setShowNewClinic(false);
     setFormData({
       name: contact.name || '',
-      phone: contact.phone || '',
+      phone: digits10(contact.phone || ''),
       email: contact.email || '',
       status: contact.status || 'new',
       notes: contact.notes || '',
+      clinicId: contact.clinicId || '',
+      consultedDate: contact.consultedDate || '',
     });
     setShowAddModal(true);
   };
@@ -440,7 +495,8 @@ function ContactsPageInner() {
           <button
             onClick={() => {
               setEditingContact(null);
-              setFormData({ name: '', phone: '', email: '', status: 'new', notes: '' });
+              setShowNewClinic(false);
+              setFormData({ name: '', phone: '', email: '', status: 'new', notes: '', clinicId: '', consultedDate: '' });
               setShowAddModal(true);
             }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] transition-colors"
@@ -733,13 +789,18 @@ function ContactsPageInner() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
-                    placeholder="9876543210"
-                  />
+                  <div className="flex items-stretch">
+                    <span className="inline-flex items-center px-3 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-500 text-sm">+91</span>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      value={formData.phone}
+                      onChange={e => setFormData(prev => ({ ...prev, phone: digits10(e.target.value) }))}
+                      className="w-full min-w-0 px-4 py-2.5 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
+                      placeholder="9876543210"
+                      maxLength={10}
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -749,6 +810,57 @@ function ContactsPageInner() {
                     onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
                     placeholder="patient@email.com"
+                  />
+                </div>
+              </div>
+
+              {/* Clinic + date consulted */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-gray-700">Clinic</label>
+                    <button type="button" onClick={() => setShowNewClinic(v => !v)} className="text-xs text-[#096b17] hover:underline">
+                      {showNewClinic ? 'Cancel' : '+ Add clinic'}
+                    </button>
+                  </div>
+                  {showNewClinic ? (
+                    <div className="space-y-2">
+                      <input
+                        type="text" value={newClinic.name}
+                        onChange={e => setNewClinic(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Clinic name"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] outline-none"
+                      />
+                      <div className="flex items-stretch">
+                        <span className="inline-flex items-center px-2.5 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-500 text-xs">+91</span>
+                        <input
+                          type="tel" inputMode="numeric" value={newClinic.phone} maxLength={10}
+                          onChange={e => setNewClinic(prev => ({ ...prev, phone: digits10(e.target.value) }))}
+                          placeholder="Clinic phone (optional)"
+                          className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-r-lg text-sm focus:ring-2 focus:ring-[#096b17] outline-none"
+                        />
+                      </div>
+                      <button type="button" onClick={addClinicInline} disabled={!newClinic.name.trim()}
+                        className="px-3 py-2 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50">Add clinic</button>
+                    </div>
+                  ) : (
+                    <select
+                      value={formData.clinicId}
+                      onChange={e => setFormData(prev => ({ ...prev, clinicId: e.target.value }))}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] outline-none bg-white"
+                    >
+                      <option value="">No clinic</option>
+                      {clinics.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                    </select>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date consulted</label>
+                  <input
+                    type="date"
+                    value={formData.consultedDate}
+                    onChange={e => setFormData(prev => ({ ...prev, consultedDate: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
                   />
                 </div>
               </div>

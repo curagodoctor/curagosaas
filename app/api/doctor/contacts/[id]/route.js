@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Contact from '@/models/Contact';
+import Clinic from '@/models/Clinic';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
 import { requireFeatureOr403, FEATURES } from '@/lib/entitlements';
 
@@ -20,10 +21,21 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ success: false, error: 'Contact not found' }, { status: 404 });
     }
 
-    const allowedFields = ['name', 'phone', 'email', 'status', 'tags', 'notes', 'googleReviewLink'];
+    const allowedFields = ['name', 'phone', 'email', 'status', 'tags', 'notes', 'googleReviewLink', 'consultedDate'];
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
         contact[field] = body[field];
+      }
+    }
+
+    // Clinic: validate ownership and denormalize the name. '' clears it.
+    if (body.clinicId !== undefined) {
+      if (body.clinicId) {
+        const clinic = await Clinic.findOne({ _id: body.clinicId, doctorId: doctor._id }).select('name').lean();
+        if (clinic) { contact.clinicId = clinic._id; contact.clinicName = clinic.name; }
+      } else {
+        contact.clinicId = null;
+        contact.clinicName = '';
       }
     }
 

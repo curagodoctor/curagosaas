@@ -38,6 +38,18 @@ const BookingSchema = new mongoose.Schema({
     ref: 'ConsultationMode',
     // Optional for backward compatibility with existing bookings
   },
+  // Which clinic the appointment is at (from the clinic the patient selected).
+  // clinicName is denormalized for WhatsApp messages + reminders.
+  clinicId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Clinic',
+    default: null,
+  },
+  clinicName: {
+    type: String,
+    default: '',
+    trim: true,
+  },
   date: {
     type: String,
     required: true,

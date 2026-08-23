@@ -7,6 +7,15 @@ const ConsultationModeSchema = new mongoose.Schema({
     required: false, // Optional for backward compatibility
     index: true,
   },
+  // Which clinic this mode belongs to. Modes are managed per-clinic; the patient
+  // booking flow is: pick clinic → pick one of its modes. Nullable for legacy
+  // modes until migrated to the doctor's primary clinic.
+  clinicId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Clinic',
+    default: null,
+    index: true,
+  },
   name: {
     type: String,
     required: true,
@@ -38,9 +47,11 @@ const ConsultationModeSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Index for efficient queries
-ConsultationModeSchema.index({ doctorId: 1, name: 1 }, { unique: true, sparse: true }); // Name unique per doctor
+// Index for efficient queries. Name is unique per clinic (a mode can repeat
+// across a doctor's clinics).
+ConsultationModeSchema.index({ doctorId: 1, clinicId: 1, name: 1 }, { unique: true, sparse: true });
 ConsultationModeSchema.index({ doctorId: 1, isActive: 1, sortOrder: 1 });
+ConsultationModeSchema.index({ clinicId: 1, isActive: 1, sortOrder: 1 });
 ConsultationModeSchema.index({ isActive: 1, sortOrder: 1 });
 
 const ConsultationMode = mongoose.models.ConsultationMode || mongoose.model('ConsultationMode', ConsultationModeSchema);

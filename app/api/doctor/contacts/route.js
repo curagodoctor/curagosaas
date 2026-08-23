@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Contact from '@/models/Contact';
 import ContactStatus from '@/models/ContactStatus';
+import Clinic from '@/models/Clinic';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
 import { requireFeatureOr403, FEATURES } from '@/lib/entitlements';
 
@@ -75,7 +76,7 @@ export async function POST(request) {
     if (locked) return locked;
 
     const body = await request.json();
-    const { name, phone, email, status, tags, notes, googleReviewLink } = body;
+    const { name, phone, email, status, tags, notes, googleReviewLink, clinicId, clinicName, consultedDate } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json({ success: false, error: 'Contact name is required' }, { status: 400 });
@@ -87,6 +88,13 @@ export async function POST(request) {
       await ContactStatus.createDefaultsForDoctor(doctor._id);
     }
 
+    // Resolve clinic: trust clinicId only if it belongs to this doctor; denormalize its name.
+    let resolvedClinicId, resolvedClinicName = clinicName?.trim() || '';
+    if (clinicId) {
+      const clinic = await Clinic.findOne({ _id: clinicId, doctorId: doctor._id }).select('name').lean();
+      if (clinic) { resolvedClinicId = clinic._id; resolvedClinicName = clinic.name; }
+    }
+
     const contact = await Contact.create({
       doctorId: doctor._id,
       name: name.trim(),
@@ -96,6 +104,9 @@ export async function POST(request) {
       tags: tags || [],
       source: 'manual',
       notes: notes || undefined,
+      clinicId: resolvedClinicId || undefined,
+      clinicName: resolvedClinicName || undefined,
+      consultedDate: consultedDate?.trim() || undefined,
       // Stamp the practice's Google review link onto the contact at creation
       // (set once in Settings). Explicit per-contact value still wins if passed.
       googleReviewLink: googleReviewLink?.trim() || doctor.googleReviewLink || undefined,

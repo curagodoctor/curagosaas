@@ -32,6 +32,8 @@ const OTPSchema = new mongoose.Schema({
     whatsapp: String,
     modeOfContact: String,
     modeId: String,
+    clinicId: String,
+    clinicName: String,
     date: String,
     time: String,
     pageSlug: String,

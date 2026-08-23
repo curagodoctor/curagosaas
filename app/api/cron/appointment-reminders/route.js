@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Booking from '@/models/Booking';
 import Doctor from '@/models/Doctor';
-import { fireWyltoWebhook } from '@/lib/wylto';
+import { fireWyltoWebhook, toE164 } from '@/lib/wylto';
 import { getClinicNames } from '@/lib/clinicName';
 
 export const runtime = 'nodejs';
@@ -40,7 +40,9 @@ export async function GET(request) {
         appointmentDate: b.date,
         appointmentTime: b.time,
         doctorName: docName,
-        clinicName: clinicByDoctor.get(String(b.doctorId)) || docName,
+        // The exact clinic booked (stored on the booking) → doctor's clinic → name.
+        clinicName: b.clinicName || clinicByDoctor.get(String(b.doctorId)) || docName,
+        clinicPhone: toE164(docPhone),
         patientName: b.name,
       };
       await Promise.all([

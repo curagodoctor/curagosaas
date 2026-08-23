@@ -9,7 +9,7 @@ import { createCalendarEvent } from "@/lib/googleCalendar";
 import { validatePhone } from "@/lib/validation";
 import { sendBookingConfirmationToPatient, sendBookingNotificationToDoctor } from "@/lib/email";
 import { sendSMS } from "@/lib/twilio";
-import { fireWyltoWebhook } from "@/lib/wylto";
+import { fireWyltoWebhook, toE164 } from "@/lib/wylto";
 import { getClinicName } from "@/lib/clinicName";
 
 export async function POST(request) {
@@ -134,6 +134,8 @@ export async function POST(request) {
       whatsapp: bookingData.whatsapp,
       mode: bookingData.modeOfContact,
       modeId: bookingData.modeId,
+      clinicId: bookingData.clinicId || null,
+      clinicName: bookingData.clinicName || '',
       date: bookingData.date,
       time: bookingData.time,
       status: 'confirmed',
@@ -154,7 +156,9 @@ export async function POST(request) {
         mode: bookingData.modeOfContact,
         meetLink: calendarEvent.meetLink || '',
         doctorName: doctorInfo.name,
-        clinicName: (await getClinicName(doctorId)) || doctorInfo.name,
+        // Prefer the clinic the patient actually booked; fall back to the doctor's clinic.
+        clinicName: bookingData.clinicName || (await getClinicName(doctorId)) || doctorInfo.name,
+        clinicPhone: toE164(doctorInfo.phone),
         patientName: bookingData.name,
       };
       await Promise.all([

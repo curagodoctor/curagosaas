@@ -8,7 +8,7 @@ import { createCalendarEvent } from "@/lib/googleCalendar";
 import connectDB from "@/lib/mongodb";
 import Doctor from "@/models/Doctor";
 import { sendBookingConfirmationToPatient, sendBookingNotificationToDoctor } from "@/lib/email";
-import { fireWyltoWebhook } from "@/lib/wylto";
+import { fireWyltoWebhook, toE164 } from "@/lib/wylto";
 import { getClinicName } from "@/lib/clinicName";
 import { sendSMS } from "@/lib/twilio";
 
@@ -180,7 +180,8 @@ export async function POST(request) {
         mode: reservation.mode,
         meetLink: calendarEvent.meetLink || '',
         doctorName: doctorInfo.name,
-        clinicName: (await getClinicName(reservation.doctorId)) || doctorInfo.name,
+        clinicName: reservation.clinicName || (await getClinicName(reservation.doctorId)) || doctorInfo.name,
+        clinicPhone: toE164(doctorInfo.phone),
         patientName: reservation.name,
       };
       await Promise.all([

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useModal } from '@/contexts/ModalContext';
+import ClinicsManager from '@/components/admin/ClinicsManager';
 
 export default function SettingsPage() {
-  const { showAlert } = useModal();
+  const { showAlert, showConfirm } = useModal();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
@@ -42,6 +43,9 @@ export default function SettingsPage() {
   const [clinicManagers, setClinicManagers] = useState([]);
   const [cmForm, setCmForm] = useState({ name: '', email: '', password: '' });
   const [savingCm, setSavingCm] = useState(false);
+  const [clinics, setClinics] = useState([]);
+  const [clinicForm, setClinicForm] = useState({ name: '', phone: '', city: '' });
+  const [savingClinic, setSavingClinic] = useState(false);
 
   const fetchSubscription = async () => {
     try {
@@ -103,8 +107,19 @@ export default function SettingsPage() {
       }
     };
 
+    const fetchClinics = async () => {
+      try {
+        const res = await fetch('/api/doctor/clinics', { credentials: 'include' });
+        const data = await res.json();
+        if (data.success) setClinics(data.clinics || []);
+      } catch (error) {
+        console.error('Error fetching clinics:', error);
+      }
+    };
+
     fetchSeoUsers();
     fetchClinicManagers();
+    fetchClinics();
   }, []);
 
   const fetchSettings = async () => {
@@ -198,6 +213,7 @@ export default function SettingsPage() {
     { id: 'profile', label: 'Profile' },
     { id: 'contact', label: 'Contact & WhatsApp' },
     { id: 'practice', label: 'Practice Info' },
+    { id: 'clinics', label: 'Clinics' },
     { id: 'domain', label: 'Domain & DNS' },
     { id: 'analytics', label: 'Analytics & Tracking' },
     { id: 'subscription', label: 'Subscription' },
@@ -439,6 +455,9 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+
+          {/* Clinics Tab */}
+          {activeTab === 'clinics' && <ClinicsManager />}
 
           {/* Domain & DNS Tab */}
           {activeTab === 'domain' && (
@@ -1153,7 +1172,7 @@ export default function SettingsPage() {
           )}
 
           {/* Save Button (hidden on read-only tabs) */}
-          <div className={`mt-8 pt-6 border-t flex justify-end ${activeTab === 'domain' || activeTab === 'subscription' || activeTab === 'seo' || activeTab === 'clinic-manager' ? 'hidden' : ''}`}>
+          <div className={`mt-8 pt-6 border-t flex justify-end ${activeTab === 'domain' || activeTab === 'subscription' || activeTab === 'seo' || activeTab === 'clinic-manager' || activeTab === 'clinics' ? 'hidden' : ''}`}>
             <button
               type="submit"
               disabled={saving}

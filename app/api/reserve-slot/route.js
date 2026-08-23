@@ -17,7 +17,7 @@ export async function POST(request) {
     // Auto-cleanup expired reservations before checking availability
     await releaseExpiredReservations();
 
-    const { name, age, gender, whatsapp, email, modeOfContact, modeId, date, time } =
+    const { name, age, gender, whatsapp, email, modeOfContact, modeId, clinicId, clinicName, date, time } =
       await request.json();
 
     // Validate required fields
@@ -67,6 +67,8 @@ export async function POST(request) {
       email: email.toLowerCase().trim(),
       mode: modeOfContact,
       modeId,
+      clinicId: clinicId || null,
+      clinicName: clinicName || '',
       date,
       time,
     });
