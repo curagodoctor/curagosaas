@@ -6,7 +6,7 @@ import Markdown from './Markdown';
 // Per-module chat assistant — full conversation with history + context (PRD §8).
 // 1 credit per message; scoped to the current module. Shared by the focus workspace
 // and the track (Day view) so the mission intro + assistant live on one screen.
-export default function ChatAssistant({ missionId, moduleId, moduleTitle }) {
+export default function ChatAssistant({ missionId, moduleId, moduleTitle, autoPrompt = '' }) {
   const [messages, setMessages] = useState([]);
   const [meta, setMeta] = useState(null);
   const [input, setInput] = useState('');
@@ -15,8 +15,10 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle }) {
   const [pendingNewSession, setPendingNewSession] = useState(false);
   const [typing, setTyping] = useState(null); // { full, shown } — reveals the reply as it "streams"
   const [expanded, setExpanded] = useState(false);
+  const [autoDrafting, setAutoDrafting] = useState(false); // first response is being generated
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const autoFiredRef = useRef(false);
 
   // Auto-grow the input as the doctor types (prompts can be long), capped so it
   // never eats the whole panel.
@@ -28,22 +30,55 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle }) {
   }, [input, expanded]);
 
   useEffect(() => {
+    autoFiredRef.current = false;
     (async () => {
       try {
-        const res = await fetch(`/api/practice-os/day/${missionId}/ai`);
+        const q = moduleId ? `?moduleId=${encodeURIComponent(moduleId)}` : '';
+        const res = await fetch(`/api/practice-os/day/${missionId}/ai${q}`);
         if (res.ok) {
           const d = await res.json();
           setMeta(d);
-          setMessages((d.messages || []).map((m) => ({ role: m.role, content: m.content })));
+          // Hide the auto-fired prompt turns — the doctor sees only replies + their own messages.
+          setMessages((d.messages || []).filter((m) => !m.hidden).map((m) => ({ role: m.role, content: m.content })));
+          // Auto-draft: if this module's thread is empty and we have a prompt, fire it
+          // once so the assistant's response is ready without the doctor pasting anything.
+          if (d.threadEmpty && autoPrompt && autoPrompt.trim() && (d.creditsRemaining ?? 0) > 0 && !autoFiredRef.current) {
+            autoFiredRef.current = true;
+            autoDraft(autoPrompt.trim());
+          }
         }
       } catch { /* ignore */ }
     })();
-  }, [missionId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [missionId, moduleId, autoPrompt]);
+
+  // Fire the module's prompt silently (hidden) and reveal only the assistant reply.
+  async function autoDraft(p) {
+    setAutoDrafting(true);
+    setError('');
+    try {
+      const res = await fetch(`/api/practice-os/day/${missionId}/ai`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: p, moduleId, auto: true }),
+      });
+      const data = await res.json();
+      if (data.success && !data.skipped) {
+        setTyping({ full: data.text || '', shown: '' });
+        setMeta((mt) => ({ ...mt, creditsRemaining: data.creditsRemaining }));
+      } else if (data.error) {
+        setError(data.error);
+      }
+    } catch {
+      setError('Could not generate a first draft. Type below to ask the assistant.');
+    } finally {
+      setAutoDrafting(false);
+    }
+  }
 
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, busy, typing]);
+  }, [messages, busy, typing, autoDrafting]);
 
   // Reveal the assistant reply progressively (a lightweight "streaming" feel over
   // the single-shot API response), then commit it to the message list.
@@ -117,9 +152,17 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle }) {
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        {messages.length === 0 && !busy && (
+        {messages.length === 0 && !busy && !autoDrafting && !typing && (
           <div className="text-center text-sm text-[var(--muted)] py-8 px-2">
-            Ask about this module — or paste the prompt above and ask me to draft it for you.
+            Ask about this module — the assistant can draft, refine and format for you.
+          </div>
+        )}
+        {autoDrafting && !typing && (
+          <div className="flex justify-start">
+            <div className="rounded-2xl px-3.5 py-2.5 text-[14px] text-[var(--muted)] inline-flex items-center gap-2" style={{ background: 'var(--rule-soft)' }}>
+              <span className="w-3.5 h-3.5 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" />
+              Drafting this for you…
+            </div>
           </div>
         )}
         {messages.map((m, i) => (

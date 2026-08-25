@@ -531,11 +531,9 @@ function FocusSession() {
               </div>
             )}
 
-            {/* Ready-to-copy AI prompt(s) — one card per prompt, with the doctor's
-                real variables filled in. */}
-            {promptList.map((p, i) => (
-              <AiPromptCard key={i} prompt={p} index={promptList.length > 1 ? i + 1 : 0} total={promptList.length} />
-            ))}
+            {/* The module's prompt is no longer shown here — it's auto-sent to the
+                assistant on the right, which drafts the response for the doctor.
+                They refine it in the chatbox. (promptList[0] feeds the auto-draft.) */}
 
             {/* Action buttons — {{variables}} in the URL/label are filled from the
                 doctor's values (server-side, plus anything typed this session). */}
@@ -618,7 +616,7 @@ function FocusSession() {
                 </button>
                 <p className="text-[11px] text-[var(--muted)] mt-1">{over ? 'Over the estimate — no rush' : (paused ? 'Paused' : 'Counting down · running long is fine')}</p>
               </div>
-              <ChatAssistant missionId={id} moduleId={mod.id} moduleTitle={mod.title} />
+              <ChatAssistant missionId={id} moduleId={mod.id} moduleTitle={mod.title} autoPrompt={promptList[0] || ''} />
             </div>
           </div>
         </div>

@@ -12,11 +12,21 @@ import { findModule } from '@/lib/practice-os/modules';
 
 export const runtime = 'nodejs';
 
-// The active chat thread = the sessionId of the most recent message (or 'default').
-async function getActiveSession(doctorId, missionId) {
-  const last = await PracticeOsChatMessage.findOne({ doctorId, missionId })
-    .sort({ createdAt: -1 }).select('sessionId').lean();
-  return last?.sessionId || 'default';
+// The active chat thread. Threads are per-module (so each module's auto-drafted
+// response + follow-up chat stays separate); the base session id for a module is
+// `mod_<moduleId>`, and "New chat" appends a timestamp. Legacy per-mission chats
+// use 'default'.
+function baseSession(moduleId) {
+  return moduleId ? `mod_${moduleId}` : 'default';
+}
+async function getActiveSession(doctorId, missionId, moduleId) {
+  const base = baseSession(moduleId);
+  // Latest message in this module's thread family (base or base_<ts>).
+  const last = await PracticeOsChatMessage.findOne({
+    doctorId, missionId,
+    sessionId: moduleId ? { $regex: `^${base}(_|$)` } : base,
+  }).sort({ createdAt: -1 }).select('sessionId').lean();
+  return last?.sessionId || base;
 }
 
 // GET /api/practice-os/day/[id]/ai — credits + availability + the CURRENT chat thread.
@@ -26,10 +36,12 @@ export async function GET(request, { params }) {
     await connectDB();
     const { id } = await params;
     const ledger = await AiCreditLedger.getOrCreateForToday(doctor._id);
-    const sessionId = await getActiveSession(doctor._id, id);
+    const url = new URL(request.url);
+    const moduleId = url.searchParams.get('moduleId') || null;
+    const sessionId = await getActiveSession(doctor._id, id, moduleId);
     const [history, totalCount] = await Promise.all([
       PracticeOsChatMessage.find({ doctorId: doctor._id, missionId: id, sessionId }).sort({ createdAt: 1 }).limit(100).lean(),
-      PracticeOsChatMessage.countDocuments({ doctorId: doctor._id, missionId: id }),
+      PracticeOsChatMessage.countDocuments({ doctorId: doctor._id, missionId: id, sessionId }),
     ]);
     return NextResponse.json({
       success: true,
@@ -37,9 +49,11 @@ export async function GET(request, { params }) {
       dailyLimit: ledger.dailyLimit,
       configured: isAiConfigured(),
       sessionId,
-      // Older threads exist if there are more saved messages than the current thread shows.
+      // Whether this module's thread has any turns yet (drives client auto-draft).
+      threadEmpty: history.length === 0,
       hasOlderSessions: totalCount > history.length,
-      messages: history.map((m) => ({ role: m.role, content: m.content, createdAt: m.createdAt })),
+      // Hidden turns (the auto-fired prompt) are flagged so the client can skip them.
+      messages: history.map((m) => ({ role: m.role, content: m.content, hidden: !!m.hidden, createdAt: m.createdAt })),
     });
   } catch (error) {
     return errorResponse(error);
@@ -52,7 +66,7 @@ export async function POST(request, { params }) {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
     const { id } = await params;
-    const { prompt, newSession, moduleId } = await request.json();
+    const { prompt, newSession, moduleId, auto } = await request.json();
 
     if (!prompt || !prompt.trim()) {
       return NextResponse.json({ success: false, error: 'Please enter a prompt.' }, { status: 400 });
@@ -73,8 +87,18 @@ export async function POST(request, { params }) {
     // "New chat" starts a fresh thread (no prior context); otherwise continue the
     // active thread. Older threads stay saved but don't leak into the new one.
     const sessionId = newSession
-      ? `s_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`
-      : await getActiveSession(doctor._id, id);
+      ? `${baseSession(moduleId)}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`
+      : await getActiveSession(doctor._id, id, moduleId);
+
+    // Guard: never auto-draft twice into the same module thread (e.g. a double
+    // mount / refresh race). If this is an auto turn and the thread already has
+    // messages, skip silently without charging a credit.
+    if (auto) {
+      const existing = await PracticeOsChatMessage.countDocuments({ doctorId: doctor._id, missionId: id, sessionId });
+      if (existing > 0) {
+        return NextResponse.json({ success: true, skipped: true, creditsRemaining: (await AiCreditLedger.getOrCreateForToday(doctor._id)).dailyBalance });
+      }
+    }
 
     // Inject the doctor's CV-derived knowledge base + this thread's running
     // conversation so the assistant keeps context across the chat.
@@ -108,7 +132,8 @@ export async function POST(request, { params }) {
 
     // Save the full conversation turn (user prompt + assistant reply) in this thread.
     await PracticeOsChatMessage.create([
-      { doctorId: doctor._id, missionId: id, sessionId, role: 'user', content: result.prompt || prompt },
+      // The auto-fired module prompt is stored hidden — the doctor sees only the reply.
+      { doctorId: doctor._id, missionId: id, sessionId, role: 'user', content: result.prompt || prompt, hidden: !!auto },
       {
         doctorId: doctor._id, missionId: id, sessionId, role: 'assistant', content: result.text,
         promptTokens: usage.promptTokens, completionTokens: usage.completionTokens, totalTokens: usage.totalTokens,

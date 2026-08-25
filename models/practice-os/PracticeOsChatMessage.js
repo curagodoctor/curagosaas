@@ -24,6 +24,9 @@ const PracticeOsChatMessageSchema = new mongoose.Schema({
   sessionId: { type: String, default: 'default', index: true },
   role: { type: String, enum: ['user', 'assistant'], required: true },
   content: { type: String, default: '' },
+  // Hidden from the doctor's chat view — used for the auto-fired module prompt
+  // (the doctor sees the assistant's response, not the underlying prompt).
+  hidden: { type: Boolean, default: false },
   // Token accounting (assistant turn carries the completion usage).
   promptTokens: { type: Number, default: 0 },
   completionTokens: { type: Number, default: 0 },
