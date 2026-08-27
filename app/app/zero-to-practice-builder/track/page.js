@@ -84,14 +84,14 @@ function TrackView() {
           the context — "How CuraGo sees you", score, progress and this-week. */}
       <div className="grid grid-cols-1 md:grid-cols-[1fr_260px] lg:grid-cols-[200px_minmax(0,1fr)_280px] gap-5 lg:gap-6">
         <div className="hidden lg:block">
-          <Spine days={days} totalDays={totalDays} withPack={withPack} />
+          <Spine days={days} totalDays={totalDays} withPack={withPack} mode={state.pack?.mode} />
         </div>
 
         <div className="min-w-0">
           {allComplete ? (
             <AllComplete daysCompleted={enrollment.daysCompleted} withPack={withPack} />
           ) : today?.status === 'available' ? (
-            <MissionIntro day={today} full={missionData?.day} modules={missionData?.modules} progress={missionData?.progress} loaded={missionData !== null} totalDays={totalDays} withPack={withPack} />
+            <MissionIntro day={today} full={missionData?.day} modules={missionData?.modules} progress={missionData?.progress} loaded={missionData !== null} totalDays={totalDays} withPack={withPack} taskMode={state.pack?.mode === 'task'} />
           ) : today?.status === 'locked' ? (
             <LockedDay day={today} nextUnlockAt={enrollment.nextUnlockAt} now={now} devBypass={state.devBypass} onUnlocked={load} canAdvance={state.canAdvance} />
           ) : (
@@ -122,8 +122,10 @@ export default function TrackPage() {
 // Just the mission content (objective card, why, module list, chips + Start mission);
 // the assistant + context rail live in the right column of the track page.
 // "Start mission" opens the guided modules directly (?start=1 skips the focus intro).
-function MissionIntro({ day, full, modules = [], progress, loaded, totalDays, withPack }) {
+function MissionIntro({ day, full, modules = [], progress, loaded, totalDays, withPack, taskMode = false }) {
   const d = { ...day, ...(full || {}) };   // prefer the fuller day object where present
+  const noun = taskMode ? 'task' : 'mission';
+  const Noun = taskMode ? 'Task' : 'Mission';
   const theme = WEEK_THEMES[d.weekNumber] || d.category || 'Practice building';
   const mods = modules || [];
   const missionXp = mods.reduce((s, m) => s + (m.xp || 0), 0) || d.reward?.points || d.points || 0;
@@ -134,12 +136,12 @@ function MissionIntro({ day, full, modules = [], progress, loaded, totalDays, wi
   return (
         <div className="pos-card p-4 md:p-5">
           <div className="flex flex-wrap items-center gap-2 mb-2.5">
-            <span className="pos-label" style={{ background: 'var(--green)', color: '#fff', padding: '4px 11px', borderRadius: 99 }}>Mission {d.missionNumber}</span>
-            <span className="pos-label" style={{ background: 'var(--green-soft)', color: 'var(--green)', padding: '4px 11px', borderRadius: 99 }}>Today&apos;s mission</span>
+            <span className="pos-label" style={{ background: 'var(--green)', color: '#fff', padding: '4px 11px', borderRadius: 99 }}>{Noun} {d.missionNumber}</span>
+            <span className="pos-label" style={{ background: 'var(--green-soft)', color: "var(--green)", padding: "4px 11px", borderRadius: 99 }}>Today&apos;s {noun}</span>
             {resuming && <span className="pos-label" style={{ background: 'var(--orange-soft, rgba(242,106,27,.08))', color: 'var(--orange)', padding: '4px 11px', borderRadius: 99 }}>In progress · {doneCount}/{mods.length}</span>}
           </div>
 
-          <p className="pos-label">Week {d.weekNumber} · {theme}</p>
+          {!taskMode && <p className="pos-label">Week {d.weekNumber} · {theme}</p>}
           <h1 className="text-[18px] md:text-[21px] font-semibold text-[var(--ink)] mt-1.5 leading-tight" style={{ letterSpacing: '-0.02em' }}>
             {d.title}
           </h1>
@@ -149,7 +151,7 @@ function MissionIntro({ day, full, modules = [], progress, loaded, totalDays, wi
             {d.difficulty && <Chip>◆ {d.difficulty}</Chip>}
             {missionXp > 0 && <Chip>+{missionXp} XP</Chip>}
             {d.points > 0 && d.scoreComponent && d.scoreComponent !== 'none' && <Chip>+{d.points} {componentLabel(d.scoreComponent)}</Chip>}
-            <Chip>Mission {d.missionNumber} of {totalDays}</Chip>
+            <Chip>{Noun} {d.missionNumber} of {totalDays}</Chip>
             {modules.length > 0 && <Chip>{modules.length} {modules.length === 1 ? 'module' : 'modules'}</Chip>}
           </div>
 
@@ -189,7 +191,7 @@ function MissionIntro({ day, full, modules = [], progress, loaded, totalDays, wi
           <div className="mt-4">
             <Link href={withPack(`/app/zero-to-practice-builder/focus/${d._id}?start=1`)} className="pos-action pos-focusable inline-flex items-center gap-2" style={{ background: 'var(--orange)' }}>
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none"><path d="M7 5l12 7-12 7V5Z" fill="#fff" /></svg>
-              {resuming ? 'Continue mission' : 'Start mission'}
+              {resuming ? `Continue ` : `Start `}
             </Link>
             <p className="text-[12px] text-[var(--muted)] mt-2">{resuming ? 'Pick up where you left off — your progress is saved.' : 'Starting opens the guided modules and your timer.'}</p>
           </div>

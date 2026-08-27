@@ -66,6 +66,7 @@ export async function POST(request) {
       summary: body.summary || '',
       outcomes,
       priceInInr: Math.max(0, Number(body.priceInInr) || 0),
+      mode: body.mode === 'task' ? 'task' : 'mission',
       isPublished: body.isPublished ?? false,
       order: body.order ?? 0,
       isActive: body.isActive ?? true,

@@ -169,6 +169,60 @@ function AddMissionForm({ frameworkId, onAdded }) {
   );
 }
 
+// Add a TASK to a task-mode pack. A task is a single-module mission; we create
+// it with the next order number and open the editor.
+function AddTaskForm({ frameworkId, nextNumber, onAdded }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async () => {
+    if (!title.trim()) { setError('Task title is required.'); return; }
+    setSaving(true); setError('');
+    try {
+      const res = await fetch('/api/platform/practice-os/missions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          frameworkId, missionText: title.trim(),
+          weekNumber: 1, dayNumber: nextNumber, missionNumber: nextNumber,
+          module: title.trim(), category: '',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        onAdded();
+        if (data.mission?._id) router.push(`/dashboard/practice-os/missions/${data.mission._id}`);
+      } else setError(data.error || 'Failed to add task');
+    } finally { setSaving(false); }
+  };
+
+  if (!open) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+        <p className="text-sm text-gray-600">Add a task to this pack, then fill in its content in the editor.</p>
+        <button onClick={() => setOpen(true)} className="bg-gray-900 hover:bg-black text-white text-sm font-medium px-4 py-2 rounded-lg">+ Add task</button>
+      </div>
+    );
+  }
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+      <h2 className="font-semibold text-gray-900">Add task</h2>
+      <div>
+        <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Task title</label>
+        <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submit(); }}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="e.g. Claim your Google Business Profile" autoFocus />
+      </div>
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="flex items-center gap-3">
+        <button onClick={submit} disabled={saving} className="bg-gray-900 hover:bg-black text-white text-sm font-medium px-5 py-2.5 rounded-lg disabled:opacity-50">{saving ? 'Adding…' : 'Add & edit content'}</button>
+        <button onClick={() => { setOpen(false); setError(''); }} className="text-sm text-gray-500">Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 export default function FrameworkDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -260,6 +314,42 @@ export default function FrameworkDetailPage() {
 
       <PackSettings framework={framework} onSaved={load} />
 
+      {framework.mode === 'task' ? (
+        <>
+          <AddTaskForm frameworkId={framework._id} nextNumber={(missions?.length || 0) + 1} onAdded={load} />
+          {missions.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm p-12 text-center text-gray-500">No tasks yet — add one above.</div>
+          ) : (
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="px-6 py-3 bg-gray-50 border-b border-gray-200"><h2 className="font-semibold text-gray-900">Tasks</h2></div>
+              <table className="w-full">
+                <thead><tr className="text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-6 py-2">#</th><th className="px-6 py-2">Task</th><th className="px-6 py-2">Status</th><th className="px-6 py-2 text-right">Actions</th>
+                </tr></thead>
+                <tbody className="divide-y divide-gray-100">
+                  {missions.slice().sort((a, b) => (a.dayNumber - b.dayNumber) || (a.missionNumber - b.missionNumber)).map((m, idx, arr) => (
+                    <tr key={m._id} onClick={() => router.push(`/dashboard/practice-os/missions/${m._id}`)} className="hover:bg-gray-50 cursor-pointer">
+                      <td className="px-6 py-3 text-gray-500">
+                        <div className="flex items-center gap-1">
+                          <div className="flex flex-col">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); reorderMission(arr, idx, -1); }} disabled={idx === 0} className="text-gray-400 hover:text-blue-600 disabled:opacity-30 leading-none" title="Move up">▲</button>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); reorderMission(arr, idx, 1); }} disabled={idx === arr.length - 1} className="text-gray-400 hover:text-blue-600 disabled:opacity-30 leading-none" title="Move down">▼</button>
+                          </div>
+                          <span>{idx + 1}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-3 text-blue-600 font-medium">{m.missionText?.slice(0, 80) || 'Untitled'}{m.missionText?.length > 80 ? '…' : ''}</td>
+                      <td className="px-6 py-3"><span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${m.status === 'draft' ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-800'}`}>{m.status === 'draft' ? 'Draft' : 'Published'}</span></td>
+                      <td className="px-6 py-3 text-right"><button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteMission(m); }} className="text-sm text-red-600 hover:text-red-700 hover:underline">Delete</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
       <AddMissionForm frameworkId={framework._id} onAdded={load} />
 
       {missions.length === 0 ? (
@@ -331,6 +421,8 @@ export default function FrameworkDetailPage() {
             </table>
           </div>
         ))
+      )}
+        </>
       )}
     </div>
   );

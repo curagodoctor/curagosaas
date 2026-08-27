@@ -69,6 +69,8 @@ function FocusSession() {
   const params = useSearchParams();
   const packId = params.get('pack');
   const startNow = params.get('start') === '1';   // from the track "Start mission" — skip the intro
+  const [reviewMode, setReviewMode] = useState(false); // true once we know the mission is completed/skipped
+  const [taskMode, setTaskMode] = useState(false);     // pack is task-based → 'Task' framing, no 'Day'
 
   const [day, setDay] = useState(null);
   const [modules, setModules] = useState([]);
@@ -96,40 +98,66 @@ function FocusSession() {
       const res = await fetch(`/api/practice-os/day/${id}`);
       const data = await res.json();
       if (data.success) {
-        // Finished (or skipped) on another device? Don't allow re-editing — the
-        // server is the source of truth, so send them back to the pack. (#17)
-        if (data.progress?.status === 'completed' || data.progress?.status === 'skipped') {
-          router.replace(`/app/zero-to-practice-builder/track?pack=${packId}`);
-          return;
-        }
+        setTaskMode(data.packMode === 'task');
+        const isDone = data.progress?.status === 'completed' || data.progress?.status === 'skipped';
+        const reviewing = isDone; // completed/skipped missions reopen in review/redo mode
+        setReviewMode(reviewing);
+
         setDay(data.day);
         const mods = data.modules || [];
         setModules(mods);
         const done = new Set(data.progress?.completedModuleIds || []);
-        const firstIncomplete = mods.findIndex((m) => !done.has(m.id));
-        // Module position ALWAYS follows server completion — a module finished on
-        // another device is never shown as editable here. (#17)
-        setIndex(firstIncomplete === -1 ? Math.max(0, mods.length - 1) : firstIncomplete);
 
-        // The cross-device draft: prefer the server's, fall back to this device's
-        // local mirror if the server has none yet. (#17, #18)
+        // Prefill the record inputs the doctor already entered. moduleInputs is
+        // keyed by input LABEL server-side, so map each back to the input id.
+        const savedByModule = data.progress?.moduleInputs || {};
+        const prefill = {};
+        for (const m of mods) {
+          if (!Array.isArray(m.inputs) || !m.inputs.length) continue;
+          const saved = savedByModule[m.id] || {};
+          const row = {};
+          for (const f of m.inputs) {
+            // Saved evidence (keyed by label) wins; otherwise fall back to the
+            // doctor's profile value so profile-backed inputs show what's on file.
+            if (saved[f.label] != null && String(saved[f.label]).trim()) row[f.id] = saved[f.label];
+            else if (f.prefill != null && String(f.prefill).trim()) row[f.id] = String(f.prefill);
+          }
+          if (Object.keys(row).length) prefill[m.id] = row;
+        }
+
         const estSeconds = (data.day.estimatedMinutes || 35) * 60;
-        const sd = normalizeDraft(data.progress?.draft) || readLocalDraft(id);
-        if (sd) {
-          if (sd.inputVals) setInputVals(sd.inputVals);
-          if (sd.stepChecks) setStepChecks(sd.stepChecks);
-          if (sd.reflection) setReflection(sd.reflection);
-          if (sd.kpiValues) setKpiValues(sd.kpiValues);
-          setRemaining(reconstructRemaining(sd, estSeconds));
+        const sd = reviewing ? null : (normalizeDraft(data.progress?.draft) || readLocalDraft(id));
+
+        if (reviewing) {
+          // Review a finished mission: start at the first module, prefill saved
+          // inputs + reflection, and show the intro overview with a "redo" CTA.
+          setIndex(0);
+          setInputVals(prefill);
+          if (data.progress?.reflection) setReflection(data.progress.reflection);
+          setRemaining(estSeconds);
         } else {
-          setRemaining(estSeconds);   // countdown starts from the estimate
+          const firstIncomplete = mods.findIndex((m) => !done.has(m.id));
+          setIndex(firstIncomplete === -1 ? Math.max(0, mods.length - 1) : firstIncomplete);
+          // Merge any saved module inputs under the draft (draft wins if present).
+          if (sd) {
+            setInputVals({ ...prefill, ...(sd.inputVals || {}) });
+            if (sd.stepChecks) setStepChecks(sd.stepChecks);
+            if (sd.reflection) setReflection(sd.reflection);
+            if (sd.kpiValues) setKpiValues(sd.kpiValues);
+            setRemaining(reconstructRemaining(sd, estSeconds));
+          } else {
+            setInputVals(prefill);
+            setRemaining(estSeconds);
+          }
         }
         restoredRef.current = true;
-        // Resume straight into the workspace if they've already started this mission,
-        // if the track sent us here with ?start=1, or if a draft exists.
-        if (done.size > 0 || startNow || sd) setPhase('work');
+        // Resume straight into the workspace if already started, sent with ?start=1,
+        // or a draft exists. In review mode, keep the intro overview first.
+        if (!reviewing && (done.size > 0 || startNow || sd)) setPhase('work');
       }
-      if (!startedRef.current) {
+      // Don't fire 'start' for a completed/skipped mission being reviewed —
+      // it must stay completed.
+      if (!startedRef.current && !(data.progress?.status === 'completed' || data.progress?.status === 'skipped')) {
         startedRef.current = true;
         fetch(`/api/practice-os/day/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'start' }) });
       }
@@ -153,6 +181,7 @@ function FocusSession() {
 
   const pushDraft = useCallback(() => {
     if (!restoredRef.current) return;
+    if (reviewMode) return;   // reviewing a completed mission — nothing to draft
     const s = latest.current;
     const draft = {
       inputVals: s.inputVals, stepChecks: s.stepChecks, reflection: s.reflection,
@@ -164,7 +193,7 @@ function FocusSession() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'save-draft', draft }), keepalive: true,
     }).catch(() => { /* ignore transient network errors */ });
-  }, [id]);
+  }, [id, reviewMode]);
 
   // Save shortly after any meaningful change.
   useEffect(() => {
@@ -241,6 +270,19 @@ function FocusSession() {
     });
     const data = await res.json();
 
+    // Reviewing a completed mission: just save (no re-celebration / no double
+    // award — the server is idempotent). Advance through modules; finish → track.
+    if (reviewMode) {
+      if (isLast) {
+        router.push(`/app/zero-to-practice-builder/track?pack=${packId}`);
+      } else {
+        setIndex((i) => i + 1);
+        if (typeof window !== 'undefined') window.scrollTo(0, 0);
+      }
+      setSaving(false);
+      return;
+    }
+
     if (data.missionComplete) {
       try { window.localStorage.removeItem(`pos-focus-${id}`); } catch { /* ignore */ }
       setResult(data.completion);
@@ -254,7 +296,7 @@ function FocusSession() {
     }
     if (typeof window !== 'undefined') window.scrollTo(0, 0);
     setSaving(false);
-  }, [mod, inputVals, remaining, isLast, reflection, kpiValues, day, id, packId]);
+  }, [mod, inputVals, remaining, isLast, reflection, kpiValues, day, id, packId, reviewMode, router]);
 
   const setItAndGo = async () => {
     // Save the doctor's schedule for the next task (same day up to 2 days out).
@@ -273,16 +315,16 @@ function FocusSession() {
   if (phase === 'intro') {
     const missionXp = modules.reduce((s, m) => s + (m.xp || 0), 0) || day.reward?.points || 0;
     return (
-      <div className="min-h-screen px-4 sm:px-6 lg:px-10 py-6">
-        <div className="max-w-6xl mx-auto">
+      <div className="min-h-screen px-3 sm:px-4 lg:px-6 py-6">
+        <div className="max-w-7xl mx-auto">
           <Link href={`/app/zero-to-practice-builder/track?pack=${packId}`} className="pos-link text-sm">← Back to pack</Link>
-          <p className="pos-label mt-3 mb-2">{day.category || 'Practice building'} · Day {day.missionNumber}</p>
+          <p className="pos-label mt-3 mb-2">{day.category || (taskMode ? "Task" : "Practice building")} · {taskMode ? "Task" : "Day"} {day.missionNumber}</p>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_440px] gap-6 lg:gap-8">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2 mb-4">
-                <span className="pos-label" style={{ background: 'var(--green)', color: '#fff', padding: '6px 14px', borderRadius: 99 }}>Day {day.missionNumber}</span>
-                <span className="pos-label" style={{ background: 'var(--green-soft)', color: 'var(--green)', padding: '6px 14px', borderRadius: 99 }}>Today&apos;s mission</span>
+                <span className="pos-label" style={{ background: 'var(--green)', color: '#fff', padding: '6px 14px', borderRadius: 99 }}>{taskMode ? "Task" : "Day"} {day.missionNumber}</span>
+                <span className="pos-label" style={{ background: 'var(--green-soft)', color: 'var(--green)', padding: '6px 14px', borderRadius: 99 }}>{reviewMode ? '✓ Completed' : "Today's mission"}</span>
               </div>
 
               <div className="flex flex-wrap gap-2 mb-5">
@@ -323,9 +365,13 @@ function FocusSession() {
 
               <button onClick={() => setPhase('work')} className="pos-action pos-focusable inline-flex items-center gap-2" style={{ background: 'var(--orange)' }}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7V5Z" fill="#fff" /></svg>
-                Start mission
+                {reviewMode ? 'Review / redo mission' : 'Start mission'}
               </button>
-              <p className="text-[12px] text-[var(--muted)] mt-2">Starting opens the guided modules and your timer.</p>
+              <p className="text-[12px] text-[var(--muted)] mt-2">
+                {reviewMode
+                  ? 'You completed this mission. Reopen to review what you did — your answers are prefilled and you can update them.'
+                  : 'Starting opens the guided modules and your timer.'}
+              </p>
             </div>
 
             {/* Chat on the overview too */}
@@ -448,24 +494,42 @@ function FocusSession() {
     .map((p) => fillVars(p, sessionVars));
 
   return (
-    <div className="min-h-screen px-4 sm:px-6 lg:px-10 py-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Top: exit + module progress */}
+    <div className="min-h-screen px-3 sm:px-4 lg:px-6 py-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Top: exit + inline timer + module progress (timer sits between them) */}
         <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-          <Link href={`/app/zero-to-practice-builder/track?pack=${packId}`} className="pos-link text-sm">← Exit mission</Link>
-          <div className="flex-1 min-w-[180px] max-w-[520px]">
-            <div className="flex justify-between text-[11px] text-[var(--muted)] mb-1">
-              <span>Module <span className="pos-num">{index + 1}/{modules.length}</span></span>
-              <span className="truncate ml-3">{mod.title}</span>
-            </div>
-            <div className="pos-meter"><span style={{ width: `${modulePct}%` }} /></div>
+          <Link href={`/app/zero-to-practice-builder/track?pack=${packId}`} className="pos-link text-sm shrink-0">← Exit {taskMode ? 'task' : 'mission'}</Link>
+
+          {/* Inline timer + pause */}
+          <div className="flex items-center gap-2 shrink-0" title={over ? 'Over the estimate — no rush' : 'Counting down · running long is fine'}>
+            <span className="pos-num text-[17px]" style={{ color: over ? 'var(--orange)' : 'var(--ink)' }}>{over ? '+' : ''}{mm}:{ss}</span>
+            <button onClick={() => setPaused((p) => !p)} className="pos-link text-[12px] inline-flex items-center gap-1" aria-label={paused ? 'Resume timer' : 'Pause timer'}>
+              {paused ? '▶ Resume' : '⏸ Pause'}
+            </button>
           </div>
+
+          {!(taskMode && modules.length <= 1) && (
+            <div className="flex-1 min-w-[180px] max-w-[520px]">
+              <div className="flex justify-between text-[11px] text-[var(--muted)] mb-1">
+                <span>Module <span className="pos-num">{index + 1}/{modules.length}</span></span>
+                <span className="truncate ml-3">{mod.title}</span>
+              </div>
+              <div className="pos-meter"><span style={{ width: `${modulePct}%` }} /></div>
+            </div>
+          )}
         </div>
 
-        <p className="pos-label mb-1">{day.category || 'Practice building'} · Day {day.missionNumber} · Mission</p>
+        <p className="pos-label mb-1">{day.category || (taskMode ? "Task" : "Practice building")} · {taskMode ? "Task" : "Day"} {day.missionNumber}{taskMode ? "" : " · Mission"}</p>
         <h1 className="text-[22px] md:text-[28px] font-semibold text-[var(--ink)] mb-5" style={{ letterSpacing: '-0.02em' }}>{day.missionText}</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-6 lg:gap-8">
+        {reviewMode && (
+          <div className="pos-card p-3.5 mb-5 flex items-center gap-2.5" style={{ background: 'var(--green-soft)', borderColor: 'var(--green)' }}>
+            <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--green)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <p className="text-[13.5px] text-[var(--ink)]">You already completed this mission — your answers are prefilled. Review or update them and save.</p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_440px] gap-6 lg:gap-8">
           {/* Left — the module */}
           <div className="min-w-0">
             <div className="flex items-center gap-3 flex-wrap mb-4">
@@ -591,7 +655,7 @@ function FocusSession() {
 
             <div className="flex items-center gap-5 mt-2 flex-wrap">
               <button onClick={finishModule} disabled={saving} className="pos-action pos-focusable" style={{ background: 'var(--green)' }}>
-                {saving ? 'Saving…' : (isLast ? '✓ Finish mission' : 'Finish module →')}
+                {saving ? 'Saving…' : (reviewMode ? (isLast ? 'Save changes' : 'Save & next module →') : (isLast ? '✓ Finish mission' : 'Finish module →'))}
               </button>
               <a
                 href={supportLink(`Hi, I need help with the module "${mod.title}" in my mission "${day.missionText}".`)}
@@ -605,17 +669,9 @@ function FocusSession() {
             </div>
           </div>
 
-          {/* Right — timer + module-aware chat */}
+          {/* Right — module-aware chat (timer moved inline into the top row) */}
           <div className="min-w-0">
             <div className="lg:sticky lg:top-6 space-y-4">
-              <div className="pos-card p-5 text-center">
-                <p className="pos-label mb-1">Mission timer</p>
-                <p className="pos-num text-4xl" style={{ color: over ? 'var(--orange)' : 'var(--ink)' }}>{over ? '+' : ''}{mm}:{ss}</p>
-                <button onClick={() => setPaused((p) => !p)} className="pos-link text-sm mt-2 inline-flex items-center gap-1.5">
-                  {paused ? '▶ Resume' : '⏸ Pause'}
-                </button>
-                <p className="text-[11px] text-[var(--muted)] mt-1">{over ? 'Over the estimate — no rush' : (paused ? 'Paused' : 'Counting down · running long is fine')}</p>
-              </div>
               <ChatAssistant missionId={id} moduleId={mod.id} moduleTitle={mod.title} autoPrompt={promptList[0] || ''} />
             </div>
           </div>

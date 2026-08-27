@@ -132,7 +132,7 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle, autoPr
   }
 
   return (
-    <div className={`pos-card flex flex-col overflow-hidden ${expanded ? 'fixed inset-3 sm:inset-6 z-[80]' : ''}`} style={expanded ? { boxShadow: '0 20px 60px rgba(16,26,19,.25)' } : { height: 'min(70vh, 650px)' }}>
+    <div className={`pos-card flex flex-col overflow-hidden ${expanded ? 'fixed inset-3 sm:inset-6 z-[80]' : ''}`} style={expanded ? { boxShadow: '0 20px 60px rgba(16,26,19,.25)' } : { height: 'min(82vh, 820px)' }}>
       <div className="flex items-center justify-between px-4 py-3 border-b shrink-0" style={{ borderColor: 'var(--rule)' }}>
         <div>
           <p className="pos-label">Mission assistant</p>

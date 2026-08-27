@@ -59,6 +59,15 @@ const FrameworkSchema = new mongoose.Schema({
     default: 0,
     min: 0,
   },
+  // How the pack is structured/presented:
+  //  'mission' — day-wise missions, each with modules (the original flow).
+  //  'task'    — a flat list of individual tasks (each stored as a single-module
+  //              mission); the doctor completes one task and moves to the next.
+  mode: {
+    type: String,
+    enum: ['mission', 'task'],
+    default: 'mission',
+  },
   order: {
     type: Number,
     default: 0,

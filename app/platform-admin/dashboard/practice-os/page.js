@@ -671,7 +671,7 @@ const LBL = 'block text-[11px] font-bold text-gray-500 uppercase mb-1';
 
 /* ---------------- New Framework modal ---------------- */
 function NewFrameworkModal({ onClose, onDone }) {
-  const [form, setForm] = useState({ title: '', category: '', description: '' });
+  const [form, setForm] = useState({ title: '', category: '', description: '', mode: 'mission' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -691,8 +691,24 @@ function NewFrameworkModal({ onClose, onDone }) {
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/40" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">New Builder Pack</h2>
-        <p className="text-sm text-gray-500 -mt-2 mb-4">Create the pack, then open it to set its price, outcomes, publish state and add missions.</p>
+        <p className="text-sm text-gray-500 -mt-2 mb-4">Create the pack, then open it to set its price, outcomes, publish state and add its content.</p>
         <div className="space-y-4">
+          <div>
+            <label className={LBL}>Pack type *</label>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <button type="button" onClick={() => setForm({ ...form, mode: 'mission' })}
+                className={`text-left border rounded-lg p-3 ${form.mode === 'mission' ? 'border-blue-600 bg-blue-50' : 'border-gray-300'}`}>
+                <p className="text-sm font-semibold text-gray-900">Mission-based</p>
+                <p className="text-xs text-gray-500 mt-0.5">Day-wise missions, each with modules.</p>
+              </button>
+              <button type="button" onClick={() => setForm({ ...form, mode: 'task' })}
+                className={`text-left border rounded-lg p-3 ${form.mode === 'task' ? 'border-blue-600 bg-blue-50' : 'border-gray-300'}`}>
+                <p className="text-sm font-semibold text-gray-900">Task-based</p>
+                <p className="text-xs text-gray-500 mt-0.5">A flat list of individual tasks. No days/modules.</p>
+              </button>
+            </div>
+            <p className="text-[11px] text-gray-400 mt-1">This can&apos;t be changed after creation.</p>
+          </div>
           <div><label className={LBL}>Title *</label><input className={INPUT} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Practice Building" /></div>
           <div><label className={LBL}>Category</label><input className={INPUT} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></div>
           <div><label className={LBL}>Description</label><textarea className={`${INPUT} h-20`} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>

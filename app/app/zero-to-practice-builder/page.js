@@ -302,9 +302,15 @@ function PackCard({ pack }) {
       {summary && <p className="text-[15px] text-[var(--muted)] mt-3 leading-relaxed" style={{ maxWidth: '48ch' }}>{summary}</p>}
 
       <div className="flex flex-wrap gap-x-6 gap-y-2 mt-5">
-        <Stat n={counts.days} label={counts.days === 1 ? 'day' : 'days'} />
-        <Stat n={counts.missions} label={counts.missions === 1 ? 'mission' : 'missions'} />
-        <Stat n={counts.modules} label={counts.modules === 1 ? 'module' : 'modules'} />
+        {pack.mode === 'task' ? (
+          <Stat n={counts.missions} label={counts.missions === 1 ? 'task' : 'tasks'} />
+        ) : (
+          <>
+            <Stat n={counts.days} label={counts.days === 1 ? 'day' : 'days'} />
+            <Stat n={counts.missions} label={counts.missions === 1 ? 'mission' : 'missions'} />
+            <Stat n={counts.modules} label={counts.modules === 1 ? 'module' : 'modules'} />
+          </>
+        )}
       </div>
 
       {outcomes.length > 0 && (

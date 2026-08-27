@@ -15,7 +15,9 @@ export const WEEK_THEMES = {
  * The 30-day spine. Treatment-chart grammar: green behind you, one orange mark
  * where you are, hairlines ahead. Locked day = paper, never orange.
  */
-export function Spine({ days, totalDays, withPack }) {
+export function Spine({ days, totalDays, withPack, mode = 'mission' }) {
+  const isTask = mode === 'task';
+  const noun = isTask ? 'tasks' : 'missions';
   const byWeek = {};
   for (const d of days) (byWeek[d.weekNumber || 1] ??= []).push(d);
   const weeks = Object.keys(byWeek).map(Number).sort((a, b) => a - b);
@@ -28,8 +30,16 @@ export function Spine({ days, totalDays, withPack }) {
     const ahead = currentFlatIndex >= 0 ? flatIndex - currentFlatIndex : 99;
     return ahead <= 1 ? 0.68 : ahead === 2 ? 0.48 : ahead === 3 ? 0.38 : 0.3;
   };
-  // Completed/skipped missions link to the Record so you can see what you did.
-  const recordHref = (d) => (withPack ? `${withPack('/app/zero-to-practice-builder/journey')}&view=record` : `/app/zero-to-practice-builder/journey?view=record`);
+  // Clicking a mission in the spine opens it in the focus session:
+  //  - completed/skipped → review/redo mode (answers prefilled)
+  //  - available (current) → start it
+  //  - locked → the record view (nothing to open yet)
+  const focusHref = (d) => (withPack ? withPack(`/app/zero-to-practice-builder/focus/${d._id}`) : `/app/zero-to-practice-builder/focus/${d._id}`);
+  const recordHref = (d) => {
+    if (d.status === 'completed' || d.status === 'skipped') return `${focusHref(d)}&review=1`;
+    if (d.status === 'available') return focusHref(d);
+    return withPack ? `${withPack('/app/zero-to-practice-builder/journey')}&view=record` : `/app/zero-to-practice-builder/journey?view=record`;
+  };
 
   return (
     <div className="sticky top-6">
@@ -38,13 +48,13 @@ export function Spine({ days, totalDays, withPack }) {
         .pos-fade-down { animation: pos-fade-down .4s ease both; }
         @media (prefers-reduced-motion: reduce) { .pos-fade-down { animation: none; } }
       `}</style>
-      <p className="pos-label mb-3">Your {totalDays || days.length} missions</p>
+      <p className="pos-label mb-3">Your {totalDays || days.length} {noun}</p>
       <div className="space-y-4">
         {weeks.map((w, wi) => {
           const base = weeks.slice(0, wi).reduce((n, ww) => n + byWeek[ww].length, 0);
           return (
           <div key={w}>
-            <p className="pos-label mb-1.5" style={{ fontSize: '9.5px' }}>Week {w} · {WEEK_THEMES[w] || ''}</p>
+            {!isTask && <p className="pos-label mb-1.5" style={{ fontSize: '9.5px' }}>Week {w} · {WEEK_THEMES[w] || ''}</p>}
             <div className="space-y-0.5">
               {byWeek[w].map((d, di) => {
                 const flatIndex = base + di;

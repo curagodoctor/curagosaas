@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor } from '@/lib/practice-os/access';
-import { getOrCreateProfile, generateDoctorSummary } from '@/lib/practice-os/profile';
+import { getOrCreateProfile, generateDoctorSummary, getDoctorProfileFields } from '@/lib/practice-os/profile';
 import Doctor from '@/models/Doctor';
 
 export const runtime = 'nodejs';
@@ -12,8 +12,10 @@ export async function GET(request) {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
     const profile = await getOrCreateProfile(doctor._id);
-    const fields = {};
-    for (const f of profile.credentials?.extracted || []) fields[f.field] = f.value;
+    // Merge extracted + mission-captured variables (+ canonical clinic/whatsapp)
+    // so values a doctor entered via mission evidence inputs also show in the
+    // profile form — no need to re-enter them here.
+    const fields = await getDoctorProfileFields(doctor._id);
     return NextResponse.json({
       success: true,
       fields,
