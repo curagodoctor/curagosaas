@@ -69,18 +69,49 @@ export default function PacksCataloguePage() {
 }
 
 export function PackHeader() {
+  const [mobile, setMobile] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 720px)');
+    const apply = () => { setMobile(mq.matches); if (!mq.matches) setOpen(false); };
+    apply();
+    mq.addEventListener ? mq.addEventListener('change', apply) : mq.addListener(apply);
+    return () => { mq.removeEventListener ? mq.removeEventListener('change', apply) : mq.removeListener(apply); };
+  }, []);
+
+  const links = (
+    <>
+      <Link href="/packs" onClick={() => setOpen(false)} style={{ color: '#096B17', fontSize: 15, fontWeight: 500, padding: mobile ? '13px 6px' : '11px 12px', textDecoration: 'none', borderBottom: mobile ? '1px solid rgba(0,0,0,.06)' : 'none' }}>Builder Packs</Link>
+      <Link href="/login" onClick={() => setOpen(false)} style={{ color: '#096B17', fontSize: 15, fontWeight: 600, padding: mobile ? '13px 6px' : '11px 12px', textDecoration: 'none', borderBottom: mobile ? '1px solid rgba(0,0,0,.06)' : 'none' }}>Login</Link>
+      <Link href="/signup" onClick={() => setOpen(false)} style={{ background: '#F26A1B', color: '#fff', fontWeight: 700, fontSize: 15, padding: mobile ? '14px 20px' : '11px 18px', borderRadius: 11, textDecoration: 'none', textAlign: 'center', marginTop: mobile ? 12 : 0 }}>Sign up</Link>
+    </>
+  );
+
   return (
-    <header style={{ position: 'sticky', top: 0, zIndex: 60, background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(0,0,0,.06)' }}>
-      <nav style={{ maxWidth: 1120, margin: '0 auto', padding: '9px clamp(16px,4vw,40px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+    <header style={{ position: 'sticky', top: 0, zIndex: 60, background: 'rgba(255,255,255,.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(0,0,0,.06)' }}>
+      <nav style={{ maxWidth: 1120, margin: '0 auto', padding: '9px clamp(16px,4vw,40px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, position: 'relative' }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/curago-logo.png" alt="CuraGo" style={{ height: 38, width: 'auto' }} />
         </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Link href="/packs" style={{ color: '#096B17', fontSize: 14.5, fontWeight: 500, padding: '11px 12px', textDecoration: 'none' }}>Builder Packs</Link>
-          <Link href="/login" style={{ color: '#096B17', fontSize: 14.5, fontWeight: 600, padding: '11px 12px', textDecoration: 'none' }}>Login</Link>
-          <Link href="/signup" style={{ background: '#F26A1B', color: '#fff', fontWeight: 700, fontSize: 14.5, padding: '11px 18px', borderRadius: 11, textDecoration: 'none' }}>Sign up</Link>
-        </div>
+
+        {!mobile ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>{links}</div>
+        ) : (
+          <button onClick={() => setOpen((o) => !o)} aria-label="Menu" aria-expanded={open}
+            style={{ width: 44, height: 44, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 5, padding: 11, background: 'transparent', border: '1px solid rgba(0,0,0,.12)', borderRadius: 10, cursor: 'pointer' }}>
+            <span style={{ display: 'block', height: 2, width: '100%', background: '#096B17', borderRadius: 2, transition: 'transform .25s,opacity .25s', transform: open ? 'translateY(7px) rotate(45deg)' : 'none' }} />
+            <span style={{ display: 'block', height: 2, width: '100%', background: '#096B17', borderRadius: 2, transition: 'opacity .25s', opacity: open ? 0 : 1 }} />
+            <span style={{ display: 'block', height: 2, width: '100%', background: '#096B17', borderRadius: 2, transition: 'transform .25s,opacity .25s', transform: open ? 'translateY(-7px) rotate(-45deg)' : 'none' }} />
+          </button>
+        )}
+
+        {mobile && open && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', borderBottom: '1px solid rgba(0,0,0,.08)', boxShadow: '0 14px 32px rgba(0,0,0,.12)', padding: '8px clamp(16px,4vw,40px) 18px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {links}
+          </div>
+        )}
       </nav>
     </header>
   );

@@ -16,9 +16,65 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle, autoPr
   const [typing, setTyping] = useState(null); // { full, shown } — reveals the reply as it "streams"
   const [expanded, setExpanded] = useState(false);
   const [autoDrafting, setAutoDrafting] = useState(false); // first response is being generated
+  const [savedIdx, setSavedIdx] = useState({}); // { [messageIndex]: 'saving'|'saved' } — save-to-workspace state
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const autoFiredRef = useRef(false);
+
+  const [actionState, setActionState] = useState({}); // { [i]: { blog?:..., reel?:... } }
+  const [publishedUrl, setPublishedUrl] = useState(null);
+
+  const deriveTitle = (text) => {
+    const firstLine = String(text || '').replace(/[#>*_`-]/g, ' ').split('\n').map((l) => l.trim()).find(Boolean) || 'AI note';
+    return firstLine.slice(0, 70) + (firstLine.length > 70 ? '…' : '');
+  };
+
+  // One-click: store an assistant reply in the doctor's workspace as a titled,
+  // dated note (universal-AI "action from the chatbox").
+  async function saveToWorkspace(text, i) {
+    if (savedIdx[i]) return;
+    setSavedIdx((s) => ({ ...s, [i]: 'saving' }));
+    const dated = `${deriveTitle(text)} · ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    try {
+      const res = await fetch('/api/practice-os/documents', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ title: dated, content: text }),
+      });
+      const d = await res.json();
+      setSavedIdx((s) => ({ ...s, [i]: d.success ? 'saved' : undefined }));
+    } catch {
+      setSavedIdx((s) => ({ ...s, [i]: undefined }));
+    }
+  }
+
+  // One-click: turn an assistant reply into a LIVE blog page.
+  async function publishBlog(text, i) {
+    if (actionState[i]?.blog) return;
+    setActionState((s) => ({ ...s, [i]: { ...s[i], blog: 'saving' } }));
+    try {
+      const res = await fetch('/api/practice-os/actions/publish-blog', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ text }),
+      });
+      const d = await res.json();
+      if (d.success) { setActionState((s) => ({ ...s, [i]: { ...s[i], blog: 'done' } })); setPublishedUrl({ url: d.url, title: d.title }); }
+      else setActionState((s) => ({ ...s, [i]: { ...s[i], blog: undefined } }));
+    } catch { setActionState((s) => ({ ...s, [i]: { ...s[i], blog: undefined } })); }
+  }
+
+  // One-click: send an assistant reel script to the Content Planner.
+  async function sendToPlanner(text, i) {
+    if (actionState[i]?.reel) return;
+    setActionState((s) => ({ ...s, [i]: { ...s[i], reel: 'saving' } }));
+    try {
+      const res = await fetch('/api/practice-os/documents', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ kind: 'reel', status: 'approved', title: deriveTitle(text), content: text }),
+      });
+      const d = await res.json();
+      setActionState((s) => ({ ...s, [i]: { ...s[i], reel: d.success ? 'done' : undefined } }));
+    } catch { setActionState((s) => ({ ...s, [i]: { ...s[i], reel: undefined } })); }
+  }
 
   // Auto-grow the input as the doctor types (prompts can be long), capped so it
   // never eats the whole panel.
@@ -132,6 +188,20 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle, autoPr
   }
 
   return (
+    <>
+    {publishedUrl && (
+      <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 p-4" onClick={() => setPublishedUrl(null)}>
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center" onClick={(e) => e.stopPropagation()}>
+          <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center mb-3" style={{ background: 'var(--green-soft)' }}>
+            <svg className="w-6 h-6" style={{ color: 'var(--green)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" /></svg>
+          </div>
+          <h3 className="text-lg font-semibold text-[var(--ink)]">Your page is live 🎉</h3>
+          <p className="text-sm text-[var(--muted)] mt-1">“{publishedUrl.title}” has been published as a blog page.</p>
+          <a href={publishedUrl.url} target="_blank" rel="noopener noreferrer" className="pos-action inline-block mt-4">View live page →</a>
+          <button onClick={() => setPublishedUrl(null)} className="block mx-auto mt-3 pos-link text-sm">Close</button>
+        </div>
+      </div>
+    )}
     <div className={`pos-card flex flex-col overflow-hidden ${expanded ? 'fixed inset-3 sm:inset-6 z-[80]' : ''}`} style={expanded ? { boxShadow: '0 20px 60px rgba(16,26,19,.25)' } : { height: 'min(82vh, 820px)' }}>
       <div className="flex items-center justify-between px-4 py-3 border-b shrink-0" style={{ borderColor: 'var(--rule)' }}>
         <div>
@@ -166,13 +236,29 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle, autoPr
           </div>
         )}
         {messages.map((m, i) => (
-          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+          <div key={i} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
             <div className="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[14px] leading-relaxed"
               style={{ background: m.role === 'user' ? 'var(--green)' : 'var(--rule-soft)', color: m.role === 'user' ? '#fff' : 'var(--ink)' }}>
               {m.role === 'user'
                 ? <span className="whitespace-pre-wrap">{m.content}</span>
                 : <Markdown text={m.content} />}
             </div>
+            {m.role === 'assistant' && (
+              <div className="mt-1 flex items-center gap-3 flex-wrap text-[11px]">
+                <button onClick={() => saveToWorkspace(m.content, i)} disabled={!!savedIdx[i]}
+                  className="inline-flex items-center gap-1" style={{ color: savedIdx[i] === 'saved' ? 'var(--green)' : 'var(--muted)' }} title="Save this to your workspace">
+                  {savedIdx[i] === 'saved' ? '✓ Saved' : savedIdx[i] === 'saving' ? 'Saving…' : '⤓ Save to workspace'}
+                </button>
+                <button onClick={() => publishBlog(m.content, i)} disabled={actionState[i]?.blog === 'saving' || actionState[i]?.blog === 'done'}
+                  className="inline-flex items-center gap-1" style={{ color: actionState[i]?.blog === 'done' ? 'var(--green)' : 'var(--muted)' }} title="Publish this as a live blog page">
+                  {actionState[i]?.blog === 'done' ? '✓ Published' : actionState[i]?.blog === 'saving' ? 'Publishing…' : '🌐 Publish as blog'}
+                </button>
+                <button onClick={() => sendToPlanner(m.content, i)} disabled={actionState[i]?.reel === 'saving' || actionState[i]?.reel === 'done'}
+                  className="inline-flex items-center gap-1" style={{ color: actionState[i]?.reel === 'done' ? 'var(--green)' : 'var(--muted)' }} title="Send this reel script to the Content Planner">
+                  {actionState[i]?.reel === 'done' ? '✓ In planner' : actionState[i]?.reel === 'saving' ? 'Sending…' : '🎬 Send to planner'}
+                </button>
+              </div>
+            )}
           </div>
         ))}
         {typing && (
@@ -210,5 +296,6 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle, autoPr
         <p className="text-[10.5px] text-[var(--muted)] mt-2 px-1">1 credit per message · Enter to send</p>
       </div>
     </div>
+    </>
   );
 }

@@ -13,6 +13,68 @@ export default function DashboardPage() {
   });
   const [loading, setLoading] = useState(true);
 
+  // Website-address (subdomain) editor — domain setup lives here now, not at signup.
+  const [editDomain, setEditDomain] = useState(false);
+  const [subInput, setSubInput] = useState('');
+  const [subAvail, setSubAvail] = useState(null);   // 'checking' | 'available' | 'taken' | 'invalid'
+  const [subMsg, setSubMsg] = useState('');
+  const [subSaving, setSubSaving] = useState(false);
+
+  const refreshDoctor = async () => {
+    try {
+      const r = await fetch('/api/auth/me');
+      if (r.ok) { const d = await r.json(); setDoctor(d.doctor); }
+    } catch { /* ignore */ }
+  };
+
+  // AI: generate website content from the doctor's profile and publish it.
+  const [genBusy, setGenBusy] = useState(false);
+  const [genResult, setGenResult] = useState(null); // { url, hasAddress } | { error }
+  const generateSite = async () => {
+    setGenBusy(true); setGenResult(null);
+    try {
+      const res = await fetch('/api/practice-os/actions/generate-site', { method: 'POST', credentials: 'include' });
+      const d = await res.json();
+      setGenResult(d.success ? { url: d.url, hasAddress: d.hasAddress } : { error: d.error || 'Could not generate your website.' });
+    } catch { setGenResult({ error: 'Something went wrong.' }); }
+    finally { setGenBusy(false); }
+  };
+
+  useEffect(() => {
+    if (!editDomain) return;
+    const v = subInput.trim().toLowerCase();
+    if (!v) { setSubAvail(null); setSubMsg(''); return; }
+    if (!/^[a-z0-9]([a-z0-9-]{1,28}[a-z0-9])?$/.test(v)) { setSubAvail('invalid'); setSubMsg('3–30 chars: lowercase letters, numbers, hyphens.'); return; }
+    setSubAvail('checking'); setSubMsg('Checking…');
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/auth/check-subdomain?subdomain=${encodeURIComponent(v)}`);
+        const d = await res.json();
+        if (d.available) { setSubAvail('available'); setSubMsg(`${v}.curago.in is available`); }
+        else { setSubAvail('taken'); setSubMsg(d.reason || d.message || 'That address is taken.'); }
+      } catch { setSubAvail(null); setSubMsg(''); }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [subInput, editDomain]);
+
+  const saveSubdomain = async () => {
+    const v = subInput.trim().toLowerCase();
+    if (!v || subAvail !== 'available') return;
+    setSubSaving(true);
+    try {
+      // PUT changes an existing address; POST claims a first one.
+      const method = doctor?.subdomain ? 'PUT' : 'POST';
+      const res = await fetch('/api/doctor/subdomain', {
+        method, headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ subdomain: v }),
+      });
+      const d = await res.json();
+      if (d.success) { await refreshDoctor(); setEditDomain(false); setSubInput(''); }
+      else { setSubMsg(d.error || 'Could not save. Try another address.'); setSubAvail('taken'); }
+    } catch { setSubMsg('Something went wrong.'); }
+    finally { setSubSaving(false); }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -141,20 +203,47 @@ export default function DashboardPage() {
               </span>
             </div>
             <h2 className="text-lg font-semibold mb-1">Your Live Website</h2>
-            {liveWebsiteUrl ? (
-              <a
-                href={liveWebsiteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-white/90 hover:text-white underline underline-offset-2 flex items-center gap-1"
-              >
-                {liveWebsiteUrl}
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
+            {editDomain ? (
+              <div className="mt-1">
+                <div className="flex items-stretch max-w-sm">
+                  <input
+                    value={subInput}
+                    onChange={(e) => setSubInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && subAvail === 'available') saveSubdomain(); }}
+                    autoFocus maxLength={30}
+                    placeholder="yourname"
+                    className="flex-1 min-w-0 px-3 py-2 rounded-l-lg text-gray-900 outline-none"
+                  />
+                  <span className="px-3 flex items-center bg-white/20 text-white rounded-r-lg text-sm whitespace-nowrap">.curago.in</span>
+                </div>
+                {subMsg && <p className={`text-xs mt-1.5 ${subAvail === 'available' ? 'text-green-200' : 'text-white/80'}`}>{subMsg}</p>}
+                <div className="flex items-center gap-2 mt-2">
+                  <button onClick={saveSubdomain} disabled={subAvail !== 'available' || subSaving} className="px-3 py-1.5 rounded-lg bg-white text-[#096b17] text-sm font-semibold disabled:opacity-50">{subSaving ? 'Saving…' : 'Save address'}</button>
+                  <button onClick={() => { setEditDomain(false); setSubInput(''); setSubMsg(''); setSubAvail(null); }} className="px-3 py-1.5 rounded-lg text-white/80 text-sm hover:text-white">Cancel</button>
+                </div>
+              </div>
+            ) : liveWebsiteUrl ? (
+              <div className="flex items-center gap-3 flex-wrap">
+                <a
+                  href={liveWebsiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white/90 hover:text-white underline underline-offset-2 flex items-center gap-1"
+                >
+                  {liveWebsiteUrl}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+                {!doctor?.customDomain && (
+                  <button onClick={() => { setEditDomain(true); setSubInput(doctor?.subdomain || ''); }} className="text-white/70 hover:text-white text-sm underline underline-offset-2">Edit address</button>
+                )}
+              </div>
             ) : (
-              <p className="text-white/70">Set up your subdomain to go live</p>
+              <div className="flex items-center gap-3">
+                <p className="text-white/70">No website address yet.</p>
+                <button onClick={() => { setEditDomain(true); setSubInput(''); }} className="px-3 py-1.5 rounded-lg bg-white text-[#096b17] text-sm font-semibold">Set up address</button>
+              </div>
             )}
           </div>
           <div className="flex gap-3">
@@ -186,6 +275,51 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* AI: generate website content instantly */}
+      <div className="bg-gradient-to-br from-[#096b17] to-[#053d0b] rounded-xl shadow-sm p-6 text-white flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h2 className="text-lg font-semibold mb-1">✨ Generate your website with AI</h2>
+          <p className="text-white/85 text-sm max-w-xl">Write your homepage from your profile — about, services and FAQs — and publish it in one click.</p>
+        </div>
+        <button onClick={generateSite} disabled={genBusy} className="bg-white text-[#096b17] font-semibold px-5 py-2.5 rounded-lg hover:bg-gray-100 disabled:opacity-60">
+          {genBusy ? 'Generating…' : 'Generate my website'}
+        </button>
+      </div>
+
+      {/* Generate-site result popup */}
+      {genResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setGenResult(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center" onClick={(e) => e.stopPropagation()}>
+            {genResult.error ? (
+              <>
+                <h3 className="text-lg font-semibold text-gray-900">Couldn&apos;t generate</h3>
+                <p className="text-sm text-gray-500 mt-1">{genResult.error}</p>
+                <button onClick={() => setGenResult(null)} className="mt-4 px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium">Close</button>
+              </>
+            ) : (
+              <>
+                <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center mb-3 bg-[#096b17]/10">
+                  <svg className="w-6 h-6 text-[#096b17]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" /></svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Your website is ready 🎉</h3>
+                {genResult.hasAddress ? (
+                  <>
+                    <p className="text-sm text-gray-500 mt-1">Your homepage has been written and published.</p>
+                    <a href={genResult.url} target="_blank" rel="noopener noreferrer" className="inline-block mt-4 px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-semibold">View my live site →</a>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-500 mt-1">Your homepage content is written. Set a website address in <strong>Your Live Website</strong> above to take it live.</p>
+                    <button onClick={() => { setGenResult(null); setEditDomain(true); setSubInput(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="inline-block mt-4 px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-semibold">Set my address</button>
+                  </>
+                )}
+                <button onClick={() => setGenResult(null)} className="block mx-auto mt-3 text-gray-400 text-sm">Close</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Website Creation Pathways */}
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">

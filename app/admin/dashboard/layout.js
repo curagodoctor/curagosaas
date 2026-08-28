@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import SubdomainGate from '@/components/SubdomainGate';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -91,7 +90,6 @@ export default function DashboardLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SubdomainGate />
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 bg-white shadow-md z-40 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">

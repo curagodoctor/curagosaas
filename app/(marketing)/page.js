@@ -158,6 +158,7 @@ const BODY = `<div style="font-family:var(--sans)">
   </nav>
   <div class="dc-mobile-menu" id="dc-mobile-menu" data-mobile-menu="">
     <a href="#builder">Practice Builder</a>
+    <a href="/packs">Builder Packs</a>
     <a href="#how">How it works</a>
     <a href="#cohort">Pricing</a>
     <a href="/store">Books &amp; courses</a>

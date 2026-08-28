@@ -1,6 +1,7 @@
 import { Instrument_Sans, Instrument_Serif, DM_Mono } from 'next/font/google';
 import './practiceos.css';
-import SubdomainGate from '@/components/SubdomainGate';
+// Subdomain setup is no longer compulsory — it's optional and set from the
+// dashboard's "Your Live Website" section. The hard gate has been removed.
 
 // Per CLAUDE.md §2 — do NOT substitute Inter / Space Grotesk / JetBrains Mono.
 const sans = Instrument_Sans({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
@@ -14,7 +15,6 @@ export const metadata = {
 export default function AppLayout({ children }) {
   return (
     <div className={`pos-root ${sans.variable} ${serif.variable} ${mono.variable}`}>
-      <SubdomainGate />
       {children}
     </div>
   );

@@ -20,10 +20,12 @@ export async function POST(request) {
       claimToken,
     } = body;
 
-    // Validate required fields
-    if (!name || !email || !phone || !password || !subdomain) {
+    // Validate required fields. Subdomain is now OPTIONAL at signup — a doctor can
+    // create their account first and claim a website address later (or have it set
+    // up for them). It's only validated when provided.
+    if (!name || !email || !phone || !password) {
       return NextResponse.json(
-        { error: 'All fields are required' },
+        { error: 'Name, email, phone and password are required' },
         { status: 400 }
       );
     }
@@ -35,21 +37,18 @@ export async function POST(request) {
       );
     }
 
-    // Validate subdomain format
-    if (!isValidSubdomain(subdomain)) {
-      return NextResponse.json(
-        { error: 'Invalid subdomain. Use only lowercase letters, numbers, and hyphens (3-30 characters)' },
-        { status: 400 }
-      );
-    }
-
-    // Check subdomain availability
-    const subdomainCheck = await checkSubdomainAvailability(subdomain);
-    if (!subdomainCheck.available) {
-      return NextResponse.json(
-        { error: subdomainCheck.reason },
-        { status: 400 }
-      );
+    const wantsSubdomain = !!(subdomain && String(subdomain).trim());
+    if (wantsSubdomain) {
+      if (!isValidSubdomain(subdomain)) {
+        return NextResponse.json(
+          { error: 'Invalid subdomain. Use only lowercase letters, numbers, and hyphens (3-30 characters)' },
+          { status: 400 }
+        );
+      }
+      const subdomainCheck = await checkSubdomainAvailability(subdomain);
+      if (!subdomainCheck.available) {
+        return NextResponse.json({ error: subdomainCheck.reason }, { status: 400 });
+      }
     }
 
     // Validate password length
@@ -115,7 +114,7 @@ export async function POST(request) {
       email: email.toLowerCase(),
       phone,
       password,
-      subdomain: subdomain.toLowerCase(),
+      ...(wantsSubdomain ? { subdomain: subdomain.toLowerCase() } : {}),
       displayName: name, // Default display name to name
       whatsappNumber: phone, // Default WhatsApp to phone
       isLicensedProfessional,

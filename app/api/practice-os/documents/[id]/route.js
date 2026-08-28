@@ -36,6 +36,9 @@ export async function PUT(request, { params }) {
     const update = {};
     if (typeof body.title === 'string') update.title = body.title.trim() || 'Untitled';
     if (typeof body.content === 'string') update.content = body.content;
+    // Content Planner fields (reel scripts).
+    if (['idea', 'approved', 'scheduled', 'posted'].includes(body.status)) update.status = body.status;
+    if (typeof body.plannedFor === 'string') update.plannedFor = body.plannedFor;
     const document = await PracticeOsDocument.findOneAndUpdate(
       { _id: id, doctorId: doctor._id },
       { $set: update },

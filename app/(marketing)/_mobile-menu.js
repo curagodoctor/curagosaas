@@ -13,42 +13,40 @@ import { useEffect } from 'react';
  */
 export default function MobileMenu() {
   useEffect(() => {
-    const toggle = document.querySelector('[data-mobile-toggle]');
-    const menu = document.querySelector('[data-mobile-menu]');
-    if (!toggle || !menu) return undefined;
-
-    // Idempotency guard: never double-bind (React strict mode / re-mounts).
-    if (toggle.dataset.mmBound === '1') return undefined;
-    toggle.dataset.mmBound = '1';
-
+    // Delegate on the document instead of binding to the button directly. The
+    // header is injected via dangerouslySetInnerHTML, so the button may not be
+    // in the DOM at effect time (or may be re-rendered) — delegation always
+    // works, and covers every mobile browser without touch/click quirks.
+    const menuEl = () => document.querySelector('[data-mobile-menu]');
     const setOpen = (open) => {
-      toggle.classList.toggle('open', open);
-      menu.classList.toggle('open', open);
-      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      const toggle = document.querySelector('[data-mobile-toggle]');
+      const menu = menuEl();
+      if (toggle) { toggle.classList.toggle('open', open); toggle.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+      if (menu) menu.classList.toggle('open', open);
     };
 
-    const onToggle = (e) => {
-      e.preventDefault();
-      setOpen(!menu.classList.contains('open'));
+    const onDocClick = (e) => {
+      const t = e.target;
+      if (!t || !t.closest) return;
+      const toggle = t.closest('[data-mobile-toggle]');
+      if (toggle) {
+        e.preventDefault();
+        const menu = menuEl();
+        setOpen(!(menu && menu.classList.contains('open')));
+        return;
+      }
+      // Tapping a link inside the open menu closes it.
+      const menu = menuEl();
+      if (menu && menu.classList.contains('open') && t.closest('[data-mobile-menu] a')) setOpen(false);
     };
 
-    const onLinkClick = (e) => {
-      if (e.target.closest('a')) setOpen(false);
-    };
+    const onResize = () => { if (window.innerWidth > 860) setOpen(false); };
 
-    const onResize = () => {
-      if (window.innerWidth > 860) setOpen(false);
-    };
-
-    toggle.addEventListener('click', onToggle);
-    menu.addEventListener('click', onLinkClick);
+    document.addEventListener('click', onDocClick);
     window.addEventListener('resize', onResize);
-
     return () => {
-      toggle.removeEventListener('click', onToggle);
-      menu.removeEventListener('click', onLinkClick);
+      document.removeEventListener('click', onDocClick);
       window.removeEventListener('resize', onResize);
-      delete toggle.dataset.mmBound;
     };
   }, []);
 

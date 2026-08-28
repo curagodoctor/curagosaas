@@ -120,12 +120,14 @@ function SignupPageInner() {
       newErrors.phone = 'Please enter a valid 10-digit phone number';
     }
 
-    if (!formData.subdomain.trim()) {
-      newErrors.subdomain = 'Subdomain is required';
-    } else if (formData.subdomain.length < 3) {
-      newErrors.subdomain = 'Subdomain must be at least 3 characters';
-    } else if (subdomainStatus === 'taken' || subdomainStatus === 'invalid') {
-      newErrors.subdomain = 'Please choose an available subdomain';
+    // Subdomain is OPTIONAL now — a doctor can set their website address later
+    // from the dashboard. Only validate it if they chose to enter one.
+    if (formData.subdomain.trim()) {
+      if (formData.subdomain.length < 3) {
+        newErrors.subdomain = 'Subdomain must be at least 3 characters';
+      } else if (subdomainStatus === 'taken' || subdomainStatus === 'invalid') {
+        newErrors.subdomain = 'Please choose an available subdomain';
+      }
     }
 
     if (!formData.password) {

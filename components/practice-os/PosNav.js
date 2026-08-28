@@ -34,6 +34,7 @@ function PosNavInner({ breadcrumb }) {
       <ProgressMenu packId={packId} withPack={withPack} onNavigate={close} />
       <Link href={withPack('/app/zero-to-practice-builder/schedule')} onClick={close} className="pos-link">Schedule</Link>
       <Link href={withPack('/app/zero-to-practice-builder/workspace')} onClick={close} className="pos-link">Workspace</Link>
+      <Link href={withPack('/app/zero-to-practice-builder/planner')} onClick={close} className="pos-link">Content Planner</Link>
       <Link href={withPack('/app/zero-to-practice-builder/leaderboard')} onClick={close} className="pos-link">Leaderboard</Link>
       <Link href={withPack('/app/zero-to-practice-builder/profile')} onClick={close} className="pos-link">My profile</Link>
     </>
