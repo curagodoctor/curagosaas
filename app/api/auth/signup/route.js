@@ -4,6 +4,7 @@ import Doctor from '@/models/Doctor';
 import ReferenceCode from '@/models/ReferenceCode';
 import { sendVerificationEmail } from '@/lib/email';
 import { checkSubdomainAvailability, isValidSubdomain } from '@/lib/doctorAuth';
+import { linkPendingPurchases } from '@/lib/practice-os/claimPending';
 
 export async function POST(request) {
   try {
@@ -16,6 +17,7 @@ export async function POST(request) {
       subdomain,
       isLicensedProfessional,
       referenceCode,
+      claimToken,
     } = body;
 
     // Validate required fields
@@ -127,6 +129,15 @@ export async function POST(request) {
 
     // Save doctor
     await doctor.save();
+
+    // Link any pack the buyer purchased BEFORE creating this account (guest
+    // checkout). Matches by claim token, falling back to email — so a refresh
+    // that lost the token still attaches the pack. Best-effort; never blocks signup.
+    try {
+      await linkPendingPurchases(doctor, { claimToken });
+    } catch (e) {
+      console.error('[signup claim link]', e.message);
+    }
 
     // Track reference code usage (only if a code was provided)
     if (refCodeResult && refCodeResult.refCode) {

@@ -75,6 +75,15 @@ export async function GET(request) {
       return redirectTo(origin, '/login?error=suspended');
     }
 
+    // Link any Builder Pack bought before this Google sign-in. No claim token
+    // survives the OAuth round-trip, so match by the account's email (refresh-safe).
+    try {
+      const { linkPendingPurchases } = await import('@/lib/practice-os/claimPending');
+      await linkPendingPurchases(doctor, {});
+    } catch (e) {
+      console.error('[google claim link]', e.message);
+    }
+
     // Website Builder needs a subdomain; email signup collects it up front, but
     // Google signup doesn't — so send those doctors through a one-step
     // "choose your address" screen before landing in the app.

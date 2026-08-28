@@ -24,9 +24,12 @@ function SignupPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const entry = searchParams.get('entry') === 'practice-os' ? 'practice-os' : 'website-builder';
+  // Set when the visitor bought a Builder Pack before signing up — links the pack.
+  const claimToken = searchParams.get('claim') || '';
+  const prefillEmail = searchParams.get('email') || '';
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
+    email: prefillEmail,
     phone: '',
     subdomain: '',
     password: '',
@@ -171,6 +174,7 @@ function SignupPageInner() {
           subdomain: formData.subdomain,
           password: formData.password,
           isLicensedProfessional: formData.isLicensedProfessional,
+          claimToken: claimToken || undefined,
         }),
       });
 

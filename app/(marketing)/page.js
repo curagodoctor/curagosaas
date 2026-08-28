@@ -144,6 +144,7 @@ const BODY = `<div style="font-family:var(--sans)">
     </a>
     <div class="dc-navlinks">
       <a href="#builder" style="color:#096B17;font-size:14.5px;font-weight:500">Practice Builder</a>
+      <a href="/packs" style="color:#096B17;font-size:14.5px;font-weight:500">Builder Packs</a>
       <a href="#how" style="color:#096B17;font-size:14.5px;font-weight:500">How it works</a>
       <a href="#cohort" style="color:#096B17;font-size:14.5px;font-weight:500">Pricing</a>
       <a href="/store" style="color:#096B17;font-size:14.5px;font-weight:500">Books &amp; courses</a>

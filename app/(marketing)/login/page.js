@@ -63,9 +63,14 @@ function LoginPageInner() {
         }
         throw new Error(data.error || 'Something went wrong');
       }
+      // If they bought a Builder Pack before logging in, link it to this account.
+      const claimToken = searchParams.get('claim');
+      if (claimToken) {
+        try { await fetch('/api/auth/claim-pending', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ claimToken }) }); } catch { /* ignore */ }
+      }
       // Land on the unified workspace (matches Google sign-in), not straight into
       // the website-builder admin. Practice-OS entrants go into that product.
-      router.push(entry === 'practice-os' ? '/app/zero-to-practice-builder' : '/app');
+      router.push((entry === 'practice-os' || claimToken) ? '/app/zero-to-practice-builder' : '/app');
     } catch (error) {
       setErrors({ submit: error.message });
     } finally {
