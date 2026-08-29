@@ -50,6 +50,9 @@ export default function WaitlistEnhancer() {
           });
           const data = await res.json();
           if (data.success) {
+            if (!data.alreadyOn && typeof window !== 'undefined' && typeof window.fbq === 'function') {
+              try { window.fbq('track', 'Lead', { content_name: 'Waitlist' }); } catch { /* ignore */ }
+            }
             btn.textContent = data.alreadyOn ? "✓ You're already on the list" : "✓ You're on the list";
             if (input) {
               input.value = '';

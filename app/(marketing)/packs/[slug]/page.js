@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { PackHeader } from '../page';
+import { fbTrack } from '@/lib/metaPixel';
 
 const RAZORPAY_SRC = 'https://checkout.razorpay.com/v1/checkout.js';
 function loadRazorpay() {
@@ -39,7 +40,10 @@ export default function PackDetailPage() {
         const res = await fetch(`/api/public/practice-os/packs/${slug}`);
         if (res.status === 404) { setNotFound(true); return; }
         const d = await res.json();
-        if (d.success) setPack(d.pack); else setNotFound(true);
+        if (d.success) {
+          setPack(d.pack);
+          fbTrack('ViewContent', { content_name: d.pack.title, content_type: 'product', content_ids: [d.pack.slug], value: d.pack.price?.total || 0, currency: 'INR' });
+        } else setNotFound(true);
       } catch { setNotFound(true); }
       finally { setLoading(false); }
     })();
@@ -51,6 +55,7 @@ export default function PackDetailPage() {
 
   // After a purchase is recorded (claimToken), route the buyer correctly.
   const afterClaim = useCallback(async ({ claimToken, email, existingUser }) => {
+    fbTrack('Purchase', { content_name: pack?.title, content_ids: [pack?.slug], value: pack?.price?.total || 0, currency: 'INR' });
     if (loggedIn) {
       // Already logged in → link to this account and open the app.
       try { await fetch('/api/auth/claim-pending', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ claimToken }) }); } catch { /* ignore */ }
@@ -77,6 +82,7 @@ export default function PackDetailPage() {
     if (!buyer.name.trim()) return setErr('Please enter your name.');
     if (!EMAIL_RE.test(buyer.email)) return setErr('Please enter a valid email.');
     setBusy(true);
+    fbTrack('InitiateCheckout', { content_name: pack.title, content_ids: [pack.slug], value: pack.price?.total || 0, currency: 'INR' });
     try {
       const orderRes = await fetch('/api/public/practice-os/order', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug }),

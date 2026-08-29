@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { fbTrack } from '@/lib/metaPixel';
 
 // Landing-matched design tokens — identical to the login page shell.
 const AUTH_CSS = `
@@ -186,6 +187,7 @@ function SignupPageInner() {
         throw new Error(data.message || data.error || 'Something went wrong');
       }
 
+      fbTrack('CompleteRegistration', { content_name: entry === 'practice-os' ? 'Practice Builder' : 'Website Builder' });
       router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`);
     } catch (error) {
       setErrors({ submit: error.message });

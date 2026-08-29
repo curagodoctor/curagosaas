@@ -3,6 +3,7 @@ import "./globals.css";
 import Script from "next/script";
 import { ModalProvider } from "@/contexts/ModalContext";
 import WyltoChatbot from "@/components/WyltoChatbot";
+import MetaPixel from "@/components/MetaPixel";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -105,22 +106,6 @@ export default function RootLayout({ children }) {
             })();
           `}
         </Script>
-
-        {/* Meta Pixel — CuraGo company pixel, loads on every page */}
-        <Script id="meta-pixel" strategy="afterInteractive">
-          {`
-            !function(f,b,e,v,n,t,s)
-            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-            n.queue=[];t=b.createElement(e);t.async=!0;
-            t.src=v;s=b.getElementsByTagName(e)[0];
-            s.parentNode.insertBefore(t,s)}(window, document,'script',
-            'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '833058805840230');
-            fbq('track', 'PageView');
-          `}
-        </Script>
               </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -136,17 +121,8 @@ export default function RootLayout({ children }) {
           ></iframe>
         </noscript>
 
-        {/* Meta Pixel (noscript) */}
-        <noscript>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            height="1"
-            width="1"
-            style={{ display: 'none' }}
-            src="https://www.facebook.com/tr?id=833058805840230&ev=PageView&noscript=1"
-            alt=""
-          />
-        </noscript>
+        {/* Meta Pixel — public marketing pages only (PageView on nav + events) */}
+        <MetaPixel />
 
         <ModalProvider>
           {children}
