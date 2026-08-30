@@ -14,6 +14,7 @@ function PackSettings({ framework, onSaved }) {
     summary: framework.summary || '',
     category: framework.category || '',
     priceInInr: framework.priceInInr ?? 0,
+    order: framework.order ?? 0,
     isPublished: !!framework.isPublished,
     outcomes: (framework.outcomes || []).join('\n'),
   });
@@ -31,6 +32,7 @@ function PackSettings({ framework, onSaved }) {
           summary: form.summary,
           category: form.category,
           priceInInr: Number(form.priceInInr) || 0,
+          order: Number(form.order) || 0,
           isPublished: form.isPublished,
           outcomes: form.outcomes.split('\n').map((o) => o.trim()).filter(Boolean),
         }),
@@ -66,6 +68,10 @@ function PackSettings({ framework, onSaved }) {
         <label className="block">
           <span className="text-xs font-medium text-gray-500 uppercase">Price (₹) — 0 = free</span>
           <input type="number" min="0" value={form.priceInInr} onChange={(e) => set('priceInInr', e.target.value)} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+        </label>
+        <label className="block">
+          <span className="text-xs font-medium text-gray-500 uppercase">Order — lower shows first</span>
+          <input type="number" value={form.order} onChange={(e) => set('order', e.target.value)} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="0" />
         </label>
       </div>
 

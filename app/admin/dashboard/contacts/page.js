@@ -364,6 +364,15 @@ function ContactsPageInner() {
   const [reviewBusy, setReviewBusy] = useState(null); // contact _id currently being sent
   const handleReviewRequest = async (contact) => {
     if (contact.reviewRequestSentAt) return;
+    // A review request can only go out once every detail is on the contact.
+    const missing = [];
+    if (!contact.phone) missing.push('phone number');
+    if (!(contact.clinicId || contact.clinicName)) missing.push('clinic');
+    if (!contact.consultedDate) missing.push('date of consultation');
+    if (missing.length) {
+      await showAlert({ title: 'Complete the contact first', message: `Add the ${missing.join(', ')} to this contact before sending a review request.`, type: 'warning' });
+      return;
+    }
     const confirmed = await showConfirm({
       title: 'Send review request',
       message: `Send the review-request WhatsApp flow to ${contact.name}? This can only be done once per contact.`,

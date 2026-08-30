@@ -541,6 +541,13 @@ function ProfileFieldsTab() {
 
   const defaultKeys = new Set(data.defaults.flatMap((s) => s.fields.map((f) => f.key)));
   const customConfigs = (data.configs || []).filter((c) => !defaultKeys.has(c.key));
+  // Distinct admin-created sections (anything not built-in), for the editor dropdown.
+  const BUILT_IN_SECTIONS = ['pro', 'practice', 'voice'];
+  const customSections = [...new Map(
+    (data.configs || [])
+      .filter((c) => c.section && !BUILT_IN_SECTIONS.includes(c.section))
+      .map((c) => [c.section, { id: c.section, title: c.sectionTitle || c.section }])
+  ).values()];
 
   return (
     <div className="space-y-6">
@@ -589,7 +596,7 @@ function ProfileFieldsTab() {
               <li key={c.key} className="px-6 py-3 flex items-center justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-900">{c.label || c.key} <span className="font-mono text-xs text-gray-400">{'{{'}{c.key}{'}}'}</span>{c.required && <span className="text-red-500"> *</span>}</p>
-                  <p className="text-xs text-gray-500">{SECTION_LABELS[c.section] || c.section} · {c.type}{c.hint ? ` · ${c.hint}` : ''}</p>
+                  <p className="text-xs text-gray-500">{SECTION_LABELS[c.section] || c.sectionTitle || c.section} · {c.type}{c.hint ? ` · ${c.hint}` : ''}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={() => setEditing({ ...c, options: (c.options || []).join(', ') })} className="text-sm text-blue-600 hover:underline">Edit</button>
@@ -601,13 +608,15 @@ function ProfileFieldsTab() {
         </div>
       )}
 
-      {editing && <ProfileFieldModal field={editing} busy={busy} onClose={() => setEditing(null)} onSave={save} />}
+      {editing && <ProfileFieldModal field={editing} busy={busy} customSections={customSections} onClose={() => setEditing(null)} onSave={save} />}
     </div>
   );
 }
 
-function ProfileFieldModal({ field, busy, onClose, onSave }) {
+function ProfileFieldModal({ field, busy, customSections = [], onClose, onSave }) {
   const [f, setF] = useState(field);
+  // Track whether the admin is adding a brand-new section vs picking an existing one.
+  const [addingSection, setAddingSection] = useState(false);
   const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
   const needsOptions = f.type === 'select' || f.type === 'tags';
   return (
@@ -637,11 +646,29 @@ function ProfileFieldModal({ field, busy, onClose, onSave }) {
               </label>
               <label className="block">
                 <span className="text-xs font-medium text-gray-500 uppercase">Section</span>
-                <select value={f.section} onChange={(e) => set('section', e.target.value)} className={INPUT}>
-                  <option value="pro">Professional profile</option>
-                  <option value="practice">Practice information</option>
-                  <option value="voice">Voice &amp; personality</option>
-                </select>
+                {addingSection ? (
+                  <div className="flex gap-1">
+                    <input value={f.sectionTitle || ''} onChange={(e) => { set('sectionTitle', e.target.value); set('section', e.target.value); }} placeholder="New section name" className={INPUT} autoFocus />
+                    <button type="button" onClick={() => { setAddingSection(false); set('section', 'pro'); set('sectionTitle', ''); }} className="text-xs text-gray-500 px-2 shrink-0">Cancel</button>
+                  </div>
+                ) : (
+                  <select
+                    value={f.section}
+                    onChange={(e) => {
+                      if (e.target.value === '__new__') { setAddingSection(true); set('section', ''); set('sectionTitle', ''); return; }
+                      const cs = customSections.find((s) => s.id === e.target.value);
+                      set('section', e.target.value);
+                      set('sectionTitle', cs ? cs.title : '');
+                    }}
+                    className={INPUT}
+                  >
+                    <option value="pro">Professional profile</option>
+                    <option value="practice">Practice information</option>
+                    <option value="voice">Voice &amp; personality</option>
+                    {customSections.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
+                    <option value="__new__">＋ New section…</option>
+                  </select>
+                )}
               </label>
               {needsOptions && (
                 <label className="block col-span-2">

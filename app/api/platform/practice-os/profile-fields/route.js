@@ -43,6 +43,12 @@ export async function POST(request) {
       ? body.options.map((o) => String(o).trim()).filter(Boolean)
       : String(body.options || '').split(/[\n,]/).map((o) => o.trim()).filter(Boolean);
 
+    // Section: a built-in id kept as-is, or a custom snake_case id + display title.
+    const BUILT_IN = ['pro', 'practice', 'voice'];
+    const rawSection = String(body.section || 'pro').trim();
+    const section = BUILT_IN.includes(rawSection) ? rawSection : (snake(rawSection) || 'pro');
+    const sectionTitle = BUILT_IN.includes(section) ? '' : (body.sectionTitle || rawSection || section);
+
     const update = {
       key,
       label: body.label || '',
@@ -50,7 +56,8 @@ export async function POST(request) {
       type: ['text', 'textarea', 'number', 'select', 'tags'].includes(body.type) ? body.type : 'text',
       options,
       required: !!body.required,
-      section: ['pro', 'practice', 'voice'].includes(body.section) ? body.section : 'pro',
+      section,
+      sectionTitle,
       order: body.order != null && body.order !== '' ? Number(body.order) : null,
       hidden: !!body.hidden,
     };

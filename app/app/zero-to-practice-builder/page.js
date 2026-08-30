@@ -329,11 +329,31 @@ function PackCard({ pack }) {
 
       {owned && started && progress && (
         <div className="mt-6 rounded-xl p-4" style={{ background: 'var(--rule-soft)' }}>
-          <div className="flex items-center justify-between mb-1.5">
-            <p className="pos-label">Your progress</p>
-            <p className="text-[12px] text-[var(--muted)]"><span className="pos-num">{progress.done}</span> / {progress.total}</p>
-          </div>
-          <div className="pos-meter"><span style={{ width: `${progress.percent}%` }} /></div>
+          {pack.mode === 'task' ? (
+            <>
+              {/* Task packs are a flat list — count by tasks done, not module "steps". */}
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="pos-label">Your progress</p>
+                <p className="text-[12px] text-[var(--muted)]">
+                  <span className="pos-num">{progress.done ?? 0}</span> / {progress.total} tasks
+                  <span className="ml-1.5">· {progress.taskPercent ?? progress.percent}%</span>
+                </p>
+              </div>
+              <div className="pos-meter"><span style={{ width: `${progress.taskPercent ?? progress.percent}%` }} /></div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="pos-label">Your progress</p>
+                <p className="text-[12px] text-[var(--muted)]">
+                  <span className="pos-num">{progress.completedModules ?? 0}</span> / {progress.totalModules ?? progress.total} steps
+                  <span className="ml-1.5">· {progress.percent}%</span>
+                </p>
+              </div>
+              <div className="pos-meter"><span style={{ width: `${progress.percent}%` }} /></div>
+              {progress.done > 0 && <p className="text-[10.5px] text-[var(--muted)] mt-1">{progress.done} of {progress.total} missions finished</p>}
+            </>
+          )}
 
           <div className="grid grid-cols-3 gap-2 text-center mt-4">
             <MiniStat n={xp} label="XP" />

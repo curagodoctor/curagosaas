@@ -124,6 +124,13 @@ const DoctorSchema = new mongoose.Schema({
     trim: true,
     default: ''
   },
+  // Optional custom message the doctor writes for the WhatsApp review-request
+  // automation. Forwarded to Wylto as {{customMessage}}; blank = Wylto's default.
+  reviewRequestMessage: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   wyltoWebhookId: {
     type: String,
     trim: true

@@ -58,7 +58,7 @@ function reconstructRemaining(draft, fallbackSeconds) {
     const elapsed = Math.floor((Date.now() - new Date(draft._stamp).getTime()) / 1000);
     if (Number.isFinite(elapsed) && elapsed > 0) rem -= Math.min(elapsed, 30);
   }
-  return rem;
+  return Math.max(0, rem);   // never resume into overtime — the timer stops at 0
 }
 
 // The mission workspace — step through the mission's modules one at a time.
@@ -88,6 +88,7 @@ function FocusSession() {
   const [result, setResult] = useState(null);          // completion summary
   const [tomorrow, setTomorrow] = useState(null);
   const [commit, setCommit] = useState({ window: 'evening', exactTime: '', dayOffset: 1 });
+  const [nextChoice, setNextChoice] = useState('schedule'); // 'now' | 'schedule'
   const [packTitle, setPackTitle] = useState('');
   const [finalMinutes, setFinalMinutes] = useState(0);   // captured for the celebration screen
   const startedRef = useRef(false);
@@ -164,11 +165,12 @@ function FocusSession() {
     })();
   }, [id, packId, router, startNow]);
 
-  // Mission countdown from the estimate. Pausable; ticks into negative (overtime)
-  // and is never penalised for running long. One timer for the whole mission.
+  // Mission countdown from the estimate. Pausable. Counts down and STOPS at 0
+  // (freezes at 00:00) — it no longer runs on into overtime. One timer for the
+  // whole mission.
   useEffect(() => {
     if (phase !== 'work' || paused) return;
-    const t = setInterval(() => setRemaining((r) => r - 1), 1000);
+    const t = setInterval(() => setRemaining((r) => (r <= 0 ? 0 : r - 1)), 1000);
     return () => clearInterval(t);
   }, [phase, paused]);
 
@@ -307,6 +309,12 @@ function FocusSession() {
     router.push(`/app/zero-to-practice-builder/track?pack=${packId}`);
   };
 
+  // "Do it today" — jump straight into the next mission's focus session.
+  const startNextNow = () => {
+    if (!tomorrow?._id) return;
+    router.push(`/app/zero-to-practice-builder/focus/${tomorrow._id}?pack=${packId}`);
+  };
+
   if (!day || !mod) {
     return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>;
   }
@@ -433,39 +441,63 @@ function FocusSession() {
 
           {tomorrow ? (
             <div className="pos-card p-5 mb-6">
-              <p className="pos-label mb-1">Tomorrow · Day {tomorrow.missionNumber}</p>
+              <p className="pos-label mb-1">Next · Day {tomorrow.missionNumber}</p>
               <p className="text-[var(--ink)] font-medium">{tomorrow.title}</p>
 
-              <p className="pos-label mt-5 mb-2">When will you do it?</p>
-              <div className="grid grid-cols-3 gap-2 mb-2">
-                {[{ o: 0, l: 'Today' }, { o: 1, l: 'Tomorrow' }, { o: 2, l: 'In 2 days' }].map((d) => (
-                  <button key={d.o} onClick={() => setCommit((c) => ({ ...c, dayOffset: d.o }))}
-                    className="rounded-lg py-2 text-center border transition-colors"
-                    style={{ borderColor: commit.dayOffset === d.o ? 'var(--green)' : 'var(--rule)', background: commit.dayOffset === d.o ? 'var(--green-soft)' : 'transparent' }}>
-                    <span className="block text-[13px] font-medium text-[var(--ink)]">{d.l}</span>
-                  </button>
-                ))}
+              {/* Do it today, or schedule it for later. */}
+              <div className="grid grid-cols-2 gap-2 mt-5">
+                <button onClick={() => setNextChoice('now')}
+                  className="rounded-lg py-2.5 text-center border transition-colors"
+                  style={{ borderColor: nextChoice === 'now' ? 'var(--green)' : 'var(--rule)', background: nextChoice === 'now' ? 'var(--green-soft)' : 'transparent' }}>
+                  <span className="block text-[13.5px] font-medium text-[var(--ink)]">Do it today</span>
+                </button>
+                <button onClick={() => setNextChoice('schedule')}
+                  className="rounded-lg py-2.5 text-center border transition-colors"
+                  style={{ borderColor: nextChoice === 'schedule' ? 'var(--green)' : 'var(--rule)', background: nextChoice === 'schedule' ? 'var(--green-soft)' : 'transparent' }}>
+                  <span className="block text-[13.5px] font-medium text-[var(--ink)]">Schedule it</span>
+                </button>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {WINDOWS.map((w) => (
-                  <button key={w.id} onClick={() => setCommit((c) => ({ ...c, window: w.id }))}
-                    className="rounded-lg py-2 text-center border transition-colors"
-                    style={{ borderColor: commit.window === w.id ? 'var(--green)' : 'var(--rule)', background: commit.window === w.id ? 'var(--green-soft)' : 'transparent' }}>
-                    <span className="block text-[13px] font-medium text-[var(--ink)]">{w.label}</span>
-                    <span className="block text-[10px] text-[var(--muted)]">{w.hint}</span>
-                  </button>
-                ))}
-              </div>
-              <input type="time" value={commit.exactTime} onChange={(e) => setCommit((c) => ({ ...c, exactTime: e.target.value }))} className="mt-3 pos-card p-2 text-sm" />
-              <p className="text-[11px] text-[var(--muted)] mt-3">You can reschedule anytime from your Schedule — up to 2 days out.</p>
+
+              {nextChoice === 'schedule' ? (
+                <>
+                  <p className="pos-label mt-5 mb-2">When will you do it?</p>
+                  <div className="grid grid-cols-3 gap-2 mb-2">
+                    {[{ o: 0, l: 'Today' }, { o: 1, l: 'Tomorrow' }, { o: 2, l: 'In 2 days' }].map((d) => (
+                      <button key={d.o} onClick={() => setCommit((c) => ({ ...c, dayOffset: d.o }))}
+                        className="rounded-lg py-2 text-center border transition-colors"
+                        style={{ borderColor: commit.dayOffset === d.o ? 'var(--green)' : 'var(--rule)', background: commit.dayOffset === d.o ? 'var(--green-soft)' : 'transparent' }}>
+                        <span className="block text-[13px] font-medium text-[var(--ink)]">{d.l}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {WINDOWS.map((w) => (
+                      <button key={w.id} onClick={() => setCommit((c) => ({ ...c, window: w.id }))}
+                        className="rounded-lg py-2 text-center border transition-colors"
+                        style={{ borderColor: commit.window === w.id ? 'var(--green)' : 'var(--rule)', background: commit.window === w.id ? 'var(--green-soft)' : 'transparent' }}>
+                        <span className="block text-[13px] font-medium text-[var(--ink)]">{w.label}</span>
+                        <span className="block text-[10px] text-[var(--muted)]">{w.hint}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <input type="time" value={commit.exactTime} onChange={(e) => setCommit((c) => ({ ...c, exactTime: e.target.value }))} className="mt-3 pos-card p-2 text-sm" />
+                  <p className="text-[11px] text-[var(--muted)] mt-3">You can reschedule anytime from your Schedule — up to 2 days out.</p>
+                </>
+              ) : (
+                <p className="text-[12px] text-[var(--muted)] mt-4">You&apos;ll jump straight into this task now. You can still pause and come back anytime.</p>
+              )}
             </div>
           ) : (
             <div className="pos-card p-5 mb-6 text-center text-[var(--muted)]">That was your last mission in this pack. See your record.</div>
           )}
 
           <div className="flex items-center justify-center gap-5">
-            <button onClick={setItAndGo} className="pos-action">{tomorrow ? 'Set my schedule' : 'Back to pack'}</button>
-            {tomorrow && <button onClick={() => downloadIcs(tomorrow, commit, packTitle)} className="pos-link text-sm">Add to my calendar</button>}
+            {tomorrow && nextChoice === 'now' ? (
+              <button onClick={startNextNow} className="pos-action">Start it now →</button>
+            ) : (
+              <button onClick={setItAndGo} className="pos-action">{tomorrow ? 'Set my schedule' : 'Back to pack'}</button>
+            )}
+            {tomorrow && nextChoice === 'schedule' && <button onClick={() => downloadIcs(tomorrow, commit, packTitle)} className="pos-link text-sm">Add to my calendar</button>}
           </div>
         </div>
       </div>
@@ -473,7 +505,7 @@ function FocusSession() {
   }
 
   // ---------- Workspace (module stepper) ----------
-  const over = remaining < 0;
+  const done = remaining <= 0;   // countdown finished — timer is stopped at 00:00
   const absR = Math.abs(remaining);
   const mm = String(Math.floor(absR / 60)).padStart(2, '0');
   const ss = String(absR % 60).padStart(2, '0');
@@ -501,11 +533,13 @@ function FocusSession() {
           <Link href={`/app/zero-to-practice-builder/track?pack=${packId}`} className="pos-link text-sm shrink-0">← Exit {taskMode ? 'task' : 'mission'}</Link>
 
           {/* Inline timer + pause */}
-          <div className="flex items-center gap-2 shrink-0" title={over ? 'Over the estimate — no rush' : 'Counting down · running long is fine'}>
-            <span className="pos-num text-[17px]" style={{ color: over ? 'var(--orange)' : 'var(--ink)' }}>{over ? '+' : ''}{mm}:{ss}</span>
-            <button onClick={() => setPaused((p) => !p)} className="pos-link text-[12px] inline-flex items-center gap-1" aria-label={paused ? 'Resume timer' : 'Pause timer'}>
-              {paused ? '▶ Resume' : '⏸ Pause'}
-            </button>
+          <div className="flex items-center gap-2 shrink-0" title={done ? "Time's up — finish whenever you're ready" : 'Counting down'}>
+            <span className="pos-num text-[17px]" style={{ color: done ? 'var(--muted)' : 'var(--ink)' }}>{mm}:{ss}</span>
+            {!done && (
+              <button onClick={() => setPaused((p) => !p)} className="pos-link text-[12px] inline-flex items-center gap-1" aria-label={paused ? 'Resume timer' : 'Pause timer'}>
+                {paused ? '▶ Resume' : '⏸ Pause'}
+              </button>
+            )}
           </div>
 
           {!(taskMode && modules.length <= 1) && (

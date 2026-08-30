@@ -30,8 +30,13 @@ export async function POST(request, { params }) {
         { status: 400 }
       );
     }
-    if (!contact.phone) {
-      return NextResponse.json({ success: false, error: 'This contact has no phone number.' }, { status: 400 });
+    // Require the full set of details before a review request can go out.
+    const missing = [];
+    if (!contact.phone) missing.push('phone number');
+    if (!(contact.clinicId || contact.clinicName)) missing.push('clinic');
+    if (!contact.consultedDate) missing.push('date of consultation');
+    if (missing.length) {
+      return NextResponse.json({ success: false, error: `Add the ${missing.join(', ')} to this contact first.` }, { status: 400 });
     }
 
     const doctorName = doctor.displayName || doctor.name || '';
@@ -59,6 +64,8 @@ export async function POST(request, { params }) {
       appointmentDate: contact.consultedDate || '',
       // Doctor's one-time review link (falls back to a per-contact one if set).
       reviewLink: doctor.googleReviewLink || contact.googleReviewLink || '',
+      // Doctor's custom review-request wording (blank → Wylto's default copy).
+      customMessage: doctor.reviewRequestMessage || '',
     });
     if (!result.success) {
       return NextResponse.json({ success: false, error: 'Could not trigger the review request. Please try again.' }, { status: 502 });

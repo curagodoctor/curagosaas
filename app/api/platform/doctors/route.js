@@ -32,13 +32,29 @@ export async function GET(request) {
     const query = {};
 
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { subdomain: { $regex: search, $options: 'i' } },
-        { displayName: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } },
+      // Escape regex metacharacters so a search like "+91..." or "dr. x" doesn't
+      // build an invalid regex (which throws and makes search look broken).
+      const safe = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const or = [
+        { name: { $regex: safe, $options: 'i' } },
+        { email: { $regex: safe, $options: 'i' } },
+        { subdomain: { $regex: safe, $options: 'i' } },
+        { displayName: { $regex: safe, $options: 'i' } },
+        { phone: { $regex: safe, $options: 'i' } },
       ];
+
+      // Normalized phone match — a phone search should hit regardless of how the
+      // number is stored (with/without +91, spaces, dashes). Drop the country code
+      // (last 10 digits) and match those digits allowing any separators between
+      // them, so "+91 98765 43210", "919876543210" and "9876543210" all match.
+      const digits = search.replace(/\D/g, '');
+      if (digits.length >= 4) {
+        const core = digits.length > 10 ? digits.slice(-10) : digits;
+        const loosePhone = core.split('').join('[^0-9]*');
+        or.push({ phone: { $regex: loosePhone } });
+      }
+
+      query.$or = or;
     }
 
     if (status === 'active') {

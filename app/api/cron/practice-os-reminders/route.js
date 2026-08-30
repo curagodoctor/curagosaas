@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import PracticeOsEnrollment from '@/models/practice-os/PracticeOsEnrollment';
 import Framework from '@/models/practice-os/Framework';
+import Mission from '@/models/practice-os/Mission';
+import UserMissionProgress from '@/models/practice-os/UserMissionProgress';
 import Doctor from '@/models/Doctor';
 import { sendPracticeOsReminderEmail } from '@/lib/email';
 import { sendSMS } from '@/lib/twilio';
@@ -137,12 +139,43 @@ export async function GET(request) {
         // WhatsApp — daily "finish today's module" nudge via Wylto.
         const waPhone = doctor.whatsappNumber || doctor.phone;
         if (waPhone) {
+          // Look up the pack + the doctor's current (first uncompleted) mission/task
+          // so the reminder message can name exactly what's next.
+          let packTitle = '';
+          let missionTitle = '';
+          let itemLabel = 'mission';
+          try {
+            const fw = await Framework.findById(enrollment.frameworkId).select('title mode').lean();
+            packTitle = fw?.title || '';
+            itemLabel = fw?.mode === 'task' ? 'task' : 'mission';
+            const doneIds = new Set(
+              (await UserMissionProgress.find({
+                doctorId: doctor._id,
+                frameworkId: enrollment.frameworkId,
+                status: { $in: ['completed', 'skipped'] },
+              })
+                .select('missionId')
+                .lean()).map((p) => String(p.missionId))
+            );
+            const missions = await Mission.find({ frameworkId: enrollment.frameworkId, status: 'published' })
+              .sort({ weekNumber: 1, dayNumber: 1, missionNumber: 1, order: 1 })
+              .select('missionText title')
+              .lean();
+            const current = missions.find((m) => !doneIds.has(String(m._id)));
+            missionTitle = current?.title || current?.missionText || '';
+          } catch (lookupError) {
+            console.error(`[PracticeOS Reminders] Mission lookup failed for ${enrollment._id}:`, lookupError);
+          }
+
           try {
             await fireWyltoWebhook('moduleReminder', {
               name: doctor.displayName || doctor.name,
               phoneNumber: waPhone,
               dayNumber: enrollment.currentDayNumber,
               daysCompleted: enrollment.daysCompleted,
+              packTitle,
+              missionTitle,
+              itemLabel,
             });
           } catch (waError) {
             console.error(`[PracticeOS Reminders] WhatsApp failed for ${enrollment._id}:`, waError);

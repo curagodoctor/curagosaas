@@ -15,7 +15,12 @@ const ProfileFieldConfigSchema = new mongoose.Schema({
   type: { type: String, enum: ['text', 'textarea', 'number', 'select', 'tags'], default: 'text' },
   options: { type: [String], default: [] }, // for select / tags
   required: { type: Boolean, default: false },
-  section: { type: String, enum: ['pro', 'practice', 'voice'], default: 'pro' },
+  // A built-in section id ('pro'/'practice'/'voice') or a custom snake_case id the
+  // admin created. Custom sections are rendered from `sectionTitle`. (no longer an
+  // enum — admins can add their own sections)
+  section: { type: String, trim: true, default: 'pro' },
+  // Display title for a custom section (ignored for built-in sections).
+  sectionTitle: { type: String, trim: true, default: '' },
   order: { type: Number, default: null },
   hidden: { type: Boolean, default: false }, // hide a default field
 }, { timestamps: true });

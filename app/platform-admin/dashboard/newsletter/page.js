@@ -24,6 +24,7 @@ export default function NewsletterPage() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [tab, setTab] = useState('newsletters'); // 'newsletters' | 'sequences'
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
@@ -61,13 +62,24 @@ export default function NewsletterPage() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setShowSettings(true)} className="px-4 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">Branding & footer</button>
-          <button onClick={createNew} className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg">+ New newsletter</button>
+          {tab === 'newsletters' && <button onClick={createNew} className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg">+ New newsletter</button>}
         </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-1 mb-5 border-b border-gray-200">
+        {[['newsletters', 'Newsletters'], ['sequences', 'Sequences']].map(([k, label]) => (
+          <button key={k} onClick={() => setTab(k)} className={`px-4 py-2 text-sm font-medium -mb-px border-b-2 ${tab === k ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>{label}</button>
+        ))}
       </div>
 
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
 
       {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">{error}</div>}
+
+      {tab === 'sequences' ? <SequencesManager newsletters={items} /> : (
+      <>
+      {/* --- Newsletters list below --- */}
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         {loading ? (
@@ -109,6 +121,8 @@ export default function NewsletterPage() {
           </table>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }
@@ -385,6 +399,171 @@ function Composer({ id, onBack }) {
       )}
 
       {preview && <PreviewModal id={id} onClose={() => setPreview(false)} />}
+    </div>
+  );
+}
+
+// ---- Sequences (drip flows) ----
+function SequencesManager({ newsletters }) {
+  const [seqs, setSeqs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null); // sequence id
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch('/api/platform/newsletter/sequences', { credentials: 'include' });
+      const d = await res.json();
+      if (d.success) setSeqs(d.sequences || []);
+    } finally { setLoading(false); }
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const createSeq = async () => {
+    const res = await fetch('/api/platform/newsletter/sequences', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ name: 'New sequence' }),
+    });
+    const d = await res.json();
+    if (d.success) { await load(); setEditing(d.sequence._id); }
+  };
+
+  if (editing) return <SequenceEditor id={editing} newsletters={newsletters} onBack={() => { setEditing(null); load(); }} />;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-gray-500">Chain newsletters into an automated flow. New contacts (doctors, cohort leads, waitlist) auto-enroll; you can also import a list.</p>
+        <button onClick={createSeq} className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg whitespace-nowrap">+ New sequence</button>
+      </div>
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        {loading ? <div className="p-8 text-center text-gray-400">Loading…</div>
+        : seqs.length === 0 ? <div className="p-10 text-center text-gray-400">No sequences yet.</div>
+        : (
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-xs uppercase tracking-wide text-gray-400 border-b border-gray-100">
+              <th className="px-5 py-3 font-medium">Sequence</th><th className="px-5 py-3 font-medium">Steps</th><th className="px-5 py-3 font-medium">Enrolled</th><th className="px-5 py-3 font-medium">Status</th><th className="px-5 py-3"></th>
+            </tr></thead>
+            <tbody>
+              {seqs.map((s) => (
+                <tr key={s._id} className="border-b border-gray-50 last:border-0">
+                  <td className="px-5 py-3 font-medium text-gray-900">{s.name}</td>
+                  <td className="px-5 py-3 text-gray-600">{s.steps?.length || 0}</td>
+                  <td className="px-5 py-3 text-gray-600">{s.counts?.active ?? 0} active · {s.counts?.total ?? 0} total</td>
+                  <td className="px-5 py-3">{s.enabled ? <span className="inline-flex items-center gap-1.5 text-green-700"><span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Live</span> : <span className="text-gray-400">Paused</span>}</td>
+                  <td className="px-5 py-3 text-right"><button onClick={() => setEditing(s._id)} className="px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded-md">Edit</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SequenceEditor({ id, newsletters, onBack }) {
+  const [seq, setSeq] = useState(null);
+  const [counts, setCounts] = useState({ active: 0, total: 0 });
+  const [msg, setMsg] = useState('');
+  const [importing, setImporting] = useState(false);
+  const fileRef = useRef(null);
+
+  const load = useCallback(async () => {
+    const res = await fetch(`/api/platform/newsletter/sequences/${id}`, { credentials: 'include' });
+    const d = await res.json();
+    if (d.success) { setSeq(d.sequence); setCounts(d.counts || { active: 0, total: 0 }); }
+  }, [id]);
+  useEffect(() => { load(); }, [load]);
+
+  const save = async (patch) => {
+    const res = await fetch(`/api/platform/newsletter/sequences/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify(patch),
+    });
+    const d = await res.json();
+    if (d.success) setSeq(d.sequence); else setMsg(d.error || 'Save failed');
+    return d.success;
+  };
+
+  const setSteps = (steps) => { setSeq((s) => ({ ...s, steps })); save({ steps }); };
+  const addStep = () => setSteps([...(seq.steps || []), { newsletterId: newsletters[0]?._id || '', delayDays: (seq.steps?.length ? 3 : 0) }]);
+  const updStep = (i, patch) => setSteps(seq.steps.map((s, j) => j === i ? { ...s, ...patch } : s));
+  const rmStep = (i) => setSteps(seq.steps.filter((_, j) => j !== i));
+  const move = (i, dir) => { const j = i + dir; if (j < 0 || j >= seq.steps.length) return; const arr = [...seq.steps]; [arr[i], arr[j]] = [arr[j], arr[i]]; setSteps(arr); };
+
+  const uploadFile = async (file) => {
+    if (!file) return;
+    setImporting(true); setMsg('');
+    const fd = new FormData(); fd.append('file', file);
+    try {
+      const res = await fetch(`/api/platform/newsletter/sequences/${id}/import`, { method: 'POST', body: fd, credentials: 'include' });
+      const d = await res.json();
+      setMsg(d.success ? `Imported ${d.enrolled} (${d.dupes} already in, ${d.invalid} invalid).` : (d.error || 'Import failed'));
+      if (d.success) load();
+    } finally { setImporting(false); if (fileRef.current) fileRef.current.value = ''; }
+  };
+
+  if (!seq) return <div className="p-8 text-center text-gray-400">Loading…</div>;
+  const nlName = (nid) => newsletters.find((n) => n._id === nid)?.subject || '(deleted newsletter)';
+
+  return (
+    <div className="max-w-3xl">
+      <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-700 mb-4">&larr; All sequences</button>
+
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+        <input value={seq.name} onChange={(e) => setSeq({ ...seq, name: e.target.value })} onBlur={() => save({ name: seq.name })}
+          className="text-xl font-bold text-gray-900 bg-transparent outline-none border-b border-transparent focus:border-gray-300" />
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={seq.enabled} onChange={(e) => save({ enabled: e.target.checked })} />
+          <span className={seq.enabled ? 'text-green-700 font-medium' : 'text-gray-500'}>{seq.enabled ? 'Live' : 'Paused'}</span>
+        </label>
+      </div>
+
+      {msg && <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">{msg}</div>}
+
+      {/* Steps */}
+      <div className="bg-white rounded-xl shadow-sm p-5 mb-4">
+        <h3 className="text-sm font-semibold text-gray-900 mb-1">Flow steps</h3>
+        <p className="text-xs text-gray-400 mb-4">Each step sends a newsletter after the given gap. Step 1&apos;s gap counts from when someone enrolls (0 = right away).</p>
+        <div className="space-y-2">
+          {(seq.steps || []).map((s, i) => (
+            <div key={i} className="flex items-center gap-2 flex-wrap border border-gray-100 rounded-lg p-2.5">
+              <span className="text-xs font-mono text-gray-400 w-5">{i + 1}</span>
+              <select value={s.newsletterId} onChange={(e) => updStep(i, { newsletterId: e.target.value })} className="flex-1 min-w-[160px] px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                {newsletters.length === 0 && <option value="">No newsletters yet</option>}
+                {newsletters.map((n) => <option key={n._id} value={n._id}>{n.subject}</option>)}
+              </select>
+              <span className="text-xs text-gray-500">after</span>
+              <input type="number" min={0} value={s.delayDays} onChange={(e) => updStep(i, { delayDays: Number(e.target.value) })} className="w-16 px-2 py-2 border border-gray-300 rounded-lg text-sm" />
+              <span className="text-xs text-gray-500">days</span>
+              <div className="flex items-center gap-1 ml-auto">
+                <button onClick={() => move(i, -1)} disabled={i === 0} className="text-gray-400 hover:text-blue-600 disabled:opacity-30 text-xs px-1">▲</button>
+                <button onClick={() => move(i, 1)} disabled={i === seq.steps.length - 1} className="text-gray-400 hover:text-blue-600 disabled:opacity-30 text-xs px-1">▼</button>
+                <button onClick={() => rmStep(i)} className="text-red-600 text-xs px-1.5">✕</button>
+              </div>
+            </div>
+          ))}
+          {(seq.steps || []).length === 0 && <p className="text-sm text-gray-400">No steps yet.</p>}
+        </div>
+        <button onClick={addStep} disabled={newsletters.length === 0} className="mt-3 text-sm text-blue-600 hover:underline disabled:opacity-50">+ Add step</button>
+      </div>
+
+      {/* Audience + import */}
+      <div className="bg-white rounded-xl shadow-sm p-5">
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">Who's in this flow</h3>
+        <label className="flex items-center gap-2 text-sm text-gray-700 mb-3">
+          <input type="checkbox" checked={seq.autoEnroll} onChange={(e) => save({ autoEnroll: e.target.checked })} />
+          Auto-enroll new contacts (doctors, cohort leads, waitlist)
+        </label>
+        <p className="text-sm text-gray-600 mb-3"><strong>{counts.active}</strong> active · {counts.total} total enrolled.</p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={(e) => uploadFile(e.target.files?.[0])} className="hidden" />
+          <button onClick={() => fileRef.current?.click()} disabled={importing} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50">
+            {importing ? 'Importing…' : 'Import mailing list (.xlsx)'}
+          </button>
+          <span className="text-xs text-gray-400">Columns: email, name</span>
+        </div>
+      </div>
     </div>
   );
 }

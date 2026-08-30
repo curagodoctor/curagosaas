@@ -29,19 +29,39 @@ export async function GET() {
     const doctorById = new Map(doctors.map((d) => [String(d._id), d]));
     const scoreByDoctor = new Map(scores.map((s) => [String(s.doctorId), s]));
 
-    const users = enrollments.map((e) => {
-      const d = doctorById.get(String(e.doctorId)) || {};
-      const s = scoreByDoctor.get(String(e.doctorId)) || {};
+    // One row PER DOCTOR (not per enrollment) — a doctor with several packs used
+    // to appear multiple times. Aggregate their packs; per-pack detail lives in
+    // the doctor's record view.
+    const byDoctor = new Map();
+    for (const e of enrollments) {
+      const k = String(e.doctorId);
+      if (!k) continue;
+      const cur = byDoctor.get(k) || { packCount: 0, daysCompleted: 0, statuses: [], lastActiveAt: null };
+      cur.packCount += 1;
+      cur.daysCompleted += e.daysCompleted || 0;
+      cur.statuses.push(e.status);
+      const la = e.lastActiveAt ? new Date(e.lastActiveAt).getTime() : 0;
+      if (la > (cur.lastActiveAt ? new Date(cur.lastActiveAt).getTime() : 0)) cur.lastActiveAt = e.lastActiveAt;
+      byDoctor.set(k, cur);
+    }
+
+    const users = [...byDoctor.entries()].map(([doctorId, agg]) => {
+      const d = doctorById.get(doctorId) || {};
+      const s = scoreByDoctor.get(doctorId) || {};
+      const status = agg.statuses.includes('active') ? 'active'
+        : agg.statuses.every((x) => x === 'completed') ? 'completed'
+        : (agg.statuses[0] || 'active');
       return {
-        doctorId: String(e.doctorId),
+        doctorId,
         name: d.name || '—',
         email: d.email || '',
         specialization: d.specialization || '',
-        status: e.status,
-        daysCompleted: e.daysCompleted || 0,
+        packCount: agg.packCount,
+        status,
+        daysCompleted: agg.daysCompleted,
         performance: s.overallScore || 0,
         currentStreak: s.currentStreak || 0,
-        lastActiveAt: e.lastActiveAt || null,
+        lastActiveAt: agg.lastActiveAt,
       };
     });
 
