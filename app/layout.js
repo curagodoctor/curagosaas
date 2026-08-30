@@ -4,6 +4,7 @@ import Script from "next/script";
 import { ModalProvider } from "@/contexts/ModalContext";
 import WyltoChatbot from "@/components/WyltoChatbot";
 import MetaPixel from "@/components/MetaPixel";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -130,6 +131,9 @@ export default function RootLayout({ children }) {
 
         {/* WhatsApp Chatbot Widget */}
         <WyltoChatbot />
+
+        {/* Floating WhatsApp button — public marketing pages only (not packs/missions) */}
+        <WhatsAppButton />
       </body>
     </html>
   );
