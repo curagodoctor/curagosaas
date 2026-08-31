@@ -91,19 +91,42 @@ export default function BlogArticleEditorPage() {
       const data = await response.json();
       if (data.article) {
         const a = data.article;
-        setFormData({
+        // Merge ONTO the default shape (not replace) so an article missing any
+        // field — e.g. one published via the AI builder, which has no
+        // metaDescription/featuredImage/faqSection — keeps safe defaults instead
+        // of leaving those undefined and crashing the render.
+        setFormData((prev) => ({
+          ...prev,
           ...a,
+          metaDescription: a.metaDescription || '',
+          featuredImage: { url: a.featuredImage?.url || '', alt: a.featuredImage?.alt || '' },
+          tags: Array.isArray(a.tags) ? a.tags : [],
           pageType: a.pageType || '',
           // Prefer the new blocks; migrate legacy sections for old articles.
           blocks: (a.blocks && a.blocks.length) ? a.blocks : legacySectionsToBlocks(a),
           locationBlock: { heading: a.locationBlock?.heading || '', content: a.locationBlock?.content || '' },
-          problemSection: { ...a.problemSection, heading: a.problemSection?.heading || '' },
-          clinicalSection: { ...a.clinicalSection, heading: a.clinicalSection?.heading || '' },
-          specialistSection: { ...a.specialistSection, heading: a.specialistSection?.heading || '' },
-          complexCasesSection: { ...a.complexCasesSection, heading: a.complexCasesSection?.heading || '' },
-          surgicalAuditSection: { ...a.surgicalAuditSection, heading: a.surgicalAuditSection?.heading || '' },
-          faqSection: { ...a.faqSection, heading: a.faqSection?.heading || '' },
-        });
+          problemSection: { heading: a.problemSection?.heading || '', content: a.problemSection?.content || '' },
+          clinicalSection: { heading: a.clinicalSection?.heading || '', content: a.clinicalSection?.content || '' },
+          specialistSection: {
+            heading: a.specialistSection?.heading || '',
+            content: a.specialistSection?.content || '',
+            stats: {
+              surgeriesPerformed: a.specialistSection?.stats?.surgeriesPerformed,
+              proceduresSupervised: a.specialistSection?.stats?.proceduresSupervised,
+            },
+          },
+          complexCasesSection: { heading: a.complexCasesSection?.heading || '', content: a.complexCasesSection?.content || '' },
+          surgicalAuditSection: {
+            heading: a.surgicalAuditSection?.heading || '',
+            content: a.surgicalAuditSection?.content || '',
+            auditSteps: a.surgicalAuditSection?.auditSteps?.length ? a.surgicalAuditSection.auditSteps : prev.surgicalAuditSection.auditSteps,
+            auditPrice: a.surgicalAuditSection?.auditPrice,
+          },
+          faqSection: {
+            heading: a.faqSection?.heading || '',
+            faqs: a.faqSection?.faqs?.length ? a.faqSection.faqs : [{ question: '', answer: '' }],
+          },
+        }));
       }
       setLoading(false);
     } catch (error) {
