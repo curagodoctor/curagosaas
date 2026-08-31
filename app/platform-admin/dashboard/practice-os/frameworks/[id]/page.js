@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { sanitizeSalesPage } from '@/lib/practice-os/salesPage';
 
 // Pack (framework) settings the doctor-facing catalog reads: price, publish
 // state, tagline, summary, and outcomes. A pack must be Published (and have a
@@ -229,6 +230,247 @@ function AddTaskForm({ frameworkId, nextNumber, onAdded }) {
   );
 }
 
+/* ---------------- Sales page editor ---------------- */
+
+const SP_INPUT = 'w-full border border-gray-300 rounded-lg px-3 py-2 text-sm';
+const SP_LABEL = 'block text-xs font-medium text-gray-500 uppercase mb-1';
+
+// A add/remove/reorder list of plain strings.
+function StringList({ label, value, onChange, placeholder }) {
+  const list = Array.isArray(value) ? value : [];
+  const upd = (i, v) => onChange(list.map((x, xi) => (xi === i ? v : x)));
+  const add = () => onChange([...list, '']);
+  const remove = (i) => onChange(list.filter((_, xi) => xi !== i));
+  const move = (i, d) => {
+    const j = i + d; if (j < 0 || j >= list.length) return;
+    const next = [...list]; [next[i], next[j]] = [next[j], next[i]]; onChange(next);
+  };
+  return (
+    <div>
+      {label && <span className={SP_LABEL}>{label}</span>}
+      <div className="space-y-2">
+        {list.map((v, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <input value={v} onChange={(e) => upd(i, e.target.value)} className={SP_INPUT} placeholder={placeholder} />
+            <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="px-2 py-1 text-gray-500 disabled:opacity-30" title="Up">↑</button>
+            <button type="button" onClick={() => move(i, 1)} disabled={i === list.length - 1} className="px-2 py-1 text-gray-500 disabled:opacity-30" title="Down">↓</button>
+            <button type="button" onClick={() => remove(i)} className="px-2 py-1 text-gray-400 hover:text-red-500" title="Remove">✕</button>
+          </div>
+        ))}
+      </div>
+      <button type="button" onClick={add} className="mt-2 text-sm text-blue-600 hover:underline">+ Add</button>
+    </div>
+  );
+}
+
+// A add/remove/reorder list of objects with named text fields.
+function ObjectList({ label, value, onChange, fields }) {
+  const list = Array.isArray(value) ? value : [];
+  const upd = (i, k, v) => onChange(list.map((x, xi) => (xi === i ? { ...x, [k]: v } : x)));
+  const add = () => onChange([...list, Object.fromEntries(fields.map((f) => [f.key, '']))]);
+  const remove = (i) => onChange(list.filter((_, xi) => xi !== i));
+  const move = (i, d) => {
+    const j = i + d; if (j < 0 || j >= list.length) return;
+    const next = [...list]; [next[i], next[j]] = [next[j], next[i]]; onChange(next);
+  };
+  return (
+    <div>
+      {label && <span className={SP_LABEL}>{label}</span>}
+      <div className="space-y-3">
+        {list.map((row, i) => (
+          <div key={i} className="border border-gray-200 rounded-lg p-3 space-y-2 bg-gray-50">
+            <div className="flex justify-end gap-1.5">
+              <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="px-2 text-gray-500 disabled:opacity-30" title="Up">↑</button>
+              <button type="button" onClick={() => move(i, 1)} disabled={i === list.length - 1} className="px-2 text-gray-500 disabled:opacity-30" title="Down">↓</button>
+              <button type="button" onClick={() => remove(i)} className="px-2 text-gray-400 hover:text-red-500" title="Remove">✕</button>
+            </div>
+            {fields.map((f) => (
+              f.multiline
+                ? <textarea key={f.key} value={row[f.key] || ''} onChange={(e) => upd(i, f.key, e.target.value)} rows={2} className={SP_INPUT} placeholder={f.placeholder} />
+                : <input key={f.key} value={row[f.key] || ''} onChange={(e) => upd(i, f.key, e.target.value)} className={SP_INPUT} placeholder={f.placeholder} />
+            ))}
+          </div>
+        ))}
+      </div>
+      <button type="button" onClick={add} className="mt-2 text-sm text-blue-600 hover:underline">+ Add</button>
+    </div>
+  );
+}
+
+// An image URL field with an upload button (reuses /api/admin/upload-image).
+function ImageField({ label, value, onChange, placeholder }) {
+  const [busy, setBusy] = useState(false);
+  const upload = async (file) => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('kind', 'image');
+      const res = await fetch('/api/platform/newsletter/upload', { method: 'POST', body: fd });
+      const d = await res.json();
+      if (d.success && d.url) onChange(d.url);
+      else alert(d.error || 'Upload failed');
+    } catch { alert('Upload failed'); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div>
+      {label && <span className={SP_LABEL}>{label}</span>}
+      <div className="flex items-center gap-2">
+        <input value={value || ''} onChange={(e) => onChange(e.target.value)} className={SP_INPUT} placeholder={placeholder || 'https://… or upload →'} />
+        <label className="shrink-0 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+          {busy ? '…' : 'Upload'}
+          <input type="file" accept="image/*" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
+        </label>
+      </div>
+      {value && <img src={value} alt="" className="mt-2 h-16 rounded border border-gray-200 object-cover" />}
+    </div>
+  );
+}
+
+// One collapsible section card with a "show on page" toggle.
+function SPSection({ title, sec, onToggle, defaultOpen, children }) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  const enabled = sec?.enabled !== false;
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 bg-gray-50">
+        <button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-2 text-left">
+          <span className="text-gray-400 text-xs">{open ? '▼' : '▶'}</span>
+          <span className="font-semibold text-gray-900 text-sm">{title}</span>
+        </button>
+        <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
+          <input type="checkbox" checked={enabled} onChange={(e) => onToggle(e.target.checked)} />
+          Show on page
+        </label>
+      </div>
+      {open && <div className="p-4 space-y-3">{children}</div>}
+    </div>
+  );
+}
+
+// The full sales-page editor: one card per section, saved via the framework PATCH.
+function SalesPageEditor({ framework, onSaved }) {
+  const [sp, setSp] = useState(() => sanitizeSalesPage(framework.salesPage || {}));
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const setSec = (key, patch) => { setSp((s) => ({ ...s, [key]: { ...s[key], ...patch } })); setSaved(false); };
+  const toggle = (key) => (v) => setSec(key, { enabled: v });
+
+  const save = async () => {
+    setSaving(true); setSaved(false);
+    try {
+      const res = await fetch(`/api/platform/practice-os/frameworks/${framework._id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ salesPage: sp }),
+      });
+      const json = await res.json();
+      if (json.success) { setSaved(true); onSaved?.(); }
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+      <div>
+        <h2 className="font-semibold text-gray-900">Sales page (public /packs/{framework.slug})</h2>
+        <p className="text-sm text-gray-500 mt-0.5">The rich public page. Blank fields fall back to the pack title/tagline/summary/outcomes and this pack&apos;s missions. Uncheck a section to hide it.</p>
+      </div>
+
+      <SPSection title="1 · Hero" sec={sp.hero} onToggle={toggle('hero')} defaultOpen>
+        <StringList label="Badges (chips)" value={sp.hero.badges} onChange={(v) => setSec('hero', { badges: v })} placeholder="BUILDER PACK 02" />
+        <input value={sp.hero.title} onChange={(e) => setSec('hero', { title: e.target.value })} className={SP_INPUT} placeholder={`Title — defaults to "${framework.title}"`} />
+        <input value={sp.hero.subtitle} onChange={(e) => setSec('hero', { subtitle: e.target.value })} className={SP_INPUT} placeholder={`Italic accent line — defaults to tagline`} />
+        <textarea value={sp.hero.description} onChange={(e) => setSec('hero', { description: e.target.value })} rows={2} className={SP_INPUT} placeholder="Description — defaults to summary" />
+        <textarea value={sp.hero.supportingLine} onChange={(e) => setSec('hero', { supportingLine: e.target.value })} rows={2} className={SP_INPUT} placeholder="Supporting line (e.g. Built for doctors.)" />
+        <ObjectList label="Spec grid (value + label)" value={sp.hero.specs} onChange={(v) => setSec('hero', { specs: v })} fields={[{ key: 'value', placeholder: '21' }, { key: 'label', placeholder: 'MISSIONS' }]} />
+        <StringList label="Product images / banner" value={sp.hero.images} onChange={(v) => setSec('hero', { images: v })} placeholder="https://…" />
+        <StringList label="Ticker lines" value={sp.hero.ticker} onChange={(v) => setSec('hero', { ticker: v })} placeholder="LEARN BY DOING" />
+      </SPSection>
+
+      <SPSection title="2 · Problem / The gap" sec={sp.problem} onToggle={toggle('problem')}>
+        <input value={sp.problem.title} onChange={(e) => setSec('problem', { title: e.target.value })} className={SP_INPUT} placeholder="Title" />
+        <input value={sp.problem.subtitle} onChange={(e) => setSec('problem', { subtitle: e.target.value })} className={SP_INPUT} placeholder="Italic subtitle" />
+        <StringList label="Bullets" value={sp.problem.bullets} onChange={(v) => setSec('problem', { bullets: v })} placeholder="Complete it." />
+        <textarea value={sp.problem.conclusion} onChange={(e) => setSec('problem', { conclusion: e.target.value })} rows={2} className={SP_INPUT} placeholder="Conclusion line" />
+      </SPSection>
+
+      <SPSection title="3 · Big idea / How it works" sec={sp.bigIdea} onToggle={toggle('bigIdea')}>
+        <input value={sp.bigIdea.title} onChange={(e) => setSec('bigIdea', { title: e.target.value })} className={SP_INPUT} placeholder="Title" />
+        <input value={sp.bigIdea.subtitle1} onChange={(e) => setSec('bigIdea', { subtitle1: e.target.value })} className={SP_INPUT} placeholder="Italic subtitle" />
+        <StringList label="The loop (steps)" value={sp.bigIdea.loop} onChange={(v) => setSec('bigIdea', { loop: v })} placeholder="Learn" />
+        <ObjectList label="Bullet cards (title + description)" value={sp.bigIdea.bullets} onChange={(v) => setSec('bigIdea', { bullets: v })} fields={[{ key: 'title', placeholder: 'Your own practice' }, { key: 'desc', placeholder: 'Every mission runs on your real profile.', multiline: true }]} />
+        <textarea value={sp.bigIdea.conclusion} onChange={(e) => setSec('bigIdea', { conclusion: e.target.value })} rows={2} className={SP_INPUT} placeholder="Green banner conclusion" />
+      </SPSection>
+
+      <SPSection title="4 · Video demo" sec={sp.videoDemo} onToggle={toggle('videoDemo')}>
+        <input value={sp.videoDemo.title} onChange={(e) => setSec('videoDemo', { title: e.target.value })} className={SP_INPUT} placeholder="Title" />
+        <label className="block">
+          <span className={SP_LABEL}>Video URL (mp4) — section hides if empty</span>
+          <input value={sp.videoDemo.videoUrl} onChange={(e) => setSec('videoDemo', { videoUrl: e.target.value })} className={SP_INPUT} placeholder="https://…/walkthrough.mp4" />
+        </label>
+        <textarea value={sp.videoDemo.description} onChange={(e) => setSec('videoDemo', { description: e.target.value })} rows={2} className={SP_INPUT} placeholder="Description" />
+        <input value={sp.videoDemo.caption} onChange={(e) => setSec('videoDemo', { caption: e.target.value })} className={SP_INPUT} placeholder="Caption under the video" />
+        <StringList label="Flow chips" value={sp.videoDemo.flow} onChange={(v) => setSec('videoDemo', { flow: v })} placeholder="Dashboard" />
+      </SPSection>
+
+      <SPSection title="5 · Honest promise" sec={sp.honestPromise} onToggle={toggle('honestPromise')}>
+        <input value={sp.honestPromise.title} onChange={(e) => setSec('honestPromise', { title: e.target.value })} className={SP_INPUT} placeholder="No magic tricks." />
+        <input value={sp.honestPromise.intro} onChange={(e) => setSec('honestPromise', { intro: e.target.value })} className={SP_INPUT} placeholder="… does not guarantee:" />
+        <StringList label="What it does NOT guarantee" value={sp.honestPromise.negatives} onChange={(v) => setSec('honestPromise', { negatives: v })} placeholder="#1 rankings" />
+        <input value={sp.honestPromise.highlight} onChange={(e) => setSec('honestPromise', { highlight: e.target.value })} className={SP_INPUT} placeholder="Green highlight line" />
+        <textarea value={sp.honestPromise.conclusion} onChange={(e) => setSec('honestPromise', { conclusion: e.target.value })} rows={2} className={SP_INPUT} placeholder="Conclusion" />
+      </SPSection>
+
+      <SPSection title="6 · Curriculum (from this pack's missions)" sec={sp.curriculum} onToggle={toggle('curriculum')}>
+        <input value={sp.curriculum.title} onChange={(e) => setSec('curriculum', { title: e.target.value })} className={SP_INPUT} placeholder="Title — defaults to “N missions. One complete workflow.”" />
+        <label className="block">
+          <span className={SP_LABEL}>How many missions to show before “Show all”</span>
+          <input type="number" min={1} max={50} value={sp.curriculum.previewCount} onChange={(e) => setSec('curriculum', { previewCount: Number(e.target.value) })} className="w-28 border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+        </label>
+        <p className="text-xs text-gray-500">Missions are pulled live from this pack — no need to re-enter them here.</p>
+      </SPSection>
+
+      <SPSection title="7 · Offer" sec={sp.offer} onToggle={toggle('offer')}>
+        <input value={sp.offer.title} onChange={(e) => setSec('offer', { title: e.target.value })} className={SP_INPUT} placeholder="Title" />
+        <StringList label="Benefits — defaults to outcomes" value={sp.offer.benefits} onChange={(v) => setSec('offer', { benefits: v })} placeholder="21 practical missions" />
+        <input value={sp.offer.ctaLabel} onChange={(e) => setSec('offer', { ctaLabel: e.target.value })} className={SP_INPUT} placeholder="CTA label — e.g. Start GBP Mastery (price is automatic)" />
+        <input value={sp.offer.supportingLine} onChange={(e) => setSec('offer', { supportingLine: e.target.value })} className={SP_INPUT} placeholder="Instant access · Learn at your own pace" />
+      </SPSection>
+
+      <SPSection title="8 · FAQ" sec={sp.faq} onToggle={toggle('faq')}>
+        <input value={sp.faq.title} onChange={(e) => setSec('faq', { title: e.target.value })} className={SP_INPUT} placeholder="Frequently asked questions" />
+        <ObjectList label="Questions" value={sp.faq.items} onChange={(v) => setSec('faq', { items: v })} fields={[{ key: 'q', placeholder: 'Question' }, { key: 'a', placeholder: 'Answer', multiline: true }]} />
+      </SPSection>
+
+      <SPSection title="9 · Final CTA" sec={sp.finalCta} onToggle={toggle('finalCta')}>
+        <input value={sp.finalCta.title} onChange={(e) => setSec('finalCta', { title: e.target.value })} className={SP_INPUT} placeholder="Title" />
+        <input value={sp.finalCta.subtitle} onChange={(e) => setSec('finalCta', { subtitle: e.target.value })} className={SP_INPUT} placeholder="Subtitle" />
+        <input value={sp.finalCta.ctaLabel} onChange={(e) => setSec('finalCta', { ctaLabel: e.target.value })} className={SP_INPUT} placeholder="CTA label" />
+        <input value={sp.finalCta.supportingLine} onChange={(e) => setSec('finalCta', { supportingLine: e.target.value })} className={SP_INPUT} placeholder="Supporting line" />
+      </SPSection>
+
+      <SPSection title="Founder box" sec={sp.founder} onToggle={toggle('founder')}>
+        <input value={sp.founder.eyebrow} onChange={(e) => setSec('founder', { eyebrow: e.target.value })} className={SP_INPUT} placeholder="BUILT BY A DOCTOR WHO UNDERSTANDS THE PROBLEM" />
+        <textarea value={sp.founder.intro} onChange={(e) => setSec('founder', { intro: e.target.value })} rows={2} className={SP_INPUT} placeholder="Intro line" />
+        <textarea value={sp.founder.body} onChange={(e) => setSec('founder', { body: e.target.value })} rows={3} className={SP_INPUT} placeholder="Body — section hides if this and name are empty" />
+        <input value={sp.founder.name} onChange={(e) => setSec('founder', { name: e.target.value })} className={SP_INPUT} placeholder="Dr Yuvaraj" />
+        <input value={sp.founder.credential} onChange={(e) => setSec('founder', { credential: e.target.value })} className={SP_INPUT} placeholder="Surgical Gastroenterologist · Founder, CuraGo" />
+        <ImageField label="Photo" value={sp.founder.photo} onChange={(v) => setSec('founder', { photo: v })} />
+      </SPSection>
+
+      <div className="flex items-center gap-3 pt-2">
+        <button onClick={save} disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium disabled:opacity-50">
+          {saving ? 'Saving…' : 'Save sales page'}
+        </button>
+        {saved && <span className="text-sm text-green-600">Saved ✓</span>}
+        <a href={`/packs/${framework.slug}`} target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline ml-auto">Preview public page →</a>
+      </div>
+    </div>
+  );
+}
+
 export default function FrameworkDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -319,6 +561,8 @@ export default function FrameworkDetailPage() {
       </div>
 
       <PackSettings framework={framework} onSaved={load} />
+
+      <SalesPageEditor framework={framework} onSaved={load} />
 
       {framework.mode === 'task' ? (
         <>

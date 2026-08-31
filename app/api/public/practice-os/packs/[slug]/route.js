@@ -12,13 +12,14 @@ export async function GET(request, { params }) {
     await connectDB();
     const { slug } = await params;
     const f = await Framework.findOne({ slug: String(slug).toLowerCase(), isPublished: true, isActive: true })
-      .select('title slug tagline summary description category coverImage outcomes priceInInr mode')
+      .select('title slug tagline summary description category coverImage outcomes priceInInr mode salesPage')
       .lean();
     if (!f) return NextResponse.json({ success: false, error: 'Pack not found' }, { status: 404 });
 
-    // A light outline of what's inside (titles only) — enough to sell it.
+    // An outline of what's inside — titles + a short description, enough to sell it
+    // and to power the curriculum accordion on the sales page.
     const missions = await Mission.find({ frameworkId: f._id, status: 'published' })
-      .select('missionText category weekNumber dayNumber missionNumber')
+      .select('missionText category weekNumber dayNumber missionNumber briefDescription purpose')
       .sort({ weekNumber: 1, dayNumber: 1, missionNumber: 1 })
       .lean();
 
@@ -37,7 +38,12 @@ export async function GET(request, { params }) {
         outcomes: f.outcomes || [],
         mode: f.mode || 'mission',
         itemLabel: (f.mode === 'task') ? 'tasks' : 'missions',
-        items: missions.map((m, i) => ({ n: i + 1, title: m.missionText || m.category || 'Untitled' })),
+        items: missions.map((m, i) => ({
+          n: i + 1,
+          title: m.missionText || m.category || 'Untitled',
+          desc: m.briefDescription || m.purpose || '',
+        })),
+        salesPage: f.salesPage || {},
         price: { base: g.base, gst: g.gst, total: g.total, pct: g.pct, free: price <= 0 },
       },
     });

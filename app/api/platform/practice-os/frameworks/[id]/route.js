@@ -6,6 +6,7 @@ import Module from '@/models/practice-os/Module';
 import Mission from '@/models/practice-os/Mission';
 import PracticeOsEnrollment from '@/models/practice-os/PracticeOsEnrollment';
 import UserMissionProgress from '@/models/practice-os/UserMissionProgress';
+import { sanitizeSalesPage } from '@/lib/practice-os/salesPage';
 
 // GET /api/platform/practice-os/frameworks/[id] — framework + its modules + missions.
 export async function GET(request, { params }) {
@@ -52,7 +53,7 @@ export async function PATCH(request, { params }) {
     }
 
     const allowed = ['title', 'description', 'category', 'coverImage', 'order', 'isActive',
-      'tagline', 'summary', 'outcomes', 'priceInInr', 'isPublished'];
+      'tagline', 'summary', 'outcomes', 'priceInInr', 'isPublished', 'salesPage'];
     const update = {};
     for (const key of allowed) {
       if (key in body) update[key] = body[key];
@@ -63,6 +64,9 @@ export async function PATCH(request, { params }) {
         ? update.outcomes.map((o) => String(o).trim()).filter(Boolean)
         : String(update.outcomes || '').split('\n').map((o) => o.trim()).filter(Boolean);
     }
+    // Coerce the rich sales page into its known shape before saving (findByIdAndUpdate
+    // runs no validators here, so this sanitizer is the guard).
+    if ('salesPage' in update) update.salesPage = sanitizeSalesPage(update.salesPage);
 
     const framework = await Framework.findByIdAndUpdate(id, { $set: update }, { new: true });
     if (!framework) {

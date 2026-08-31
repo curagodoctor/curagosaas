@@ -88,6 +88,90 @@ const FrameworkSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  // Rich, admin-editable public sales page for /packs/[slug]. Fixed named
+  // sections rendered in a set order; each has an `enabled` toggle. Empty text
+  // fields fall back to the flat pack fields (title/tagline/summary/outcomes) or
+  // hide entirely. Price/CTA amounts are NEVER stored here — always derived from
+  // priceInInr via computeGst so there's one source of truth.
+  salesPage: {
+    hero: {
+      enabled: { type: Boolean, default: true },
+      badges: { type: [String], default: [] },
+      title: { type: String, trim: true, default: '' },
+      subtitle: { type: String, trim: true, default: '' },
+      description: { type: String, trim: true, default: '' },
+      supportingLine: { type: String, trim: true, default: '' },
+      specs: { type: [{ value: String, label: String, _id: false }], default: [] },
+      images: { type: [String], default: [] },
+      ticker: { type: [String], default: [] },
+    },
+    problem: {
+      enabled: { type: Boolean, default: true },
+      title: { type: String, trim: true, default: '' },
+      subtitle: { type: String, trim: true, default: '' },
+      bullets: { type: [String], default: [] },
+      conclusion: { type: String, trim: true, default: '' },
+    },
+    bigIdea: {
+      enabled: { type: Boolean, default: true },
+      title: { type: String, trim: true, default: '' },
+      subtitle1: { type: String, trim: true, default: '' },
+      subtitle2: { type: String, trim: true, default: '' },
+      loop: { type: [String], default: [] },
+      bullets: { type: [{ title: String, desc: String, _id: false }], default: [] },
+      conclusion: { type: String, trim: true, default: '' },
+      image: { type: String, trim: true, default: '' },
+    },
+    videoDemo: {
+      enabled: { type: Boolean, default: true },
+      title: { type: String, trim: true, default: '' },
+      videoUrl: { type: String, trim: true, default: '' },
+      caption: { type: String, trim: true, default: '' },
+      description: { type: String, trim: true, default: '' },
+      flow: { type: [String], default: [] },
+    },
+    honestPromise: {
+      enabled: { type: Boolean, default: true },
+      title: { type: String, trim: true, default: '' },
+      intro: { type: String, trim: true, default: '' },
+      negatives: { type: [String], default: [] },
+      highlight: { type: String, trim: true, default: '' },
+      conclusion: { type: String, trim: true, default: '' },
+    },
+    curriculum: {
+      enabled: { type: Boolean, default: true },
+      title: { type: String, trim: true, default: '' },
+      previewCount: { type: Number, default: 5, min: 1, max: 50 },
+    },
+    offer: {
+      enabled: { type: Boolean, default: true },
+      title: { type: String, trim: true, default: '' },
+      benefits: { type: [String], default: [] },
+      ctaLabel: { type: String, trim: true, default: '' },
+      supportingLine: { type: String, trim: true, default: '' },
+    },
+    faq: {
+      enabled: { type: Boolean, default: true },
+      title: { type: String, trim: true, default: '' },
+      items: { type: [{ q: String, a: String, _id: false }], default: [] },
+    },
+    finalCta: {
+      enabled: { type: Boolean, default: true },
+      title: { type: String, trim: true, default: '' },
+      subtitle: { type: String, trim: true, default: '' },
+      ctaLabel: { type: String, trim: true, default: '' },
+      supportingLine: { type: String, trim: true, default: '' },
+    },
+    founder: {
+      enabled: { type: Boolean, default: true },
+      eyebrow: { type: String, trim: true, default: '' },
+      intro: { type: String, trim: true, default: '' },
+      body: { type: String, trim: true, default: '' },
+      name: { type: String, trim: true, default: '' },
+      credential: { type: String, trim: true, default: '' },
+      photo: { type: String, trim: true, default: '' },
+    },
+  },
 }, { timestamps: true });
 
 FrameworkSchema.index({ slug: 1 }, { unique: true });

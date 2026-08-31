@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { PackHeader } from '../page';
 import { fbTrack } from '@/lib/metaPixel';
+import PackSalesPage from '@/components/packs/PackSalesPage';
 
 const RAZORPAY_SRC = 'https://checkout.razorpay.com/v1/checkout.js';
 function loadRazorpay() {
@@ -139,45 +140,8 @@ export default function PackDetailPage() {
 
   return (
     <Shell>
-      <main style={{ maxWidth: 960, margin: '0 auto', padding: '32px clamp(16px,4vw,40px) 90px' }}>
-        <Link href="/packs" style={{ color: '#5E6B5F', fontSize: 14, textDecoration: 'none' }}>← All packs</Link>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 28, marginTop: 18 }}>
-          <div>
-            {pack.category && <p style={{ fontFamily: 'ui-monospace,monospace', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: '#096B17', fontWeight: 600, margin: 0 }}>{pack.category}</p>}
-            <h1 style={{ fontSize: 'clamp(28px,4vw,40px)', fontWeight: 700, letterSpacing: '-0.02em', margin: '10px 0 6px', lineHeight: 1.15 }}>{pack.title}</h1>
-            {pack.tagline && <p style={{ fontSize: 18, color: '#5E6B5F', margin: 0 }}>{pack.tagline}</p>}
-
-            {pack.summary && <p style={{ fontSize: 16.5, color: '#374151', lineHeight: 1.65, marginTop: 20, maxWidth: '60ch' }}>{pack.summary}</p>}
-
-            {pack.outcomes?.length > 0 && (
-              <div style={{ marginTop: 26 }}>
-                <p style={{ fontFamily: 'ui-monospace,monospace', fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase', color: '#096B17', fontWeight: 600 }}>What you&apos;ll have built</p>
-                <ul style={{ margin: '10px 0 0', padding: 0, listStyle: 'none' }}>
-                  {pack.outcomes.map((o, i) => (
-                    <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '6px 0', fontSize: 15.5, color: '#374151' }}>
-                      <span style={{ color: '#096B17', fontWeight: 700 }}>✓</span> {o}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {pack.items?.length > 0 && (
-              <div style={{ marginTop: 26 }}>
-                <p style={{ fontFamily: 'ui-monospace,monospace', fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase', color: '#096B17', fontWeight: 600 }}>Inside the pack — {pack.items.length} {pack.itemLabel}</p>
-                <ol style={{ margin: '10px 0 0', padding: 0, listStyle: 'none' }}>
-                  {pack.items.map((it) => (
-                    <li key={it.n} style={{ display: 'flex', gap: 12, padding: '7px 0', borderBottom: '1px solid #EDF1EB', fontSize: 15, color: '#374151' }}>
-                      <span style={{ color: '#9ca3af', fontVariantNumeric: 'tabular-nums', minWidth: 22 }}>{it.n}.</span> {it.title}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
-          </div>
-        </div>
-      </main>
+      {/* Rich, admin-editable sales page — all CTAs open the same buyer modal. */}
+      <PackSalesPage pack={pack} onBuy={() => { setShowBuy(true); setErr(''); }} />
 
       {/* Sticky buy bar */}
       <div style={{ position: 'sticky', bottom: 0, background: 'rgba(255,255,255,.96)', backdropFilter: 'blur(10px)', borderTop: '1px solid #DDE4D9' }}>
