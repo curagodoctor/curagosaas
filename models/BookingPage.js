@@ -148,6 +148,19 @@ const BookingPageSchema = new mongoose.Schema({
     type: String,
     default: 'admin',
   },
+  // True once the DOCTOR has edited this page's sections by hand (or applied an
+  // AI chat edit). The AI "generate my website" flow must NOT overwrite a page
+  // the doctor has customized — it only writes to a still-default page unless the
+  // doctor explicitly forces a regenerate. AI generation itself does NOT set this.
+  userEdited: {
+    type: Boolean,
+    default: false,
+  },
+  // When the AI last generated this page's copy (for reference / audit).
+  aiGeneratedAt: {
+    type: Date,
+    default: null,
+  },
 }, {
   timestamps: true,
 });

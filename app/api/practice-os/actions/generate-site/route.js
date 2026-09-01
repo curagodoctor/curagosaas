@@ -18,7 +18,23 @@ export async function POST(request) {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
 
+    const body = await request.json().catch(() => ({}));
+    const force = !!body.force;
+
     const doc = await Doctor.findById(doctor._id).lean();
+
+    // Guard: never overwrite a website the doctor has already customized. If the
+    // home page exists and is user-edited, refuse unless they explicitly force it.
+    const existing = await BookingPage.findOne({ doctorId: doctor._id, slug: 'home' }).select('userEdited').lean();
+    if (existing?.userEdited && !force) {
+      return NextResponse.json({
+        success: false,
+        skipped: true,
+        reason: 'customized',
+        error: 'Your website has changes you made yourself. Generating again would overwrite them.',
+      });
+    }
+
     const fields = await getDoctorProfileFields(doctor._id);
 
     const gen = await structureContent({
@@ -56,6 +72,7 @@ export async function POST(request) {
       return { ...s, config: cfg };
     });
     page.status = 'published';
+    page.aiGeneratedAt = new Date();
     page.markModified('sections');
     await page.save();
 

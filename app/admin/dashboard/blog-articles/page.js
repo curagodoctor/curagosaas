@@ -13,6 +13,30 @@ export default function BlogArticlesPage() {
   const [filterCategory, setFilterCategory] = useState('all');
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
 
+  // AI draft chatbox — context → AI draft → review in editor → publish.
+  const [showAiDraft, setShowAiDraft] = useState(false);
+  const [aiContext, setAiContext] = useState('');
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiErr, setAiErr] = useState('');
+  const draftWithAi = async () => {
+    if (!aiContext.trim() || aiBusy) return;
+    setAiBusy(true); setAiErr('');
+    try {
+      const res = await fetch('/api/practice-os/actions/draft-blog', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ context: aiContext.trim() }),
+      });
+      const d = await res.json();
+      if (d.success && d.id) {
+        // Open the draft in the editor for review; the doctor publishes it there.
+        router.push(`/admin/dashboard/blog-articles/${d.id}`);
+      } else {
+        setAiErr(d.error === 'PaymentRequired' ? 'This needs an active builder pack.' : (d.error || 'Could not draft the article.'));
+      }
+    } catch { setAiErr('Something went wrong.'); }
+    finally { setAiBusy(false); }
+  };
+
   useEffect(() => {
     fetchArticles();
   }, [filterStatus, filterCategory, pagination.page]);
@@ -122,16 +146,52 @@ export default function BlogArticlesPage() {
           <h1 className="text-3xl font-bold text-gray-800">Blog Articles</h1>
           <p className="text-gray-600 mt-2">Manage your medical blog content</p>
         </div>
-        <button
-          onClick={() => router.push('/admin/dashboard/blog-articles/new')}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          New Article
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setShowAiDraft(true); setAiErr(''); }}
+            className="bg-[#096b17] hover:bg-[#075512] text-white px-5 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
+          >
+            ✨ Draft with AI
+          </button>
+          <button
+            onClick={() => router.push('/admin/dashboard/blog-articles/new')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New Article
+          </button>
+        </div>
       </div>
+
+      {/* AI draft chatbox — describe the article, AI writes a draft, you review before publishing */}
+      {showAiDraft && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => !aiBusy && setShowAiDraft(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-8 h-8 rounded-lg bg-[#096b17] text-white grid place-items-center">✨</span>
+              <h2 className="text-lg font-semibold text-gray-900">Draft a blog with AI</h2>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">Describe the topic and anything to include. The AI writes a draft — you review and edit it, then publish with one click. It won&apos;t go live until you publish.</p>
+            <textarea
+              value={aiContext}
+              onChange={(e) => setAiContext(e.target.value)}
+              rows={5}
+              autoFocus
+              placeholder="e.g. Write an article for patients about what to expect during a first gastroenterology consultation — preparation, questions to ask, and when to see a specialist."
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+            />
+            {aiErr && <p className="text-sm text-red-600 mt-2">{aiErr}</p>}
+            <div className="flex items-center justify-end gap-3 mt-4">
+              <button onClick={() => setShowAiDraft(false)} disabled={aiBusy} className="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+              <button onClick={draftWithAi} disabled={aiBusy || !aiContext.trim()} className="bg-[#096b17] hover:bg-[#075512] text-white px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50">
+                {aiBusy ? 'Drafting…' : 'Draft & review →'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">

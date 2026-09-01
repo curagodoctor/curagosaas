@@ -216,6 +216,9 @@ export async function PATCH(request, { params }) {
     // Auto-order sections if they were updated
     if (updates.sections) {
       page.reorderSections();
+      // The doctor edited the page by hand — mark it so the AI "generate my
+      // website" flow won't overwrite their work.
+      page.userEdited = true;
     }
 
     // Set publishedAt if status changed to published

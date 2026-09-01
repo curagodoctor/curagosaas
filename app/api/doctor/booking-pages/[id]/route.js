@@ -121,6 +121,8 @@ export async function PUT(request, { params }) {
     // Reorder sections if updated
     if (data.sections && page.sections.length > 0) {
       page.reorderSections();
+      // Hand-edit by the doctor — protect it from AI regeneration.
+      page.userEdited = true;
     }
 
     page.updatedAt = new Date();

@@ -30,12 +30,23 @@ export default function DashboardPage() {
   // AI: generate website content from the doctor's profile and publish it.
   const [genBusy, setGenBusy] = useState(false);
   const [genResult, setGenResult] = useState(null); // { url, hasAddress } | { error }
-  const generateSite = async () => {
+  const generateSite = async (force = false) => {
     setGenBusy(true); setGenResult(null);
     try {
-      const res = await fetch('/api/practice-os/actions/generate-site', { method: 'POST', credentials: 'include' });
+      const res = await fetch('/api/practice-os/actions/generate-site', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force }),
+      });
       const d = await res.json();
-      setGenResult(d.success ? { url: d.url, hasAddress: d.hasAddress } : { error: d.error || 'Could not generate your website.' });
+      if (d.skipped && d.reason === 'customized') {
+        // Don't silently overwrite the doctor's own edits — ask first.
+        const ok = window.confirm("You've made your own changes to this website. Generating again will replace them with a fresh AI version. Continue?");
+        if (ok) { setGenBusy(false); return generateSite(true); }
+        setGenResult(null);
+      } else {
+        setGenResult(d.success ? { url: d.url, hasAddress: d.hasAddress } : { error: d.error || 'Could not generate your website.' });
+      }
     } catch { setGenResult({ error: 'Something went wrong.' }); }
     finally { setGenBusy(false); }
   };
@@ -282,7 +293,7 @@ export default function DashboardPage() {
           <h2 className="text-lg font-semibold mb-1">✨ Generate your website with AI</h2>
           <p className="text-white/85 text-sm max-w-xl">Write your homepage from your profile — about, services and FAQs — and publish it in one click.</p>
         </div>
-        <button onClick={generateSite} disabled={genBusy} className="bg-white text-[#096b17] font-semibold px-5 py-2.5 rounded-lg hover:bg-gray-100 disabled:opacity-60">
+        <button onClick={() => generateSite()} disabled={genBusy} className="bg-white text-[#096b17] font-semibold px-5 py-2.5 rounded-lg hover:bg-gray-100 disabled:opacity-60">
           {genBusy ? 'Generating…' : 'Generate my website'}
         </button>
       </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useModal } from "@/contexts/ModalContext";
+import SiteAiChat from "@/components/admin/SiteAiChat";
 
 // Import config forms
 import HeroCarouselConfig from "@/components/admin/booking-pages/config-forms/HeroCarouselConfig";
@@ -1201,6 +1202,9 @@ export default function PageBuilderEditor() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </button>
+
+        {/* AI website assistant — proposes edits, applied into local state for review before Save */}
+        <SiteAiChat sections={pageData.sections} onApplyEdit={updateSectionConfig} />
       </div>
     </div>
   );
