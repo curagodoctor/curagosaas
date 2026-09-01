@@ -26,6 +26,7 @@ export async function GET(request) {
         specialization: doctor.specialization,
         qualification: doctor.qualification,
         profileImage: doctor.profileImage,
+        favicon: doctor.favicon || '',
         bio: doctor.bio,
         isLicensedProfessional: doctor.isLicensedProfessional,
         licenseNumber: doctor.licenseNumber,

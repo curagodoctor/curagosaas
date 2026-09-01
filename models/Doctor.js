@@ -69,6 +69,12 @@ const DoctorSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  // Favicon (browser-tab icon) for the doctor's own published website. A square
+  // PNG URL; injected site-wide via the tenant site's metadata. Empty = default.
+  favicon: {
+    type: String,
+    default: ''
+  },
   bio: {
     type: String,
     maxlength: [500, 'Bio cannot exceed 500 characters']

@@ -2,6 +2,26 @@ import Script from 'next/script';
 import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 
+// Site-wide metadata for the tenant — sets the doctor's own favicon across every
+// page of their site (home, blog, custom pages). Page-level generateMetadata
+// (title/description/OG) still applies and merges on top of this.
+export async function generateMetadata({ params }) {
+  const { subdomain } = await params;
+  try {
+    await connectDB();
+    const doctor = await Doctor.findOne({ subdomain: (subdomain || '').toLowerCase(), isActive: true })
+      .select('favicon')
+      .lean();
+    const favicon = doctor?.favicon?.trim();
+    if (favicon) {
+      return { icons: { icon: favicon, shortcut: favicon, apple: favicon } };
+    }
+  } catch {
+    // Never let a favicon lookup break the site.
+  }
+  return {};
+}
+
 // Injects each doctor's OWN analytics into their published site. IDs are read
 // from the doctor's settings (Website Builder → Analytics & Tracking) and
 // validated before injection so a bad value can never break the page.

@@ -27,6 +27,7 @@ export async function GET(request) {
         licenseNumber: doctor.licenseNumber,
         timezone: doctor.timezone,
         profileImage: doctor.profileImage,
+        favicon: doctor.favicon || '',
         subdomain: doctor.subdomain,
         customDomain: doctor.customDomain,
         email: doctor.email,
@@ -69,6 +70,7 @@ export async function PUT(request) {
       'licenseNumber',
       'timezone',
       'profileImage',
+      'favicon',
     ];
 
     const updates = {};

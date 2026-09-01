@@ -27,6 +27,39 @@ export default function DashboardPage() {
     } catch { /* ignore */ }
   };
 
+  // Favicon (browser-tab icon) for the doctor's published site.
+  const [faviconBusy, setFaviconBusy] = useState(false);
+  const uploadFavicon = async (file) => {
+    if (!file) return;
+    setFaviconBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('slug', 'favicons');
+      const up = await fetch('/api/admin/upload-image', { method: 'POST', body: fd, credentials: 'include' });
+      const ud = await up.json();
+      if (!ud.success || !ud.url) throw new Error(ud.error || 'Upload failed');
+      const res = await fetch('/api/doctor/settings', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ favicon: ud.url }),
+      });
+      const rd = await res.json();
+      if (rd.error) throw new Error(rd.error);
+      setDoctor((d) => ({ ...d, favicon: ud.url }));
+    } catch (e) { alert(e.message || 'Could not update the favicon.'); }
+    finally { setFaviconBusy(false); }
+  };
+  const removeFavicon = async () => {
+    setFaviconBusy(true);
+    try {
+      await fetch('/api/doctor/settings', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ favicon: '' }),
+      });
+      setDoctor((d) => ({ ...d, favicon: '' }));
+    } finally { setFaviconBusy(false); }
+  };
+
   // AI: generate website content from the doctor's profile and publish it.
   const [genBusy, setGenBusy] = useState(false);
   const [genResult, setGenResult] = useState(null); // { url, hasAddress } | { error }
@@ -256,6 +289,23 @@ export default function DashboardPage() {
                 <button onClick={() => { setEditDomain(true); setSubInput(''); }} className="px-3 py-1.5 rounded-lg bg-white text-[#096b17] text-sm font-semibold">Set up address</button>
               </div>
             )}
+
+            {/* Favicon — the browser-tab icon for this site */}
+            <div className="mt-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-md bg-white/15 border border-white/20 grid place-items-center overflow-hidden shrink-0">
+                {doctor?.favicon
+                  ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={doctor.favicon} alt="favicon" className="w-full h-full object-contain" />
+                  : <span className="text-white/50 text-[10px]">icon</span>}
+              </div>
+              <span className="text-white/70 text-sm">Tab icon</span>
+              <label className="text-white/90 hover:text-white text-sm underline underline-offset-2 cursor-pointer">
+                {faviconBusy ? 'Uploading…' : (doctor?.favicon ? 'Change' : 'Upload favicon')}
+                <input type="file" accept="image/png,image/webp,image/jpeg" className="hidden" onChange={(e) => uploadFavicon(e.target.files?.[0])} disabled={faviconBusy} />
+              </label>
+              {doctor?.favicon && !faviconBusy && (
+                <button onClick={removeFavicon} className="text-white/60 hover:text-white text-sm">Remove</button>
+              )}
+            </div>
           </div>
           <div className="flex gap-3">
             <a

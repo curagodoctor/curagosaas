@@ -23,7 +23,9 @@ export default function SettingsPage() {
     timezone: 'Asia/Kolkata',
     ga4MeasurementId: '',
     metaPixelId: '',
+    favicon: '',
   });
+  const [faviconUploading, setFaviconUploading] = useState(false);
   const [domainInfo, setDomainInfo] = useState({ subdomain: '', customDomain: null });
   const [domainInput, setDomainInput] = useState('');
   const [subdomainInput, setSubdomainInput] = useState('');
@@ -144,6 +146,7 @@ export default function SettingsPage() {
           whatsappNumber: data.doctor.whatsappNumber || '',
           googleReviewLink: data.doctor.googleReviewLink || '',
           reviewRequestMessage: data.doctor.reviewRequestMessage || '',
+          favicon: data.doctor.favicon || '',
           phone: data.doctor.phone || '',
           licenseNumber: data.doctor.licenseNumber || '',
           timezone: data.doctor.timezone || 'Asia/Kolkata',
@@ -166,6 +169,23 @@ export default function SettingsPage() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Upload a favicon image and store its URL on the form (saved with the rest).
+  const handleFaviconUpload = async (file) => {
+    if (!file) return;
+    setFaviconUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('slug', 'favicons');
+      const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd, credentials: 'include' });
+      const d = await res.json();
+      if (d.success && d.url) setFormData(prev => ({ ...prev, favicon: d.url }));
+      else showAlert({ title: 'Upload failed', message: d.error || 'Could not upload the favicon.', type: 'error' });
+    } catch {
+      showAlert({ title: 'Upload failed', message: 'Something went wrong.', type: 'error' });
+    } finally { setFaviconUploading(false); }
   };
 
   const handleSubmit = async (e) => {
@@ -406,6 +426,29 @@ export default function SettingsPage() {
                 />
                 <p className="mt-1 text-sm text-gray-500">
                   Optional. Your own wording for the WhatsApp review-request automation. Leave blank to use the default message.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Website Favicon (browser-tab icon)
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-lg border border-gray-200 bg-gray-50 grid place-items-center overflow-hidden shrink-0">
+                    {formData.favicon
+                      ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={formData.favicon} alt="favicon" className="w-full h-full object-contain" />
+                      : <span className="text-gray-300 text-xs">none</span>}
+                  </div>
+                  <label className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+                    {faviconUploading ? 'Uploading…' : (formData.favicon ? 'Change favicon' : 'Upload favicon')}
+                    <input type="file" accept="image/png,image/webp,image/jpeg" className="hidden" onChange={(e) => handleFaviconUpload(e.target.files?.[0])} disabled={faviconUploading} />
+                  </label>
+                  {formData.favicon && (
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, favicon: '' }))} className="text-sm text-gray-400 hover:text-red-500">Remove</button>
+                  )}
+                </div>
+                <p className="mt-1 text-sm text-gray-500">
+                  Shows in the browser tab of your published website. Use a square PNG (e.g. 512×512). Saved when you click Save below.
                 </p>
               </div>
 
