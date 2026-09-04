@@ -127,8 +127,8 @@ export default function AIGeneratePage() {
                 <p className="text-xs text-gray-600 mt-0.5">Approve to make it live, or discard to keep your current homepage.</p>
                 <div className="flex items-center gap-2 mt-3">
                   <button onClick={() => draftAction('approve')} disabled={!!busy} className="px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-medium disabled:opacity-50">{busy === 'draft:approve' ? 'Publishing…' : 'Approve & publish'}</button>
+                  <a href="/admin/dashboard/ai-generate/edit" className="px-4 py-2 border border-[#096b17] text-[#096b17] rounded-lg text-sm font-medium hover:bg-[#096b17]/5">Preview &amp; edit</a>
                   <button onClick={() => draftAction('discard')} disabled={!!busy} className="px-4 py-2 text-gray-500 text-sm hover:text-gray-700">Discard</button>
-                  <a href="/admin/dashboard/pages" className="ml-auto text-sm text-blue-600 hover:underline">Fine-tune in the builder →</a>
                 </div>
               </div>
             )}
@@ -162,7 +162,7 @@ export default function AIGeneratePage() {
 
           {/* Fine edits pointer */}
           <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-600">
-            Want to change specific sections by talking to the AI? Open the <a href="/admin/dashboard/pages" className="text-blue-600 hover:underline">page builder</a> and use the “Edit with AI” assistant.
+            Want to fine-tune with AI chat + live preview and edit sections by hand? Open the <a href="/admin/dashboard/ai-generate/edit" className="text-blue-600 hover:underline">AI Website Editor</a>.
           </div>
         </>
       )}

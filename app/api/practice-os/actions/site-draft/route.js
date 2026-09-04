@@ -11,14 +11,18 @@ export async function GET(request) {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
     const page = await BookingPage.findOne({ doctorId: doctor._id, slug: 'home' })
-      .select('draftSections draftMeta versions aiGeneratedAt status')
+      .select('draftSections draftMeta versions aiGeneratedAt status sections title')
       .lean();
     if (!page) return NextResponse.json({ success: true, exists: false });
     return NextResponse.json({
       success: true,
       exists: true,
+      pageId: String(page._id),
+      title: page.title || '',
       hasDraft: Array.isArray(page.draftSections) && page.draftSections.length > 0,
       draftSections: page.draftSections || null,
+      // The current live sections (fallback to edit when there's no draft yet).
+      liveSections: page.sections || [],
       draftMeta: page.draftMeta || null,
       versionCount: (page.versions || []).length,
       versions: (page.versions || []).map((v, i) => ({ index: i, savedAt: v.savedAt, source: v.source, sectionCount: (v.sections || []).length })),
@@ -38,11 +42,24 @@ export async function POST(request) {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
     await assertAiAccess(doctor._id);
-    const { action, index } = await request.json();
+    const { action, index, sections } = await request.json();
 
     const page = await BookingPage.findOne({ doctorId: doctor._id, slug: 'home' });
     if (!page) return NextResponse.json({ success: false, error: 'No home page found.' }, { status: 404 });
     const now = new Date();
+
+    if (action === 'save') {
+      // Persist the doctor's edited draft sections (from the split editor), without
+      // going live yet. Creates a draft if there wasn't one.
+      if (!Array.isArray(sections)) {
+        return NextResponse.json({ success: false, error: 'No sections to save.' }, { status: 400 });
+      }
+      page.draftSections = sections;
+      page.draftMeta = { source: page.draftMeta?.source || 'edited', createdAt: page.draftMeta?.createdAt || now };
+      page.markModified('draftSections');
+      await page.save();
+      return NextResponse.json({ success: true, applied: 'save' });
+    }
 
     if (action === 'approve') {
       if (!Array.isArray(page.draftSections) || page.draftSections.length === 0) {
