@@ -1,4 +1,5 @@
 // Section Components (will be created/imported)
+import HeaderSection from './sections/HeaderSection';
 import HeroCarouselSection from './sections/HeroCarouselSection';
 import BannerImageSection from './sections/BannerImageSection';
 import BenefitsListSection from './sections/BenefitsListSection';
@@ -18,6 +19,7 @@ import ProfessionalFeesSection from './sections/ProfessionalFeesSection';
 import FAQChatbot from '@/components/FAQChatbot';
 
 const SECTION_COMPONENTS = {
+  header: HeaderSection,
   hero_carousel: HeroCarouselSection,
   banner_image: BannerImageSection,
   benefits_list: BenefitsListSection,
@@ -37,8 +39,8 @@ const SECTION_COMPONENTS = {
   faq_chatbot: FAQChatbot,
 };
 
-export default function SectionRenderer({ section, trackingContext, consultationFee, bookingFee }) {
-  if (!section || !section.visible) {
+export default function SectionRenderer({ section, trackingContext, consultationFee, bookingFee, pageSections = [], extraNavLinks = [] }) {
+  if (!section || section.visible === false) {
     return null;
   }
 
@@ -49,10 +51,13 @@ export default function SectionRenderer({ section, trackingContext, consultation
     return null;
   }
 
-  // Pass config, tracking context, and fees to component
+  // Pass config, tracking context, and fees to component. The header also needs
+  // the full section list (for its auto-generated nav).
   return (
     <Component
       {...section.config}
+      pageSections={pageSections}
+      extraNavLinks={extraNavLinks}
       trackingContext={trackingContext}
       consultationFee={consultationFee}
       bookingFee={bookingFee}

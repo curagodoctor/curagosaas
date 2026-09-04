@@ -233,7 +233,7 @@ export default function AiSiteEditor() {
           ) : (
             <div className="bg-white mx-auto my-4 shadow-sm" style={{ maxWidth: 1100 }}>
               {sections.map((s, i) => (
-                <SectionRenderer key={i} section={s} />
+                <SectionRenderer key={`${s.type}-${i}`} section={s} pageSections={sections} />
               ))}
             </div>
           )}

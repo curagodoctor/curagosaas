@@ -351,9 +351,9 @@ export default function DashboardPage() {
           <h2 className="text-lg font-semibold mb-1">✨ Generate your website with AI</h2>
           <p className="text-white/85 text-sm max-w-xl">Write your homepage from your profile — about, services and FAQs — and publish it in one click.</p>
         </div>
-        <button onClick={() => generateSite()} disabled={genBusy} className="bg-white text-[#096b17] font-semibold px-5 py-2.5 rounded-lg hover:bg-gray-100 disabled:opacity-60">
-          {genBusy ? 'Generating…' : 'Generate my website'}
-        </button>
+        <Link href="/admin/dashboard/ai-generate/questions" className="bg-white text-[#096b17] font-semibold px-5 py-2.5 rounded-lg hover:bg-gray-100">
+          Generate my website
+        </Link>
       </div>
 
       {/* Generate-site result popup */}

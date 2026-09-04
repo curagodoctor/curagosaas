@@ -116,8 +116,8 @@ export default function AIGeneratePage() {
             <p className="text-sm text-gray-500 mt-0.5 mb-3">
               {home?.exists ? 'Regenerate a fresh AI homepage as a draft — your live page stays up until you approve it.' : 'Generate your homepage from your profile and publish it instantly.'}
             </p>
-            <button onClick={() => generateHome()} disabled={!!busy || noCredits} className="px-5 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium disabled:opacity-50">
-              {busy === 'home' ? 'Generating…' : (home?.exists ? 'Generate new draft' : 'Generate my homepage')}
+            <button onClick={() => router.push('/admin/dashboard/ai-generate/questions')} disabled={noCredits} className="px-5 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium disabled:opacity-50">
+              {home?.exists ? 'Generate new draft' : 'Generate my homepage'}
             </button>
 
             {/* Pending draft */}
