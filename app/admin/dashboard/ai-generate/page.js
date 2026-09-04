@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import BlogChat from '@/components/admin/BlogChat';
 
 // AI Website Builder — the paid AI surface. Generate the homepage (live first
 // time, draft + approve afterwards), draft blogs for review, and see homepage
@@ -149,15 +150,16 @@ export default function AIGeneratePage() {
             )}
           </div>
 
-          {/* Blog drafting */}
+          {/* Blog drafting — conversational assistant (same as the mission assistant) */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="font-semibold text-gray-900">Draft a blog with AI</h2>
-            <p className="text-sm text-gray-500 mt-0.5 mb-3">Describe the topic — AI writes a draft you review and publish. It won&apos;t go live until you publish.</p>
-            <textarea value={blogCtx} onChange={(e) => setBlogCtx(e.target.value)} rows={4} placeholder="e.g. What patients should know before a first gastroenterology consultation…" className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#096b17] focus:border-transparent" />
-            <div className="flex items-center gap-3 mt-3">
-              <button onClick={draftBlog} disabled={!!busy || noCredits || !blogCtx.trim()} className="px-5 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium disabled:opacity-50">{busy === 'blog' ? 'Drafting…' : 'Draft & review →'}</button>
-              <a href="/admin/dashboard/blog-articles" className="text-sm text-blue-600 hover:underline">All blog articles →</a>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className="font-semibold text-gray-900">Write a blog with AI</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Chat to draft and refine an article, then tap “Draft as blog” to review &amp; publish.</p>
+              </div>
+              <a href="/admin/dashboard/blog-articles" className="text-sm text-blue-600 hover:underline whitespace-nowrap">All articles →</a>
             </div>
+            <BlogChat onCredits={(n) => setCredits((c) => ({ ...c, remaining: n }))} />
           </div>
 
           {/* Fine edits pointer */}
