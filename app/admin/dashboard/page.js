@@ -74,11 +74,19 @@ export default function DashboardPage() {
       const d = await res.json();
       if (d.skipped && d.reason === 'customized') {
         // Don't silently overwrite the doctor's own edits — ask first.
-        const ok = window.confirm("You've made your own changes to this website. Generating again will replace them with a fresh AI version. Continue?");
+        const ok = window.confirm("You've made your own changes to this website. Generating a fresh AI draft won't overwrite your live site — you'll review and approve it. Continue?");
         if (ok) { setGenBusy(false); return generateSite(true); }
         setGenResult(null);
+      } else if (d.success) {
+        // mode 'live' = published now; mode 'draft' = saved as a draft to approve.
+        setGenResult({ mode: d.mode, url: d.url, hasAddress: d.hasAddress });
       } else {
-        setGenResult(d.success ? { url: d.url, hasAddress: d.hasAddress } : { error: d.error || 'Could not generate your website.' });
+        const friendly = d.error === 'PaymentRequired'
+          ? 'The AI website builder is a paid feature — you need an active Builder Pack.'
+          : d.error === 'NoCredits'
+            ? (d.message || "You've used all of today's AI credits. They reset tomorrow.")
+            : (d.error || 'Could not generate your website.');
+        setGenResult({ error: friendly });
       }
     } catch { setGenResult({ error: 'Something went wrong.' }); }
     finally { setGenBusy(false); }
@@ -363,16 +371,27 @@ export default function DashboardPage() {
                 <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center mb-3 bg-[#096b17]/10">
                   <svg className="w-6 h-6 text-[#096b17]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" /></svg>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Your website is ready 🎉</h3>
-                {genResult.hasAddress ? (
+                {genResult.mode === 'draft' ? (
                   <>
-                    <p className="text-sm text-gray-500 mt-1">Your homepage has been written and published.</p>
-                    <a href={genResult.url} target="_blank" rel="noopener noreferrer" className="inline-block mt-4 px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-semibold">View my live site →</a>
+                    {/* A homepage already existed — we saved a draft, live site unchanged. */}
+                    <h3 className="text-lg font-semibold text-gray-900">Draft ready to review</h3>
+                    <p className="text-sm text-gray-500 mt-1">Your live website is unchanged. We wrote a fresh AI version as a <strong>draft</strong> — review and approve it to publish.</p>
+                    <Link href="/admin/dashboard/ai-generate" onClick={() => setGenResult(null)} className="inline-block mt-4 px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-semibold">Review &amp; approve →</Link>
                   </>
                 ) : (
                   <>
-                    <p className="text-sm text-gray-500 mt-1">Your homepage content is written. Set a website address in <strong>Your Live Website</strong> above to take it live.</p>
-                    <button onClick={() => { setGenResult(null); setEditDomain(true); setSubInput(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="inline-block mt-4 px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-semibold">Set my address</button>
+                    <h3 className="text-lg font-semibold text-gray-900">Your website is ready 🎉</h3>
+                    {genResult.hasAddress ? (
+                      <>
+                        <p className="text-sm text-gray-500 mt-1">Your homepage has been written and published.</p>
+                        <a href={genResult.url} target="_blank" rel="noopener noreferrer" className="inline-block mt-4 px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-semibold">View my live site →</a>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-500 mt-1">Your homepage content is written and published. Set a website address in <strong>Your Live Website</strong> above to make it reachable.</p>
+                        <button onClick={() => { setGenResult(null); setEditDomain(true); setSubInput(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="inline-block mt-4 px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-semibold">Set my address</button>
+                      </>
+                    )}
                   </>
                 )}
                 <button onClick={() => setGenResult(null)} className="block mx-auto mt-3 text-gray-400 text-sm">Close</button>
