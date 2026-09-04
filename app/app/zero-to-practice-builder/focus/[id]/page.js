@@ -399,6 +399,10 @@ function FocusSession() {
     const before = (result?.newTotal || 0) - (result?.scoreDelta || 0);
     const est = day.estimatedMinutes || 35;
     const actual = finalMinutes;
+    const noun = taskMode ? 'task' : 'mission';
+    const Noun = taskMode ? 'Task' : 'Mission';
+    const finishedEarly = actual > 0 && actual < est;
+    const minsEarly = Math.max(0, est - actual);
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-5 py-10">
         {result?.celebration && <Confetti />}
@@ -408,9 +412,9 @@ function FocusSession() {
             <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center mb-3" style={{ background: 'var(--green)' }}>
               <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
             </div>
-            <p className="pos-label" style={{ color: 'var(--green)' }}>Mission complete</p>
+            <p className="pos-label" style={{ color: 'var(--green)' }}>{Noun} complete</p>
             <h1 className="text-[26px] font-semibold text-[var(--ink)] mt-1" style={{ letterSpacing: '-0.02em' }}>
-              Day {day.missionNumber} — all {modules.length} {modules.length === 1 ? 'module' : 'modules'} done.
+              {finishedEarly ? 'Done early — nice work.' : 'Nice work.'}
             </h1>
             {result?.performance && (
               <p className="text-[13px] text-[var(--muted)] mt-2">
@@ -432,73 +436,39 @@ function FocusSession() {
             </div>
           )}
 
-          <div className="flex justify-center gap-8 text-center mb-6">
-            <div><p className="pos-label">Estimated</p><p className="pos-num text-xl text-[var(--ink)]">{est}m</p></div>
-            <div><p className="pos-label">Actual</p><p className="pos-num text-xl text-[var(--ink)]">{actual}m</p></div>
-          </div>
+          {/* Time taken — lead with the "finished early" nudge when they beat the estimate. */}
+          {finishedEarly ? (
+            <div className="pos-card p-4 mb-5 text-center" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)' }}>
+              <p className="text-[15px] font-semibold" style={{ color: 'var(--green)' }}>⚡ You finished {minsEarly} min early</p>
+              <p className="text-[12.5px] text-[var(--muted)] mt-0.5">Estimated {est}m · you did it in {actual}m. Keep the momentum going.</p>
+            </div>
+          ) : (
+            <div className="flex justify-center gap-8 text-center mb-5">
+              <div><p className="pos-label">Estimated</p><p className="pos-num text-xl text-[var(--ink)]">{est}m</p></div>
+              <div><p className="pos-label">Actual</p><p className="pos-num text-xl text-[var(--ink)]">{actual ? `${actual}m` : '—'}</p></div>
+            </div>
+          )}
 
           <LeaderboardPrompt />
 
+          {/* The primary action: move straight on to the next mission/task. */}
           {tomorrow ? (
-            <div className="pos-card p-5 mb-6">
-              <p className="pos-label mb-1">Next · Day {tomorrow.missionNumber}</p>
-              <p className="text-[var(--ink)] font-medium">{tomorrow.title}</p>
-
-              {/* Do it today, or schedule it for later. */}
-              <div className="grid grid-cols-2 gap-2 mt-5">
-                <button onClick={() => setNextChoice('now')}
-                  className="rounded-lg py-2.5 text-center border transition-colors"
-                  style={{ borderColor: nextChoice === 'now' ? 'var(--green)' : 'var(--rule)', background: nextChoice === 'now' ? 'var(--green-soft)' : 'transparent' }}>
-                  <span className="block text-[13.5px] font-medium text-[var(--ink)]">Do it today</span>
-                </button>
-                <button onClick={() => setNextChoice('schedule')}
-                  className="rounded-lg py-2.5 text-center border transition-colors"
-                  style={{ borderColor: nextChoice === 'schedule' ? 'var(--green)' : 'var(--rule)', background: nextChoice === 'schedule' ? 'var(--green-soft)' : 'transparent' }}>
-                  <span className="block text-[13.5px] font-medium text-[var(--ink)]">Schedule it</span>
-                </button>
+            <>
+              <div className="pos-card p-5 mb-4" style={{ borderColor: 'var(--green)' }}>
+                <p className="pos-label mb-1" style={{ color: 'var(--green)' }}>Up next · {Noun} {tomorrow.missionNumber}</p>
+                <p className="text-[var(--ink)] font-medium mb-4">{tomorrow.title}</p>
+                <button onClick={startNextNow} className="pos-action w-full" style={{ textAlign: 'center' }}>Start the next {noun} →</button>
               </div>
-
-              {nextChoice === 'schedule' ? (
-                <>
-                  <p className="pos-label mt-5 mb-2">When will you do it?</p>
-                  <div className="grid grid-cols-3 gap-2 mb-2">
-                    {[{ o: 0, l: 'Today' }, { o: 1, l: 'Tomorrow' }, { o: 2, l: 'In 2 days' }].map((d) => (
-                      <button key={d.o} onClick={() => setCommit((c) => ({ ...c, dayOffset: d.o }))}
-                        className="rounded-lg py-2 text-center border transition-colors"
-                        style={{ borderColor: commit.dayOffset === d.o ? 'var(--green)' : 'var(--rule)', background: commit.dayOffset === d.o ? 'var(--green-soft)' : 'transparent' }}>
-                        <span className="block text-[13px] font-medium text-[var(--ink)]">{d.l}</span>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {WINDOWS.map((w) => (
-                      <button key={w.id} onClick={() => setCommit((c) => ({ ...c, window: w.id }))}
-                        className="rounded-lg py-2 text-center border transition-colors"
-                        style={{ borderColor: commit.window === w.id ? 'var(--green)' : 'var(--rule)', background: commit.window === w.id ? 'var(--green-soft)' : 'transparent' }}>
-                        <span className="block text-[13px] font-medium text-[var(--ink)]">{w.label}</span>
-                        <span className="block text-[10px] text-[var(--muted)]">{w.hint}</span>
-                      </button>
-                    ))}
-                  </div>
-                  <input type="time" value={commit.exactTime} onChange={(e) => setCommit((c) => ({ ...c, exactTime: e.target.value }))} className="mt-3 pos-card p-2 text-sm" />
-                  <p className="text-[11px] text-[var(--muted)] mt-3">You can reschedule anytime from your Schedule — up to 2 days out.</p>
-                </>
-              ) : (
-                <p className="text-[12px] text-[var(--muted)] mt-4">You&apos;ll jump straight into this task now. You can still pause and come back anytime.</p>
-              )}
-            </div>
+              <div className="text-center">
+                <button onClick={() => router.push(`/app/zero-to-practice-builder/track?pack=${packId}`)} className="pos-link text-sm">Back to pack</button>
+              </div>
+            </>
           ) : (
-            <div className="pos-card p-5 mb-6 text-center text-[var(--muted)]">That was your last mission in this pack. See your record.</div>
+            <div className="pos-card p-5 mb-2 text-center">
+              <p className="text-[var(--ink)] font-medium">That was the last {noun} in this pack. 🎉</p>
+              <button onClick={() => router.push(`/app/zero-to-practice-builder/track?pack=${packId}`)} className="pos-action mt-4">See your record →</button>
+            </div>
           )}
-
-          <div className="flex items-center justify-center gap-5">
-            {tomorrow && nextChoice === 'now' ? (
-              <button onClick={startNextNow} className="pos-action">Start it now →</button>
-            ) : (
-              <button onClick={setItAndGo} className="pos-action">{tomorrow ? 'Set my schedule' : 'Back to pack'}</button>
-            )}
-            {tomorrow && nextChoice === 'schedule' && <button onClick={() => downloadIcs(tomorrow, commit, packTitle)} className="pos-link text-sm">Add to my calendar</button>}
-          </div>
         </div>
       </div>
     );

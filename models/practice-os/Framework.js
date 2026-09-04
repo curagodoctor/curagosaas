@@ -72,6 +72,18 @@ const FrameworkSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  // A "Continue" pack that only unlocks AFTER the doctor completes another pack.
+  // When set, the doctor can't see/buy this pack until they have a completed
+  // enrollment for `prerequisiteFrameworkId`.
+  isContinuation: {
+    type: Boolean,
+    default: false,
+  },
+  prerequisiteFrameworkId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Framework',
+    default: null,
+  },
   // Only published packs appear in the doctor-facing catalog and can be bought.
   // (isActive is the soft-delete flag; a pack can be active but not yet published.)
   isPublished: {

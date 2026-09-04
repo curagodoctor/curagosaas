@@ -2,24 +2,41 @@ import Script from 'next/script';
 import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 
-// Site-wide metadata for the tenant — sets the doctor's own favicon across every
-// page of their site (home, blog, custom pages). Page-level generateMetadata
-// (title/description/OG) still applies and merges on top of this.
+// Site-wide metadata for the tenant. Sets the doctor's own favicon AND overrides
+// the platform-level twitter/keywords/OG defaults (from the root app/layout.js)
+// so a doctor's page never shows "CuraGo — Digital Practice Platform" or the
+// platform keywords/og-preview when shared. Page-level generateMetadata
+// (title/description/canonical/OG) still applies and wins per-field on top.
 export async function generateMetadata({ params }) {
   const { subdomain } = await params;
   try {
     await connectDB();
     const doctor = await Doctor.findOne({ subdomain: (subdomain || '').toLowerCase(), isActive: true })
-      .select('favicon')
+      .select('favicon displayName name specialization qualification profileImage')
       .lean();
-    const favicon = doctor?.favicon?.trim();
-    if (favicon) {
-      return { icons: { icon: favicon, shortcut: favicon, apple: favicon } };
-    }
+    if (!doctor) return {};
+
+    const name = doctor.displayName || doctor.name || 'Doctor';
+    const spec = doctor.specialization || '';
+    const titleBase = spec ? `${name} — ${spec}` : name;
+    const desc = `Book an appointment with ${name}${spec ? `, ${spec}` : ''}.`;
+    const img = doctor.profileImage || '';
+
+    const md = {
+      // Replace the platform's boilerplate keywords with per-doctor terms.
+      keywords: [name, spec, doctor.qualification, 'doctor', 'appointment', 'clinic'].filter(Boolean),
+      // Per-doctor social cards (pages that set their own openGraph override this).
+      openGraph: { title: titleBase, description: desc, ...(img ? { images: [img] } : {}) },
+      twitter: { card: img ? 'summary_large_image' : 'summary', title: titleBase, description: desc, ...(img ? { images: [img] } : {}) },
+    };
+
+    const favicon = doctor.favicon?.trim();
+    if (favicon) md.icons = { icon: favicon, shortcut: favicon, apple: favicon };
+    return md;
   } catch {
-    // Never let a favicon lookup break the site.
+    // Never let a metadata lookup break the site.
+    return {};
   }
-  return {};
 }
 
 // Injects each doctor's OWN analytics into their published site. IDs are read

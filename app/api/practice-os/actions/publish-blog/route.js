@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import { requirePracticeOsDoctor } from '@/lib/practice-os/access';
+import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/access';
+import { assertHasCredits, chargeAiCredits } from '@/lib/practice-os/aiCredits';
 import { structureContent } from '@/lib/practice-os/ai';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 import BlogArticle from '@/models/BlogArticle';
@@ -16,8 +17,10 @@ export async function POST(request) {
   try {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
+    await assertAiAccess(doctor._id);
     const { text } = await request.json();
     if (!text || !text.trim()) return NextResponse.json({ success: false, error: 'Nothing to publish.' }, { status: 400 });
+    await assertHasCredits(doctor._id);
 
     const fields = await getDoctorProfileFields(doctor._id);
     const gen = await structureContent({
@@ -49,11 +52,13 @@ export async function POST(request) {
       status: 'published',
     });
 
+    const { remaining } = await chargeAiCredits(doctor._id, { label: 'publish-blog' });
     const url = doc?.subdomain ? `https://${doc.subdomain}.curago.in/blog/${slug}` : `/blog/${slug}`;
-    return NextResponse.json({ success: true, url, slug, title: article.title });
+    return NextResponse.json({ success: true, url, slug, title: article.title, creditsRemaining: remaining });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     if (error.message === 'PaymentRequired') return NextResponse.json({ success: false, error: 'PaymentRequired' }, { status: 402 });
+    if (error.code === 'NoCredits') return NextResponse.json({ success: false, error: 'NoCredits', message: "You've used all of today's AI credits. They reset tomorrow." }, { status: 402 });
     console.error('[publish-blog]', error);
     return NextResponse.json({ success: false, error: 'Could not publish the page.' }, { status: 500 });
   }

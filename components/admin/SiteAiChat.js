@@ -22,7 +22,7 @@ export default function SiteAiChat({ sections = [], onApplyEdit }) {
   ]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
-  const [pending, setPending] = useState(null); // { index, type, config, forMessage }
+  const [pending, setPending] = useState(null); // { edits: [{index,type,config}] }
   const scrollRef = useRef(null);
 
   useEffect(() => { scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight); }, [messages, pending]);
@@ -42,10 +42,14 @@ export default function SiteAiChat({ sections = [], onApplyEdit }) {
       });
       const d = await res.json();
       if (!d.success) {
-        setMessages((m) => [...m, { role: 'assistant', content: d.error === 'PaymentRequired' ? 'This needs an active builder pack.' : (d.error || 'Something went wrong.') }]);
+        const msg = d.error === 'PaymentRequired' ? 'This needs an active builder pack.'
+          : d.error === 'NoCredits' ? (d.message || "You've used today's AI credits.")
+          : (d.error || 'Something went wrong.');
+        setMessages((m) => [...m, { role: 'assistant', content: msg }]);
       } else {
-        setMessages((m) => [...m, { role: 'assistant', content: d.reply || (d.edit ? 'Here is a suggested change.' : '') }]);
-        if (d.edit) setPending({ ...d.edit });
+        const edits = Array.isArray(d.edits) ? d.edits : (d.edit ? [d.edit] : []);
+        setMessages((m) => [...m, { role: 'assistant', content: d.reply || (edits.length ? 'Here are the suggested changes.' : '') }]);
+        if (edits.length) setPending({ edits });
       }
     } catch {
       setMessages((m) => [...m, { role: 'assistant', content: 'The assistant is unavailable right now.' }]);
@@ -53,9 +57,10 @@ export default function SiteAiChat({ sections = [], onApplyEdit }) {
   };
 
   const apply = () => {
-    if (!pending) return;
-    onApplyEdit?.(pending.index, pending.config);
-    setMessages((m) => [...m, { role: 'assistant', content: `Applied to the ${label(pending.type)} section — review it in the preview, then Save to publish.` }]);
+    if (!pending?.edits?.length) return;
+    pending.edits.forEach((e) => onApplyEdit?.(e.index, e.config));
+    const names = pending.edits.map((e) => label(e.type)).join(', ');
+    setMessages((m) => [...m, { role: 'assistant', content: `Applied to ${names} — review in the preview, then Save to publish.` }]);
     setPending(null);
   };
 
@@ -91,12 +96,14 @@ export default function SiteAiChat({ sections = [], onApplyEdit }) {
             </div>
           </div>
         ))}
-        {pending && (
+        {pending?.edits?.length > 0 && (
           <div className="border border-[#096b17]/30 bg-[#096b17]/5 rounded-xl p-3">
-            <p className="text-[11px] font-semibold text-[#096b17] uppercase tracking-wide mb-1">Suggested change · {label(pending.type)}</p>
-            <p className="text-[12px] text-gray-600 mb-2">Apply it to preview the change, then Save to publish.</p>
+            <p className="text-[11px] font-semibold text-[#096b17] uppercase tracking-wide mb-1">
+              Suggested {pending.edits.length === 1 ? 'change' : `changes (${pending.edits.length})`} · {pending.edits.map((e) => label(e.type)).join(', ')}
+            </p>
+            <p className="text-[12px] text-gray-600 mb-2">Apply to preview, then Save to publish.</p>
             <div className="flex gap-2">
-              <button onClick={apply} className="px-3 py-1.5 bg-[#096b17] text-white rounded-lg text-[13px] font-medium hover:bg-[#075512]">Apply change</button>
+              <button onClick={apply} className="px-3 py-1.5 bg-[#096b17] text-white rounded-lg text-[13px] font-medium hover:bg-[#075512]">Apply {pending.edits.length > 1 ? 'changes' : 'change'}</button>
               <button onClick={() => setPending(null)} className="px-3 py-1.5 text-gray-500 text-[13px] hover:text-gray-700">Discard</button>
             </div>
           </div>

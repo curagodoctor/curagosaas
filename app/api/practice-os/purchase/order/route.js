@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
-import { getFrameworkPriceInr, getPracticeOsRazorpay, isDevPaymentBypass, hasPackAccess, computeGst } from '@/lib/practice-os/access';
+import { getFrameworkPriceInr, getPracticeOsRazorpay, isDevPaymentBypass, hasPackAccess, computeGst, getPackUnlockState } from '@/lib/practice-os/access';
 import Framework from '@/models/practice-os/Framework';
 
 export const runtime = 'nodejs';
@@ -14,11 +14,12 @@ export async function GET(request) {
     await connectDB();
     const packId = new URL(request.url).searchParams.get('pack');
     if (!packId) return NextResponse.json({ success: false, error: 'Missing pack' }, { status: 400 });
-    const fw = await Framework.findById(packId).select('title priceInInr isPublished isActive').lean();
+    const fw = await Framework.findById(packId).select('title priceInInr isPublished isActive isContinuation prerequisiteFrameworkId').lean();
     if (!fw) return NextResponse.json({ success: false, error: 'Pack not found' }, { status: 404 });
     const rzp = getPracticeOsRazorpay();
     const price = fw.priceInInr || 0;
     const { base, gst, total, pct } = computeGst(price);
+    const unlock = await getPackUnlockState(doctor._id, fw);
     return NextResponse.json({
       success: true,
       pack: { id: String(fw._id), title: fw.title },
@@ -27,6 +28,9 @@ export async function GET(request) {
       pricing: { base, gst, total, gstPercent: pct },
       free: price <= 0,
       alreadyOwned: await hasPackAccess(doctor._id, fw),
+      // Continuation pack still locked until its prerequisite pack is completed.
+      locked: !unlock.unlocked,
+      prerequisiteFrameworkId: unlock.prerequisiteFrameworkId,
       configured: !!(rzp.keyId && rzp.keySecret),
       devBypass: isDevPaymentBypass(),
     });
@@ -47,11 +51,17 @@ export async function POST(request) {
     const { packId } = await request.json();
     if (!packId) return NextResponse.json({ success: false, error: 'Missing pack' }, { status: 400 });
 
-    const fw = await Framework.findById(packId).select('title priceInInr').lean();
+    const fw = await Framework.findById(packId).select('title priceInInr isContinuation prerequisiteFrameworkId').lean();
     if (!fw) return NextResponse.json({ success: false, error: 'Pack not found' }, { status: 404 });
 
     if (await hasPackAccess(doctor._id, fw)) {
       return NextResponse.json({ success: true, alreadyOwned: true });
+    }
+
+    // A continuation pack can't be bought until its prerequisite pack is completed.
+    const unlock = await getPackUnlockState(doctor._id, fw);
+    if (!unlock.unlocked) {
+      return NextResponse.json({ success: false, error: 'Complete the prerequisite pack before starting this Continue pack.', locked: true }, { status: 403 });
     }
 
     const rzp = getPracticeOsRazorpay();

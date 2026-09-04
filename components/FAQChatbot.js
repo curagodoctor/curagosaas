@@ -2,249 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 
-// Default FAQ data organized by categories
+// Default chatbot CONFIG only — deliberately carries NO doctor-specific or seed
+// FAQ content. A doctor's chatbot must only ever show FAQs THEY configured; when
+// none are configured, `categories` stays empty and the chatbot does not render
+// at all (see the guard in the component). This prevents any one doctor's / the
+// platform's placeholder content from leaking onto another doctor's site.
 const defaultFAQData = {
-  categories: [
-    {
-      id: "services",
-      name: "Service & Consultations",
-      icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
-      questions: [
-        {
-          q: "How do I book an online consultation?",
-          a: "You can pre-book directly through our website or via the WhatsApp link provided."
-        },
-        {
-          q: "Do I need to have my reports ready before booking?",
-          a: "Yes, having your scans (USG/CT/MRI) ready ensures the most accurate audit."
-        },
-        {
-          q: "Is an online consultation as effective as in-person?",
-          a: "Online consultation has its role in patient evaluation and management. For conditions like IBS, report review, second opinions, follow ups and so on, online consultation is an alternative. It never replaces an in-person consultation."
-        },
-        {
-          q: "How long does a typical session last?",
-          a: "Most audits last between 15-20 minutes, depending on the complexity of your case."
-        },
-        {
-          q: "Can I consult for someone else (e.g., a parent)?",
-          a: "Yes, as long as you have their clinical history and reports available."
-        },
-        {
-          q: "Is this only for surgery?",
-          a: "No, we also provide consultations for chronic conditions like IBS and medical gastro issues."
-        },
-        {
-          q: "What if I don't have any reports yet?",
-          a: "Dr. Yuvaraj will guide you on exactly which scans are needed after an initial discussion."
-        },
-        {
-          q: "Do you provide a written prescription/summary?",
-          a: "Yes, a digital summary of the consultation and advice is provided after the call."
-        },
-        {
-          q: "Can I show my reports on screen during the call?",
-          a: "We don't have that feature as of yet, but you can share your reports either before or after the consultation to the WhatsApp support number provided."
-        }
-      ]
-    },
-    {
-      id: "pricing",
-      name: "Pricing & Payments",
-      icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-      questions: [
-        {
-          q: "What is the consultation fee?",
-          a: "The consultation fee for the first time consultation is Rs 1000/- and for follow-up consultation it is Rs 800/-"
-        },
-        {
-          q: "Are there any hidden charges?",
-          a: "All the prices mentioned are inclusive of everything. There are no hidden prices."
-        },
-        {
-          q: "How do I pay?",
-          a: "Payment can be done seamlessly via Razorpay."
-        },
-        {
-          q: "Is the payment gateway secure?",
-          a: "Yes, we use industry-standard encrypted payment gateways."
-        },
-        {
-          q: "Do I get a receipt for the payment?",
-          a: "Yes, an automated receipt is generated and sent to your email/WhatsApp."
-        },
-        {
-          q: "Is there a discount for follow-up consultations?",
-          a: "Please check the 'Follow-up' section on our booking page for current rates."
-        },
-        {
-          q: "Can I pay after the consultation?",
-          a: "No, we would require all payments to be done prior to the commencement of the consultation."
-        },
-        {
-          q: "Do you offer refunds?",
-          a: "In certain situations, Yes. We do provide refunds. Each refund ticket will be analysed and only after that the refund will be processed."
-        },
-        {
-          q: "What happens if the payment fails?",
-          a: "Please check your bank statement; failed transactions usually reverse within 3-5 business days."
-        }
-      ]
-    },
-    {
-      id: "language",
-      name: "Language & Regional Support",
-      icon: "M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129",
-      questions: [
-        {
-          q: "Can I speak to the doctor in Tamil?",
-          a: "Yes, Dr. Yuvaraj is a native Tamil speaker from Salem."
-        },
-        {
-          q: "Does the doctor speak Kannada?",
-          a: "Yes, Dr. Yuvaraj is fluent in Kannada."
-        },
-        {
-          q: "Is the consultation available in Hindi?",
-          a: "Yes, consultations are available in Hindi."
-        },
-        {
-          q: "Can I talk in Marathi?",
-          a: "Dr. Yuvaraj can follow Marathi and reply in Hindi/English."
-        },
-        {
-          q: "Is Malayalam supported?",
-          a: "Dr. Yuvaraj can follow Malayalam and provide advice accordingly."
-        },
-        {
-          q: "I am from Salem; can I meet the doctor in person?",
-          a: "Currently, Dr. Yuvaraj is practicing in Mumbai, but specialized online audits are available for Salem residents."
-        },
-        {
-          q: "Do I need to speak English to consult?",
-          a: "No, you can choose any of the supported regional languages."
-        }
-      ]
-    },
-    {
-      id: "timings",
-      name: "Timings & Scheduling",
-      icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
-      questions: [
-        {
-          q: "What are the consultation hours?",
-          a: "Standard hours are updated weekly on the booking calendar."
-        },
-        {
-          q: "Do you have slots on weekends?",
-          a: "Yes, specific slots are usually available on Saturdays."
-        },
-        {
-          q: "What if the doctor is late for the call?",
-          a: "Our team will notify you via WhatsApp if there is a minor delay due to a surgical emergency."
-        },
-        {
-          q: "Can I book an emergency same-day slot?",
-          a: "Same-day slots depend on availability; please check with the team via WhatsApp support line."
-        },
-        {
-          q: "Is there a waiting time for the online call?",
-          a: "We strive to start all calls within 10 minutes of the scheduled time."
-        },
-        {
-          q: "What if I miss my scheduled slot?",
-          a: "Please contact support immediately to see if you can be squeezed into a later slot."
-        }
-      ]
-    },
-    {
-      id: "cancellations",
-      name: "Cancellations & Rescheduling",
-      icon: "M6 18L18 6M6 6l12 12",
-      questions: [
-        {
-          q: "How do I cancel my booking?",
-          a: "You can cancel by messaging our support."
-        },
-        {
-          q: "Can I reschedule my appointment?",
-          a: "Yes, rescheduling is free if done at least 12 hours before the slot."
-        },
-        {
-          q: "What is the cancellation fee?",
-          a: "Cancellations within 12 hours of the slot may incur a small processing fee."
-        },
-        {
-          q: "How long does a refund take?",
-          a: "Refunds usually take 5-7 working days to reflect in your account."
-        },
-        {
-          q: "Can I change my online slot to an in-person visit?",
-          a: "Yes, reach out to our team and they will co-ordinate and do the needful."
-        }
-      ]
-    },
-    {
-      id: "technology",
-      name: "Technology & Privacy",
-      icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
-      questions: [
-        {
-          q: "Which app is used for the video call?",
-          a: "We use secure platforms like Google Meet."
-        },
-        {
-          q: "Are my medical reports safe?",
-          a: "Yes, all uploaded documents are encrypted and accessible only to the clinical team."
-        },
-        {
-          q: "Do you record the consultation?",
-          a: "We do not record video calls without explicit patient consent."
-        },
-        {
-          q: "Can I use my phone for the consultation?",
-          a: "Yes, any smartphone with a working camera and microphone is sufficient."
-        },
-        {
-          q: "What if the internet connection drops during the call?",
-          a: "Our team will attempt to reconnect or finish the audit via a standard phone call."
-        }
-      ]
-    },
-    {
-      id: "general",
-      name: "General & Trust",
-      icon: "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-      questions: [
-        {
-          q: "Where is Dr. Yuvaraj's clinic located?",
-          a: "Dr. Yuvaraj practices at SRV Hospital in Tilak Nagar, Mumbai."
-        },
-        {
-          q: "What are the doctor's qualifications?",
-          a: "He is an MS, MCh (Gold Medalist) from KEM Mumbai."
-        },
-        {
-          q: "How many surgeries has he performed?",
-          a: "He has personally performed over 450 complex GI surgeries."
-        },
-        {
-          q: "Can I get a second opinion on a surgery already scheduled?",
-          a: "Yes, that is a primary focus of our 'Second Opinion' service."
-        },
-        {
-          q: "Is this chatbot monitored by humans?",
-          a: "Yes, our administrative team reviews queries to assist with booking."
-        },
-        {
-          q: "How can I provide feedback?",
-          a: "You will receive a feedback link via WhatsApp after your audit."
-        }
-      ]
-    }
-  ],
-  welcomeMessage: "Hi! I'm here to help you with any questions about our consultation services. What would you like to know?",
-  botName: "CuraGo Assistant",
+  categories: [],
+  welcomeMessage: "Hi! How can I help you today?",
+  botName: "Assistant",
   primaryColor: "#059669",
   position: "right"
 };
@@ -282,12 +48,18 @@ export default function FAQChatbot({
     ...(welcomeMessage && { welcomeMessage }),
     ...(primaryColor && { primaryColor }),
     ...(position && { position }),
-    categories: categories?.length > 0 ? categories : (config.categories?.length > 0 ? config.categories : defaultFAQData.categories)
+    // A doctor's chatbot must ONLY show their own configured FAQs — never any
+    // seed/placeholder data. If nothing is configured, categories stays empty and
+    // the chatbot does not render (see guard below).
+    categories: categories?.length > 0 ? categories : (config.categories?.length > 0 ? config.categories : [])
   };
 
-  // Check if chatbot is enabled and should show on current page
+  // Check if chatbot is enabled and should show on current page. It also must
+  // have at least one configured category — otherwise there's nothing to answer
+  // and we must never fall back to another doctor's / platform seed content.
   const isEnabled = enabled !== false && config.enabled !== false;
-  const shouldShow = isEnabled && (showOnPages.includes("all") || showOnPages.includes(currentPage));
+  const hasContent = Array.isArray(faqConfig.categories) && faqConfig.categories.length > 0;
+  const shouldShow = isEnabled && hasContent && (showOnPages.includes("all") || showOnPages.includes(currentPage));
 
   // Auto-show tooltip on page load
   useEffect(() => {

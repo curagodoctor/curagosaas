@@ -62,6 +62,22 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle, autoPr
     } catch { setActionState((s) => ({ ...s, [i]: { ...s[i], blog: undefined } })); }
   }
 
+  // One-tap: expand this reply into a LONG blog DRAFT and open it for review
+  // (draft → edit → publish) — "pages written by the Mission Assistant".
+  async function draftBlog(text, i) {
+    if (actionState[i]?.draft) return;
+    setActionState((s) => ({ ...s, [i]: { ...s[i], draft: 'saving' } }));
+    try {
+      const res = await fetch('/api/practice-os/actions/draft-blog', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ context: text }),
+      });
+      const d = await res.json();
+      if (d.success && d.id) { window.location.href = `/admin/dashboard/blog-articles/${d.id}`; }
+      else { setActionState((s) => ({ ...s, [i]: { ...s[i], draft: undefined } })); alert(d.message || d.error || 'Could not draft the article.'); }
+    } catch { setActionState((s) => ({ ...s, [i]: { ...s[i], draft: undefined } })); }
+  }
+
   // One-click: send an assistant reel script to the Content Planner.
   async function sendToPlanner(text, i) {
     if (actionState[i]?.reel) return;
@@ -248,6 +264,10 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle, autoPr
                 <button onClick={() => saveToWorkspace(m.content, i)} disabled={!!savedIdx[i]}
                   className="inline-flex items-center gap-1" style={{ color: savedIdx[i] === 'saved' ? 'var(--green)' : 'var(--muted)' }} title="Save this to your workspace">
                   {savedIdx[i] === 'saved' ? '✓ Saved' : savedIdx[i] === 'saving' ? 'Saving…' : '⤓ Save to workspace'}
+                </button>
+                <button onClick={() => draftBlog(m.content, i)} disabled={actionState[i]?.draft === 'saving'}
+                  className="inline-flex items-center gap-1" style={{ color: 'var(--muted)' }} title="Expand into a full blog draft and review it before publishing">
+                  {actionState[i]?.draft === 'saving' ? 'Drafting…' : '📝 Draft as blog'}
                 </button>
                 <button onClick={() => publishBlog(m.content, i)} disabled={actionState[i]?.blog === 'saving' || actionState[i]?.blog === 'done'}
                   className="inline-flex items-center gap-1" style={{ color: actionState[i]?.blog === 'done' ? 'var(--green)' : 'var(--muted)' }} title="Publish this as a live blog page">

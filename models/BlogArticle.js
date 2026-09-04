@@ -141,10 +141,13 @@ const blogArticleSchema = new mongoose.Schema({
   // Publishing & Status
   status: {
     type: String,
-    enum: ['draft', 'published', 'archived'],
+    enum: ['draft', 'scheduled', 'published', 'archived'],
     default: 'draft',
   },
   publishedAt: Date,
+  // When status is 'scheduled', the content-scheduler cron publishes it once this
+  // time passes.
+  scheduledAt: Date,
 
   // Local SEO — from the doctor's own location, no hardcoded defaults.
   location: {

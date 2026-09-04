@@ -23,6 +23,10 @@
     {
       "path": "/api/cron/newsletter-sequences",
       "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/content-scheduler",
+      "schedule": "0 8 * * *"
     }
   ]
 }

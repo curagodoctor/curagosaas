@@ -32,6 +32,7 @@ export default function BlogArticleEditorPage() {
     category: '',
     tags: [],
     status: 'draft',
+    scheduledAt: '',
 
     // Modular structure (new).
     pageType: '',
@@ -99,6 +100,8 @@ export default function BlogArticleEditorPage() {
           ...prev,
           ...a,
           metaDescription: a.metaDescription || '',
+          // Stored instant → local wall-clock for the datetime-local input.
+          scheduledAt: a.scheduledAt ? (() => { const d = new Date(a.scheduledAt); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); })() : '',
           featuredImage: { url: a.featuredImage?.url || '', alt: a.featuredImage?.alt || '' },
           tags: Array.isArray(a.tags) ? a.tags : [],
           pageType: a.pageType || '',
@@ -282,11 +285,20 @@ export default function BlogArticleEditorPage() {
         : `/api/admin/blog-articles/${params.id}`;
       const method = isNew ? 'POST' : 'PATCH';
 
+      // Normalize the schedule: only send a real time when actually scheduling;
+      // convert the local datetime-input value to an absolute instant (ISO).
+      const payload = {
+        ...formData,
+        scheduledAt: formData.status === 'scheduled' && formData.scheduledAt
+          ? new Date(formData.scheduledAt).toISOString()
+          : null,
+      };
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -436,9 +448,22 @@ export default function BlogArticleEditorPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="draft">Draft</option>
+                  <option value="scheduled">Scheduled</option>
                   <option value="published">Published</option>
                   <option value="archived">Archived</option>
                 </select>
+                {formData.status === 'scheduled' && (
+                  <div className="mt-2">
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Go live at</label>
+                    <input
+                      type="datetime-local"
+                      value={formData.scheduledAt || ''}
+                      onChange={(e) => handleChange('scheduledAt', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Published automatically at this time (checked daily).</p>
+                  </div>
+                )}
               </div>
             </div>
 

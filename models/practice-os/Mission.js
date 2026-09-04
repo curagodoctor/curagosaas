@@ -75,6 +75,10 @@ const ModuleSchema = new mongoose.Schema({
   aiSystemPrompt: { type: String, trim: true, default: '' },
   buttons: { type: [ButtonSchema], default: [] },
   inputs: { type: [ModuleInputSchema], default: [] },
+  // Optional: this module produces website content. When set, the assistant
+  // surfaces a one-tap "draft this as a <target>" action (blog / page / homepage)
+  // that routes the reply into the draft→review→publish flow.
+  publishTarget: { type: String, enum: ['', 'blog', 'page', 'homepage'], default: '' },
 }, { _id: true });
 
 const MissionSchema = new mongoose.Schema({

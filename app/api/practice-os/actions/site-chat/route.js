@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import { requirePracticeOsDoctor } from '@/lib/practice-os/access';
+import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/access';
+import { assertHasCredits, chargeAiCredits } from '@/lib/practice-os/aiCredits';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 
 export const runtime = 'nodejs';
@@ -15,6 +16,7 @@ export async function POST(request) {
   try {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
+    await assertAiAccess(doctor._id);
 
     const { message, sections = [], history = [] } = await request.json();
     if (!message || !message.trim()) {
@@ -23,6 +25,7 @@ export async function POST(request) {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ success: false, error: 'AI is not configured.' }, { status: 500 });
     }
+    await assertHasCredits(doctor._id);
 
     const fields = await getDoctorProfileFields(doctor._id);
     // Compact section list for the prompt: index + type + current config.
@@ -35,9 +38,9 @@ export async function POST(request) {
     const system = `You are the CuraGo website assistant for an Indian doctor. Their website is built from typed "sections", each with a JSON "config".
 Rules:
 - Keep everything NMC-compliant: informative, professional, no superlatives, no comparative or guaranteed-outcome claims, no soliciting patients.
-- When the doctor asks to change something, pick the SINGLE most relevant section and return its FULL updated config — same keys and structure, changing only what the request needs. Never invent contact details, prices, or credentials that aren't in the profile.
-- If the message is a question, a greeting, or you cannot map it to a section, set "edit" to null and just reply.
-Return ONLY a JSON object: {"reply": string (1-3 short sentences, plain), "edit": {"index": number, "config": object} | null }.`;
+- When the doctor asks to change something, update EVERY section the request touches — a request may affect one section or several (e.g. "make the whole site warmer" → edit About + Benefits + Footer). For each affected section return its FULL updated config (same keys and structure), changing only what's needed. Never invent contact details, prices, or credentials that aren't in the profile.
+- If the message is a question, a greeting, or you cannot map it to any section, return an empty "edits" array and just reply.
+Return ONLY a JSON object: {"reply": string (1-3 short sentences, plain), "edits": [{"index": number, "config": object}] }.`;
 
     const profileLine = Object.entries(fields || {})
       .filter(([, v]) => v != null && String(v).trim())
@@ -67,17 +70,22 @@ Return ONLY a JSON object: {"reply": string (1-3 short sentences, plain), "edit"
     let data;
     try { data = JSON.parse(raw); } catch { return NextResponse.json({ success: false, error: 'Could not understand that — try rephrasing.' }, { status: 502 }); }
 
-    // Validate the proposed edit against the sections we actually sent.
-    let edit = null;
-    const e = data.edit;
-    if (e && typeof e === 'object' && Number.isInteger(e.index) && e.index >= 0 && e.index < brief.length && e.config && typeof e.config === 'object') {
-      edit = { index: e.index, type: brief[e.index].type, config: e.config };
-    }
+    // Validate the proposed edits against the sections we actually sent. Accept
+    // the new `edits` array; fall back to a legacy single `edit` object.
+    const rawEdits = Array.isArray(data.edits) ? data.edits : (data.edit ? [data.edit] : []);
+    const edits = rawEdits
+      .filter((e) => e && typeof e === 'object' && Number.isInteger(e.index) && e.index >= 0 && e.index < brief.length && e.config && typeof e.config === 'object')
+      .map((e) => ({ index: e.index, type: brief[e.index].type, config: e.config }));
 
-    return NextResponse.json({ success: true, reply: String(data.reply || '').slice(0, 1200), edit });
+    // Charge one credit per assistant turn (whether or not it proposed edits).
+    const { remaining } = await chargeAiCredits(doctor._id, { label: 'site-chat', tokens: completion.usage?.total_tokens || 0 });
+
+    // `edit` kept for backward compatibility with older clients.
+    return NextResponse.json({ success: true, reply: String(data.reply || '').slice(0, 1200), edits, edit: edits[0] || null, creditsRemaining: remaining });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     if (error.message === 'PaymentRequired') return NextResponse.json({ success: false, error: 'PaymentRequired' }, { status: 402 });
+    if (error.code === 'NoCredits') return NextResponse.json({ success: false, error: 'NoCredits', message: "You've used all of today's AI credits. They reset tomorrow." }, { status: 402 });
     console.error('[site-chat]', error);
     return NextResponse.json({ success: false, error: 'The assistant is unavailable right now.' }, { status: 500 });
   }

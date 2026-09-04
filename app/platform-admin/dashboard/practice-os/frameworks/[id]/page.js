@@ -18,9 +18,19 @@ function PackSettings({ framework, onSaved }) {
     order: framework.order ?? 0,
     isPublished: !!framework.isPublished,
     outcomes: (framework.outcomes || []).join('\n'),
+    isContinuation: !!framework.isContinuation,
+    prerequisiteFrameworkId: framework.prerequisiteFrameworkId ? String(framework.prerequisiteFrameworkId) : '',
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  // Other packs, to pick a prerequisite for a Continue pack.
+  const [otherPacks, setOtherPacks] = useState([]);
+  useEffect(() => {
+    fetch('/api/platform/practice-os/frameworks')
+      .then((r) => r.json())
+      .then((d) => setOtherPacks((d.frameworks || []).filter((f) => String(f._id) !== String(framework._id))))
+      .catch(() => {});
+  }, [framework._id]);
 
   const save = async () => {
     setSaving(true); setSaved(false);
@@ -36,6 +46,8 @@ function PackSettings({ framework, onSaved }) {
           order: Number(form.order) || 0,
           isPublished: form.isPublished,
           outcomes: form.outcomes.split('\n').map((o) => o.trim()).filter(Boolean),
+          isContinuation: form.isContinuation,
+          prerequisiteFrameworkId: form.isContinuation ? (form.prerequisiteFrameworkId || null) : null,
         }),
       });
       const json = await res.json();
@@ -95,6 +107,22 @@ function PackSettings({ framework, onSaved }) {
         <input type="checkbox" checked={form.isPublished} onChange={(e) => set('isPublished', e.target.checked)} className="w-4 h-4" />
         <span className="text-sm text-gray-700">Published (visible &amp; purchasable in the doctor catalog)</span>
       </label>
+
+      <div className="border-t border-gray-100 pt-3 space-y-2">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked={form.isContinuation} onChange={(e) => set('isContinuation', e.target.checked)} className="w-4 h-4" />
+          <span className="text-sm text-gray-700">Continue pack (unlocks only after another pack is completed)</span>
+        </label>
+        {form.isContinuation && (
+          <label className="block">
+            <span className="text-xs font-medium text-gray-500 uppercase">Prerequisite pack (must be completed first)</span>
+            <select value={form.prerequisiteFrameworkId} onChange={(e) => set('prerequisiteFrameworkId', e.target.value)} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option value="">Select a pack…</option>
+              {otherPacks.map((p) => <option key={p._id} value={p._id}>{p.title}</option>)}
+            </select>
+          </label>
+        )}
+      </div>
 
       <div className="flex items-center gap-3">
         <button onClick={save} disabled={saving} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium disabled:opacity-50">

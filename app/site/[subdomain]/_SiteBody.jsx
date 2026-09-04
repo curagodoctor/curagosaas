@@ -124,13 +124,42 @@ export default async function SiteBody({ doctor, bookingPage }) {
     ...(hasBlog ? [{ text: 'Resources', url: '/blog' }] : []),
   ];
 
-  // Separate sticky buttons from regular sections
-  const regularSections = bookingPage.sections.filter(
-    s => s.visible !== false && !['whatsapp_sticky', 'book_now_sticky'].includes(s.type)
-  );
-  const stickyButtons = bookingPage.sections.filter(
-    s => s.visible !== false && ['whatsapp_sticky', 'book_now_sticky'].includes(s.type)
-  );
+  // A section renders empty (and should be skipped) when it's an image-only type
+  // with no image — the builder can leave behind empty hero_carousel/banner blocks.
+  const isEmptySection = (s) => {
+    const c = s.config || {};
+    if (s.type === 'hero_carousel') return !(Array.isArray(c.images) && c.images.filter(Boolean).length > 0);
+    if (s.type === 'banner_image') return !(c.imageUrl || c.image);
+    return false;
+  };
+  // Structural singletons — only ever render the first of each, in page order, so
+  // duplicate headers/footers left by the builder don't stack.
+  const SINGLETON_TYPES = new Set(['header', 'footer']);
+
+  // Sort once by order, then suppress empties + collapse singletons.
+  const visibleSorted = [...bookingPage.sections]
+    .filter((s) => s.visible !== false && !isEmptySection(s))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  const seenSingleton = new Set();
+  const deduped = visibleSorted.filter((s) => {
+    if (SINGLETON_TYPES.has(s.type)) {
+      if (seenSingleton.has(s.type)) return false;
+      seenSingleton.add(s.type);
+    }
+    return true;
+  });
+
+  // Separate sticky buttons from regular sections, keeping only the FIRST of each
+  // sticky type (stacked duplicate "Book Now" / WhatsApp buttons are a builder bug).
+  const regularSections = deduped.filter((s) => !['whatsapp_sticky', 'book_now_sticky'].includes(s.type));
+  const seenSticky = new Set();
+  const stickyButtons = deduped.filter((s) => {
+    if (!['whatsapp_sticky', 'book_now_sticky'].includes(s.type)) return false;
+    if (seenSticky.has(s.type)) return false;
+    seenSticky.add(s.type);
+    return true;
+  });
 
   // Get the theme for this booking page
   const themeId = resolveThemeId(bookingPage);

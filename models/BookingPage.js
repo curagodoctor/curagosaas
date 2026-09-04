@@ -108,10 +108,15 @@ const BookingPageSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['draft', 'published', 'archived'],
+    enum: ['draft', 'scheduled', 'published', 'archived'],
     default: 'draft',
   },
   publishedAt: {
+    type: Date,
+  },
+  // When status is 'scheduled', the content-scheduler cron publishes it once this
+  // time passes.
+  scheduledAt: {
     type: Date,
   },
   sections: [SectionSchema],
@@ -160,6 +165,28 @@ const BookingPageSchema = new mongoose.Schema({
   aiGeneratedAt: {
     type: Date,
     default: null,
+  },
+  // Guard rails for AI homepage regeneration (Content Block 6): when a page
+  // already exists, AI writes a DRAFT here instead of overwriting live; the
+  // doctor approves it to go live. Previous live versions are snapshotted so an
+  // AI overwrite can always be undone.
+  draftSections: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
+  },
+  draftMeta: {
+    source: { type: String, default: '' },   // e.g. 'ai'
+    createdAt: { type: Date, default: null },
+  },
+  // Capped history of prior live section sets (most-recent first, max ~10).
+  versions: {
+    type: [{
+      sections: mongoose.Schema.Types.Mixed,
+      savedAt: { type: Date, default: Date.now },
+      source: { type: String, default: '' },
+      _id: false,
+    }],
+    default: [],
   },
 }, {
   timestamps: true,

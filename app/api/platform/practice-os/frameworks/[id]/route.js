@@ -53,11 +53,15 @@ export async function PATCH(request, { params }) {
     }
 
     const allowed = ['title', 'description', 'category', 'coverImage', 'order', 'isActive',
-      'tagline', 'summary', 'outcomes', 'priceInInr', 'isPublished', 'salesPage'];
+      'tagline', 'summary', 'outcomes', 'priceInInr', 'isPublished', 'salesPage',
+      'isContinuation', 'prerequisiteFrameworkId'];
     const update = {};
     for (const key of allowed) {
       if (key in body) update[key] = body[key];
     }
+    // Normalize the continuation prerequisite (empty string → null).
+    if ('isContinuation' in update) update.isContinuation = !!update.isContinuation;
+    if ('prerequisiteFrameworkId' in update) update.prerequisiteFrameworkId = update.prerequisiteFrameworkId || null;
     if ('priceInInr' in update) update.priceInInr = Math.max(0, Number(update.priceInInr) || 0);
     if ('outcomes' in update) {
       update.outcomes = Array.isArray(update.outcomes)
