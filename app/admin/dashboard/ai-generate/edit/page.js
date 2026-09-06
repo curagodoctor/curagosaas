@@ -109,7 +109,9 @@ export default function AiSiteEditor() {
     if (!pending?.edits?.length) return;
     setSections((prev) => prev.map((s, i) => {
       const e = pending.edits.find((x) => x.index === i);
-      return e ? { ...s, config: e.config } : s;
+      // MERGE the proposed fields onto the existing config — never replace it
+      // wholesale (the AI may only return the changed keys).
+      return e ? { ...s, config: { ...s.config, ...e.config } } : s;
     }));
     setMessages((m) => [...m, { role: 'assistant', content: `Applied — check the preview. Save when you're happy.` }]);
     setPending(null);
@@ -224,14 +226,17 @@ export default function AiSiteEditor() {
           )}
         </div>
 
-        {/* RIGHT: live preview */}
-        <div className="flex-1 overflow-y-auto bg-gray-100">
+        {/* RIGHT: live preview. The `transform` on the scroll area makes any
+            position:fixed / sticky section (header, sticky buttons) resolve
+            RELATIVE TO THIS COLUMN instead of the whole viewport — otherwise the
+            sticky header covers the left chat panel and the top toolbar. */}
+        <div className="flex-1 overflow-y-auto bg-gray-100" style={{ transform: 'translateZ(0)', contain: 'layout paint' }}>
           {loading ? (
             <div className="h-full grid place-items-center text-gray-400 text-sm">Loading preview…</div>
           ) : sections.length === 0 ? (
             <div className="h-full grid place-items-center text-gray-400 text-sm text-center px-6">No homepage yet. Generate one from the AI Website Builder first.</div>
           ) : (
-            <div className="bg-white mx-auto my-4 shadow-sm" style={{ maxWidth: 1100 }}>
+            <div className="bg-white mx-auto my-4 shadow-sm" style={{ maxWidth: 1100, position: 'relative' }}>
               {sections.map((s, i) => (
                 <SectionRenderer key={`${s.type}-${i}`} section={s} pageSections={sections} />
               ))}
