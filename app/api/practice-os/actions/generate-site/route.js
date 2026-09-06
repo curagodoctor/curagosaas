@@ -27,17 +27,20 @@ export async function POST(request) {
     // assets). Split into extra text context and image/logo URLs.
     const answers = body.answers && typeof body.answers === 'object' ? body.answers : {};
     const answerLines = [];
-    const heroImages = [];
+    const clinicPhotos = [];
     let logoUrl = '';
+    let profileImageUrl = '';
     for (const [k, v] of Object.entries(answers)) {
       if (v == null || v === '') continue;
-      const val = Array.isArray(v) ? v.filter(Boolean).join(', ') : String(v);
-      if (!val) continue;
-      if (/^https?:\/\//i.test(val.trim()) && !val.includes(', ')) {
-        if (/logo/i.test(k)) logoUrl = val.trim(); else heroImages.push(val.trim());
-      } else {
-        answerLines.push(`${k.replace(/_/g, ' ')}: ${val}`);
+      const values = (Array.isArray(v) ? v : [v]).map((x) => String(x).trim()).filter(Boolean);
+      const urls = values.filter((x) => /^https?:\/\//i.test(x));
+      const texts = values.filter((x) => !/^https?:\/\//i.test(x));
+      if (urls.length) {
+        if (/logo/i.test(k)) logoUrl = urls[0];
+        else if (/profile/i.test(k)) profileImageUrl = urls[0];
+        else urls.forEach((u) => clinicPhotos.push(u)); // clinic photos / hero images
       }
+      if (texts.length) answerLines.push(`${k.replace(/_/g, ' ')}: ${texts.join(', ')}`);
     }
 
     const doc = await Doctor.findById(doctor._id).lean();
@@ -109,14 +112,18 @@ export async function POST(request) {
     // regardless of what the doctor's current page happens to contain.
     const generated = injectCopy(buildDefaultSections(doc || {}));
 
-    // Drop uploaded assets (logo / hero photo) into the right sections.
-    if (logoUrl || heroImages.length) {
+    // Drop uploaded assets into the right sections: logo → header, clinic photos
+    // → hero carousel, profile photo → doctor profile.
+    if (logoUrl || clinicPhotos.length || profileImageUrl) {
       for (const s of generated) {
         if (s.type === 'header' && logoUrl) s.config.logoUrl = logoUrl;
-        if (s.type === 'hero_carousel' && heroImages.length) {
-          s.config.images = heroImages.map((u) => ({ url: u, alt: '', caption: '' }));
+        if (s.type === 'hero_carousel' && clinicPhotos.length) {
+          s.config.images = clinicPhotos.map((u) => ({ url: u, alt: '', caption: '' }));
         }
-        if (s.type === 'doctor_profile' && heroImages[0] && !s.config.imageUrl) s.config.imageUrl = heroImages[0];
+        if (s.type === 'doctor_profile') {
+          if (profileImageUrl) s.config.imageUrl = profileImageUrl;
+          else if (clinicPhotos[0] && !s.config.imageUrl) s.config.imageUrl = clinicPhotos[0];
+        }
       }
     }
 

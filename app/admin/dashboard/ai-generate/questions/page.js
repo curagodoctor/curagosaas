@@ -38,20 +38,49 @@ export default function AiSiteQuestions() {
     return { ...a, [id]: cur.includes(opt) ? cur.filter((x) => x !== opt) : [...cur, opt] };
   });
 
-  const uploadImage = async (id, file) => {
+  // Read a file's pixel dimensions (client-side) to enforce a minimum size.
+  const readDims = (file) => new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => { URL.revokeObjectURL(url); resolve({ w: img.naturalWidth, h: img.naturalHeight }); };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve({ w: 0, h: 0 }); };
+    img.src = url;
+  });
+  // Validate size, then upload one file; returns the URL or throws.
+  const uploadOne = async (file, q) => {
+    const { w, h } = await readDims(file);
+    if (q.minWidth && q.minHeight && (w < q.minWidth || h < q.minHeight)) {
+      throw new Error(`“${file.name}” is ${w}×${h}px — please use an image at least ${q.minWidth}×${q.minHeight}px.`);
+    }
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('slug', 'ai-site');
+    const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd, credentials: 'include' });
+    const d = await res.json();
+    if (!d.success || !d.url) throw new Error(d.error || 'Upload failed.');
+    return d.url;
+  };
+  const uploadSingle = async (q, file) => {
     if (!file) return;
-    setUploading(id);
-    try {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('slug', 'ai-site');
-      const res = await fetch('/api/admin/upload-image', { method: 'POST', body: fd, credentials: 'include' });
-      const d = await res.json();
-      if (d.success && d.url) setAnswer(id, d.url);
-      else setErr(d.error || 'Upload failed.');
-    } catch { setErr('Upload failed.'); }
+    setUploading(q.id); setErr('');
+    try { setAnswer(q.id, await uploadOne(file, q)); }
+    catch (e) { setErr(e.message); }
     finally { setUploading(''); }
   };
+  const uploadMany = async (q, fileList) => {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    setUploading(q.id); setErr('');
+    try {
+      const cur = Array.isArray(answers[q.id]) ? answers[q.id] : [];
+      const room = Math.max(0, (q.max || 6) - cur.length);
+      const urls = [];
+      for (const f of files.slice(0, room)) urls.push(await uploadOne(f, q));
+      setAnswer(q.id, [...cur, ...urls]);
+    } catch (e) { setErr(e.message); }
+    finally { setUploading(''); }
+  };
+  const removeImageAt = (id, idx) => setAnswer(id, (Array.isArray(answers[id]) ? answers[id] : []).filter((_, i) => i !== idx));
 
   const generate = async (finalAnswers) => {
     setGenerating(true); setErr('');
@@ -130,14 +159,36 @@ export default function AiSiteQuestions() {
               </div>
             )}
             {q.type === 'image' && (
-              <div className="mt-2 flex items-center gap-3">
-                {answers[q.id] && <img src={answers[q.id]} alt="" className="h-14 rounded border border-gray-200 object-contain" />}
-                <label className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
-                  {uploading === q.id ? 'Uploading…' : (answers[q.id] ? 'Change' : 'Upload')}
-                  <input type="file" accept="image/png,image/webp,image/jpeg" className="hidden" onChange={(e) => uploadImage(q.id, e.target.files?.[0])} />
-                </label>
-                {answers[q.id] && <button onClick={() => setAnswer(q.id, '')} className="text-sm text-gray-400 hover:text-red-500">Remove</button>}
-              </div>
+              <>
+                {q.sizeHint && <p className="text-[11px] text-gray-400 mt-1">Recommended size: {q.sizeHint}</p>}
+                <div className="mt-2 flex items-center gap-3">
+                  {answers[q.id] && <img src={answers[q.id]} alt="" className="h-14 rounded border border-gray-200 object-contain" />}
+                  <label className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+                    {uploading === q.id ? 'Uploading…' : (answers[q.id] ? 'Change' : 'Upload')}
+                    <input type="file" accept="image/png,image/webp,image/jpeg" className="hidden" onChange={(e) => uploadSingle(q, e.target.files?.[0])} />
+                  </label>
+                  {answers[q.id] && <button onClick={() => setAnswer(q.id, '')} className="text-sm text-gray-400 hover:text-red-500">Remove</button>}
+                </div>
+              </>
+            )}
+            {q.type === 'images' && (
+              <>
+                {q.sizeHint && <p className="text-[11px] text-gray-400 mt-1">Recommended size: {q.sizeHint} · up to {q.max || 6} photos</p>}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {(Array.isArray(answers[q.id]) ? answers[q.id] : []).map((u, idx) => (
+                    <div key={idx} className="relative">
+                      <img src={u} alt="" className="h-16 w-20 object-cover rounded border border-gray-200" />
+                      <button onClick={() => removeImageAt(q.id, idx)} className="absolute -top-1.5 -right-1.5 bg-white border border-gray-300 rounded-full w-5 h-5 text-[11px] leading-none text-gray-500 hover:text-red-500">✕</button>
+                    </div>
+                  ))}
+                  {(!(Array.isArray(answers[q.id])) || answers[q.id].length < (q.max || 6)) && (
+                    <label className="h-16 w-20 border-2 border-dashed border-gray-300 rounded grid place-items-center cursor-pointer text-gray-400 text-xs hover:border-[#096b17]">
+                      {uploading === q.id ? '…' : '+ Add'}
+                      <input type="file" accept="image/png,image/webp,image/jpeg" multiple className="hidden" onChange={(e) => uploadMany(q, e.target.files)} />
+                    </label>
+                  )}
+                </div>
+              </>
             )}
           </div>
         ))}
