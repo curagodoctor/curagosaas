@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { trackButtonClick } from "@/lib/tracking";
+
+// Keep the desktop navbar tidy: show at most this many top-level items; the rest
+// collapse into a "More" dropdown so a doctor with many pages doesn't overflow.
+const MAX_TOP_LEVEL = 6;
 
 // Section navigation metadata - matches SECTION_TYPES in page builder
 const SECTION_NAV_INFO = {
@@ -203,6 +209,59 @@ export default function HeaderSection({
     return dedupeByLabel([...items, ...extraItems]);
   }, [navMode, navLinks, pageSections, autoNavConfig, extraNavLinks]);
 
+  const pathname = usePathname() || "/";
+  // "Home" is an anchor to the hero on the home page, but a real route ("/") from
+  // any sub-page — otherwise clicking Home on a sub-page scrolls to nothing.
+  const isHomeUrl = (url) => url === "/" || url === "#" || url === "#hero_carousel" || url === "#banner_image";
+  const isActive = (url) => {
+    if (isHomeUrl(url)) return pathname === "/";
+    return typeof url === "string" && url.startsWith("/") && pathname.replace(/\/$/, "") === url.replace(/\/$/, "");
+  };
+  const dropdownActive = (item) => (item.items || []).some((s) => isActive(s.url));
+
+  // Cap the desktop navbar; overflow into a single "More" dropdown so many pages
+  // don't blow out the header.
+  let visibleNav = navItems;
+  let overflowItems = [];
+  if (navItems.length > MAX_TOP_LEVEL) {
+    visibleNav = navItems.slice(0, MAX_TOP_LEVEL - 1);
+    overflowItems = navItems.slice(MAX_TOP_LEVEL - 1)
+      .flatMap((it) => (it.type === "dropdown" ? it.items : [it]));
+  }
+
+  const activeLinkClass = "text-primary-600 font-semibold";
+
+  // Renders a single nav link (route via <Link> for instant client nav, or an
+  // in-page #anchor via <a>), with active highlighting and Home→/ handling.
+  const NavAnchor = ({ item, className = "", context = "header_nav" }) => {
+    const home = isHomeUrl(item.url);
+    const url = home ? "/" : item.url;
+    const active = isActive(url);
+    const cls = `${className} ${active ? activeLinkClass : ""}`.trim();
+    const done = () => { setMobileMenuOpen(false); setOpenDropdown(null); };
+    if (typeof url === "string" && url.startsWith("/")) {
+      return (
+        <Link
+          href={url}
+          prefetch
+          className={cls}
+          onClick={() => { if (home && pathname === "/") window.scrollTo({ top: 0, behavior: "smooth" }); done(); trackButtonClick(item.text, `${trackingContext.pageSlug}_${context}`); }}
+        >
+          {item.text}
+        </Link>
+      );
+    }
+    return (
+      <a
+        href={url}
+        className={cls}
+        onClick={(e) => { handleNavClick(e, url); trackButtonClick(item.text, `${trackingContext.pageSlug}_${context}`); }}
+      >
+        {item.text}
+      </a>
+    );
+  };
+
   // Smooth scroll handler
   const handleNavClick = (e, url) => {
     if (url.startsWith("#")) {
@@ -293,7 +352,7 @@ export default function HeaderSection({
             {/* Desktop Navigation */}
             {showNavigation && navItems.length > 0 && (
               <nav className="hidden md:flex items-center gap-6">
-                {navItems.map((item, index) =>
+                {[...visibleNav, ...(overflowItems.length ? [{ type: "dropdown", label: "More", items: overflowItems }] : [])].map((item, index) =>
                   item.type === "dropdown" ? (
                     <div key={index} className="relative nav-dropdown">
                       <button
@@ -301,7 +360,7 @@ export default function HeaderSection({
                           e.stopPropagation();
                           setOpenDropdown(openDropdown === item.label ? null : item.label);
                         }}
-                        className={`flex items-center gap-1 ${textClass} ${linkHoverClass} font-medium transition-colors`}
+                        className={`flex items-center gap-1 ${textClass} ${linkHoverClass} font-medium transition-colors ${dropdownActive(item) ? activeLinkClass : ""}`}
                       >
                         {item.label}
                         <svg
@@ -314,35 +373,25 @@ export default function HeaderSection({
                         </svg>
                       </button>
                       {openDropdown === item.label && (
-                        <div className={`absolute top-full left-0 mt-2 py-2 min-w-[160px] rounded-lg shadow-lg ${dropdownBgClass}`}>
+                        <div className={`absolute top-full right-0 mt-2 py-2 min-w-[190px] max-h-[70vh] overflow-y-auto rounded-lg shadow-lg ${dropdownBgClass}`}>
                           {item.items.map((subItem, subIndex) => (
-                            <a
+                            <NavAnchor
                               key={subIndex}
-                              href={subItem.url}
-                              onClick={(e) => {
-                                handleNavClick(e, subItem.url);
-                                trackButtonClick(subItem.text, `${trackingContext.pageSlug}_header_nav`);
-                              }}
+                              item={subItem}
+                              context="header_nav"
                               className={`block px-4 py-2 ${textClass} ${dropdownItemHoverClass} font-medium transition-colors`}
-                            >
-                              {subItem.text}
-                            </a>
+                            />
                           ))}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <a
+                    <NavAnchor
                       key={index}
-                      href={item.url}
-                      onClick={(e) => {
-                        handleNavClick(e, item.url);
-                        trackButtonClick(item.text, `${trackingContext.pageSlug}_header_nav`);
-                      }}
+                      item={item}
+                      context="header_nav"
                       className={`${textClass} ${linkHoverClass} font-medium transition-colors`}
-                    >
-                      {item.text}
-                    </a>
+                    />
                   )
                 )}
               </nav>
@@ -393,7 +442,7 @@ export default function HeaderSection({
                     <div key={index}>
                       <button
                         onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
-                        className={`w-full flex items-center justify-between ${textClass} ${linkHoverClass} font-medium py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors`}
+                        className={`w-full flex items-center justify-between ${textClass} ${linkHoverClass} font-medium py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors ${dropdownActive(item) ? activeLinkClass : ""}`}
                       >
                         {item.label}
                         <svg
@@ -408,33 +457,23 @@ export default function HeaderSection({
                       {openDropdown === item.label && (
                         <div className="pl-4 mt-1 space-y-1">
                           {item.items.map((subItem, subIndex) => (
-                            <a
+                            <NavAnchor
                               key={subIndex}
-                              href={subItem.url}
-                              onClick={(e) => {
-                                handleNavClick(e, subItem.url);
-                                trackButtonClick(subItem.text, `${trackingContext.pageSlug}_header_nav_mobile`);
-                              }}
+                              item={subItem}
+                              context="header_nav_mobile"
                               className={`block ${textClass} ${linkHoverClass} font-medium py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors`}
-                            >
-                              {subItem.text}
-                            </a>
+                            />
                           ))}
                         </div>
                       )}
                     </div>
                   ) : (
-                    <a
+                    <NavAnchor
                       key={index}
-                      href={item.url}
-                      onClick={(e) => {
-                        handleNavClick(e, item.url);
-                        trackButtonClick(item.text, `${trackingContext.pageSlug}_header_nav_mobile`);
-                      }}
+                      item={item}
+                      context="header_nav_mobile"
                       className={`${textClass} ${linkHoverClass} font-medium py-2 px-4 rounded-lg hover:bg-gray-100 transition-colors`}
-                    >
-                      {item.text}
-                    </a>
+                    />
                   )
                 )}
                 {ctaButton.show && (
