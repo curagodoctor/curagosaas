@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import WorkspaceDrawer from '@/components/practice-os/WorkspaceDrawer';
 import PosNav from '@/components/practice-os/PosNav';
+import { UsernamePicker } from './_username';
 
 // The Control Center — the logged-in landing. Left: welcome + the doctor's
 // Builder Packs. Right: an aggregate progress rail (XP, streak, today's next
@@ -15,20 +16,25 @@ export default function ControlCenter() {
   const [name, setName] = useState('');
   const [leaderboard, setLeaderboard] = useState(null);
   const [loading, setLoading] = useState(true);
+  // Leaderboard participation is compulsory — every doctor must pick an anonymous
+  // name. Gate the control center until they do.
+  const [needsUsername, setNeedsUsername] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const [pRes, meRes, lbRes] = await Promise.all([
+        const [pRes, meRes, lbRes, uRes] = await Promise.all([
           fetch('/api/practice-os/packs'),
           fetch('/api/auth/me'),
           fetch('/api/practice-os/leaderboard'),
+          fetch('/api/practice-os/username'),
         ]);
         if (pRes.status === 401) { router.push('/login?entry=practice-os'); return; }
         const pData = await pRes.json();
         if (pData.success) setPacks(pData.packs);
         if (meRes.ok) { const me = await meRes.json(); setName(me.doctor?.displayName || me.doctor?.name || ''); }
         if (lbRes.ok) { const lb = await lbRes.json(); if (lb.success) setLeaderboard(lb); }
+        if (uRes.ok) { const u = await uRes.json(); if (u.success && !u.username) setNeedsUsername(true); }
       } finally {
         setLoading(false);
       }
@@ -37,6 +43,19 @@ export default function ControlCenter() {
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>;
+  }
+
+  if (needsUsername) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: 'var(--paper)' }}>
+        <div className="w-full max-w-md pos-card p-6">
+          <p className="pos-label" style={{ color: 'var(--green)' }}>One quick thing</p>
+          <h1 className="text-[22px] font-semibold text-[var(--ink)] mt-1" style={{ letterSpacing: '-0.02em' }}>Pick your leaderboard name</h1>
+          <p className="text-sm text-[var(--muted)] mt-2 mb-4">Everyone here is on a shared, anonymous leaderboard. Choose a name to continue — your real name is never shown.</p>
+          <UsernamePicker onSaved={() => setNeedsUsername(false)} />
+        </div>
+      </div>
+    );
   }
 
   const owned = (packs || []).filter((p) => p.owned);

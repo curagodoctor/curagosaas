@@ -27,6 +27,10 @@
     {
       "path": "/api/cron/content-scheduler",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-website-analytics",
+      "schedule": "0 9 * * *"
     }
   ]
 }

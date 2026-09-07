@@ -4,6 +4,8 @@ import { headers } from 'next/headers';
 import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 import BlogArticle from '@/models/BlogArticle';
+import { getSiteChrome } from '../../_siteChrome';
+import SiteChrome from '@/components/booking-page/SiteChrome';
 
 // The tenant's own origin (subdomain/custom domain) from the request host, so
 // canonical/OG URLs resolve to the doctor's own domain, not curago.in.
@@ -117,9 +119,12 @@ export default async function DoctorBlogArticlePage({ params }) {
     ? article.locationBlock
     : null;
 
+  const chrome = await getSiteChrome(doctor);
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
+    <SiteChrome header={chrome.header} footer={chrome.footer} navSections={chrome.navSections} extraNavLinks={chrome.extraNavLinks} doctor={doctor} themeId={chrome.themeId}>
+      <div className="bg-white">
+      {/* Article title block */}
       <header className="border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
           <Link
@@ -241,6 +246,7 @@ export default async function DoctorBlogArticlePage({ params }) {
           </Link>
         </div>
       </main>
-    </div>
+      </div>
+    </SiteChrome>
   );
 }

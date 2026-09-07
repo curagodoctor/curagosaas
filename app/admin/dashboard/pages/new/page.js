@@ -17,6 +17,9 @@ export default function NewBookingPageForm() {
     consultationFee: 1000,
     bookingFee: 150,
     status: "published",
+    // New pages default to a minimal layout — header/footer are shared from the
+    // home page, so a sub-page just needs content + a booking CTA.
+    template: "blank",
   });
 
   const handleChange = (e) => {
@@ -158,6 +161,28 @@ export default function NewBookingPageForm() {
             <p className="text-sm text-gray-500 mt-1">
               Lowercase letters, numbers, and hyphens only. Auto-generated from title.
             </p>
+          </div>
+
+          {/* Template choice */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Starting layout</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { id: 'blank', name: 'Blank page', desc: 'Just a content block + booking. Best for service/condition pages.' },
+                { id: 'full', name: 'Full homepage layout', desc: 'Hero, about, services, FAQs, etc. — a complete page.' },
+              ].map((t) => (
+                <button
+                  type="button"
+                  key={t.id}
+                  onClick={() => setFormData((p) => ({ ...p, template: t.id }))}
+                  className={`text-left rounded-lg border p-3 transition-colors ${formData.template === t.id ? 'border-[#096b17] bg-[#096b17]/5' : 'border-gray-300 hover:border-gray-400'}`}
+                >
+                  <div className="font-semibold text-sm text-gray-900">{t.name}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{t.desc}</div>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-1.5">Header &amp; footer come from your home page automatically — no need to add them here.</p>
           </div>
 
           {/* Meta Description */}

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import BookingPage from '@/models/BookingPage';
 import { getCurrentDoctor } from '@/lib/doctorAuth';
-import { buildDefaultSections } from '@/lib/defaultTemplate';
+import { buildDefaultSections, buildBlankSections } from '@/lib/defaultTemplate';
 
 // GET - List all booking pages
 export async function GET(request) {
@@ -120,7 +120,9 @@ export async function POST(request) {
       metaDescription: data.metaDescription || '',
       metaKeywords: data.metaKeywords || [],
       status: data.status || 'published',
-      sections: data.sections || buildDefaultSections(doctor),
+      // 'blank' = a minimal sub-page (content + booking); 'full' (default) = the
+      // full homepage layout. Header/footer are shared site-wide either way.
+      sections: data.sections || (data.template === 'blank' ? buildBlankSections(doctor, data.title) : buildDefaultSections(doctor)),
       consultationFee: data.consultationFee || 1000,
       bookingFee: data.bookingFee || 150,
       theme: data.theme || 'forest', // Default to forest green theme

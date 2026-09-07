@@ -4,6 +4,8 @@ import { headers } from 'next/headers';
 import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 import BlogArticle from '@/models/BlogArticle';
+import { getSiteChrome } from '../_siteChrome';
+import SiteChrome from '@/components/booking-page/SiteChrome';
 
 // The tenant's own origin (subdomain/custom domain) from the request host, so
 // canonical/OG URLs resolve to the doctor's own domain, not curago.in.
@@ -81,36 +83,11 @@ export default async function DoctorBlogListPage({ params }) {
     .lean();
 
   const doctorName = doctor.displayName || doctor.name;
+  const chrome = await getSiteChrome(doctor);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-3 min-w-0">
-            {doctor.profileImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={doctor.profileImage}
-                alt={doctorName}
-                className="h-10 w-10 rounded-full object-cover flex-shrink-0"
-              />
-            ) : (
-              <span className="h-10 w-10 rounded-full bg-[#096b17]/10 text-[#096b17] flex items-center justify-center font-bold flex-shrink-0">
-                {doctorName?.charAt(0)?.toUpperCase()}
-              </span>
-            )}
-            <span className="font-semibold text-gray-900 truncate">{doctorName}</span>
-          </Link>
-          <Link
-            href="/"
-            className="text-sm font-medium text-gray-600 hover:text-[#096b17] transition-colors whitespace-nowrap"
-          >
-            ← Back to site
-          </Link>
-        </div>
-      </header>
-
+    <SiteChrome header={chrome.header} footer={chrome.footer} navSections={chrome.navSections} extraNavLinks={chrome.extraNavLinks} doctor={doctor} themeId={chrome.themeId}>
+      <div className="bg-gray-50">
       {/* Title */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 pb-4">
         <p className="text-xs font-medium uppercase tracking-wider text-[#096b17] mb-2">Resources</p>
@@ -179,12 +156,7 @@ export default async function DoctorBlogListPage({ params }) {
           </div>
         )}
       </main>
-
-      <footer className="border-t border-gray-200 bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 text-center text-sm text-gray-500">
-          Powered by <span className="text-[#096b17] font-medium">CuraGo</span>
-        </div>
-      </footer>
-    </div>
+      </div>
+    </SiteChrome>
   );
 }
