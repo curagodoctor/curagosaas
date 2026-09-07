@@ -51,11 +51,16 @@ export async function POST(request) {
     const { packId } = await request.json();
     if (!packId) return NextResponse.json({ success: false, error: 'Missing pack' }, { status: 400 });
 
-    const fw = await Framework.findById(packId).select('title priceInInr isContinuation prerequisiteFrameworkId').lean();
+    const fw = await Framework.findById(packId).select('title priceInInr isContinuation prerequisiteFrameworkId isHidden').lean();
     if (!fw) return NextResponse.json({ success: false, error: 'Pack not found' }, { status: 404 });
 
     if (await hasPackAccess(doctor._id, fw)) {
       return NextResponse.json({ success: true, alreadyOwned: true });
+    }
+
+    // A hidden pack can't be bought by a new user (owners already returned above).
+    if (fw.isHidden) {
+      return NextResponse.json({ success: false, error: 'This pack is not available.' }, { status: 404 });
     }
 
     // A continuation pack can't be bought until its prerequisite pack is completed.

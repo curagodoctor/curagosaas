@@ -54,7 +54,7 @@ export async function PATCH(request, { params }) {
 
     const allowed = ['title', 'description', 'category', 'coverImage', 'order', 'isActive',
       'tagline', 'summary', 'outcomes', 'priceInInr', 'isPublished', 'salesPage',
-      'isContinuation', 'prerequisiteFrameworkId'];
+      'isContinuation', 'prerequisiteFrameworkId', 'isHidden'];
     const update = {};
     for (const key of allowed) {
       if (key in body) update[key] = body[key];

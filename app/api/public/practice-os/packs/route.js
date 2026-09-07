@@ -11,7 +11,7 @@ export const runtime = 'nodejs';
 export async function GET() {
   try {
     await connectDB();
-    const frameworks = await Framework.find({ isPublished: true, isActive: true })
+    const frameworks = await Framework.find({ isPublished: true, isActive: true, isHidden: { $ne: true } })
       .select('title slug tagline summary description category coverImage outcomes priceInInr mode order')
       .sort({ order: 1, createdAt: 1 })
       .lean();

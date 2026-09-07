@@ -11,7 +11,7 @@ export async function GET(request, { params }) {
   try {
     await connectDB();
     const { slug } = await params;
-    const f = await Framework.findOne({ slug: String(slug).toLowerCase(), isPublished: true, isActive: true })
+    const f = await Framework.findOne({ slug: String(slug).toLowerCase(), isPublished: true, isActive: true, isHidden: { $ne: true } })
       .select('title slug tagline summary description category coverImage outcomes priceInInr mode salesPage')
       .lean();
     if (!f) return NextResponse.json({ success: false, error: 'Pack not found' }, { status: 404 });

@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 // Company WhatsApp number for the floating contact button.
 const WHATSAPP_NUMBER = '917021227203';
@@ -18,14 +19,26 @@ const HIDDEN_PREFIXES = [
   '/packs', // pack catalogue + pack detail pages
 ];
 
-function showOn(path) {
+function pathAllowed(path) {
   if (!path) return false;
   return !HIDDEN_PREFIXES.some((p) => path === p || path.startsWith(p + '/'));
 }
 
 export default function WhatsAppButton() {
   const pathname = usePathname();
-  if (!showOn(pathname)) return null;
+  // Doctor sites run on subdomains / custom domains where the client path is just
+  // "/", so a path check alone can't exclude them. Gate on HOST too: only render
+  // on the CuraGo marketing site itself, never on a doctor's own website.
+  const [onMarketingHost, setOnMarketingHost] = useState(false);
+  useEffect(() => {
+    const root = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'curago.in').toLowerCase();
+    const host = (window.location.hostname || '').toLowerCase();
+    setOnMarketingHost(
+      host === root || host === `www.${root}` || host === 'localhost' || host === '127.0.0.1'
+    );
+  }, []);
+
+  if (!onMarketingHost || !pathAllowed(pathname)) return null;
 
   const href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(PREFILL)}`;
 

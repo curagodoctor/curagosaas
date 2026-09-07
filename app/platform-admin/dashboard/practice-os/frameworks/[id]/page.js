@@ -17,6 +17,7 @@ function PackSettings({ framework, onSaved }) {
     priceInInr: framework.priceInInr ?? 0,
     order: framework.order ?? 0,
     isPublished: !!framework.isPublished,
+    isHidden: !!framework.isHidden,
     outcomes: (framework.outcomes || []).join('\n'),
     isContinuation: !!framework.isContinuation,
     prerequisiteFrameworkId: framework.prerequisiteFrameworkId ? String(framework.prerequisiteFrameworkId) : '',
@@ -45,6 +46,7 @@ function PackSettings({ framework, onSaved }) {
           priceInInr: Number(form.priceInInr) || 0,
           order: Number(form.order) || 0,
           isPublished: form.isPublished,
+          isHidden: form.isHidden,
           outcomes: form.outcomes.split('\n').map((o) => o.trim()).filter(Boolean),
           isContinuation: form.isContinuation,
           prerequisiteFrameworkId: form.isContinuation ? (form.prerequisiteFrameworkId || null) : null,
@@ -106,6 +108,14 @@ function PackSettings({ framework, onSaved }) {
       <label className="flex items-center gap-2 cursor-pointer">
         <input type="checkbox" checked={form.isPublished} onChange={(e) => set('isPublished', e.target.checked)} className="w-4 h-4" />
         <span className="text-sm text-gray-700">Published (visible &amp; purchasable in the doctor catalog)</span>
+      </label>
+
+      <label className="flex items-start gap-2 cursor-pointer">
+        <input type="checkbox" checked={form.isHidden} onChange={(e) => set('isHidden', e.target.checked)} className="w-4 h-4 mt-0.5" />
+        <span className="text-sm text-gray-700">
+          Hide from catalogue
+          <span className="block text-xs text-gray-400">Removes it from curago.in/packs &amp; new buyers, but existing owners keep it on their control center.</span>
+        </span>
       </label>
 
       <div className="border-t border-gray-100 pt-3 space-y-2">

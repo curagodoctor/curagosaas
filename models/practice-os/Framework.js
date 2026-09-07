@@ -90,6 +90,14 @@ const FrameworkSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  // Hide a LIVE pack from the public catalogue (curago.in/packs) and from new
+  // buyers, WITHOUT cutting off existing owners — doctors who already bought/
+  // started it keep seeing and using it on their control center. Distinct from
+  // isPublished (draft) and deletedAt (removed).
+  isHidden: {
+    type: Boolean,
+    default: false,
+  },
   isActive: {
     type: Boolean,
     default: true,

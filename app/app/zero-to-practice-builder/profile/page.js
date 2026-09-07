@@ -112,6 +112,15 @@ export default function ProfilePage() {
         <p className="text-sm text-[var(--muted)] mt-2" style={{ maxWidth: '52ch' }}>Everything CuraGo writes for you is generated from this. Keep it up to date.</p>
       </div>
 
+      {/* Guided AI builder — fill the profile section by section instead of a form. */}
+      <a href="/app/zero-to-practice-builder/profile/build" className="pos-card p-4 mb-8 flex items-center justify-between gap-3" style={{ borderLeft: '3px solid var(--orange)', textDecoration: 'none' }}>
+        <div>
+          <p className="text-[15px] font-medium text-[var(--ink)]">✨ Build my profile with AI</p>
+          <p className="text-[13px] text-[var(--muted)] mt-0.5">Answer a couple of lines per section — AI writes it, you approve. Faster than the form.</p>
+        </div>
+        <span className="pos-action shrink-0" style={{ padding: '9px 16px' }}>Start →</span>
+      </a>
+
       {summary && (
         <div className="pos-card p-5 mb-8" style={{ borderLeft: '3px solid var(--green)' }}>
           <p className="pos-label mb-1">How CuraGo sees you</p>
