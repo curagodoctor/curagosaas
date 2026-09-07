@@ -4,7 +4,7 @@ import { trackButtonClick } from "@/lib/tracking";
 
 export default function BookNowStickyButton({
   buttonText = "Book Now",
-  buttonLink = "#booking",
+  buttonLink = "#booking_form",
   tooltipText = "Book your appointment",
   position = "bottom-left", // bottom-right, bottom-left
   backgroundColor = "#1e40af",
@@ -26,12 +26,19 @@ export default function BookNowStickyButton({
   const handleClick = (e) => {
     trackButtonClick(buttonText, `${trackingContext.pageSlug}_sticky_book_now`);
 
-    // If it's an anchor link, scroll smoothly
+    // If it's an anchor link, scroll to the booking form. Normalize the legacy
+    // "#booking" to the real section id "booking_form", and if the form isn't on
+    // this page (e.g. a disease sub-page), go to the home page's booking section.
     if (buttonLink.startsWith("#")) {
       e.preventDefault();
-      const element = document.querySelector(buttonLink);
+      let id = buttonLink.slice(1) || "booking_form";
+      if (id === "booking") id = "booking_form";
+      const element = document.getElementById(id);
       if (element) {
-        element.scrollIntoView({ behavior: "smooth" });
+        const top = element.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({ top, behavior: "smooth" });
+      } else {
+        window.location.href = `/#${id}`;
       }
     }
   };

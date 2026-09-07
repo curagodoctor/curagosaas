@@ -1,5 +1,7 @@
 "use client";
 
+import SectionIcon from "../SectionIcon";
+
 export default function BenefitsListSection({
   sectionId,
   title = "Why Choose Us",
@@ -30,9 +32,9 @@ export default function BenefitsListSection({
               key={index}
               className="flex items-start gap-4 p-6 bg-beige-50 rounded-xl hover:shadow-lg transition-shadow duration-300"
             >
-              {/* Icon */}
-              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg">
-                {item.icon || "✓"}
+              {/* Icon — a real line icon (resolved from the item's icon/label), not an emoji */}
+              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center text-white shadow-lg">
+                <SectionIcon name={item.icon} label={item.title} className="w-6 h-6" />
               </div>
 
               {/* Content */}

@@ -230,7 +230,7 @@ export default function AiSiteEditor() {
             position:fixed / sticky section (header, sticky buttons) resolve
             RELATIVE TO THIS COLUMN instead of the whole viewport — otherwise the
             sticky header covers the left chat panel and the top toolbar. */}
-        <div className="flex-1 overflow-y-auto bg-gray-100" style={{ transform: 'translateZ(0)', contain: 'layout paint' }}>
+        <div className="flex-1 overflow-y-auto bg-gray-100" style={{ transform: 'translateZ(0)' }}>
           {loading ? (
             <div className="h-full grid place-items-center text-gray-400 text-sm">Loading preview…</div>
           ) : sections.length === 0 ? (

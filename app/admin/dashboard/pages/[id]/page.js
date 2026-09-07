@@ -846,7 +846,16 @@ export default function PageBuilderEditor() {
               </button>
             </div>
             <div className="p-3 space-y-2">
-              {SECTION_TYPES.map((section) => (
+              {SECTION_TYPES.map((sectionDef) => {
+                // Header & footer are shared across the whole site (managed on the
+                // home page), so don't let sub-pages add their own — it would just
+                // be ignored at render and confuse the doctor.
+                const isShared = sectionDef.type === 'header' || sectionDef.type === 'footer';
+                const lockedShared = isShared && pageData.slug !== 'home';
+                const section = lockedShared
+                  ? { ...sectionDef, disabled: true, disabledReason: 'Shared across your site — edit it on your home page' }
+                  : sectionDef;
+                return (
                 <button
                   key={section.type}
                   onClick={() => {
@@ -876,7 +885,8 @@ export default function PageBuilderEditor() {
                     )}
                   </div>
                 </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

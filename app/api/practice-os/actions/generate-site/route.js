@@ -72,7 +72,7 @@ export async function POST(request) {
     const profileThin = !(fields.specialty || doc?.specialization) && !fields.expertise && !fields.diseases && !doc?.bio;
 
     const gen = await structureLongContent({
-      instruction: 'Write RICH, complete website copy for this doctor\'s clinic home page, grounded in the full doctor profile AND knowledge base provided. Return JSON: {"metaDescription": string (<=155 chars), "aboutTitle": string (e.g. "About Dr. X"), "aboutContent": string (3-4 substantial, warm, factual paragraphs — experience, approach, what patients can expect), "servicesSubtitle": string (<=140 chars), "services": [{"icon": string (ONE emoji), "title": string (3-6 words), "description": string (2-3 sentences)}] (4-6 items drawn from the doctor\'s actual specialty / procedures / expertise / conditions treated), "faqs": [{"question": string, "answer": string (2-4 sentences)}] (6 items covering booking, what to expect, conditions, follow-up), "tagline": string (<=90 chars)}. Ground everything strictly in the doctor profile + knowledge base below — do NOT invent specialties, procedures, credentials, prices or locations that are not given. Informative and NMC-compliant — no superlatives or guarantees.',
+      instruction: 'Write RICH, complete website copy for this doctor\'s clinic home page, grounded in the full doctor profile AND knowledge base provided. Return JSON: {"metaDescription": string (<=155 chars), "aboutTitle": string (e.g. "About Dr. X"), "aboutContent": string (3-4 substantial, warm, factual paragraphs — experience, approach, what patients can expect), "servicesSubtitle": string (<=140 chars), "services": [{"icon": string (ONE of: stethoscope, calendar, chat, shield, heart, clock, location, phone, user, award, document), "title": string (3-6 words), "description": string (2-3 sentences)}] (4-6 items drawn from the doctor\'s actual specialty / procedures / expertise / conditions treated), "faqs": [{"question": string, "answer": string (2-4 sentences)}] (6 items covering booking, what to expect, conditions, follow-up), "tagline": string (<=90 chars)}. Ground everything strictly in the doctor profile + knowledge base below — do NOT invent specialties, procedures, credentials, prices or locations that are not given. Informative and NMC-compliant — no superlatives or guarantees.',
       source: `Doctor name: ${fields.doctor_name || doc?.displayName || doc?.name || ''}\nSpecialty: ${fields.specialty || doc?.specialization || ''}\n${profileSummary}${answerLines.length ? `\n\nAdditional details the doctor provided:\n${answerLines.join('\n')}` : ''}`,
       profileFields: fields,
       // No single pack context for the site — pull global knowledge chunks.
@@ -93,7 +93,7 @@ export async function POST(request) {
         if (g.servicesSubtitle) cfg.subtitle = String(g.servicesSubtitle).slice(0, 200);
         if (Array.isArray(g.services) && g.services.length) {
           cfg.items = g.services.slice(0, 6).map((x) => ({
-            icon: String(x.icon || '🩺').slice(0, 4),
+            icon: String(x.icon || 'stethoscope').slice(0, 24),
             title: String(x.title || '').slice(0, 80),
             description: String(x.description || '').slice(0, 300),
           }));

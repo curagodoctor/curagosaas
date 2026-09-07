@@ -87,6 +87,10 @@ export default async function SiteBody({ doctor, bookingPage }) {
   // navbar. Without this, creating a new page never appears in the nav (the
   // section-based nav only links to anchors within the current page).
   let pageNavLinks = [];
+  // The home page owns the SHARED header + footer for the whole site, so branding
+  // (logo, nav, footer) is identical on every page — sub-pages no longer each
+  // carry their own divergent header/footer.
+  let homeSections = bookingPage.sections || [];
   try {
     const pages = await BookingPage.find({ doctorId: doctorData._id, status: 'published' })
       .sort({ createdAt: 1 }) // first-created published page is the homepage ('/')
@@ -103,6 +107,12 @@ export default async function SiteBody({ doctor, bookingPage }) {
         text: p.displayName || p.title || p.slug,
         url: `/${p.slug}`,
       }));
+    // Load the home page's sections (unless we're already on it) for the shared
+    // header/footer.
+    if (homepageId && String(bookingPage._id) !== homepageId) {
+      const home = await BookingPage.findById(homepageId).select('sections').lean();
+      if (home?.sections?.length) homeSections = home.sections;
+    }
   } catch {
     pageNavLinks = [];
   }
@@ -164,22 +174,41 @@ export default async function SiteBody({ doctor, bookingPage }) {
   // Get the theme for this booking page
   const themeId = resolveThemeId(bookingPage);
 
-  // A fixed/sticky header overlaps the top of the page. Reserve space for it at
-  // the very top so the first section (hero/banner) isn't hidden behind the
-  // navbar — regardless of where the header sits in the section order.
-  const hasStickyHeader = regularSections.some(
-    (s) => s.type === 'header' && s.config?.sticky !== false
+  // The header is now position:sticky (in normal flow), so it reserves its own
+  // height and never overlaps the hero — no manual top spacer needed.
+
+  // --- Shared header + footer (from the HOME page) ---------------------------
+  const brandName = doctorData.displayName || doctorData.name || 'Clinic';
+  const DEFAULT_HEADER = {
+    type: 'header', order: -1, visible: true,
+    config: { showNavigation: true, navMode: 'auto', autoNavConfig: { useSmartGroups: true, excludeSections: [], customLabels: {} }, ctaButton: { text: 'Book Appointment', url: '#booking_form', show: true }, backgroundColor: 'white', sticky: true },
+  };
+  const DEFAULT_FOOTER = {
+    type: 'footer', order: 9999, visible: true,
+    config: { companyName: brandName, showQuickLinks: true },
+  };
+  const sharedHeader = homeSections.find((s) => s.type === 'header' && s.visible !== false) || DEFAULT_HEADER;
+  const sharedFooter = homeSections.find((s) => s.type === 'footer' && s.visible !== false) || DEFAULT_FOOTER;
+  // Drive the header's auto-nav from the HOME page's content sections so the nav
+  // is identical on every page (missing-anchor clicks route to the home section).
+  const homeNavSections = homeSections.filter(
+    (s) => s.visible !== false && !['header', 'footer', 'whatsapp_sticky', 'book_now_sticky'].includes(s.type)
   );
+  // The current page's own header/footer are ignored — the shared ones win.
+  const contentSections = regularSections
+    .filter((s) => !['header', 'footer'].includes(s.type))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
 
   return (
     <div className="min-h-screen" data-theme={themeId}>
-      {/* Reserve space for the fixed header so the hero isn't clipped by it */}
-      {hasStickyHeader && <div className="h-16 md:h-20" />}
+      {/* Shared site header (from the home page) */}
+      {renderSection(sharedHeader, doctorData, 'shared-header', homeNavSections, extraNavLinks)}
 
-      {/* Render regular sections */}
-      {regularSections
-        .sort((a, b) => (a.order || 0) - (b.order || 0))
-        .map((section, index) => renderSection(section, doctorData, index, regularSections, extraNavLinks))}
+      {/* This page's content sections */}
+      {contentSections.map((section, index) => renderSection(section, doctorData, index, homeNavSections, extraNavLinks))}
+
+      {/* Shared site footer (from the home page) */}
+      {renderSection(sharedFooter, doctorData, 'shared-footer', homeNavSections, extraNavLinks)}
 
       {/* Render sticky buttons */}
       {stickyButtons.map((section, index) => {

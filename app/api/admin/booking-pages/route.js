@@ -93,7 +93,7 @@ export async function POST(request) {
     }
 
     // Check for reserved slugs
-    const reservedSlugs = ['api', 'admin', '_next', 'main'];
+    const reservedSlugs = ['api', 'admin', '_next', 'main', 'blog', 'site'];
     if (reservedSlugs.includes(data.slug.toLowerCase())) {
       return NextResponse.json(
         { success: false, error: `Slug "${data.slug}" is reserved. Please choose another.` },

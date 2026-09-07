@@ -35,7 +35,7 @@ export async function generateMetadata({ params }) {
     const bookingPage = await BookingPage.findOne({
       doctorId: doctor._id,
       status: 'published',
-    }).lean();
+    }).sort({ createdAt: 1 }).lean(); // same page the homepage actually renders
 
     const base = await tenantBase();
     return {

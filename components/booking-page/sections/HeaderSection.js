@@ -266,8 +266,10 @@ export default function HeaderSection({
   const handleNavClick = (e, url) => {
     if (url.startsWith("#")) {
       e.preventDefault();
-      const targetId = url.slice(1);
-      const element = document.getElementById(targetId);
+      let targetId = url.slice(1);
+      // Legacy "#booking" → the real booking section id.
+      if (targetId === "booking") targetId = "booking_form";
+      const element = targetId ? document.getElementById(targetId) : null;
       if (element) {
         const headerHeight = sticky ? 80 : 0;
         const elementPosition = element.getBoundingClientRect().top + window.scrollY;
@@ -275,6 +277,10 @@ export default function HeaderSection({
           top: elementPosition - headerHeight,
           behavior: "smooth",
         });
+      } else if (targetId) {
+        // Target isn't on this page (e.g. "Book" on a disease sub-page) — send them
+        // to the home page's section.
+        window.location.href = `/#${targetId}`;
       }
       setMobileMenuOpen(false);
       setOpenDropdown(null);
@@ -319,7 +325,9 @@ export default function HeaderSection({
     <>
       <header
         id={sectionId}
-        className={`${sticky ? "fixed top-0 left-0 right-0 z-50" : "relative"} ${bgClass} transition-all duration-300`}
+        // `sticky` keeps the header IN FLOW so it always reserves its real height
+        // (no hero overlap, even when the nav wraps) and still pins on scroll.
+        className={`${sticky ? "sticky top-0 z-50" : "relative"} ${bgClass} transition-all duration-300`}
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16 md:h-20">
