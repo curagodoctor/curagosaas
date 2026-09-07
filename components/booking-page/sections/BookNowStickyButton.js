@@ -1,6 +1,7 @@
 "use client";
 
 import { trackButtonClick } from "@/lib/tracking";
+import { handleBookingAnchorClick } from "@/lib/scrollToSection";
 
 export default function BookNowStickyButton({
   buttonText = "Book Now",
@@ -25,22 +26,7 @@ export default function BookNowStickyButton({
 
   const handleClick = (e) => {
     trackButtonClick(buttonText, `${trackingContext.pageSlug}_sticky_book_now`);
-
-    // If it's an anchor link, scroll to the booking form. Normalize the legacy
-    // "#booking" to the real section id "booking_form", and if the form isn't on
-    // this page (e.g. a disease sub-page), go to the home page's booking section.
-    if (buttonLink.startsWith("#")) {
-      e.preventDefault();
-      let id = buttonLink.slice(1) || "booking_form";
-      if (id === "booking") id = "booking_form";
-      const element = document.getElementById(id);
-      if (element) {
-        const top = element.getBoundingClientRect().top + window.scrollY - 80;
-        window.scrollTo({ top, behavior: "smooth" });
-      } else {
-        window.location.href = `/#${id}`;
-      }
-    }
+    handleBookingAnchorClick(e, buttonLink);
   };
 
   return (

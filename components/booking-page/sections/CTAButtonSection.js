@@ -1,6 +1,7 @@
 "use client";
 
 import { trackButtonClick } from "@/lib/tracking";
+import { handleBookingAnchorClick } from "@/lib/scrollToSection";
 
 export default function CTAButtonSection({
   sectionId,
@@ -42,11 +43,12 @@ export default function CTAButtonSection({
     large: "py-4 px-10 text-lg md:text-xl",
   }[size] || "py-4 px-10 text-lg md:text-xl";
 
-  const handleClick = () => {
+  const handleClick = (e) => {
     trackButtonClick(
       buttonText,
       `${trackingContext.pageSlug}_cta_section`
     );
+    handleBookingAnchorClick(e, buttonLink);
   };
 
   return (

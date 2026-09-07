@@ -266,8 +266,8 @@ export default function HeaderSection({
   const handleNavClick = (e, url) => {
     if (url.startsWith("#")) {
       e.preventDefault();
-      let targetId = url.slice(1);
-      // Legacy "#booking" → the real booking section id.
+      let targetId = url.slice(1).trim();
+      // Legacy "#booking" (with stray whitespace in some saved pages) → real id.
       if (targetId === "booking") targetId = "booking_form";
       const element = targetId ? document.getElementById(targetId) : null;
       if (element) {

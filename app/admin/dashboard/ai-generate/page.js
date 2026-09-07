@@ -90,7 +90,7 @@ export default function AIGeneratePage() {
         {credits?.access && (
           <div className="text-right">
             <div className="text-2xl font-bold text-[#096b17] leading-none">{credits.remaining}</div>
-            <div className="text-[11px] text-gray-400 uppercase tracking-wide">credits left today</div>
+            <div className="text-[11px] text-gray-400 uppercase tracking-wide">AI credits left</div>
           </div>
         )}
       </div>
@@ -109,7 +109,7 @@ export default function AIGeneratePage() {
 
       {credits?.access && (
         <>
-          {noCredits && <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">You&apos;ve used all of today&apos;s AI credits. They reset tomorrow.</div>}
+          {noCredits && <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">You&apos;re out of AI credits. You get more each day (unused credits carry over).</div>}
 
           {/* Homepage generation */}
           <div className="bg-white rounded-xl shadow-sm p-6">
