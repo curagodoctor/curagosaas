@@ -153,6 +153,29 @@ export async function middleware(request) {
       );
     }
 
+    // Primary-domain enforcement: if this doctor has a VERIFIED custom domain, the
+    // subdomain is no longer the canonical home — 301 to the custom domain so we
+    // never serve a duplicate, indexable copy. Path + query are preserved so
+    // {sub}.curago.in/thyroid-surgery?x=1 -> customdomain/thyroid-surgery?x=1.
+    // Gated on customDomainVerified: an unverified/dead domain leaves the
+    // subdomain serving as before (no redirect into a domain that isn't live).
+    try {
+      const host = hostname.split(':')[0];
+      const lookupUrl = new URL('/api/public/domain-lookup', request.url);
+      lookupUrl.searchParams.set('domain', host);
+      const lookupRes = await fetch(lookupUrl.toString());
+      if (lookupRes.ok) {
+        const data = await lookupRes.json();
+        const target = (data.customDomain || '').toLowerCase();
+        if (data.customDomainVerified && target && target !== host) {
+          const dest = new URL(`https://${target}${pathname}${request.nextUrl.search}`);
+          return NextResponse.redirect(dest, 301);
+        }
+      }
+    } catch (error) {
+      console.error('[Middleware] Primary-domain lookup failed:', error.message);
+    }
+
     // {doctor}.curago.in -> /site/[subdomain] routes
     // This renders the doctor's public website
     const newUrl = new URL(`/site/${subdomain}${pathname}`, request.url);

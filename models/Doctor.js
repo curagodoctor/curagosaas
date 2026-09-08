@@ -42,6 +42,18 @@ const DoctorSchema = new mongoose.Schema({
     trim: true,
     default: null
   },
+  // True once the custom domain has been machine-verified as actually serving
+  // (DNS points at us + SSL live). Only THEN does the custom domain become the
+  // site's primary domain and the subdomain 301s to it. A new/changed domain
+  // resets this to false so we never redirect into a domain that isn't live.
+  customDomainVerified: {
+    type: Boolean,
+    default: false
+  },
+  customDomainVerifiedAt: {
+    type: Date,
+    default: null
+  },
 
   // Profile
   displayName: {

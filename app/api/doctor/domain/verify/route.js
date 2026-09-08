@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
+import Doctor from '@/models/Doctor';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
 import { verifyDomain, getDomainConfig, dnsPointsToVercel } from '@/lib/vercelDomains';
+import { domainServesOurSite } from '@/lib/domainLive';
 
 export const runtime = 'nodejs';
 
@@ -25,6 +27,19 @@ export async function POST(request) {
     // Connected = points at Vercel (API flag or real DNS) AND no conflicting record.
     const connected = !hasConflict
       && !!(verifyResult.verified || config.verified || config.configured || dnsCheck.pointsToVercel);
+
+    // Persist the REDIRECT gate separately from the UI's "connected" signal.
+    // `connected` (Vercel config/DNS) is enough to tell the doctor their DNS is
+    // set, but NOT enough to start 301-ing their live subdomain — Vercel reports
+    // configured while SSL is still provisioning. So the gate additionally
+    // requires the domain to actually serve our site over HTTPS right now.
+    const servesLive = connected && await domainServesOurSite(doctor.customDomain);
+    if (doctor.customDomainVerified !== servesLive) {
+      await Doctor.findByIdAndUpdate(doctor._id, {
+        customDomainVerified: servesLive,
+        customDomainVerifiedAt: servesLive ? new Date() : null,
+      });
+    }
 
     return NextResponse.json({
       success: true,

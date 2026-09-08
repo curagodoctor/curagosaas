@@ -23,6 +23,10 @@ export async function generateMetadata({ params }) {
     const img = doctor.profileImage || '';
 
     const md = {
+      // Doctor sites are the doctor's OWN brand — strip the platform's
+      // "%s | CuraGo" title template (from the root app/layout.js). `%s` passes
+      // each page's title through unchanged; `default` covers pages that set none.
+      title: { template: '%s', default: titleBase },
       // Replace the platform's boilerplate keywords with per-doctor terms.
       keywords: [name, spec, doctor.qualification, 'doctor', 'appointment', 'clinic'].filter(Boolean),
       // Per-doctor social cards (pages that set their own openGraph override this).

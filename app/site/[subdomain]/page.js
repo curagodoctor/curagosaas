@@ -1,18 +1,9 @@
 import { notFound } from 'next/navigation';
-import { headers } from 'next/headers';
 import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 import BookingPage from '@/models/BookingPage';
+import { primaryBaseUrl } from '@/lib/primaryDomain';
 import SiteBody from './_SiteBody';
-
-// The tenant's own origin (subdomain or custom domain), from the request host.
-// Used as metadataBase so canonical/OG URLs point at the DOCTOR's site, not curago.in.
-async function tenantBase() {
-  const h = await headers();
-  const host = h.get('host') || '';
-  const proto = h.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
-  return host ? `${proto}://${host}` : null;
-}
 
 // Generate metadata
 export async function generateMetadata({ params }) {
@@ -37,7 +28,9 @@ export async function generateMetadata({ params }) {
       status: 'published',
     }).sort({ createdAt: 1 }).lean(); // same page the homepage actually renders
 
-    const base = await tenantBase();
+    // Canonical/OG resolve to the doctor's PRIMARY domain (verified custom domain
+    // else subdomain) — never the request host — so both hosts agree on one URL.
+    const base = primaryBaseUrl(doctor);
     return {
       // Override the app-wide curago.in metadataBase so relative canonical/OG
       // URLs resolve to THIS doctor's own domain.

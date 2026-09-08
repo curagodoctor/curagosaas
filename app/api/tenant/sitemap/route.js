@@ -1,6 +1,7 @@
 import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 import BookingPage from '@/models/BookingPage';
+import { primaryBaseUrl } from '@/lib/primaryDomain';
 
 // Per-tenant sitemap generator. Middleware rewrites `<host>/sitemap.xml` (any
 // doctor subdomain or custom domain) here with ?subdomain=<sub>. URLs are built
@@ -24,15 +25,19 @@ function xmlEscape(s) {
 
 export async function GET(request) {
   const subdomain = (request.nextUrl.searchParams.get('subdomain') || '').toLowerCase();
-  const { base } = baseUrl(request);
+  // Default to the request host, but override with the doctor's PRIMARY domain
+  // below so the sitemap only ever lists one domain (never both subdomain + custom).
+  let { base } = baseUrl(request);
 
   let urls = [];
   try {
     await connectDB();
     const doctor = subdomain
-      ? await Doctor.findOne({ subdomain, isActive: true }).select('_id').lean()
+      ? await Doctor.findOne({ subdomain, isActive: true })
+          .select('_id subdomain customDomain customDomainVerified').lean()
       : null;
     if (doctor) {
+      base = primaryBaseUrl(doctor) || base;
       const pages = await BookingPage.find({ doctorId: doctor._id, status: 'published' })
         .sort({ createdAt: 1 })
         .select('slug updatedAt publishedAt createdAt')

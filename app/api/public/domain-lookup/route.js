@@ -19,22 +19,30 @@ export async function GET(request) {
     // Check cache
     const cached = cache.get(domain);
     if (cached && Date.now() - cached.time < CACHE_TTL) {
-      return NextResponse.json({ subdomain: cached.subdomain });
+      return NextResponse.json(cached.data);
     }
 
     await connectDB();
 
-    const doctor = await Doctor.findOne({
-      customDomain: domain,
-      isActive: true,
-    }).select('subdomain').lean();
+    // The domain we're asked about may be the custom domain OR the subdomain host.
+    // Resolve either to the owning doctor so middleware can decide the primary host.
+    const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'curago.in').toLowerCase();
+    const sub = domain.endsWith(`.${rootDomain}`) ? domain.replace(`.${rootDomain}`, '') : null;
 
-    const subdomain = doctor?.subdomain || null;
+    const doctor = await Doctor.findOne(
+      sub ? { subdomain: sub, isActive: true } : { customDomain: domain, isActive: true }
+    ).select('subdomain customDomain customDomainVerified').lean();
+
+    const data = {
+      subdomain: doctor?.subdomain || null,
+      customDomain: doctor?.customDomain || null,
+      customDomainVerified: !!doctor?.customDomainVerified,
+    };
 
     // Cache the result
-    cache.set(domain, { subdomain, time: Date.now() });
+    cache.set(domain, { data, time: Date.now() });
 
-    return NextResponse.json({ subdomain });
+    return NextResponse.json(data);
   } catch (error) {
     console.error('[Domain Lookup]', error);
     return NextResponse.json({ subdomain: null });

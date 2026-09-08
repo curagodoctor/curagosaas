@@ -1,20 +1,11 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { headers } from 'next/headers';
 import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 import BlogArticle from '@/models/BlogArticle';
+import { primaryBaseUrl } from '@/lib/primaryDomain';
 import { getSiteChrome } from '../_siteChrome';
 import SiteChrome from '@/components/booking-page/SiteChrome';
-
-// The tenant's own origin (subdomain/custom domain) from the request host, so
-// canonical/OG URLs resolve to the doctor's own domain, not curago.in.
-async function tenantBase() {
-  const h = await headers();
-  const host = h.get('host') || '';
-  const proto = h.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
-  return host ? `${proto}://${host}` : null;
-}
 
 function formatDate(dateString) {
   if (!dateString) return '';
@@ -42,7 +33,7 @@ export async function generateMetadata({ params }) {
     }
 
     const name = doctor.displayName || doctor.name;
-    const base = await tenantBase();
+    const base = primaryBaseUrl(doctor);
     return {
       ...(base ? { metadataBase: new URL(base) } : {}),
       title: `Resources — ${name}`,

@@ -73,8 +73,14 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: result.error }, { status: 500 });
     }
 
-    // Save to doctor record
-    await Doctor.findByIdAndUpdate(doctor._id, { customDomain: cleanDomain });
+    // Save to doctor record. A newly-added/changed domain is NOT proven live yet,
+    // so reset the verified gate — the subdomain keeps serving until the doctor
+    // verifies the new domain (prevents redirecting into a dead domain).
+    await Doctor.findByIdAndUpdate(doctor._id, {
+      customDomain: cleanDomain,
+      customDomainVerified: false,
+      customDomainVerifiedAt: null,
+    });
 
     // Get DNS records the doctor needs to add
     const config = await getDomainConfig(cleanDomain);
@@ -105,7 +111,11 @@ export async function DELETE(request) {
     }
 
     await removeDomain(doctor.customDomain);
-    await Doctor.findByIdAndUpdate(doctor._id, { customDomain: null });
+    await Doctor.findByIdAndUpdate(doctor._id, {
+      customDomain: null,
+      customDomainVerified: false,
+      customDomainVerifiedAt: null,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
