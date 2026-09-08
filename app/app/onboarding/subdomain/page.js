@@ -7,6 +7,9 @@ function SubdomainOnboarding() {
   const router = useRouter();
   const params = useSearchParams();
   const next = params.get('next') || '/app';
+  // §16 branch context carried from the onboarding entry step.
+  const hasWebsite = params.get('hasWebsite') === '1';
+  const existing = (params.get('existing') || '').trim();
 
   const [subdomain, setSubdomain] = useState('');
   const [status, setStatus] = useState(null); // checking | available | taken | invalid
@@ -55,7 +58,7 @@ function SubdomainOnboarding() {
       const res = await fetch('/api/doctor/subdomain', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subdomain }),
+        body: JSON.stringify({ subdomain, hadWebsite: hasWebsite, existingWebsiteUrl: existing }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -85,7 +88,9 @@ function SubdomainOnboarding() {
           Choose your website address
         </h1>
         <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--muted, #5E6B5F)', margin: '0 0 24px' }}>
-          This is where patients will find your clinic online. You can point a custom domain at it later.
+          {hasWebsite
+            ? <>We&apos;ll build your new site here first. Once it&apos;s ready, we&apos;ll help you point{existing ? <> <strong>{existing}</strong></> : ' your existing domain'} at it — you keep your domain and its SEO.</>
+            : 'This is where patients will find your clinic online. You can point a custom domain at it later.'}
         </p>
 
         <form onSubmit={onSubmit}>
