@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import OrientationVideosTab from '@/components/practice-os-admin/OrientationVideosTab';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
@@ -12,6 +13,7 @@ const TABS = [
   { id: 'curriculum', label: 'Builder Packs' },
   { id: 'knowledge', label: 'Knowledge Base' },
   { id: 'profileFields', label: 'Profile Fields' },
+  { id: 'videos', label: 'Orientation Videos' },
   { id: 'analytics', label: 'Analytics' },
   { id: 'doctors', label: 'Doctors' },
 ];
@@ -67,6 +69,7 @@ export default function PracticeOSPage() {
       )}
       {tab === 'knowledge' && <KnowledgeBaseTab frameworks={frameworks} />}
       {tab === 'profileFields' && <ProfileFieldsTab />}
+      {tab === 'videos' && <OrientationVideosTab />}
       {tab === 'analytics' && <AnalyticsTab />}
       {tab === 'doctors' && <DoctorsTab />}
 
