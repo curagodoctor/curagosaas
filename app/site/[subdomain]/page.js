@@ -35,7 +35,11 @@ export async function generateMetadata({ params }) {
       // Override the app-wide curago.in metadataBase so relative canonical/OG
       // URLs resolve to THIS doctor's own domain.
       ...(base ? { metadataBase: new URL(base) } : {}),
-      title: bookingPage?.title || `${doctor.displayName || doctor.name} - Book Appointment`,
+      // `absolute` bypasses the root "%s | CuraGo" template. The home page sits in
+      // the SAME segment as the site layout, so the layout's "%s" template doesn't
+      // reach it (templates apply to child segments only) — absolute is required
+      // here to strip CuraGo. Child pages (sub-pages, blog) inherit the layout's %s.
+      title: { absolute: bookingPage?.title || `${doctor.displayName || doctor.name} - Book Appointment` },
       description: bookingPage?.metaDescription || `Book an appointment with ${doctor.displayName || doctor.name}`,
       alternates: { canonical: '/' },
       openGraph: {
