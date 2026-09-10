@@ -216,6 +216,32 @@ export default function BlogArticleEditorPage() {
     handleChange('slug', slug);
   };
 
+  // §10 — generate a featured image from the article's topic (charges AI credits).
+  const handleGenerateImage = async () => {
+    if (!formData.title.trim()) {
+      await showAlert({ title: 'Add a title first', message: 'Give the article a title so the image matches its topic.', type: 'error' });
+      return;
+    }
+    setUploading(true);
+    try {
+      const res = await fetch('/api/practice-os/actions/generate-image', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ title: formData.title, context: formData.excerpt || formData.metaDescription }),
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        handleNestedChange('featuredImage', 'url', data.url);
+        await showAlert({ title: 'Image ready', message: 'Generated a featured image from your topic.', type: 'success' });
+      } else if (data.error === 'NoCredits' || data.error === 'PaymentRequired') {
+        await showAlert({ title: 'Not enough credits', message: data.message || 'This needs AI credits.', type: 'error' });
+      } else {
+        throw new Error(data.error || 'Generation failed');
+      }
+    } catch (err) {
+      await showAlert({ title: 'Could not generate', message: err.message || 'Please try again.', type: 'error' });
+    } finally { setUploading(false); }
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -599,10 +625,18 @@ export default function BlogArticleEditorPage() {
                     )}
                   </div>
                 </label>
+                <button
+                  type="button"
+                  onClick={handleGenerateImage}
+                  disabled={uploading}
+                  className="px-4 py-3 bg-[#096b17] hover:bg-[#075110] text-white rounded-lg font-medium transition-colors disabled:opacity-50 whitespace-nowrap"
+                >
+                  ✨ Generate with AI
+                </button>
               </div>
 
               <p className="text-sm text-gray-500 mt-2">
-                Recommended: 1200x630px (JPG, PNG, or WebP, max 5MB)
+                Recommended: 1200x630px (JPG, PNG, or WebP, max 5MB). AI generation uses 3 credits.
               </p>
 
               {/* Alt Text */}
