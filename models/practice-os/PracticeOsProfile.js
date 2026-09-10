@@ -45,13 +45,6 @@ const PracticeOsProfileSchema = new mongoose.Schema({
   // Doctor-global variables collected from module inputs (e.g. gbp_link,
   // website_url, whatsapp_number). Injected into prompts/content via {{name}}.
   variables: { type: mongoose.Schema.Types.Mixed, default: {} },
-
-  // §6 — record that the doctor watched the orientation videos and acknowledged
-  // the use cases + account suspension / re-verification risk. Persisted consent.
-  orientationConsent: {
-    acknowledgedAt: { type: Date, default: null },
-    videoCount: { type: Number, default: 0 }, // how many videos existed at consent time
-  },
 }, { timestamps: true });
 
 export default mongoose.models.PracticeOsProfile
