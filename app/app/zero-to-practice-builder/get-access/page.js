@@ -48,16 +48,7 @@ export default function GetAccessPage() {
 
       {status === null && <p className="text-sm text-[var(--muted)] mt-8">Loading…</p>}
 
-      {status === 'granted' && (
-        <div className="mt-8">
-          <div className="pos-card p-6" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)' }}>
-            <p className="pos-label" style={{ color: 'var(--green)' }}>You&apos;re in</p>
-            <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1" style={{ letterSpacing: '-0.02em' }}>Optimization is unlocked</h1>
-            <p className="text-sm text-[var(--muted)] mt-2">Your ongoing work is ready in your control center.</p>
-            <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-action mt-4">Go to control center</button>
-          </div>
-        </div>
-      )}
+      {status === 'granted' && <GrantedActions router={router} />}
 
       {status === 'pending' && (
         <div className="mt-8">
@@ -102,6 +93,41 @@ export default function GetAccessPage() {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// Granted state — plus an on-demand "generate my next page" action (§7 alt).
+function GrantedActions({ router }) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  const generateNext = async () => {
+    setBusy(true); setMsg('');
+    try {
+      const res = await fetch('/api/practice-os/actions/generate-next-page', { method: 'POST', credentials: 'include' });
+      const d = await res.json();
+      if (d.success && d.id) { router.push(`/admin/dashboard/blog-articles/${d.id}`); return; }
+      if (d.success && d.done) setMsg(d.message || "You've covered all your conditions.");
+      else setMsg(d.message || d.error || 'Could not generate a page.');
+    } catch { setMsg('Something went wrong.'); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <div className="mt-8">
+      <div className="pos-card p-6" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)' }}>
+        <p className="pos-label" style={{ color: 'var(--green)' }}>You&apos;re in</p>
+        <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1" style={{ letterSpacing: '-0.02em' }}>Optimization is unlocked</h1>
+        <p className="text-sm text-[var(--muted)] mt-2">Generate your next education page whenever you&apos;re ready — we&apos;ll draft the next condition from your profile for you to review.</p>
+        {msg && <p className="text-[13px] text-[var(--muted)] mt-3">{msg}</p>}
+        <div className="flex flex-wrap items-center gap-3 mt-4">
+          <button onClick={generateNext} disabled={busy} className="pos-action" style={{ opacity: busy ? 0.5 : 1 }}>
+            {busy ? 'Generating…' : '✨ Generate my next page'}
+          </button>
+          <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-link" style={{ fontSize: 14 }}>Go to control center →</button>
+        </div>
+      </div>
     </div>
   );
 }
