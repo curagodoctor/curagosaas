@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import WorkspaceDrawer from '@/components/practice-os/WorkspaceDrawer';
 import PosNav from '@/components/practice-os/PosNav';
+import StreakCalendar from '@/components/practice-os/StreakCalendar';
 import { UsernamePicker } from './_username';
 
 // The Control Center — the logged-in landing. Left: welcome + the doctor's
@@ -90,6 +91,11 @@ export default function ControlCenter() {
           ? <>Your practice is <strong className="text-[var(--green)]">{overallPct}%</strong> built across your packs. One mission a day gets you the rest.</>
           : <>Pick a builder pack below. Each is a guided programme that produces a real asset — not a certificate.</>}
       </p>
+
+      {/* §12 — streak calendar at the top of the control center */}
+      <div className="mt-5">
+        <StreakCalendar />
+      </div>
 
       {/* No pack yet → offer the same right-fit assessment as signup/landing. */}
       {owned.length === 0 && (
