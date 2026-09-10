@@ -45,6 +45,14 @@ const PracticeOsProfileSchema = new mongoose.Schema({
   // Doctor-global variables collected from module inputs (e.g. gbp_link,
   // website_url, whatsapp_number). Injected into prompts/content via {{name}}.
   variables: { type: mongoose.Schema.Types.Mixed, default: {} },
+
+  // §7 — the optimization boundary in v1. Free setup is always available;
+  // ongoing optimization work is gated behind this flag, which the founder flips
+  // after reviewing the doctor's access request. Bypassable from the admin portal.
+  optimizationAccess: {
+    granted: { type: Boolean, default: false },
+    grantedAt: { type: Date, default: null },
+  },
 }, { timestamps: true });
 
 export default mongoose.models.PracticeOsProfile

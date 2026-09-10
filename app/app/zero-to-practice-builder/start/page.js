@@ -20,14 +20,19 @@ export default function StartPage() {
   const router = useRouter();
   const [steps, setSteps] = useState(null);
   const [sub, setSub] = useState('');
+  const [accessStatus, setAccessStatus] = useState('none'); // none | pending | granted | denied
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/practice-os/onboarding-status', { credentials: 'include' });
-      if (res.status === 401) { router.push('/login?entry=practice-os'); return; }
-      const d = await res.json();
+      const [statusRes, accessRes] = await Promise.all([
+        fetch('/api/practice-os/onboarding-status', { credentials: 'include' }),
+        fetch('/api/practice-os/access-request', { credentials: 'include' }),
+      ]);
+      if (statusRes.status === 401) { router.push('/login?entry=practice-os'); return; }
+      const d = await statusRes.json();
       setSteps(d.steps || {});
       setSub(d.subdomainName || '');
+      try { const a = await accessRes.json(); setAccessStatus(a.status || 'none'); } catch { /* ignore */ }
     } catch { setSteps({}); }
   }, [router]);
   useEffect(() => { load(); }, [load]);
@@ -108,10 +113,32 @@ export default function StartPage() {
         </ol>
       )}
 
+      {/* §7 — the optimization boundary appears once setup is complete */}
       {steps !== null && doneCount >= total && (
-        <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-action mt-6" style={{ width: '100%' }}>
-          Go to my control center
-        </button>
+        <div className="pos-card p-5 mt-6" style={{ borderColor: accessStatus === 'granted' ? 'var(--green)' : 'var(--orange)', background: accessStatus === 'granted' ? 'var(--green-soft)' : 'var(--orange-soft)' }}>
+          {accessStatus === 'granted' ? (
+            <>
+              <p className="pos-label" style={{ color: 'var(--green)' }}>Unlocked</p>
+              <p className="text-[15px] font-semibold text-[var(--ink)] mt-1">Your optimization work is ready</p>
+              <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-action mt-3">Go to control center</button>
+            </>
+          ) : accessStatus === 'pending' ? (
+            <>
+              <p className="pos-label" style={{ color: 'var(--orange)' }}>Request received</p>
+              <p className="text-[15px] font-semibold text-[var(--ink)] mt-1">We&apos;re reviewing your access request</p>
+              <p className="text-[13px] text-[var(--muted)] mt-1">We&apos;ll reach out on WhatsApp to open up the optimization work.</p>
+            </>
+          ) : (
+            <>
+              <p className="pos-label" style={{ color: 'var(--orange)' }}>The next step</p>
+              <p className="text-[15px] font-semibold text-[var(--ink)] mt-1">Unlock ongoing optimization</p>
+              <p className="text-[13px] text-[var(--muted)] mt-1" style={{ maxWidth: '48ch' }}>
+                Your foundation is built. Next we grow your visibility week after week — GBP services and education pages, written for you to review and publish.
+              </p>
+              <button onClick={() => router.push('/app/zero-to-practice-builder/get-access')} className="pos-action mt-3">Get access</button>
+            </>
+          )}
+        </div>
       )}
     </div>
   );
