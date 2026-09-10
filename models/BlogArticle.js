@@ -69,6 +69,15 @@ const blogArticleSchema = new mongoose.Schema({
     content: { type: String, default: '' },
   },
 
+  // §10 — social media links for this page (Instagram reels, YouTube, posts).
+  // The doctor adds these later to embed their social presence on the article.
+  socialLinks: [
+    {
+      label: { type: String, trim: true, default: '' }, // e.g. "Watch the reel"
+      url: { type: String, trim: true, default: '' },
+    },
+  ],
+
   // Structured sections. All optional now — CuraGo is multi-specialty, so a
   // simple post shouldn't be forced to fill surgical sections to save. Empty
   // sections simply don't render.

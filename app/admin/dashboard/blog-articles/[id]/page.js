@@ -37,6 +37,7 @@ export default function BlogArticleEditorPage() {
     // Modular structure (new).
     pageType: '',
     diseaseCluster: '',
+    socialLinks: [],
     blocks: [],
     locationBlock: { heading: '', content: '' },
 
@@ -105,6 +106,7 @@ export default function BlogArticleEditorPage() {
           scheduledAt: a.scheduledAt ? (() => { const d = new Date(a.scheduledAt); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); })() : '',
           featuredImage: { url: a.featuredImage?.url || '', alt: a.featuredImage?.alt || '' },
           tags: Array.isArray(a.tags) ? a.tags : [],
+          socialLinks: Array.isArray(a.socialLinks) ? a.socialLinks : [],
           pageType: a.pageType || '',
           // Prefer the new blocks; migrate legacy sections for old articles.
           blocks: (a.blocks && a.blocks.length) ? a.blocks : legacySectionsToBlocks(a),
@@ -425,6 +427,50 @@ export default function BlogArticleEditorPage() {
                   <option value="symptom">Symptom</option>
                   <option value="location">Location</option>
                 </select>
+              </div>
+            </div>
+
+            {/* §10 — social media links (reels / posts) shown on the page */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">Social media links</label>
+                <button
+                  type="button"
+                  onClick={() => handleChange('socialLinks', [...(formData.socialLinks || []), { label: '', url: '' }])}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  + Add link
+                </button>
+              </div>
+              {(formData.socialLinks || []).length === 0 && (
+                <p className="text-xs text-gray-400">Add Instagram reels, YouTube videos or post links to show on this page.</p>
+              )}
+              <div className="space-y-2">
+                {(formData.socialLinks || []).map((link, i) => (
+                  <div key={i} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={link.label}
+                      onChange={(e) => { const next = [...formData.socialLinks]; next[i] = { ...next[i], label: e.target.value }; handleChange('socialLinks', next); }}
+                      placeholder="Label (e.g. Watch the reel)"
+                      className="w-1/3 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                    <input
+                      type="url"
+                      value={link.url}
+                      onChange={(e) => { const next = [...formData.socialLinks]; next[i] = { ...next[i], url: e.target.value }; handleChange('socialLinks', next); }}
+                      placeholder="https://instagram.com/reel/…"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleChange('socialLinks', formData.socialLinks.filter((_, j) => j !== i))}
+                      className="px-3 text-red-500 hover:text-red-700 text-sm"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
 
