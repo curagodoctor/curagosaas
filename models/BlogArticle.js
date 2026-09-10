@@ -47,6 +47,16 @@ const blogArticleSchema = new mongoose.Schema({
     enum: ['', 'disease', 'treatment', 'procedure', 'location', 'symptom'],
     default: '',
   },
+  // §10 — the disease cluster this page belongs to (e.g. "gallbladder-stones").
+  // Together with pageType it forms the central link registry used for automatic
+  // internal linking and for reusing page links in GBP posts / other content.
+  diseaseCluster: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    default: '',
+    index: true,
+  },
   blocks: [
     {
       heading: { type: String, default: '' },

@@ -36,6 +36,7 @@ export default function BlogArticleEditorPage() {
 
     // Modular structure (new).
     pageType: '',
+    diseaseCluster: '',
     blocks: [],
     locationBlock: { heading: '', content: '' },
 
@@ -393,6 +394,37 @@ export default function BlogArticleEditorPage() {
                 >
                   Generate
                 </button>
+              </div>
+            </div>
+
+            {/* §10 — disease cluster + page type for the central link registry
+                (automatic internal linking + reusing links in GBP posts). */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Disease cluster</label>
+                <input
+                  type="text"
+                  value={formData.diseaseCluster}
+                  onChange={(e) => handleChange('diseaseCluster', e.target.value.toLowerCase())}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., gallbladder-stones"
+                />
+                <p className="text-xs text-gray-400 mt-1">Groups related pages so they link to each other automatically.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Page type</label>
+                <select
+                  value={formData.pageType}
+                  onChange={(e) => handleChange('pageType', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">—</option>
+                  <option value="disease">Disease / condition</option>
+                  <option value="treatment">Treatment</option>
+                  <option value="procedure">Procedure</option>
+                  <option value="symptom">Symptom</option>
+                  <option value="location">Location</option>
+                </select>
               </div>
             </div>
 

@@ -4,8 +4,11 @@ import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/acces
 import { assertHasCredits, chargeAiCredits } from '@/lib/practice-os/aiCredits';
 import { structureLongContent } from '@/lib/practice-os/ai';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
+import { relatedReadingBlock } from '@/lib/practice-os/blogLinks';
 import BlogArticle from '@/models/BlogArticle';
 import Doctor from '@/models/Doctor';
+
+const PAGE_TYPES = ['', 'disease', 'treatment', 'procedure', 'location', 'symptom'];
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -21,9 +24,12 @@ export async function POST(request) {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
     await assertAiAccess(doctor._id);
-    const { context } = await request.json();
+    const { context, diseaseCluster, pageType } = await request.json();
     if (!context || !context.trim()) return NextResponse.json({ success: false, error: 'Tell me what the article should be about.' }, { status: 400 });
     await assertHasCredits(doctor._id);
+
+    const cluster = String(diseaseCluster || '').trim().toLowerCase();
+    const type = PAGE_TYPES.includes(pageType) ? pageType : '';
 
     const fields = await getDoctorProfileFields(doctor._id);
     const gen = await structureLongContent({
@@ -43,6 +49,13 @@ export async function POST(request) {
       ? d.blocks.filter((b) => b && (b.heading || b.content)).map((b) => ({ heading: String(b.heading || '').slice(0, 160), content: String(b.content || '') }))
       : [];
 
+    // §10 auto internal linking — append a "Related reading" block pointing at the
+    // doctor's other published pages in the same disease cluster.
+    if (cluster) {
+      const related = await relatedReadingBlock(doctor._id, cluster);
+      if (related) blocks.push(related);
+    }
+
     const doc = await Doctor.findById(doctor._id).select('displayName name specialization').lean();
     const article = await BlogArticle.create({
       doctorId: doctor._id,
@@ -52,6 +65,8 @@ export async function POST(request) {
       category: String(d.category || fields.specialty || '').slice(0, 60),
       author: { name: doc?.displayName || doc?.name || '', designation: doc?.specialization || '' },
       blocks,
+      diseaseCluster: cluster,
+      pageType: type,
       // Draft — the doctor reviews and publishes it themselves.
       status: 'draft',
     });
