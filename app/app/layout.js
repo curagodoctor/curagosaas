@@ -1,5 +1,6 @@
 import { Instrument_Sans, Instrument_Serif, DM_Mono } from 'next/font/google';
 import './practiceos.css';
+import GlobalAssistant from '@/components/practice-os/GlobalAssistant';
 // Subdomain setup is no longer compulsory — it's optional and set from the
 // dashboard's "Your Live Website" section. The hard gate has been removed.
 
@@ -16,6 +17,8 @@ export default function AppLayout({ children }) {
   return (
     <div className={`pos-root ${sans.variable} ${serif.variable} ${mono.variable}`}>
       {children}
+      {/* §8 — persistent assistant, present on every POS page */}
+      <GlobalAssistant />
     </div>
   );
 }
