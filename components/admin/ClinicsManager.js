@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useModal } from '@/contexts/ModalContext';
+import NapCaution from '@/components/admin/NapCaution';
 
 // Phone helper: strip to 10 local digits (drop +91/91/leading 0).
 function digits10(v) {
@@ -82,6 +83,7 @@ export default function ClinicsManager() {
       {/* Add clinic */}
       <div className="border border-gray-200 rounded-lg p-4 space-y-3">
         <h4 className="font-medium text-gray-900">Add a clinic</h4>
+        <NapCaution />
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <input type="text" placeholder="Clinic name *" value={clinicForm.name}
             onChange={(e) => setClinicForm((p) => ({ ...p, name: e.target.value }))}
