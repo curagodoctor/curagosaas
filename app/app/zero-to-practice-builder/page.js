@@ -6,6 +6,7 @@ import Link from 'next/link';
 import WorkspaceDrawer from '@/components/practice-os/WorkspaceDrawer';
 import PosNav from '@/components/practice-os/PosNav';
 import StreakCalendar from '@/components/practice-os/StreakCalendar';
+import PendingWorkPrompt from '@/components/practice-os/PendingWorkPrompt';
 import { UsernamePicker } from './_username';
 
 // The Control Center — the logged-in landing. Left: welcome + the doctor's
@@ -92,8 +93,9 @@ export default function ControlCenter() {
           : <>Pick a builder pack below. Each is a guided programme that produces a real asset — not a certificate.</>}
       </p>
 
-      {/* §12 — streak calendar at the top of the control center */}
-      <div className="mt-5">
+      {/* §8 — work awaiting review + §12 streak calendar at the top */}
+      <div className="mt-5 space-y-4">
+        <PendingWorkPrompt />
         <StreakCalendar />
       </div>
 
