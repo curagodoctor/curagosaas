@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 function SubdomainOnboarding() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get('next') || '/app';
   // §16 branch context carried from the onboarding entry step.
   const hasWebsite = params.get('hasWebsite') === '1';
   const existing = (params.get('existing') || '').trim();
@@ -66,7 +65,9 @@ function SubdomainOnboarding() {
         setSubmitting(false);
         return;
       }
-      router.replace(next);
+      // Into the guided setup funnel (profile → website → article → GBP), not
+      // straight to the dashboard, so the doctor has a clear next step.
+      router.replace('/app/zero-to-practice-builder/start');
     } catch {
       setError('Something went wrong. Please try again.');
       setSubmitting(false);
