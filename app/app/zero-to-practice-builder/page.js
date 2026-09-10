@@ -7,6 +7,7 @@ import WorkspaceDrawer from '@/components/practice-os/WorkspaceDrawer';
 import PosNav from '@/components/practice-os/PosNav';
 import StreakCalendar from '@/components/practice-os/StreakCalendar';
 import PendingWorkPrompt from '@/components/practice-os/PendingWorkPrompt';
+import NotificationWindowCard from '@/components/practice-os/NotificationWindowCard';
 import { UsernamePicker } from './_username';
 
 // The Control Center — the logged-in landing. Left: welcome + the doctor's
@@ -93,10 +94,11 @@ export default function ControlCenter() {
           : <>Pick a builder pack below. Each is a guided programme that produces a real asset — not a certificate.</>}
       </p>
 
-      {/* §8 — work awaiting review + §12 streak calendar at the top */}
+      {/* §8 work awaiting review + §12 streak calendar + §14 reminder window */}
       <div className="mt-5 space-y-4">
         <PendingWorkPrompt />
         <StreakCalendar />
+        <NotificationWindowCard />
       </div>
 
       {/* No pack yet → offer the same right-fit assessment as signup/landing. */}

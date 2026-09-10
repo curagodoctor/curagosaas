@@ -53,6 +53,14 @@ const PracticeOsProfileSchema = new mongoose.Schema({
     granted: { type: Boolean, default: false },
     grantedAt: { type: Date, default: null },
   },
+
+  // §14 — the doctor's preferred window for reminders/nudges. Notifications are
+  // sent only in this window (best-effort within the daily cron cadence).
+  notificationWindow: {
+    type: String,
+    enum: ['morning', 'afternoon', 'evening', 'night'],
+    default: 'evening',
+  },
 }, { timestamps: true });
 
 export default mongoose.models.PracticeOsProfile
