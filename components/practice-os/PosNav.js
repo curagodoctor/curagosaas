@@ -31,6 +31,7 @@ function PosNavInner({ breadcrumb }) {
   const links = (
     <>
       <Link href="/app/zero-to-practice-builder" onClick={close} className="pos-link">All packs</Link>
+      <Link href="/app/zero-to-practice-builder/content" onClick={close} className="pos-link">Your content</Link>
       <ProgressMenu packId={packId} withPack={withPack} onNavigate={close} />
       <Link href={withPack('/app/zero-to-practice-builder/schedule')} onClick={close} className="pos-link">Schedule</Link>
       <Link href={withPack('/app/zero-to-practice-builder/workspace')} onClick={close} className="pos-link">Workspace</Link>
