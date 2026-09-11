@@ -77,7 +77,7 @@ export default function DominateOrganicSearch() {
             <a href="#built">What gets built</a>
             <a href="#how">How it works</a>
             <a href="#journey">The journey</a>
-            <button onClick={start} className="dos-btn-orange">Start Now</button>
+            <button onClick={start} className="dos-btn-orange">Get Early Access</button>
           </div>
           <button className="dos-burger" aria-label="Menu" onClick={() => setNavOpen((v) => !v)}>
             <span /><span /><span />
@@ -88,7 +88,7 @@ export default function DominateOrganicSearch() {
             {[['#problem', 'The problem'], ['#built', 'What gets built'], ['#how', 'How it works'], ['#journey', 'The journey']].map(([h, t]) => (
               <a key={h} href={h} onClick={() => setNavOpen(false)}>{t}</a>
             ))}
-            <button onClick={start} className="dos-btn-orange" style={{ marginTop: 10 }}>Start Now</button>
+            <button onClick={start} className="dos-btn-orange" style={{ marginTop: 10 }}>Get Early Access</button>
           </div>
         )}
       </header>
