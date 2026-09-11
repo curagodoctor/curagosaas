@@ -16,7 +16,7 @@ const GENERATED_KEYS = ['expertise', 'diseases', 'procedures', 'usp', 'interests
 const OPTIONAL_KEYS = ['awards', 'publications', 'registration'];
 const fieldsBy = (section, keys) => keys.map((k) => section.fields.find((f) => f.key === k)).filter(Boolean);
 
-// PROFILE-phase steps.
+// Wizard steps (PROFILE + WEBSITE phases so far).
 const STEPS = [
   { id: 'branch', phase: 0 },
   { id: 'profile', phase: 0 },
@@ -24,6 +24,8 @@ const STEPS = [
   { id: 'subdomain', phase: 0 },
   { id: 'clinical', phase: 0 },
   { id: 'summary', phase: 0 },
+  { id: 'generate', phase: 1 },
+  { id: 'live', phase: 1 },
 ];
 
 function Wizard() {
@@ -47,6 +49,11 @@ function Wizard() {
   const [subdomain, setSubdomain] = useState('');
   const [subStatus, setSubStatus] = useState(null);
   const [subMsg, setSubMsg] = useState('');
+  // website generation
+  const [genState, setGenState] = useState('idle'); // idle | running | done | error
+  const [genMsg, setGenMsg] = useState('');
+  const [siteUrl, setSiteUrl] = useState('');
+  const [creditsLeft, setCreditsLeft] = useState(null);
 
   const st = STEPS[step];
 
@@ -164,6 +171,28 @@ function Wizard() {
     } catch { setErr('Something went wrong.'); }
     finally { setBusy(''); }
   };
+
+  // ---- website auto-build (§6/§7): homepage live + first blog, no redirect ----
+  const runGenerate = useCallback(async () => {
+    setGenState('running'); setErr(''); setGenMsg('Writing your homepage from your profile…');
+    const J = { headers: { 'Content-Type': 'application/json' }, credentials: 'include' };
+    try {
+      const g = await fetch('/api/practice-os/actions/generate-site', { method: 'POST', ...J, body: JSON.stringify({ force: true }) }).then((r) => r.json());
+      if (!g.success) throw new Error(g.message || g.error || 'Could not build your website.');
+      if (g.url) setSiteUrl(g.url);
+      // The subdomain seeds a bare default page, so generation returns a draft —
+      // approve it so the AI homepage goes LIVE (no redirection).
+      if (g.mode === 'draft') { setGenMsg('Publishing your homepage…'); await fetch('/api/practice-os/actions/site-draft', { method: 'POST', ...J, body: JSON.stringify({ action: 'approve' }) }); }
+      // First educational blog, auto-drafted from the doctor's top condition.
+      setGenMsg('Preparing your first article…');
+      const topic = (fields.diseases || '').split(',')[0]?.trim() || (fields.expertise || '').split(',')[0]?.trim() || `${fields.specialty || 'my practice'}`;
+      const b = await fetch('/api/practice-os/actions/draft-blog', { method: 'POST', ...J, body: JSON.stringify({ context: `An introductory patient-education article about ${topic}.`, pageType: 'disease' }) }).then((r) => r.json());
+      if (typeof b.creditsRemaining === 'number') setCreditsLeft(b.creditsRemaining);
+      setGenState('done'); next();
+    } catch (x) { setGenState('error'); setErr(x.message || 'Something went wrong.'); }
+  }, [fields]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { if (st.id === 'generate' && genState === 'idle') runGenerate(); }, [st.id, genState, runGenerate]);
 
   const pct = Math.round(((step + 1) / STEPS.length) * 100);
 
@@ -318,8 +347,55 @@ function Wizard() {
                 ? <p className="text-[15px] text-[var(--ink)] whitespace-pre-line" style={{ lineHeight: 1.65 }}>{summary}</p>
                 : <p className="text-sm text-[var(--muted)]">Your profile is saved. We&apos;ll use it to build your website next.</p>}
             </div>
-            <button onClick={() => router.push('/admin/dashboard/ai-generate')} className="pos-action mt-6">Continue to my website →</button>
+            <button onClick={next} className="pos-action mt-6">Build my website →</button>
             <p className="text-[12px] text-[var(--muted)] mt-3">Next: we generate your website and first article from this profile.</p>
+          </div>
+        )}
+
+        {/* STEP: generate (auto) */}
+        {st.id === 'generate' && (
+          <div className="text-center py-10">
+            {genState === 'error' ? (
+              <>
+                <h1 className="text-[22px] font-semibold text-[var(--ink)]" style={{ letterSpacing: '-0.02em' }}>We hit a snag</h1>
+                <p className="text-sm text-red-600 mt-2">{err}</p>
+                <button onClick={() => { setGenState('idle'); }} className="pos-action mt-5">Try again</button>
+              </>
+            ) : (
+              <>
+                <div className="w-10 h-10 mx-auto rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" />
+                <h1 className="text-[22px] font-semibold text-[var(--ink)] mt-5" style={{ letterSpacing: '-0.02em' }}>Building your website…</h1>
+                <p className="text-sm text-[var(--muted)] mt-2">{genMsg || 'One moment…'}</p>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* STEP: live (aha) */}
+        {st.id === 'live' && (
+          <div>
+            <p className="pos-label" style={{ color: 'var(--green)' }}>Your website is live</p>
+            <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-3" style={{ letterSpacing: '-0.02em' }}>It&apos;s built — and editable, no redirection.</h1>
+            <div className="pos-card p-5 mb-4" style={{ background: 'var(--green-soft)', borderColor: 'var(--green)' }}>
+              <p className="text-[15px] text-[var(--ink)]" style={{ lineHeight: 1.6 }}>Your website and your first article are ready. Edit everything from the AI builder — you never leave CuraGo.</p>
+              {siteUrl && <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="pos-action inline-block mt-3">View my website →</a>}
+            </div>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="pos-card p-4">
+                <p className="pos-num text-2xl text-[var(--green)]">{creditsLeft ?? 10}</p>
+                <p className="text-[13px] text-[var(--muted)] mt-0.5">AI credits, ready to use</p>
+              </div>
+              <div className="pos-card p-4">
+                <p className="text-[14px] font-semibold text-[var(--ink)]">First article ready</p>
+                <p className="text-[13px] text-[var(--muted)] mt-0.5">Review &amp; publish it anytime.</p>
+              </div>
+            </div>
+            <div className="pos-card p-4 mb-5">
+              <p className="text-[14px] font-semibold text-[var(--ink)]">Optional: connect Google Search Console</p>
+              <p className="text-[13px] text-[var(--muted)] mt-0.5">See the searches your site starts appearing for. You can do this anytime.</p>
+            </div>
+            <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-action">Continue</button>
+            <p className="text-[12px] text-[var(--muted)] mt-3">Next up: your Google Business Profile setup.</p>
           </div>
         )}
 
