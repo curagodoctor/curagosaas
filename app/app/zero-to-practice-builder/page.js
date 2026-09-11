@@ -7,6 +7,7 @@ import WorkspaceDrawer from '@/components/practice-os/WorkspaceDrawer';
 import PosNav from '@/components/practice-os/PosNav';
 import StreakCalendar from '@/components/practice-os/StreakCalendar';
 import PendingWorkPrompt from '@/components/practice-os/PendingWorkPrompt';
+import WebsiteStats from '@/components/practice-os/WebsiteStats';
 import NotificationWindowCard from '@/components/practice-os/NotificationWindowCard';
 import { UsernamePicker } from './_username';
 
@@ -97,6 +98,7 @@ export default function ControlCenter() {
       {/* §8 work awaiting review + §12 streak calendar + §14 reminder window */}
       <div className="mt-5 space-y-4">
         <PendingWorkPrompt />
+        <WebsiteStats />
         <StreakCalendar />
         <NotificationWindowCard />
       </div>

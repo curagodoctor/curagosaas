@@ -30,14 +30,18 @@ function PosNavInner({ breadcrumb }) {
 
   const links = (
     <>
+      {/* §9 control-center nav. Leaderboard is a section (not a nav button) and
+          there's no separate "scheduled tasks" — the ready-now teaser covers it. */}
       <Link href="/app/zero-to-practice-builder" onClick={close} className="pos-link">All packs</Link>
       <Link href="/app/zero-to-practice-builder/content" onClick={close} className="pos-link">Your content</Link>
-      <ProgressMenu packId={packId} withPack={withPack} onNavigate={close} />
-      <Link href={withPack('/app/zero-to-practice-builder/schedule')} onClick={close} className="pos-link">Schedule</Link>
+      <Link href="/admin/dashboard/ai-generate" onClick={close} className="pos-link">AI Website Builder</Link>
+      <Link href={withPack('/app/zero-to-practice-builder/profile')} onClick={close} className="pos-link">Profile</Link>
+      <Link href="/admin/dashboard/contacts" onClick={close} className="pos-link">Contacts</Link>
+      <Link href="/admin/dashboard/bookings" onClick={close} className="pos-link">Appointments</Link>
       <Link href={withPack('/app/zero-to-practice-builder/workspace')} onClick={close} className="pos-link">Workspace</Link>
       <Link href={withPack('/app/zero-to-practice-builder/planner')} onClick={close} className="pos-link">Content Planner</Link>
-      <Link href={withPack('/app/zero-to-practice-builder/leaderboard')} onClick={close} className="pos-link">Leaderboard</Link>
-      <Link href={withPack('/app/zero-to-practice-builder/profile')} onClick={close} className="pos-link">My profile</Link>
+      <Link href="/admin/dashboard/settings" onClick={close} className="pos-link">Settings</Link>
+      <ProgressMenu packId={packId} withPack={withPack} onNavigate={close} />
     </>
   );
 
