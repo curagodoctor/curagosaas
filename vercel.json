@@ -38,7 +38,7 @@
     },
     {
       "path": "/api/cron/practice-os-content",
-      "schedule": "0 0 * * *"
+      "schedule": "30 18 * * *"
     }
   ]
 }
