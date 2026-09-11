@@ -10,6 +10,9 @@ import mongoose from 'mongoose';
 const PracticeOsSettingsSchema = new mongoose.Schema({
   key: { type: String, default: 'global', unique: true },
   priceInInr: { type: Number, default: 5000, min: 0 },
+  // §8 — admin-overridable GBP setup guide (blocks + tasks). Empty = use the
+  // built-in default from lib/practice-os/gbpGuide.
+  gbpGuide: { type: mongoose.Schema.Types.Mixed, default: null },
 }, { timestamps: true });
 
 // Fetch (creating on first use). Seeds price from PRACTICE_OS_PRICE_INR if set,

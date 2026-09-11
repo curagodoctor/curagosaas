@@ -26,7 +26,16 @@ const STEPS = [
   { id: 'summary', phase: 0 },
   { id: 'generate', phase: 1 },
   { id: 'live', phase: 1 },
+  { id: 'google', phase: 2 },
 ];
+
+// Field-type tag colours for the GBP task flow (§8).
+const KIND_STYLE = {
+  'DO NOT TOUCH': { bg: '#FDECEC', ink: '#96231F' },
+  'ONE-TIME': { bg: 'var(--orange-soft)', ink: '#B04E00' },
+  'EDITABLE': { bg: 'var(--green-soft)', ink: 'var(--green)' },
+  'LEARN': { bg: 'var(--rule-soft)', ink: 'var(--muted)' },
+};
 
 function Wizard() {
   const router = useRouter();
@@ -54,6 +63,10 @@ function Wizard() {
   const [genMsg, setGenMsg] = useState('');
   const [siteUrl, setSiteUrl] = useState('');
   const [creditsLeft, setCreditsLeft] = useState(null);
+  // GBP guide
+  const [gbpBlocks, setGbpBlocks] = useState(null);
+  const [gbpProgress, setGbpProgress] = useState({});
+  const [gbpBlock, setGbpBlock] = useState(0);
 
   const st = STEPS[step];
 
@@ -193,6 +206,34 @@ function Wizard() {
   }, [fields]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { if (st.id === 'generate' && genState === 'idle') runGenerate(); }, [st.id, genState, runGenerate]);
+
+  // ---- GBP guide (§8) ----
+  useEffect(() => {
+    if (st.id !== 'google' || gbpBlocks !== null) return;
+    (async () => {
+      try {
+        const d = await fetch('/api/practice-os/gbp-guide', { credentials: 'include' }).then((r) => r.json());
+        if (d.success) { setGbpBlocks(d.blocks || []); setGbpProgress(d.progress || {}); }
+        else setGbpBlocks([]);
+      } catch { setGbpBlocks([]); }
+    })();
+  }, [st.id, gbpBlocks]);
+
+  const toggleGbp = (blockKey, i) => {
+    const key = `${blockKey}:${i}`;
+    const nextProg = { ...gbpProgress, [key]: !gbpProgress[key] };
+    setGbpProgress(nextProg);
+    const mandatoryDone = gbpMandatoryComplete(nextProg);
+    fetch('/api/practice-os/gbp-guide', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ progress: nextProg, riskAcknowledged: mandatoryDone }),
+    }).catch(() => {});
+  };
+  const gbpMandatoryComplete = (prog) => {
+    const m = (gbpBlocks || []).find((b) => b.mandatory);
+    if (!m) return true;
+    return m.tasks.every((_, i) => prog[`${m.key}:${i}`]);
+  };
 
   const pct = Math.round(((step + 1) / STEPS.length) * 100);
 
@@ -394,8 +435,75 @@ function Wizard() {
               <p className="text-[14px] font-semibold text-[var(--ink)]">Optional: connect Google Search Console</p>
               <p className="text-[13px] text-[var(--muted)] mt-0.5">See the searches your site starts appearing for. You can do this anytime.</p>
             </div>
-            <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-action">Continue</button>
+            <button onClick={next} className="pos-action">Set up Google Business Profile →</button>
             <p className="text-[12px] text-[var(--muted)] mt-3">Next up: your Google Business Profile setup.</p>
+          </div>
+        )}
+
+        {/* STEP: google (GBP setup task flow) */}
+        {st.id === 'google' && (
+          <div>
+            <p className="pos-label" style={{ color: 'var(--green)' }}>Google Business Profile</p>
+            <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Set up your Google profile — carefully.</h1>
+            <p className="text-sm text-[var(--muted)] mb-4">You make the changes in your own Google account. We guide you, and mark which fields are dangerous <b>before</b> you touch them. Start with the mandatory block.</p>
+
+            {gbpBlocks === null ? (
+              <p className="text-sm text-[var(--muted)]">Loading…</p>
+            ) : (
+              <>
+                {/* Block tabs */}
+                <div className="flex gap-2 flex-wrap mb-4">
+                  {gbpBlocks.map((b, i) => {
+                    const done = b.tasks.every((_, j) => gbpProgress[`${b.key}:${j}`]);
+                    return (
+                      <button key={b.key} onClick={() => setGbpBlock(i)}
+                        className="text-[13px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"
+                        style={{ background: i === gbpBlock ? 'var(--green)' : 'transparent', color: i === gbpBlock ? '#fff' : 'var(--muted)', border: `1px solid ${i === gbpBlock ? 'var(--green)' : 'var(--rule)'}` }}>
+                        {done && <span style={{ color: i === gbpBlock ? '#fff' : 'var(--green)' }}>✓</span>}
+                        {b.label}
+                        {b.mandatory && <span className="pos-label" style={{ background: 'var(--orange)', color: '#fff', padding: '1px 5px', borderRadius: 4, fontSize: 9 }}>MUST</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Active block */}
+                {gbpBlocks[gbpBlock] && (
+                  <div className="pos-card p-0 overflow-hidden">
+                    <div className="p-4" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--rule)' }}>
+                      <p className="text-[16px] font-semibold text-[var(--ink)]">{gbpBlocks[gbpBlock].title}</p>
+                      <p className="text-[13px] text-[var(--muted)] mt-0.5">{gbpBlocks[gbpBlock].desc}</p>
+                    </div>
+                    <div className="p-3 space-y-2">
+                      {gbpBlocks[gbpBlock].tasks.map((t, i) => {
+                        const on = !!gbpProgress[`${gbpBlocks[gbpBlock].key}:${i}`];
+                        const ks = KIND_STYLE[t.kind] || KIND_STYLE.EDITABLE;
+                        return (
+                          <button key={i} onClick={() => toggleGbp(gbpBlocks[gbpBlock].key, i)}
+                            className="w-full text-left flex items-start gap-3 p-3 rounded-lg"
+                            style={{ background: on ? 'var(--green-soft)' : 'var(--card)', border: `1px solid ${on ? 'var(--green)' : 'var(--rule)'}` }}>
+                            <span className="shrink-0 grid place-items-center rounded-md mt-0.5" style={{ width: 20, height: 20, background: on ? 'var(--green)' : 'transparent', border: `1.5px solid ${on ? 'var(--green)' : 'var(--rule)'}`, color: '#fff', fontSize: 12 }}>{on ? '✓' : ''}</span>
+                            <span className="flex-1 min-w-0">
+                              <span className="block text-[14.5px] font-medium text-[var(--ink)]" style={{ textDecoration: on ? 'line-through' : 'none' }}>{t.label}</span>
+                              <span className="block text-[12.5px] text-[var(--muted)] mt-0.5">{t.hint}</span>
+                            </span>
+                            <span className="pos-label shrink-0" style={{ background: ks.bg, color: ks.ink, padding: '3px 6px', borderRadius: 5, whiteSpace: 'nowrap' }}>{t.kind}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {!gbpMandatoryComplete(gbpProgress) && (
+                  <p className="text-[13px] mt-3" style={{ color: 'var(--orange)' }}>Finish the mandatory <b>Suspension risk</b> block to continue.</p>
+                )}
+                <button onClick={() => router.push('/app/zero-to-practice-builder')} disabled={!gbpMandatoryComplete(gbpProgress)} className="pos-action mt-5" style={{ opacity: gbpMandatoryComplete(gbpProgress) ? 1 : 0.5 }}>
+                  Continue
+                </button>
+                <p className="text-[12px] text-[var(--muted)] mt-3">Next up: the commitment check and Get Access.</p>
+              </>
+            )}
           </div>
         )}
 

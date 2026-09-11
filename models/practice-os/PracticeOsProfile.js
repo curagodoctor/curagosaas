@@ -61,6 +61,11 @@ const PracticeOsProfileSchema = new mongoose.Schema({
     enum: ['morning', 'afternoon', 'evening', 'night'],
     default: 'evening',
   },
+
+  // §8 — GBP setup task-flow progress (map of "blockKey:taskIndex" → true) and
+  // the acknowledgement of the mandatory suspension-risk block.
+  gbpProgress: { type: mongoose.Schema.Types.Mixed, default: {} },
+  gbpRiskAcknowledgedAt: { type: Date, default: null },
 }, { timestamps: true });
 
 export default mongoose.models.PracticeOsProfile
