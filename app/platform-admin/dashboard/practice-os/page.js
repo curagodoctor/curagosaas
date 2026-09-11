@@ -7,6 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import AccessRequestsTab from '@/components/practice-os-admin/AccessRequestsTab';
+import GbpGuideTab from '@/components/practice-os-admin/GbpGuideTab';
 
 const TABS = [
   { id: 'import', label: 'Bulk Upload' },
@@ -14,6 +15,7 @@ const TABS = [
   { id: 'knowledge', label: 'Knowledge Base' },
   { id: 'profileFields', label: 'Profile Fields' },
   { id: 'access', label: 'Access Requests' },
+  { id: 'gbpGuide', label: 'GBP Guide' },
   { id: 'analytics', label: 'Analytics' },
   { id: 'doctors', label: 'Doctors' },
 ];
@@ -70,6 +72,7 @@ export default function PracticeOSPage() {
       {tab === 'knowledge' && <KnowledgeBaseTab frameworks={frameworks} />}
       {tab === 'profileFields' && <ProfileFieldsTab />}
       {tab === 'access' && <AccessRequestsTab />}
+      {tab === 'gbpGuide' && <GbpGuideTab />}
       {tab === 'analytics' && <AnalyticsTab />}
       {tab === 'doctors' && <DoctorsTab />}
 
