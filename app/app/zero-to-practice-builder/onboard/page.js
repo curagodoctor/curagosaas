@@ -23,6 +23,7 @@ const STEPS = [
   { id: 'photos', phase: 0 },
   { id: 'subdomain', phase: 0 },
   { id: 'clinical', phase: 0 },
+  { id: 'links', phase: 0 },
   { id: 'summary', phase: 0 },
   { id: 'generate', phase: 1 },
   { id: 'live', phase: 1 },
@@ -78,6 +79,9 @@ function Wizard() {
   // commitment quiz
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizFailed, setQuizFailed] = useState(false);
+  // §5b areas + §5e relevant links
+  const [areas, setAreas] = useState([]);
+  const [relevantLinks, setRelevantLinks] = useState([]);
 
   const st = STEPS[step];
 
@@ -246,6 +250,24 @@ function Wizard() {
     return m.tasks.every((_, i) => prog[`${m.key}:${i}`]);
   };
 
+  // §5b — AI-suggest local areas from the city.
+  const suggestAreas = async () => {
+    setBusy('areas'); setErr('');
+    try {
+      const d = await fetch('/api/practice-os/actions/suggest-areas', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ city: fields.city, specialty: fields.specialty }),
+      }).then((r) => r.json());
+      if (d.success) setAreas((prev) => Array.from(new Set([...prev, ...(d.areas || [])])));
+      else setErr(d.error || 'Could not suggest areas.');
+    } catch { setErr('Something went wrong.'); }
+    finally { setBusy(''); }
+  };
+  const saveMedia = (extra = {}) => fetch('/api/practice-os/onboarding-media', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+    body: JSON.stringify(extra),
+  }).catch(() => {});
+
   const pct = Math.round(((step + 1) / STEPS.length) * 100);
 
   if (!loaded) return <div className="min-h-screen grid place-items-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>;
@@ -381,10 +403,55 @@ function Wizard() {
             <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Where do patients find you?</h1>
             <p className="text-sm text-[var(--muted)] mb-4">Taken as you type it. Anything you skip simply doesn&apos;t appear on your site. Please use clinic (not personal) contact details.</p>
             <div className="space-y-4">{PRACTICE.fields.map((f) => <Field key={f.key} f={f} value={fields[f.key] || ''} onChange={(v) => setField(f.key, v)} onToggleTag={(o) => toggleTag(f.key, o)} />)}</div>
+
+            {/* §5b — local areas for local SEO */}
+            <div className="pos-card p-4 mt-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="pos-label" style={{ color: 'var(--green)' }}>Local areas</p>
+                  <p className="text-[13px] text-[var(--muted)] mt-0.5">Areas near you that patients search from — we&apos;ll mention these for local SEO.</p>
+                </div>
+                <button onClick={suggestAreas} disabled={!!busy || !fields.city} className="pos-action shrink-0" style={{ padding: '8px 14px', opacity: fields.city ? 1 : 0.5 }}>{busy === 'areas' ? '…' : '✨ Suggest'}</button>
+              </div>
+              {areas.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {areas.map((a, i) => (
+                    <span key={i} className="inline-flex items-center gap-1.5 text-[13px] px-2.5 py-1 rounded-full" style={{ background: 'var(--green-soft)', color: 'var(--green)', border: '1px solid var(--rule)' }}>
+                      {a}
+                      <button onClick={() => setAreas(areas.filter((_, j) => j !== i))} className="opacity-60 hover:opacity-100">×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {err && <p className="text-[13px] text-red-600 mt-3">{err}</p>}
             <div className="flex items-center gap-3 mt-6">
-              <button onClick={async () => { if (await saveProfile(true)) next(); }} disabled={!!busy} className="pos-action">{busy === 'save' ? 'Saving…' : 'Save & continue'}</button>
-              <button onClick={async () => { await saveProfile(true); next(); }} className="pos-link" style={{ fontSize: 14 }}>Skip for now →</button>
+              <button onClick={async () => { if (await saveProfile(true)) { saveMedia({ localAreas: areas }); next(); } }} disabled={!!busy} className="pos-action">{busy === 'save' ? 'Saving…' : 'Save & continue'}</button>
+              <button onClick={async () => { await saveProfile(true); saveMedia({ localAreas: areas }); next(); }} className="pos-link" style={{ fontSize: 14 }}>Skip for now →</button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP: relevant links (§5e) */}
+        {st.id === 'links' && (
+          <div>
+            <p className="pos-label" style={{ color: 'var(--green)' }}>Relevant links</p>
+            <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Any links worth adding?</h1>
+            <p className="text-sm text-[var(--muted)] mb-4">Optional — your existing profiles, articles, videos or press. Skip and come back anytime.</p>
+            <div className="space-y-2">
+              {relevantLinks.map((l, i) => (
+                <div key={i} className="flex gap-2">
+                  <input value={l.label} onChange={(e) => setRelevantLinks((p) => { const n = [...p]; n[i] = { ...n[i], label: e.target.value }; return n; })} placeholder="Label" className="w-1/3 pos-card p-2.5 text-sm" />
+                  <input value={l.url} onChange={(e) => setRelevantLinks((p) => { const n = [...p]; n[i] = { ...n[i], url: e.target.value }; return n; })} placeholder="https://…" className="flex-1 pos-card p-2.5 text-sm" />
+                  <button onClick={() => setRelevantLinks(relevantLinks.filter((_, j) => j !== i))} className="pos-link text-sm px-2">Remove</button>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => setRelevantLinks([...relevantLinks, { label: '', url: '' }])} className="pos-link text-sm mt-3">+ Add a link</button>
+            <div className="flex items-center gap-3 mt-6">
+              <button onClick={() => { saveMedia({ relevantLinks }); next(); }} className="pos-action">Save &amp; continue</button>
+              <button onClick={next} className="pos-link" style={{ fontSize: 14 }}>Skip for now →</button>
             </div>
           </div>
         )}
