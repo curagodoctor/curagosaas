@@ -14,6 +14,7 @@ function PackSettings({ framework, onSaved }) {
     tagline: framework.tagline || '',
     summary: framework.summary || '',
     category: framework.category || '',
+    tier: framework.tier || 'optimization',
     priceInInr: framework.priceInInr ?? 0,
     order: framework.order ?? 0,
     isPublished: !!framework.isPublished,
@@ -43,6 +44,7 @@ function PackSettings({ framework, onSaved }) {
           tagline: form.tagline,
           summary: form.summary,
           category: form.category,
+          tier: form.tier,
           priceInInr: Number(form.priceInInr) || 0,
           order: Number(form.order) || 0,
           isPublished: form.isPublished,
@@ -79,6 +81,13 @@ function PackSettings({ framework, onSaved }) {
         <label className="block">
           <span className="text-xs font-medium text-gray-500 uppercase">Category</span>
           <input value={form.category} onChange={(e) => set('category', e.target.value)} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="e.g. Get found on Google" />
+        </label>
+        <label className="block">
+          <span className="text-xs font-medium text-gray-500 uppercase">Tier</span>
+          <select value={form.tier} onChange={(e) => set('tier', e.target.value)} className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            <option value="optimization">Optimization — behind the Get Access gate</option>
+            <option value="setup">Setup — always free</option>
+          </select>
         </label>
         <label className="block">
           <span className="text-xs font-medium text-gray-500 uppercase">Price (₹) — 0 = free</span>

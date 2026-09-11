@@ -30,6 +30,14 @@ const FrameworkSchema = new mongoose.Schema({
     trim: true,
     default: '',
   },
+  // §3 — which side of the access gate this pack sits on. 'setup' is always free;
+  // 'optimization' sits beyond the Get Access gate (unlocked by a founder grant
+  // in v1 — no payment wall). Packs are optimization work by default.
+  tier: {
+    type: String,
+    enum: ['setup', 'optimization'],
+    default: 'optimization',
+  },
   coverImage: {
     type: String,
     trim: true,
