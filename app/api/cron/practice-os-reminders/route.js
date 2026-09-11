@@ -4,6 +4,7 @@ import PracticeOsEnrollment from '@/models/practice-os/PracticeOsEnrollment';
 import Framework from '@/models/practice-os/Framework';
 import Mission from '@/models/practice-os/Mission';
 import UserMissionProgress from '@/models/practice-os/UserMissionProgress';
+import BlogArticle from '@/models/BlogArticle';
 import Doctor from '@/models/Doctor';
 import { sendPracticeOsReminderEmail } from '@/lib/email';
 import { sendSMS } from '@/lib/twilio';
@@ -107,6 +108,23 @@ export async function GET(request) {
           };
         }
 
+        // §11 — content-first: if AI content is waiting for review, send a custom
+        // preview message (with the page title + excerpt) instead of a generic
+        // reminder. This overrides the mission reminder and points at the draft.
+        const draft = await BlogArticle.findOne({ doctorId: doctor._id, status: 'draft' })
+          .select('title excerpt').sort({ createdAt: -1 }).lean();
+        if (draft) {
+          const preview = (draft.excerpt || '').trim().slice(0, 160);
+          reminder = {
+            subject: 'Your next educational page is ready',
+            heading: 'Your next page is ready to review',
+            body: `Your next educational page — "${draft.title}" — is ready.${preview ? `\n\n${preview}…` : ''}\n\nAbout 10 minutes to review, then publish with one tap.`,
+            ctaLabel: 'Review & publish',
+            ctaUrl: `${appUrl}/admin/dashboard/blog-articles`,
+            sms: `CuraGo: Your next page "${draft.title}" is ready to review — about 10 min, publish with one tap. ${appUrl}/admin/dashboard/blog-articles`,
+          };
+        }
+
         if (!reminder) {
           continue;
         }
@@ -120,7 +138,7 @@ export async function GET(request) {
             heading: reminder.heading,
             body: reminder.body,
             ctaLabel: reminder.ctaLabel,
-            ctaUrl,
+            ctaUrl: reminder.ctaUrl || ctaUrl,
           });
         } catch (emailError) {
           console.error(`[PracticeOS Reminders] Email failed for ${enrollment._id}:`, emailError);
