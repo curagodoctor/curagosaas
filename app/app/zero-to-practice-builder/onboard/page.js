@@ -27,6 +27,14 @@ const STEPS = [
   { id: 'generate', phase: 1 },
   { id: 'live', phase: 1 },
   { id: 'google', phase: 2 },
+  { id: 'quiz', phase: 3 },
+];
+
+// §11 — the commitment check before Get Access.
+const QUIZ = [
+  { title: 'Are you serious about being found by your patients on Google?', body: 'Not curious — serious. This only works for doctors who genuinely want to be discoverable.', yes: 'Yes, I am serious', no: 'Not right now' },
+  { title: 'Can you commit ten minutes a day?', body: 'We do the work — the strategy, the content, the next actions. You spend about 10 minutes a day, or 60 minutes a week, flexible.', yes: 'Yes, I can commit', no: "I can't commit that" },
+  { title: 'Do you accept the subdomain → custom-domain path?', body: 'SEO is a long-term mission, best on your own domain. You can start on a subdomain and switch later — you may see a short ranking dip while Google processes the move.', yes: 'Understood, I accept', no: 'I need to think' },
 ];
 
 // Field-type tag colours for the GBP task flow (§8).
@@ -67,6 +75,9 @@ function Wizard() {
   const [gbpBlocks, setGbpBlocks] = useState(null);
   const [gbpProgress, setGbpProgress] = useState({});
   const [gbpBlock, setGbpBlock] = useState(0);
+  // commitment quiz
+  const [quizIdx, setQuizIdx] = useState(0);
+  const [quizFailed, setQuizFailed] = useState(false);
 
   const st = STEPS[step];
 
@@ -498,7 +509,7 @@ function Wizard() {
                 {!gbpMandatoryComplete(gbpProgress) && (
                   <p className="text-[13px] mt-3" style={{ color: 'var(--orange)' }}>Finish the mandatory <b>Suspension risk</b> block to continue.</p>
                 )}
-                <button onClick={() => router.push('/app/zero-to-practice-builder')} disabled={!gbpMandatoryComplete(gbpProgress)} className="pos-action mt-5" style={{ opacity: gbpMandatoryComplete(gbpProgress) ? 1 : 0.5 }}>
+                <button onClick={next} disabled={!gbpMandatoryComplete(gbpProgress)} className="pos-action mt-5" style={{ opacity: gbpMandatoryComplete(gbpProgress) ? 1 : 0.5 }}>
                   Continue
                 </button>
                 <p className="text-[12px] text-[var(--muted)] mt-3">Next up: the commitment check and Get Access.</p>
@@ -507,8 +518,41 @@ function Wizard() {
           </div>
         )}
 
-        {/* Back */}
-        {step > 0 && st.id !== 'summary' && (
+        {/* STEP: quiz → Get Access */}
+        {st.id === 'quiz' && (
+          quizFailed ? (
+            <div>
+              <p className="pos-label" style={{ color: 'var(--orange)' }}>Not yet</p>
+              <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-2" style={{ letterSpacing: '-0.02em' }}>Access needs a yes to all three.</h1>
+              <p className="text-sm text-[var(--muted)] mb-5" style={{ maxWidth: '52ch' }}>Organic search is a long mission, not a sprint. Your website, first article and Google foundation stay yours either way — come back when the ten minutes a day are genuinely available.</p>
+              <div className="flex flex-wrap gap-3">
+                <button onClick={() => { setQuizIdx(0); setQuizFailed(false); }} className="pos-action">Answer again</button>
+                <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-link" style={{ fontSize: 14 }}>Back to my control center →</button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <p className="pos-label" style={{ color: 'var(--green)' }}>Commitment check · {quizIdx + 1} of 3</p>
+              <div className="pos-meter my-3"><span style={{ width: `${Math.round(((quizIdx) / 3) * 100)}%` }} /></div>
+              <h1 className="text-[23px] font-semibold text-[var(--ink)] mt-1 mb-2" style={{ letterSpacing: '-0.02em' }}>{QUIZ[quizIdx].title}</h1>
+              <p className="text-sm text-[var(--muted)] mb-5" style={{ lineHeight: 1.6 }}>{QUIZ[quizIdx].body}</p>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => { if (quizIdx >= 2) router.push('/app/zero-to-practice-builder/get-access'); else setQuizIdx(quizIdx + 1); }}
+                  className="pos-action" style={{ flex: '1 1 200px' }}>
+                  {QUIZ[quizIdx].yes}
+                </button>
+                <button onClick={() => setQuizFailed(true)} className="pos-card px-4 py-3 text-[15px] font-medium text-[var(--muted)]" style={{ flex: '1 1 200px' }}>
+                  {QUIZ[quizIdx].no}
+                </button>
+              </div>
+              {quizIdx > 0 && <button onClick={() => setQuizIdx(quizIdx - 1)} className="pos-link text-sm mt-5">← Previous question</button>}
+            </div>
+          )
+        )}
+
+        {/* Back — only within the editable PROFILE steps */}
+        {st.phase === 0 && step > 0 && st.id !== 'summary' && (
           <button onClick={() => go(step - 1)} disabled={!!busy} className="pos-link text-sm mt-6 disabled:opacity-40">← Back</button>
         )}
       </div>
