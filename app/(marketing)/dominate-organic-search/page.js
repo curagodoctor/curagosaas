@@ -103,7 +103,7 @@ export default function DominateOrganicSearch() {
             <p className="dos-hero-lead">CuraGo helps doctors build and continuously strengthen their organic presence on Google — starting with your own website first, then your Google Business Profile, and growing from there.</p>
             <p className="dos-hero-mono">APPEAR. COMPETE. DOMINATE.</p>
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14 }}>
-              <button onClick={start} className="dos-btn-orange dos-btn-lg">Start Now</button>
+              <button onClick={start} className="dos-btn-orange dos-btn-lg">Get Early Access</button>
               <a href="#how" className="dos-btn-ghost">See how it works</a>
             </div>
             <p className="dos-hero-fine">No subscription. No payment required to build the foundation.</p>
@@ -150,7 +150,7 @@ export default function DominateOrganicSearch() {
         <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
           <h2 className="dos-h2" style={{ color: '#fff', margin: '0 0 12px' }}>Ready to be found?</h2>
           <p style={{ fontSize: 17, color: 'rgba(255,255,255,.8)', lineHeight: 1.6, margin: '0 0 22px' }}>Build your foundation with CuraGo. It&apos;s free to start.</p>
-          <button onClick={start} className="dos-btn-orange dos-btn-lg">Start Now</button>
+          <button onClick={start} className="dos-btn-orange dos-btn-lg">Get Early Access</button>
           <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,.58)', margin: '16px 0 0' }}>You can start with a subdomain and connect your custom domain when you&apos;re ready.</p>
         </div>
       </section>
@@ -282,7 +282,7 @@ export default function DominateOrganicSearch() {
         <div style={{ maxWidth: 820, margin: '0 auto' }}>
           <h2 style={{ fontSize: 'clamp(32px,5vw,62px)', fontWeight: 800, letterSpacing: '-.035em', lineHeight: 1, margin: '0 0 16px' }}>Ready to be found?</h2>
           <p style={{ fontSize: 'clamp(17px,1.6vw,20px)', color: 'rgba(255,255,255,.82)', lineHeight: 1.55, margin: '0 0 28px' }}>Build your foundation with CuraGo. It&apos;s free to start.</p>
-          <button onClick={start} className="dos-btn-orange dos-btn-xl">Start Now</button>
+          <button onClick={start} className="dos-btn-orange dos-btn-xl">Get Early Access</button>
           <p style={{ fontSize: 14, color: 'rgba(255,255,255,.62)', margin: '20px 0 0', lineHeight: 1.6 }}>You can start with a subdomain and connect your custom domain when you&apos;re ready.</p>
         </div>
       </section>

@@ -96,11 +96,12 @@ function VerifyEmailContent() {
         throw new Error(data.error || 'Verification failed');
       }
 
-      setSuccess('Email verified successfully! Redirecting to dashboard...');
+      setSuccess('Email verified! Setting up your practice…');
 
-      // Redirect to dashboard after a brief delay
+      // Into the onboarding wizard (branch → profile → website → GBP → access);
+      // the wizard collects the subdomain, so email signup no longer needs it.
       setTimeout(() => {
-        router.push('/admin/dashboard');
+        router.push('/app/zero-to-practice-builder/onboard');
       }, 1500);
     } catch (error) {
       setError(error.message);

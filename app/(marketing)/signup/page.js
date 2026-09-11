@@ -378,33 +378,8 @@ function SignupPageInner() {
                   </div>
                 </div>
 
-                {/* Subdomain */}
-                <div>
-                  <label htmlFor="subdomain" className="mono block text-[11px] tracking-[0.1em] uppercase mb-2" style={{ color: 'var(--muted)' }}>Choose Your Website URL</label>
-                  <div className="relative">
-                    <input
-                      type="text" id="subdomain" name="subdomain" value={formData.subdomain} onChange={handleChange} placeholder="drpriya" maxLength={30}
-                      className="w-full px-4 pr-28 py-3 rounded-[10px] outline-none transition-all" style={subdomainStyle()}
-                      onFocus={focusOn} onBlur={focusOff}
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium" style={{ color: 'var(--muted)' }}>.curago.in</span>
-                  </div>
-                  {subdomainMessage && (
-                    <p className={`mt-1 text-sm flex items-center gap-1 ${
-                      subdomainStatus === 'available' ? 'text-green-600' :
-                      subdomainStatus === 'checking' ? 'text-gray-500' : 'text-red-500'
-                    }`}>
-                      {subdomainStatus === 'checking' && <span className="inline-block animate-spin">&#9696;</span>}
-                      {subdomainStatus === 'available' && (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                      {subdomainMessage}
-                    </p>
-                  )}
-                  {errors.subdomain && <p className="mt-1 text-sm text-red-600">{errors.subdomain}</p>}
-                </div>
+                {/* Subdomain is no longer collected here — the onboarding wizard
+                    picks it after the "do you already have a website?" branch. */}
 
                 {/* Password & Confirm */}
                 <div className="grid sm:grid-cols-2 gap-4">
