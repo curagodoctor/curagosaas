@@ -4,6 +4,24 @@ import { Suspense, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
+// §9 control-center nav. Primary items sit inline on desktop; the rest live under
+// a "More" menu so the bar never overflows. Mobile lists everything. Leaderboard
+// is a section (not a nav button) and there's no "scheduled tasks" item — the
+// ready-now teaser covers it.
+const PRIMARY = (withPack) => [
+  ['Your content', '/app/zero-to-practice-builder/content'],
+  ['AI Website Builder', '/admin/dashboard/ai-generate'],
+  ['Appointments', '/admin/dashboard/bookings'],
+  ['Profile', withPack('/app/zero-to-practice-builder/profile')],
+];
+const MORE = (withPack) => [
+  ['All packs', '/app/zero-to-practice-builder'],
+  ['Contacts', '/admin/dashboard/contacts'],
+  ['Workspace', withPack('/app/zero-to-practice-builder/workspace')],
+  ['Content Planner', withPack('/app/zero-to-practice-builder/planner')],
+  ['Settings', '/admin/dashboard/settings'],
+];
+
 // The ONE shared top-nav for every Practice OS screen. Fixed to the top; screens
 // pad their content with pt-[64px]. On desktop the links sit inline on the right;
 // on mobile they collapse behind a hamburger.
@@ -30,17 +48,10 @@ function PosNavInner({ breadcrumb }) {
 
   const links = (
     <>
-      {/* §9 control-center nav. Leaderboard is a section (not a nav button) and
-          there's no separate "scheduled tasks" — the ready-now teaser covers it. */}
-      <Link href="/app/zero-to-practice-builder" onClick={close} className="pos-link">All packs</Link>
-      <Link href="/app/zero-to-practice-builder/content" onClick={close} className="pos-link">Your content</Link>
-      <Link href="/admin/dashboard/ai-generate" onClick={close} className="pos-link">AI Website Builder</Link>
-      <Link href={withPack('/app/zero-to-practice-builder/profile')} onClick={close} className="pos-link">Profile</Link>
-      <Link href="/admin/dashboard/contacts" onClick={close} className="pos-link">Contacts</Link>
-      <Link href="/admin/dashboard/bookings" onClick={close} className="pos-link">Appointments</Link>
-      <Link href={withPack('/app/zero-to-practice-builder/workspace')} onClick={close} className="pos-link">Workspace</Link>
-      <Link href={withPack('/app/zero-to-practice-builder/planner')} onClick={close} className="pos-link">Content Planner</Link>
-      <Link href="/admin/dashboard/settings" onClick={close} className="pos-link">Settings</Link>
+      {/* Mobile shows every item; desktop splits into primary + "More". */}
+      {[...PRIMARY(withPack), ...MORE(withPack)].map(([label, href]) => (
+        <Link key={label} href={href} onClick={close} className="pos-link">{label}</Link>
+      ))}
       <ProgressMenu packId={packId} withPack={withPack} onNavigate={close} />
     </>
   );
@@ -61,9 +72,13 @@ function PosNavInner({ breadcrumb }) {
           )}
         </div>
 
-        {/* Desktop links */}
+        {/* Desktop links — primary inline, the rest under "More" so it never overflows */}
         <div className="hidden md:flex items-center gap-x-4 text-[13px] justify-end">
-          {links}
+          {PRIMARY(withPack).map(([label, href]) => (
+            <Link key={label} href={href} onClick={close} className="pos-link">{label}</Link>
+          ))}
+          <MoreMenu items={MORE(withPack)} onNavigate={close} />
+          <ProgressMenu packId={packId} withPack={withPack} onNavigate={close} />
           <Link href="/admin/dashboard" className="text-white px-3 py-1 rounded-[7px] font-semibold text-[12.5px] shrink-0" style={{ backgroundColor: 'var(--green)' }}>Website Builder</Link>
           <button onClick={logout} className="pos-link" style={{ color: 'var(--muted)' }}>Sign out</button>
         </div>
@@ -130,6 +145,42 @@ function ProgressMenu({ packId, withPack, onNavigate }) {
     <div className="relative">
       <button ref={btnRef} onClick={toggle} className="pos-link inline-flex items-center gap-1">
         Progress
+        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
+      </button>
+      {open && pos && (
+        <>
+          <div className="fixed inset-0 z-[60]" onClick={() => setOpen(false)} />
+          <div className="fixed z-[70] pos-card p-1 min-w-[180px]" style={{ top: pos.top, right: pos.right, boxShadow: '0 12px 32px rgba(16,26,19,.14)' }}>
+            {items.map(([label, href]) => (
+              <Link key={label} href={href} onClick={go} className="block px-3 py-2 text-[13px] rounded-md hover:bg-[var(--rule-soft)]" style={{ color: 'var(--ink)' }}>
+                {label}
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// Secondary nav items under one "More" button (keeps the desktop bar from
+// overflowing). Same anchored-dropdown pattern as ProgressMenu.
+function MoreMenu({ items, onNavigate }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(null);
+  const btnRef = useRef(null);
+  const toggle = () => {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
+    }
+    setOpen((o) => !o);
+  };
+  const go = () => { setOpen(false); onNavigate?.(); };
+  return (
+    <div className="relative">
+      <button ref={btnRef} onClick={toggle} className="pos-link inline-flex items-center gap-1">
+        More
         <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
       </button>
       {open && pos && (

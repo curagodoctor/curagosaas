@@ -21,25 +21,29 @@ export default function ControlCenter() {
   const [name, setName] = useState('');
   const [leaderboard, setLeaderboard] = useState(null);
   const [loading, setLoading] = useState(true);
-  // Leaderboard participation is compulsory — every doctor must pick an anonymous
-  // name. Gate the control center until they do.
+  // §11 — the leaderboard join is compulsory, but placed at the OPTIMIZATION
+  // boundary: only doctors who've been granted access must pick a name before
+  // proceeding. Free/setup doctors aren't gated.
   const [needsUsername, setNeedsUsername] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const [pRes, meRes, lbRes, uRes] = await Promise.all([
+        const [pRes, meRes, lbRes, uRes, aRes] = await Promise.all([
           fetch('/api/practice-os/packs'),
           fetch('/api/auth/me'),
           fetch('/api/practice-os/leaderboard'),
           fetch('/api/practice-os/username'),
+          fetch('/api/practice-os/access-request'),
         ]);
         if (pRes.status === 401) { router.push('/login?entry=practice-os'); return; }
         const pData = await pRes.json();
         if (pData.success) setPacks(pData.packs);
         if (meRes.ok) { const me = await meRes.json(); setName(me.doctor?.displayName || me.doctor?.name || ''); }
         if (lbRes.ok) { const lb = await lbRes.json(); if (lb.success) setLeaderboard(lb); }
-        if (uRes.ok) { const u = await uRes.json(); if (u.success && !u.username) setNeedsUsername(true); }
+        let granted = false;
+        if (aRes.ok) { const a = await aRes.json(); granted = !!a.granted; }
+        if (uRes.ok) { const u = await uRes.json(); if (u.success && !u.username && granted) setNeedsUsername(true); }
       } finally {
         setLoading(false);
       }
