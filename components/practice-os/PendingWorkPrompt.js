@@ -40,11 +40,13 @@ export default function PendingWorkPrompt() {
       <p className="text-[16px] font-semibold text-[var(--ink)] mt-1">
         {backlog
           ? `You have ${data.oldestDays} days of work waiting for your review.`
-          : `${data.count} ${data.count === 1 ? 'item is' : 'items are'} ready for your review.`}
+          : summary
+            ? <>Your practice needs review. Update these: <span style={{ color: 'var(--orange)' }}>{summary}</span>.</>
+            : `${data.count} ${data.count === 1 ? 'item is' : 'items are'} ready for your review.`}
       </p>
-      {summary && <p className="text-[13px] text-[var(--muted)] mt-1">We&apos;ve created {summary} — look them over and publish.</p>}
+      {backlog && summary && <p className="text-[13px] text-[var(--muted)] mt-1">We&apos;ve created {summary} — look them over and publish.</p>}
       <button onClick={goToFirst} className="pos-action mt-3">
-        {backlog ? 'Catch up now' : 'Review & publish'}
+        {backlog ? "Look at what we've created" : 'Review & publish'}
       </button>
     </div>
   );
