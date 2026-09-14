@@ -108,6 +108,30 @@ export default function BlogArticlesPage() {
     }
   };
 
+  const handlePublish = async (id, title) => {
+    const confirmed = await showConfirm({
+      title: 'Publish Article',
+      message: `Publish "${title}"? It will go live on your website immediately.`,
+      confirmText: 'Publish',
+      cancelText: 'Cancel',
+      type: 'success',
+    });
+    if (!confirmed) return;
+    try {
+      const response = await fetch(`/api/admin/blog-articles/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ status: 'published' }),
+      });
+      if (!response.ok) throw new Error('Failed to publish');
+      await showAlert({ title: 'Published', message: 'Your article is now live.', type: 'success' });
+      fetchArticles();
+    } catch (error) {
+      await showAlert({ title: 'Error', message: 'Failed to publish article', type: 'error' });
+    }
+  };
+
   const getStatusBadge = (status) => {
     const config = {
       draft: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Draft' },
@@ -327,6 +351,14 @@ export default function BlogArticlesPage() {
                       <div className="text-sm text-gray-500">{formatDate(article.publishedAt)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
+                      {article.status !== 'published' && (
+                        <button
+                          onClick={() => handlePublish(article._id, article.title)}
+                          className="text-[#096b17] hover:text-[#075512] font-semibold"
+                        >
+                          Publish
+                        </button>
+                      )}
                       <button
                         onClick={() => router.push(`/admin/dashboard/blog-articles/${article._id}`)}
                         className="text-blue-600 hover:text-blue-700 font-medium"
@@ -381,6 +413,14 @@ export default function BlogArticlesPage() {
               </div>
 
               <div className="flex gap-2">
+                {article.status !== 'published' && (
+                  <button
+                    onClick={() => handlePublish(article._id, article.title)}
+                    className="flex-1 text-center py-2 px-4 bg-[#096b17] hover:bg-[#075512] text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Publish
+                  </button>
+                )}
                 <button
                   onClick={() => router.push(`/admin/dashboard/blog-articles/${article._id}`)}
                   className="flex-1 text-center py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"

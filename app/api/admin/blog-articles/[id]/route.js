@@ -86,6 +86,12 @@ export async function PATCH(request, { params }) {
       );
     }
 
+    // Stamp the publish time when an article is being published and doesn't
+    // already have one (works for the editor and the list's one-click Publish).
+    if (updates.status === 'published' && !updates.publishedAt) {
+      updates.publishedAt = new Date();
+    }
+
     const query = { _id: id };
     if (doctorId) query.doctorId = doctorId;
 
