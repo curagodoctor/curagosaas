@@ -9,10 +9,25 @@ import Doctor from '@/models/Doctor';
 import { sendPracticeOsReminderEmail } from '@/lib/email';
 import { sendSMS } from '@/lib/twilio';
 import { fireWyltoWebhook } from '@/lib/wylto';
+import PracticeOsProfile from '@/models/practice-os/PracticeOsProfile';
 
 export const runtime = 'nodejs';
 
 const DAY_MS = 86400000;
+
+// §11/§14 — the doctor's preferred notification window, in IST hours. The cron
+// runs hourly and only sends when the current IST hour is inside the window
+// (the once-per-day guard means they get exactly one, at their chosen time).
+const WINDOW_HOURS = {
+  morning: [6, 12], afternoon: [12, 17], evening: [17, 21], night: [21, 24],
+};
+function istHour(now = new Date()) {
+  return Number(now.toLocaleString('en-US', { hour: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' })) % 24;
+}
+function inWindow(window, hour) {
+  const [start, end] = WINDOW_HOURS[window] || WINDOW_HOURS.evening;
+  return hour >= start && hour < end;
+}
 
 /**
  * GET /api/cron/practice-os-reminders
@@ -49,6 +64,7 @@ export async function GET(request) {
     const enrollments = allActive.filter((e) => liveFwIds.has(String(e.frameworkId)));
 
     const now = new Date();
+    const hourNow = istHour(now);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://curago.in';
     const ctaUrl = `${appUrl}/practice-os`;
 
@@ -67,6 +83,13 @@ export async function GET(request) {
 
         const doctor = await Doctor.findById(enrollment.doctorId);
         if (!doctor || !doctor.email) {
+          continue;
+        }
+
+        // §11/§14 — only send inside the doctor's preferred window (defaults to
+        // evening). The cron runs hourly; this delivers at the chosen time.
+        const prof = await PracticeOsProfile.findOne({ doctorId: enrollment.doctorId }).select('notificationWindow').lean();
+        if (!inWindow(prof?.notificationWindow || 'evening', hourNow)) {
           continue;
         }
 
