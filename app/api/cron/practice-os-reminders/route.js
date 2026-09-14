@@ -188,6 +188,8 @@ export async function GET(request) {
               name: doctor.displayName || doctor.name,
               phoneNumber: waPhone,
               contentTitle: reminder.contentTitle || '',
+              reviewMinutes: '10',
+              link: `${appUrl}/admin/dashboard/blog-articles`,
             });
           } catch (waError) {
             console.error(`[PracticeOS Reminders] WhatsApp (content) failed for ${enrollment._id}:`, waError);
