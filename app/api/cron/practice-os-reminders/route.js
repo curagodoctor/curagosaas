@@ -145,6 +145,8 @@ export async function GET(request) {
             ctaLabel: 'Review & publish',
             ctaUrl: `${appUrl}/admin/dashboard/blog-articles`,
             sms: `CuraGo: Your next page "${draft.title}" is ready to review — about 10 min, publish with one tap. ${appUrl}/admin/dashboard/blog-articles`,
+            isContent: true,
+            contentTitle: draft.title,
           };
         }
 
@@ -177,9 +179,20 @@ export async function GET(request) {
           }
         }
 
-        // WhatsApp — daily "finish today's module" nudge via Wylto.
+        // WhatsApp — content-first (§11): if content is waiting, send the
+        // "your next content is ready" template; otherwise the module nudge.
         const waPhone = doctor.whatsappNumber || doctor.phone;
-        if (waPhone) {
+        if (waPhone && reminder.isContent) {
+          try {
+            await fireWyltoWebhook('contentReady', {
+              name: doctor.displayName || doctor.name,
+              phoneNumber: waPhone,
+              contentTitle: reminder.contentTitle || '',
+            });
+          } catch (waError) {
+            console.error(`[PracticeOS Reminders] WhatsApp (content) failed for ${enrollment._id}:`, waError);
+          }
+        } else if (waPhone) {
           // Look up the pack + the doctor's current (first uncompleted) mission/task
           // so the reminder message can name exactly what's next.
           let packTitle = '';
