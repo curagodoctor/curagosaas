@@ -8,7 +8,7 @@ import BlogArticle from '@/models/BlogArticle';
 import Doctor from '@/models/Doctor';
 import { sendPracticeOsReminderEmail } from '@/lib/email';
 import { sendSMS } from '@/lib/twilio';
-import { fireWyltoWebhook } from '@/lib/wylto';
+import { fireWyltoWebhook, sendWyltoTemplate } from '@/lib/wylto';
 import PracticeOsProfile from '@/models/practice-os/PracticeOsProfile';
 
 export const runtime = 'nodejs';
@@ -184,12 +184,13 @@ export async function GET(request) {
         const waPhone = doctor.whatsappNumber || doctor.phone;
         if (waPhone && reminder.isContent) {
           try {
-            await fireWyltoWebhook('contentReady', {
-              name: doctor.displayName || doctor.name,
-              phoneNumber: waPhone,
-              contentTitle: reminder.contentTitle || '',
-              reviewMinutes: '10',
-              link: `${appUrl}/admin/dashboard/blog-articles`,
+            // Direct Wylto send of the approved `content_ready_review` template:
+            // {{1}} = doctor name, {{2}} = page title.
+            await sendWyltoTemplate({
+              to: waPhone,
+              templateName: process.env.WYLTO_CONTENT_TEMPLATE || 'content_ready_review',
+              language: 'en',
+              bodyParams: [doctor.displayName || doctor.name || 'Doctor', reminder.contentTitle || 'your next page'],
             });
           } catch (waError) {
             console.error(`[PracticeOS Reminders] WhatsApp (content) failed for ${enrollment._id}:`, waError);
