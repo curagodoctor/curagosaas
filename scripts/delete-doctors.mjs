@@ -3,7 +3,7 @@
 // Delete:   node --env-file=.env.local scripts/delete-doctors.mjs --apply
 import mongoose from 'mongoose';
 
-const EMAILS = ['raghavendra@goodenergies.in', 'raghavendra@doctorite.ai'];
+const EMAILS = ['vattikutiraghavendra3@gmail.com'];
 const APPLY = process.argv.includes('--apply');
 
 await mongoose.connect(process.env.MONGODB_URI);

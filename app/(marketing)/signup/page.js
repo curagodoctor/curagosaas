@@ -471,13 +471,6 @@ function SignupPageInner() {
                   )}
                 </button>
               </form>
-
-              <div className="mt-5 p-4 rounded-[10px]" style={{ backgroundColor: 'var(--rule-soft)' }}>
-                <p className="text-center text-sm" style={{ color: 'var(--muted)' }}>
-                  Your clinic website will be live at{' '}
-                  <span className="font-semibold" style={{ color: 'var(--green)' }}>{formData.subdomain || 'yourname'}.curago.in</span>
-                </p>
-              </div>
             </div>
 
             <p className="mt-6 text-center text-sm" style={{ color: 'var(--muted)' }}>
