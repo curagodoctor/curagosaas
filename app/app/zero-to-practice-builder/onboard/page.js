@@ -91,7 +91,17 @@ function Wizard() {
         const r = await fetch('/api/practice-os/profile', { credentials: 'include' });
         if (r.status === 401) { router.push('/login?entry=practice-os'); return; }
         const d = await r.json();
-        if (d.success) { setFields(d.fields || {}); setSummary(d.summary || ''); }
+        if (d.success) {
+          setFields(d.fields || {}); setSummary(d.summary || '');
+          if (d.hasWebsite) setHasWebsite(d.hasWebsite);
+          // Resume where they left off. Never resume ONTO the auto-running
+          // 'generate' step (it would re-charge credits) — land on 'live' instead.
+          let s = Number(d.onboardStep) || 0;
+          const genIdx = STEPS.findIndex((x) => x.id === 'generate');
+          const liveIdx = STEPS.findIndex((x) => x.id === 'live');
+          if (s === genIdx) s = liveIdx;
+          setStep(Math.min(Math.max(s, 0), STEPS.length - 1));
+        }
       } catch { /* ignore */ }
       setLoaded(true);
     })();
@@ -104,8 +114,25 @@ function Wizard() {
     return { ...f, [k]: next.join(', ') };
   });
 
-  const go = (i) => { setStep(i); setErr(''); window.scrollTo(0, 0); };
+  // Persist the wizard position so a mid-flow refresh resumes instead of
+  // restarting (fire-and-forget; never blocks navigation).
+  const persistStep = useCallback((i) => {
+    fetch('/api/practice-os/profile', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ onboardStep: i }),
+    }).catch(() => {});
+  }, []);
+  const go = (i) => { setStep(i); setErr(''); window.scrollTo(0, 0); persistStep(i); };
   const next = () => go(Math.min(step + 1, STEPS.length - 1));
+  const goToId = (id) => go(STEPS.findIndex((s) => s.id === id));
+  // §3 branch — remember the choice so a refresh keeps the right framing.
+  const chooseBranch = (v) => {
+    setHasWebsite(v);
+    fetch('/api/practice-os/profile', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ hasWebsite: v }),
+    }).catch(() => {});
+  };
 
   // ---- profile AI draft + save ----
   const draft = async () => {
@@ -211,12 +238,19 @@ function Wizard() {
       // The subdomain seeds a bare default page, so generation returns a draft —
       // approve it so the AI homepage goes LIVE (no redirection).
       if (g.mode === 'draft') { setGenMsg('Publishing your homepage…'); await fetch('/api/practice-os/actions/site-draft', { method: 'POST', ...J, body: JSON.stringify({ action: 'approve' }) }); }
-      // First educational blog, auto-drafted from the doctor's top condition.
-      setGenMsg('Preparing your first article…');
+
+      // §6d — reveal the live site immediately (the "aha"); it must NOT wait behind
+      // the slow first-article draft. Navigate by absolute index: `next()` here
+      // closes over a stale `step` (deps are [fields]) and would jump backwards.
+      setGenState('done');
+      goToId('live');
+
+      // First educational article drafts in the background from the top condition.
       const topic = (fields.diseases || '').split(',')[0]?.trim() || (fields.expertise || '').split(',')[0]?.trim() || `${fields.specialty || 'my practice'}`;
-      const b = await fetch('/api/practice-os/actions/draft-blog', { method: 'POST', ...J, body: JSON.stringify({ context: `An introductory patient-education article about ${topic}.`, pageType: 'disease' }) }).then((r) => r.json());
-      if (typeof b.creditsRemaining === 'number') setCreditsLeft(b.creditsRemaining);
-      setGenState('done'); next();
+      fetch('/api/practice-os/actions/draft-blog', { method: 'POST', ...J, body: JSON.stringify({ context: `An introductory patient-education article about ${topic}.`, pageType: 'disease' }) })
+        .then((r) => r.json())
+        .then((b) => { if (typeof b.creditsRemaining === 'number') setCreditsLeft(b.creditsRemaining); })
+        .catch(() => {});
     } catch (x) { setGenState('error'); setErr(x.message || 'Something went wrong.'); }
   }, [fields]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -296,11 +330,11 @@ function Wizard() {
             <p className="pos-label" style={{ color: 'var(--green)' }}>Getting started</p>
             <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-2" style={{ letterSpacing: '-0.02em' }}>Do you already have a website?</h1>
             <div className="grid gap-2.5 mt-4">
-              <button onClick={() => setHasWebsite('no')} className="pos-card p-4 text-left" style={{ borderColor: hasWebsite === 'no' ? 'var(--green)' : 'var(--rule)', background: hasWebsite === 'no' ? 'var(--green-soft)' : 'var(--card)' }}>
+              <button onClick={() => chooseBranch('no')} className="pos-card p-4 text-left" style={{ borderColor: hasWebsite === 'no' ? 'var(--green)' : 'var(--rule)', background: hasWebsite === 'no' ? 'var(--green-soft)' : 'var(--card)' }}>
                 <span className="block font-semibold text-[15px] text-[var(--ink)]">No, not yet</span>
                 <span className="block text-[13px] text-[var(--muted)] mt-1">Perfect — we&apos;ll build one for you, free. No downside.</span>
               </button>
-              <button onClick={() => setHasWebsite('yes')} className="pos-card p-4 text-left" style={{ borderColor: hasWebsite === 'yes' ? 'var(--green)' : 'var(--rule)', background: hasWebsite === 'yes' ? 'var(--green-soft)' : 'var(--card)' }}>
+              <button onClick={() => chooseBranch('yes')} className="pos-card p-4 text-left" style={{ borderColor: hasWebsite === 'yes' ? 'var(--green)' : 'var(--rule)', background: hasWebsite === 'yes' ? 'var(--green-soft)' : 'var(--card)' }}>
                 <span className="block font-semibold text-[15px] text-[var(--ink)]">Yes, I have one</span>
                 <span className="block text-[13px] text-[var(--muted)] mt-1">We&apos;ll build your new site here, then help you point your existing domain at it — you keep your domain and its SEO.</span>
               </button>
