@@ -10,6 +10,7 @@ import PosNav from '@/components/practice-os/PosNav';
 export default function GetAccessPage() {
   const router = useRouter();
   const [status, setStatus] = useState(null); // 'none' | 'pending' | 'granted' | 'denied'
+  const [access, setAccess] = useState({});
   const [form, setForm] = useState({ name: '', phone: '', specialty: '', city: '', challenge: '', goal: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -20,6 +21,7 @@ export default function GetAccessPage() {
       if (res.status === 401) { router.push('/login?entry=practice-os'); return; }
       const d = await res.json();
       setStatus(d.status || 'none');
+      setAccess(d.access || {});
       setForm((f) => ({ ...f, ...(d.prefill || {}) }));
     } catch { setStatus('none'); }
   }, [router]);
@@ -48,7 +50,7 @@ export default function GetAccessPage() {
 
       {status === null && <p className="text-sm text-[var(--muted)] mt-8">Loading…</p>}
 
-      {status === 'granted' && <GrantedActions router={router} />}
+      {status === 'granted' && <GrantedActions router={router} access={access} />}
 
       {status === 'pending' && (
         <div className="mt-8">
@@ -97,10 +99,31 @@ export default function GetAccessPage() {
   );
 }
 
-// Granted state — plus an on-demand "generate my next page" action (§7 alt).
-function GrantedActions({ router }) {
+function loadRazorpay() {
+  return new Promise((resolve) => {
+    if (window.Razorpay) return resolve(true);
+    const s = document.createElement('script');
+    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    s.onload = () => resolve(true); s.onerror = () => resolve(false);
+    document.body.appendChild(s);
+  });
+}
+
+// Granted state — access status + subscribe/renew (₹5,000/mo) + generate next page.
+function GrantedActions({ router, access }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
+  const [subBusy, setSubBusy] = useState(false);
+
+  const days = access?.expiresAt ? Math.ceil((new Date(access.expiresAt) - Date.now()) / (24 * 60 * 60 * 1000)) : null;
+  const statusLine = access?.subscribed
+    ? 'Your ₹5,000/mo subscription is active.'
+    : access?.permanent
+      ? 'Full access — enabled by CuraGo.'
+      : days != null
+        ? `Your free access ${days > 0 ? `runs for ${days} more day${days === 1 ? '' : 's'}` : 'has ended'} — subscribe to keep it going.`
+        : 'Optimization is unlocked.';
+  const showSubscribe = !access?.subscribed && !access?.permanent;
 
   const generateNext = async () => {
     setBusy(true); setMsg('');
@@ -114,17 +137,48 @@ function GrantedActions({ router }) {
     finally { setBusy(false); }
   };
 
+  const subscribe = async () => {
+    setSubBusy(true); setMsg('');
+    try {
+      const d = await fetch('/api/practice-os/optimization/subscribe', { method: 'POST', credentials: 'include' }).then((r) => r.json());
+      if (!d.success) { setMsg(d.error || 'Could not start the subscription.'); return; }
+      const ok = await loadRazorpay();
+      if (!ok) { setMsg('Could not load the payment window.'); return; }
+      const rz = new window.Razorpay({
+        key: d.keyId,
+        subscription_id: d.subscriptionId,
+        name: 'CuraGo — Dominate Organic Search',
+        description: '₹5,000 / month',
+        handler: async (resp) => {
+          await fetch('/api/practice-os/optimization/verify', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+            body: JSON.stringify(resp),
+          });
+          window.location.reload();
+        },
+        theme: { color: '#096b17' },
+      });
+      rz.open();
+    } catch { setMsg('Something went wrong.'); }
+    finally { setSubBusy(false); }
+  };
+
   return (
     <div className="mt-8">
       <div className="pos-card p-6" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)' }}>
         <p className="pos-label" style={{ color: 'var(--green)' }}>You&apos;re in</p>
         <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1" style={{ letterSpacing: '-0.02em' }}>Optimization is unlocked</h1>
-        <p className="text-sm text-[var(--muted)] mt-2">Generate your next education page whenever you&apos;re ready — we&apos;ll draft the next condition from your profile for you to review.</p>
+        <p className="text-sm text-[var(--muted)] mt-2">{statusLine}</p>
         {msg && <p className="text-[13px] text-[var(--muted)] mt-3">{msg}</p>}
         <div className="flex flex-wrap items-center gap-3 mt-4">
           <button onClick={generateNext} disabled={busy} className="pos-action" style={{ opacity: busy ? 0.5 : 1 }}>
             {busy ? 'Generating…' : '✨ Generate my next page'}
           </button>
+          {showSubscribe && (
+            <button onClick={subscribe} disabled={subBusy} className="pos-card px-4 py-3 text-[14px] font-semibold" style={{ borderColor: 'var(--orange)', color: 'var(--orange)' }}>
+              {subBusy ? 'Opening…' : 'Subscribe · ₹5,000/mo'}
+            </button>
+          )}
           <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-link" style={{ fontSize: 14 }}>Go to control center →</button>
         </div>
       </div>

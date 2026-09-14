@@ -22,7 +22,18 @@ export async function GET(request) {
       phone: doctor.whatsappNumber || doctor.phone || '',
       specialty: doctor.specialization || '',
     };
-    return NextResponse.json({ success: true, granted, status, prefill });
+    // Access detail for the "granted" screen (expiry + subscription state).
+    const PracticeOsProfile = (await import('@/models/practice-os/PracticeOsProfile')).default;
+    const OptimizationSubscription = (await import('@/models/practice-os/OptimizationSubscription')).default;
+    const profile = await PracticeOsProfile.findOne({ doctorId: doctor._id }).select('optimizationAccess').lean();
+    const sub = await OptimizationSubscription.findOne({ doctorId: doctor._id, status: 'active' }).select('status').lean();
+    const a = profile?.optimizationAccess || {};
+    const access = {
+      permanent: !!a.permanent,
+      expiresAt: a.expiresAt || null,
+      subscribed: !!sub,
+    };
+    return NextResponse.json({ success: true, granted, status, prefill, access });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     console.error('[access-request GET]', error);
