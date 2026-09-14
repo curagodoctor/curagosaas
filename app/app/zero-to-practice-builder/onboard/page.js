@@ -8,7 +8,10 @@ import GbpGuide from '@/components/practice-os/GbpGuide';
 // The linear onboarding wizard (entry flow §2). One guided flow, one step at a
 // time, with a phase rail: PROFILE → WEBSITE → GOOGLE → ACCESS. POS design.
 // This commit implements the PROFILE phase; later phases follow.
-const PHASES = ['Profile', 'Website', 'Google', 'Access'];
+// Phase rail labels. 'Account' (signup) is always complete by the time the
+// wizard opens, so it shows as a done step; a STEP's `phase` (0–3) maps to
+// Profile…Access, i.e. rail index = phase + 1.
+const PHASES = ['Account', 'Profile', 'Website', 'Google', 'Access'];
 
 const PRO = SECTIONS.find((s) => s.id === 'pro') || { fields: [] };
 const PRACTICE = SECTIONS.find((s) => s.id === 'practice') || { fields: [] };
@@ -285,13 +288,23 @@ function Wizard() {
       {/* Phase rail + progress */}
       <div className="sticky top-0 z-10" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--rule)' }}>
         <div className="max-w-2xl mx-auto px-5 py-3">
-          <div className="flex items-center gap-2 mb-2 flex-wrap">
-            {PHASES.map((p, i) => (
-              <span key={p} className="pos-label px-2 py-1 rounded-md"
-                style={{ background: i === st.phase ? 'var(--green)' : i < st.phase ? 'var(--green-soft)' : 'transparent', color: i === st.phase ? '#fff' : i < st.phase ? 'var(--green)' : 'var(--muted)', border: `1px solid ${i <= st.phase ? 'var(--green)' : 'var(--rule)'}` }}>
-                {p}
-              </span>
-            ))}
+          <div className="flex items-center gap-1.5 mb-2.5 flex-wrap">
+            {PHASES.map((p, i) => {
+              const cur = st.phase + 1;      // Account (index 0) is already done
+              const active = i === cur;
+              const done = i < cur;
+              return (
+                <div key={p} className="flex items-center gap-1.5 rounded-[10px] pl-1 pr-2.5 py-1"
+                  style={{ background: active ? 'var(--green-soft)' : 'transparent', border: `1px solid ${active ? 'var(--green)' : 'transparent'}` }}>
+                  <span className="grid place-items-center rounded-md shrink-0"
+                    style={{ width: 20, height: 20, fontFamily: 'var(--mono)', fontSize: 10.5, fontWeight: 600,
+                      background: done || active ? 'var(--green)' : 'var(--rule-soft)', color: done || active ? '#fff' : 'var(--muted)' }}>
+                    {done ? '✓' : i + 1}
+                  </span>
+                  <span className="pos-label" style={{ color: active ? 'var(--green)' : done ? 'var(--ink)' : 'var(--muted)' }}>{p}</span>
+                </div>
+              );
+            })}
           </div>
           <div className="pos-meter"><span style={{ width: `${pct}%` }} /></div>
         </div>
