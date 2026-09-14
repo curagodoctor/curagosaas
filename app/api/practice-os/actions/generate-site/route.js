@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/access';
-import { assertHasCredits, chargeAiCredits } from '@/lib/practice-os/aiCredits';
+import { assertHasCredits, chargeAiCredits, getRemainingCredits } from '@/lib/practice-os/aiCredits';
 import { structureLongContent } from '@/lib/practice-os/ai';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 import BookingPage from '@/models/BookingPage';
@@ -58,8 +58,12 @@ export async function POST(request) {
       });
     }
 
+    // §7 — the very first website build is a free onboarding gift: the doctor's
+    // 10 credits are for their own AI usage afterwards, not the automatic build.
+    // Only meter (and require credits for) re-generations.
+    const firstBuild = !existing;
     // Block when today's credit pool is empty (throws NoCredits → 402 below).
-    await assertHasCredits(doctor._id);
+    if (!firstBuild) await assertHasCredits(doctor._id);
 
     const fields = await getDoctorProfileFields(doctor._id);
     // A readable summary of everything we know about the doctor, for grounding.
@@ -155,8 +159,10 @@ export async function POST(request) {
       mode = 'draft';
     }
 
-    // Charge one credit now that generation succeeded.
-    const { remaining } = await chargeAiCredits(doctor._id, { label: 'generate-site' });
+    // Charge one credit now that generation succeeded — except the free first build.
+    const remaining = firstBuild
+      ? await getRemainingCredits(doctor._id)
+      : (await chargeAiCredits(doctor._id, { label: 'generate-site' })).remaining;
 
     const hasAddress = !!(doc?.customDomain || doc?.subdomain);
     const url = doc?.customDomain ? `https://${doc.customDomain}` : (doc?.subdomain ? `https://${doc.subdomain}.curago.in` : '');

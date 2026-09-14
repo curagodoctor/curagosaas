@@ -72,6 +72,7 @@ function Wizard() {
   const [genMsg, setGenMsg] = useState('');
   const [siteUrl, setSiteUrl] = useState('');
   const [creditsLeft, setCreditsLeft] = useState(null);
+  const [firstArticleId, setFirstArticleId] = useState('');
   // GBP guide
   const [gbpBlocks, setGbpBlocks] = useState(null);
   const [gbpProgress, setGbpProgress] = useState({});
@@ -260,7 +261,7 @@ function Wizard() {
       const topic = (fields.diseases || '').split(',')[0]?.trim() || (fields.expertise || '').split(',')[0]?.trim() || `${fields.specialty || 'my practice'}`;
       fetch('/api/practice-os/actions/draft-blog', { method: 'POST', ...J, body: JSON.stringify({ context: `An introductory patient-education article about ${topic}.`, pageType: 'disease' }) })
         .then((r) => r.json())
-        .then((b) => { if (typeof b.creditsRemaining === 'number') setCreditsLeft(b.creditsRemaining); })
+        .then((b) => { if (typeof b.creditsRemaining === 'number') setCreditsLeft(b.creditsRemaining); if (b.id) setFirstArticleId(b.id); })
         .catch(() => {});
     } catch (x) { setGenState('error'); setErr(x.message || 'Something went wrong.'); }
   }, [fields]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -542,7 +543,10 @@ function Wizard() {
             <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-3" style={{ letterSpacing: '-0.02em' }}>It&apos;s built — and editable, no redirection.</h1>
             <div className="pos-card p-5 mb-4" style={{ background: 'var(--green-soft)', borderColor: 'var(--green)' }}>
               <p className="text-[15px] text-[var(--ink)]" style={{ lineHeight: 1.6 }}>Your website and your first article are ready. Edit everything from the AI builder — you never leave CuraGo.</p>
-              {siteUrl && <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="pos-action inline-block mt-3">View my website →</a>}
+              <div className="flex flex-wrap gap-3 mt-3">
+                {siteUrl && <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="pos-action inline-block">View my website →</a>}
+                <a href="/admin/dashboard/ai-generate" className="pos-card inline-block px-4 py-3 text-[14px] font-semibold" style={{ borderColor: 'var(--green)', color: 'var(--green)' }}>Edit in the AI builder →</a>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div className="pos-card p-4">
@@ -550,8 +554,10 @@ function Wizard() {
                 <p className="text-[13px] text-[var(--muted)] mt-0.5">AI credits, ready to use</p>
               </div>
               <div className="pos-card p-4">
-                <p className="text-[14px] font-semibold text-[var(--ink)]">First article ready</p>
-                <p className="text-[13px] text-[var(--muted)] mt-0.5">Review &amp; publish it anytime.</p>
+                <p className="text-[14px] font-semibold text-[var(--ink)]">First article</p>
+                {firstArticleId
+                  ? <a href={`/admin/dashboard/blog-articles/${firstArticleId}`} className="text-[13px] font-medium inline-block mt-0.5" style={{ color: 'var(--green)' }}>Review &amp; publish →</a>
+                  : <p className="text-[13px] text-[var(--muted)] mt-0.5">Preparing… ready in a moment.</p>}
               </div>
             </div>
             <div className="pos-card p-4 mb-5">

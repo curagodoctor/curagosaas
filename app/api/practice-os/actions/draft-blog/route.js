@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/access';
-import { assertHasCredits, chargeAiCredits } from '@/lib/practice-os/aiCredits';
+import { assertHasCredits, chargeAiCredits, getRemainingCredits } from '@/lib/practice-os/aiCredits';
 import { structureLongContent } from '@/lib/practice-os/ai';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 import { relatedReadingBlock } from '@/lib/practice-os/blogLinks';
@@ -26,7 +26,10 @@ export async function POST(request) {
     await assertAiAccess(doctor._id);
     const { context, diseaseCluster, pageType } = await request.json();
     if (!context || !context.trim()) return NextResponse.json({ success: false, error: 'Tell me what the article should be about.' }, { status: 400 });
-    await assertHasCredits(doctor._id);
+    // §7 — the first auto-drafted article is a free onboarding gift; the doctor's
+    // 10 credits are for their own subsequent AI usage. Only meter later articles.
+    const firstArticle = (await BlogArticle.countDocuments({ doctorId: doctor._id })) === 0;
+    if (!firstArticle) await assertHasCredits(doctor._id);
 
     const cluster = String(diseaseCluster || '').trim().toLowerCase();
     const type = PAGE_TYPES.includes(pageType) ? pageType : '';
@@ -71,7 +74,9 @@ export async function POST(request) {
       status: 'draft',
     });
 
-    const { remaining } = await chargeAiCredits(doctor._id, { label: 'draft-blog' });
+    const remaining = firstArticle
+      ? await getRemainingCredits(doctor._id)
+      : (await chargeAiCredits(doctor._id, { label: 'draft-blog' })).remaining;
     return NextResponse.json({ success: true, id: String(article._id), title: article.title, creditsRemaining: remaining });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
