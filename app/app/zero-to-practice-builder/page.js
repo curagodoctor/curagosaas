@@ -29,14 +29,22 @@ export default function ControlCenter() {
   useEffect(() => {
     (async () => {
       try {
-        const [pRes, meRes, lbRes, uRes, aRes] = await Promise.all([
+        const [pRes, meRes, lbRes, uRes, aRes, profRes] = await Promise.all([
           fetch('/api/practice-os/packs'),
           fetch('/api/auth/me'),
           fetch('/api/practice-os/leaderboard'),
           fetch('/api/practice-os/username'),
           fetch('/api/practice-os/access-request'),
+          fetch('/api/practice-os/profile'),
         ]);
         if (pRes.status === 401) { router.push('/login?entry=practice-os'); return; }
+        // If the doctor started signup but never finished onboarding, send them
+        // back into the wizard (it resumes at their saved step) rather than
+        // dropping them on the control center half-set-up.
+        if (profRes.ok) {
+          const prof = await profRes.json();
+          if (prof.success && !prof.onboardComplete) { router.replace('/app/zero-to-practice-builder/onboard'); return; }
+        }
         const pData = await pRes.json();
         if (pData.success) setPacks(pData.packs);
         if (meRes.ok) { const me = await meRes.json(); setName(me.doctor?.displayName || me.doctor?.name || ''); }

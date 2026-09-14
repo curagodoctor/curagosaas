@@ -133,6 +133,17 @@ function Wizard() {
       body: JSON.stringify({ hasWebsite: v }),
     }).catch(() => {});
   };
+  // Onboarding is done once the commitment quiz passes → the control center stops
+  // sending them back here. Wait for the flag to persist before navigating away.
+  const finishOnboarding = async (dest) => {
+    try {
+      await fetch('/api/practice-os/profile', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ onboardComplete: true }),
+      });
+    } catch { /* non-blocking */ }
+    router.push(dest);
+  };
 
   // ---- profile AI draft + save ----
   const draft = async () => {
@@ -639,7 +650,7 @@ function Wizard() {
               <p className="text-sm text-[var(--muted)] mb-5" style={{ lineHeight: 1.6 }}>{QUIZ[quizIdx].body}</p>
               <div className="flex flex-wrap gap-3">
                 <button
-                  onClick={() => { if (quizIdx >= 2) router.push('/app/zero-to-practice-builder/get-access'); else setQuizIdx(quizIdx + 1); }}
+                  onClick={() => { if (quizIdx >= 2) finishOnboarding('/app/zero-to-practice-builder/get-access'); else setQuizIdx(quizIdx + 1); }}
                   className="pos-action" style={{ flex: '1 1 200px' }}>
                   {QUIZ[quizIdx].yes}
                 </button>
