@@ -32,6 +32,10 @@ export default function AccessRequestsTab() {
     } catch { /* ignore */ } finally { setBusyId(''); }
   };
 
+  const accessLabel = (expiresAt) => {
+    const days = Math.ceil((new Date(expiresAt) - Date.now()) / (24 * 60 * 60 * 1000));
+    return days > 0 ? `expires in ${days}d` : 'expired';
+  };
   const badge = (s) => ({
     pending: 'bg-amber-100 text-amber-800',
     granted: 'bg-green-100 text-green-800',
@@ -68,23 +72,36 @@ export default function AccessRequestsTab() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-gray-900">{r.name || 'Unknown'}</span>
                     <span className={`text-[11px] px-2 py-0.5 rounded-full capitalize ${badge(r.status)}`}>{r.status}</span>
+                    {r.access?.permanent
+                      ? <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">permanent</span>
+                      : r.access?.expiresAt && <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{accessLabel(r.access.expiresAt)}</span>}
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">
                     {[r.specialty, r.city].filter(Boolean).join(' · ') || '—'} · {r.phone || 'no phone'} · {r.email || 'no email'}
                   </p>
                 </div>
-                {r.status === 'pending' && (
-                  <div className="flex gap-2 shrink-0">
-                    <button onClick={() => decide(r._id, 'grant')} disabled={busyId === r._id}
-                      className="px-3 py-1.5 bg-[#096b17] text-white rounded-lg text-sm font-medium disabled:opacity-50">Grant</button>
-                    <button onClick={() => decide(r._id, 'deny')} disabled={busyId === r._id}
-                      className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm disabled:opacity-50">Deny</button>
-                  </div>
-                )}
-                {r.status === 'granted' && (
-                  <button onClick={() => decide(r._id, 'deny')} disabled={busyId === r._id}
-                    className="px-3 py-1.5 border border-gray-300 text-gray-500 rounded-lg text-xs shrink-0 disabled:opacity-50">Revoke</button>
-                )}
+                <div className="flex gap-2 shrink-0 flex-wrap justify-end">
+                  {r.status === 'pending' && (
+                    <>
+                      <button onClick={() => decide(r._id, 'grant')} disabled={busyId === r._id}
+                        className="px-3 py-1.5 bg-[#096b17] text-white rounded-lg text-sm font-medium disabled:opacity-50">Grant 30 days</button>
+                      <button onClick={() => decide(r._id, 'deny')} disabled={busyId === r._id}
+                        className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm disabled:opacity-50">Deny</button>
+                    </>
+                  )}
+                  {r.status === 'granted' && (
+                    <>
+                      <button onClick={() => decide(r._id, 'extend')} disabled={busyId === r._id}
+                        className="px-3 py-1.5 border border-[#096b17] text-[#096b17] rounded-lg text-xs disabled:opacity-50">+30 days</button>
+                      {!r.access?.permanent && (
+                        <button onClick={() => decide(r._id, 'permanent')} disabled={busyId === r._id}
+                          className="px-3 py-1.5 border border-blue-300 text-blue-700 rounded-lg text-xs disabled:opacity-50">Make permanent</button>
+                      )}
+                      <button onClick={() => decide(r._id, 'deny')} disabled={busyId === r._id}
+                        className="px-3 py-1.5 border border-gray-300 text-gray-500 rounded-lg text-xs disabled:opacity-50">Revoke</button>
+                    </>
+                  )}
+                </div>
               </div>
               {(r.challenge || r.goal) && (
                 <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5 text-sm">

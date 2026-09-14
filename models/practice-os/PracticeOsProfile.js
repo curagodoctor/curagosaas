@@ -46,12 +46,16 @@ const PracticeOsProfileSchema = new mongoose.Schema({
   // website_url, whatsapp_number). Injected into prompts/content via {{name}}.
   variables: { type: mongoose.Schema.Types.Mixed, default: {} },
 
-  // §7 — the optimization boundary in v1. Free setup is always available;
-  // ongoing optimization work is gated behind this flag, which the founder flips
-  // after reviewing the doctor's access request. Bypassable from the admin portal.
+  // §7 — the optimization boundary. The founder grants access from the admin
+  // portal; a grant lasts 30 days (expiresAt), after which the doctor must renew
+  // (₹5,000/mo Razorpay subscription) OR the founder overrides. `permanent` is the
+  // founder override that never expires. Access is live while: permanent, or now
+  // < expiresAt, or an active subscription exists.
   optimizationAccess: {
     granted: { type: Boolean, default: false },
     grantedAt: { type: Date, default: null },
+    expiresAt: { type: Date, default: null },
+    permanent: { type: Boolean, default: false },
   },
 
   // §14 — the doctor's preferred window for reminders/nudges. Notifications are
