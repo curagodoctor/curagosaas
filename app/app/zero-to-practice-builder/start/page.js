@@ -13,7 +13,7 @@ const STEPS = [
   { key: 'profileBuilt', title: 'Build your profile with AI', desc: 'Answer a few prompts — the AI writes it up, you edit and approve.', href: '/app/zero-to-practice-builder/profile/build', cta: 'Build profile' },
   { key: 'websiteReady', title: 'Generate your website', desc: 'Your site is written from your profile and goes live — no redirection.', href: '/admin/dashboard/ai-generate', cta: 'Generate website' },
   { key: 'firstBlog', title: 'Publish your first article', desc: 'A patient-education page that helps people find you on Google.', href: '/admin/dashboard/ai-generate', cta: 'Write an article' },
-  { key: 'gbpConnected', title: 'Set up Google Business Profile', desc: 'The single biggest lever for being found locally.', href: '/admin/dashboard/gmb', cta: 'Set up GBP' },
+  { key: 'gbpConnected', title: 'Set up Google Business Profile', desc: 'The single biggest lever for being found locally.', href: '/app/zero-to-practice-builder/gbp', cta: 'Set up GBP' },
 ];
 
 export default function StartPage() {
