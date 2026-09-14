@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import NapCaution from "@/components/admin/NapCaution";
 
 export default function ClinicInfoConfig({ config, onChange, slug }) {
   const [editingIndex, setEditingIndex] = useState(null);
@@ -150,6 +151,8 @@ export default function ClinicInfoConfig({ config, onChange, slug }) {
           <h4 className="font-medium text-sm text-gray-900 mb-3">
             {editingIndex !== null ? "Edit Clinic" : "Add New Clinic"}
           </h4>
+
+          <NapCaution className="mb-3" />
 
           <div className="space-y-3">
             <div>

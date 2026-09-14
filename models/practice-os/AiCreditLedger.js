@@ -9,6 +9,10 @@ const DAILY_LIMIT = parseInt(process.env.PRACTICE_OS_AI_DAILY_CREDITS, 10) > 0
 const MAX_BALANCE = parseInt(process.env.PRACTICE_OS_AI_MAX_CREDITS, 10) > 0
   ? parseInt(process.env.PRACTICE_OS_AI_MAX_CREDITS, 10) : DAILY_LIMIT * 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
+// §4 — the FREE tier gets a small one-time lifetime pool (never refills), so a
+// doctor can try AI before paying. Paid tiers use the accumulating daily pool.
+const FREE_LIFETIME = parseInt(process.env.PRACTICE_OS_AI_FREE_LIFETIME, 10) >= 0
+  ? parseInt(process.env.PRACTICE_OS_AI_FREE_LIFETIME, 10) : 10;
 
 /**
  * Practice OS — AiCreditLedger
@@ -42,16 +46,30 @@ const AiCreditLedgerSchema = new mongoose.Schema({
   lifetimePromptTokens: { type: Number, default: 0 },
   lifetimeCompletionTokens: { type: Number, default: 0 },
   lifetimeTokens: { type: Number, default: 0 },
+  // True once the free lifetime pool was seeded (so it's granted exactly once and
+  // never refills, even if the doctor stays on the free tier).
+  freeInitialized: { type: Boolean, default: false },
 }, { timestamps: true });
 
-// Credit the doctor for every day elapsed since we last topped them up, so unused
-// days accumulate (capped at MAX_BALANCE) rather than being lost at midnight.
-AiCreditLedgerSchema.statics.getOrCreateForToday = async function (doctorId) {
+// Get (or create) the doctor's ledger for today.
+//  - paid tier: top up the accumulating daily pool (one day's allowance per
+//    elapsed day, capped at a week's worth).
+//  - free tier: seed a one-time FREE_LIFETIME pool and NEVER top up.
+AiCreditLedgerSchema.statics.getOrCreateForToday = async function (doctorId, paid = true) {
   const today = startOfDay(new Date());
   let ledger = await this.findOne({ doctorId });
   if (!ledger) {
-    return this.create({ doctorId, dailyLimit: DAILY_LIMIT, dailyBalance: DAILY_LIMIT, lastResetDate: today });
+    return this.create({
+      doctorId,
+      dailyLimit: paid ? DAILY_LIMIT : 0,
+      dailyBalance: paid ? DAILY_LIMIT : FREE_LIFETIME,
+      lastResetDate: today,
+      freeInitialized: !paid,
+    });
   }
+  // Free tier: no daily accumulation — the lifetime pool just drains.
+  if (!paid) return ledger;
+
   const last = ledger.lastResetDate ? startOfDay(new Date(ledger.lastResetDate)) : null;
   // How many day-boundaries have passed since the last top-up.
   const daysElapsed = last ? Math.max(0, Math.floor((today.getTime() - last.getTime()) / DAY_MS)) : 1;

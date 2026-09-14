@@ -45,6 +45,31 @@ const PracticeOsProfileSchema = new mongoose.Schema({
   // Doctor-global variables collected from module inputs (e.g. gbp_link,
   // website_url, whatsapp_number). Injected into prompts/content via {{name}}.
   variables: { type: mongoose.Schema.Types.Mixed, default: {} },
+
+  // §7 — the optimization boundary. The founder grants access from the admin
+  // portal; a grant lasts 30 days (expiresAt), after which the doctor must renew
+  // (₹5,000/mo Razorpay subscription) OR the founder overrides. `permanent` is the
+  // founder override that never expires. Access is live while: permanent, or now
+  // < expiresAt, or an active subscription exists.
+  optimizationAccess: {
+    granted: { type: Boolean, default: false },
+    grantedAt: { type: Date, default: null },
+    expiresAt: { type: Date, default: null },
+    permanent: { type: Boolean, default: false },
+  },
+
+  // §14 — the doctor's preferred window for reminders/nudges. Notifications are
+  // sent only in this window (best-effort within the daily cron cadence).
+  notificationWindow: {
+    type: String,
+    enum: ['morning', 'afternoon', 'evening', 'night'],
+    default: 'evening',
+  },
+
+  // §8 — GBP setup task-flow progress (map of "blockKey:taskIndex" → true) and
+  // the acknowledgement of the mandatory suspension-risk block.
+  gbpProgress: { type: mongoose.Schema.Types.Mixed, default: {} },
+  gbpRiskAcknowledgedAt: { type: Date, default: null },
 }, { timestamps: true });
 
 export default mongoose.models.PracticeOsProfile

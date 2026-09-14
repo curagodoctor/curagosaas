@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import GlobalAssistant from '@/components/practice-os/GlobalAssistant';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -377,6 +378,9 @@ export default function DashboardLayout({ children }) {
           {children}
         </div>
       </main>
+
+      {/* §4 — persistent assistant (auto-opens on the AI builder pages) */}
+      <GlobalAssistant />
     </div>
   );
 }

@@ -93,6 +93,7 @@ export default async function DoctorBlogArticlePage({ params }) {
   const doctorName = doctor.displayName || doctor.name;
   const authorName = article.author?.name || doctorName;
   const faqs = article.faqSection?.faqs?.filter((f) => f.question && f.answer) || [];
+  const socialLinks = (article.socialLinks || []).filter((l) => l.url && l.url.trim());
 
   // Fill {{doctor_name}} / {{city}} tokens used in modular blog copy.
   const vars = { doctor_name: doctorName || '', city: article.location?.city || doctor.city || '' };
@@ -207,6 +208,27 @@ export default async function DoctorBlogArticlePage({ params }) {
                       {fill(faq.answer)}
                     </div>
                   </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* §10 — social media links (reels / posts) */}
+          {socialLinks.length > 0 && (
+            <section>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Watch &amp; follow</h2>
+              <div className="flex flex-wrap gap-3">
+                {socialLinks.map((link, index) => (
+                  <a
+                    key={index}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-lg text-gray-800 hover:border-[#096b17] hover:text-[#096b17] transition-colors text-sm font-medium"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    {link.label || 'View'}
+                  </a>
                 ))}
               </div>
             </section>

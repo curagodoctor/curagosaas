@@ -96,7 +96,7 @@ export async function POST(request) {
       return NextResponse.json({ success: true, subdomain: doctor.subdomain, alreadySet: true });
     }
 
-    const { subdomain: raw } = await request.json();
+    const { subdomain: raw, hadWebsite, existingWebsiteUrl } = await request.json();
     const subdomain = (raw || '').trim().toLowerCase();
 
     if (!subdomain) {
@@ -121,6 +121,13 @@ export async function POST(request) {
     }
     fresh.subdomain = subdomain;
     fresh.websiteBuilderActive = true;
+    // §16 onboarding branch: record whether they arrived with an existing site
+    // (and its URL) so we can later offer the "point your domain here" path.
+    if (typeof hadWebsite === 'boolean') fresh.hadWebsiteAtSignup = hadWebsite;
+    if (existingWebsiteUrl && existingWebsiteUrl.trim()) {
+      fresh.existingWebsiteUrl = existingWebsiteUrl.trim()
+        .replace(/^https?:\/\//i, '').replace(/\/+$/, '').toLowerCase();
+    }
     try {
       await fresh.save();
     } catch (saveErr) {

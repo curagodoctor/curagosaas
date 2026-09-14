@@ -4,14 +4,30 @@ import PracticeOsEnrollment from '@/models/practice-os/PracticeOsEnrollment';
 import Framework from '@/models/practice-os/Framework';
 import Mission from '@/models/practice-os/Mission';
 import UserMissionProgress from '@/models/practice-os/UserMissionProgress';
+import BlogArticle from '@/models/BlogArticle';
 import Doctor from '@/models/Doctor';
 import { sendPracticeOsReminderEmail } from '@/lib/email';
 import { sendSMS } from '@/lib/twilio';
-import { fireWyltoWebhook } from '@/lib/wylto';
+import { fireWyltoWebhook, sendWyltoTemplate } from '@/lib/wylto';
+import PracticeOsProfile from '@/models/practice-os/PracticeOsProfile';
 
 export const runtime = 'nodejs';
 
 const DAY_MS = 86400000;
+
+// §11/§14 — the doctor's preferred notification window, in IST hours. The cron
+// runs hourly and only sends when the current IST hour is inside the window
+// (the once-per-day guard means they get exactly one, at their chosen time).
+const WINDOW_HOURS = {
+  morning: [6, 12], afternoon: [12, 17], evening: [17, 21], night: [21, 24],
+};
+function istHour(now = new Date()) {
+  return Number(now.toLocaleString('en-US', { hour: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' })) % 24;
+}
+function inWindow(window, hour) {
+  const [start, end] = WINDOW_HOURS[window] || WINDOW_HOURS.evening;
+  return hour >= start && hour < end;
+}
 
 /**
  * GET /api/cron/practice-os-reminders
@@ -48,6 +64,7 @@ export async function GET(request) {
     const enrollments = allActive.filter((e) => liveFwIds.has(String(e.frameworkId)));
 
     const now = new Date();
+    const hourNow = istHour(now);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://curago.in';
     const ctaUrl = `${appUrl}/practice-os`;
 
@@ -66,6 +83,13 @@ export async function GET(request) {
 
         const doctor = await Doctor.findById(enrollment.doctorId);
         if (!doctor || !doctor.email) {
+          continue;
+        }
+
+        // §11/§14 — only send inside the doctor's preferred window (defaults to
+        // evening). The cron runs hourly; this delivers at the chosen time.
+        const prof = await PracticeOsProfile.findOne({ doctorId: enrollment.doctorId }).select('notificationWindow').lean();
+        if (!inWindow(prof?.notificationWindow || 'evening', hourNow)) {
           continue;
         }
 
@@ -107,6 +131,25 @@ export async function GET(request) {
           };
         }
 
+        // §11 — content-first: if AI content is waiting for review, send a custom
+        // preview message (with the page title + excerpt) instead of a generic
+        // reminder. This overrides the mission reminder and points at the draft.
+        const draft = await BlogArticle.findOne({ doctorId: doctor._id, status: 'draft' })
+          .select('title excerpt').sort({ createdAt: -1 }).lean();
+        if (draft) {
+          const preview = (draft.excerpt || '').trim().slice(0, 160);
+          reminder = {
+            subject: 'Your next educational page is ready',
+            heading: 'Your next page is ready to review',
+            body: `Your next educational page — "${draft.title}" — is ready.${preview ? `\n\n${preview}…` : ''}\n\nAbout 10 minutes to review, then publish with one tap.`,
+            ctaLabel: 'Review & publish',
+            ctaUrl: `${appUrl}/admin/dashboard/blog-articles`,
+            sms: `CuraGo: Your next page "${draft.title}" is ready to review — about 10 min, publish with one tap. ${appUrl}/admin/dashboard/blog-articles`,
+            isContent: true,
+            contentTitle: draft.title,
+          };
+        }
+
         if (!reminder) {
           continue;
         }
@@ -120,7 +163,7 @@ export async function GET(request) {
             heading: reminder.heading,
             body: reminder.body,
             ctaLabel: reminder.ctaLabel,
-            ctaUrl,
+            ctaUrl: reminder.ctaUrl || ctaUrl,
           });
         } catch (emailError) {
           console.error(`[PracticeOS Reminders] Email failed for ${enrollment._id}:`, emailError);
@@ -136,9 +179,23 @@ export async function GET(request) {
           }
         }
 
-        // WhatsApp — daily "finish today's module" nudge via Wylto.
+        // WhatsApp — content-first (§11): if content is waiting, send the
+        // "your next content is ready" template; otherwise the module nudge.
         const waPhone = doctor.whatsappNumber || doctor.phone;
-        if (waPhone) {
+        if (waPhone && reminder.isContent) {
+          try {
+            // Direct Wylto send of the approved `content_ready_review` template:
+            // {{1}} = doctor name, {{2}} = page title.
+            await sendWyltoTemplate({
+              to: waPhone,
+              templateName: process.env.WYLTO_CONTENT_TEMPLATE || 'content_ready_review',
+              language: 'en',
+              bodyParams: [doctor.displayName || doctor.name || 'Doctor', reminder.contentTitle || 'your next page'],
+            });
+          } catch (waError) {
+            console.error(`[PracticeOS Reminders] WhatsApp (content) failed for ${enrollment._id}:`, waError);
+          }
+        } else if (waPhone) {
           // Look up the pack + the doctor's current (first uncompleted) mission/task
           // so the reminder message can name exactly what's next.
           let packTitle = '';

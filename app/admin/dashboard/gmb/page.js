@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import NapCaution from '@/components/admin/NapCaution';
 
 export default function GmbDashboard() {
   const searchParams = useSearchParams();
@@ -166,7 +167,8 @@ export default function GmbDashboard() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Google Business Profile</h1>
-        <p className="text-gray-600">Manage your Google Business Profile, posts, reviews, and more.</p>
+        <p className="text-gray-600 mb-4">Manage your Google Business Profile, posts, reviews, and more.</p>
+        <NapCaution />
       </div>
 
       {/* Messages */}

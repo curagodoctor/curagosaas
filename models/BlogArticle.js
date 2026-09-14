@@ -47,6 +47,16 @@ const blogArticleSchema = new mongoose.Schema({
     enum: ['', 'disease', 'treatment', 'procedure', 'location', 'symptom'],
     default: '',
   },
+  // §10 — the disease cluster this page belongs to (e.g. "gallbladder-stones").
+  // Together with pageType it forms the central link registry used for automatic
+  // internal linking and for reusing page links in GBP posts / other content.
+  diseaseCluster: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    default: '',
+    index: true,
+  },
   blocks: [
     {
       heading: { type: String, default: '' },
@@ -58,6 +68,15 @@ const blogArticleSchema = new mongoose.Schema({
     heading: { type: String, default: '' },
     content: { type: String, default: '' },
   },
+
+  // §10 — social media links for this page (Instagram reels, YouTube, posts).
+  // The doctor adds these later to embed their social presence on the article.
+  socialLinks: [
+    {
+      label: { type: String, trim: true, default: '' }, // e.g. "Watch the reel"
+      url: { type: String, trim: true, default: '' },
+    },
+  ],
 
   // Structured sections. All optional now — CuraGo is multi-specialty, so a
   // simple post shouldn't be forced to fill surgical sections to save. Empty

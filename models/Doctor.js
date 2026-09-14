@@ -54,6 +54,18 @@ const DoctorSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  // Onboarding (§16 "Do you already have a website?"): whether the doctor already
+  // ran a website when they signed up, and its URL. Drives the reframed onboarding
+  // copy and the later "point your existing domain at your new Curago site" path.
+  hadWebsiteAtSignup: {
+    type: Boolean,
+    default: null
+  },
+  existingWebsiteUrl: {
+    type: String,
+    trim: true,
+    default: null
+  },
 
   // Profile
   displayName: {

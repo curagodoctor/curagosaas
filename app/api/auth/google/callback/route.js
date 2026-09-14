@@ -85,12 +85,14 @@ export async function GET(request) {
     }
 
     // Website Builder needs a subdomain; email signup collects it up front, but
-    // Google signup doesn't — so send those doctors through a one-step
-    // "choose your address" screen before landing in the app.
+    // Google signup doesn't — so send those doctors through onboarding, starting
+    // with the §16 "do you already have a website?" branch, before landing.
     const landing = DEST[entry] || '/app';
-    const needsSubdomain = entry === 'website-builder' && !doctor.subdomain;
-    const dest = needsSubdomain
-      ? `/app/onboarding/subdomain?next=${encodeURIComponent(landing)}`
+    // New Website-Builder sign-ups go through the full onboarding wizard
+    // (branch → profile → website → GBP → access), which handles the subdomain.
+    const needsOnboarding = entry === 'website-builder' && !doctor.subdomain;
+    const dest = needsOnboarding
+      ? '/app/zero-to-practice-builder/onboard'
       : landing;
     const token = generateDoctorToken(doctor);
     const res = redirectTo(origin, dest);

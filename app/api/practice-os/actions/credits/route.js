@@ -10,9 +10,12 @@ export async function GET(request) {
   try {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
-    const access = await hasAiAccess(doctor._id);
-    const remaining = access ? await getRemainingCredits(doctor._id) : 0;
-    return NextResponse.json({ success: true, access, remaining });
+    const paid = await hasAiAccess(doctor._id);
+    // §4 — the free tier has a lifetime pool too, so compute remaining for both;
+    // "access" is true whenever the doctor can still spend (paid, or free w/ credits).
+    const remaining = await getRemainingCredits(doctor._id);
+    const access = paid || remaining > 0;
+    return NextResponse.json({ success: true, access, paid, tier: paid ? 'paid' : 'free', remaining });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     return NextResponse.json({ success: false, error: 'Failed' }, { status: 500 });

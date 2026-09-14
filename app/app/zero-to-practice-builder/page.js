@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import WorkspaceDrawer from '@/components/practice-os/WorkspaceDrawer';
 import PosNav from '@/components/practice-os/PosNav';
+import StreakCalendar from '@/components/practice-os/StreakCalendar';
+import PendingWorkPrompt from '@/components/practice-os/PendingWorkPrompt';
+import WebsiteStats from '@/components/practice-os/WebsiteStats';
+import EngagementNudges from '@/components/practice-os/EngagementNudges';
+import NotificationWindowCard from '@/components/practice-os/NotificationWindowCard';
 import { UsernamePicker } from './_username';
 
 // The Control Center — the logged-in landing. Left: welcome + the doctor's
@@ -16,25 +21,37 @@ export default function ControlCenter() {
   const [name, setName] = useState('');
   const [leaderboard, setLeaderboard] = useState(null);
   const [loading, setLoading] = useState(true);
-  // Leaderboard participation is compulsory — every doctor must pick an anonymous
-  // name. Gate the control center until they do.
+  // §11 — the leaderboard join is compulsory, but placed at the OPTIMIZATION
+  // boundary: only doctors who've been granted access must pick a name before
+  // proceeding. Free/setup doctors aren't gated.
   const [needsUsername, setNeedsUsername] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const [pRes, meRes, lbRes, uRes] = await Promise.all([
+        const [pRes, meRes, lbRes, uRes, aRes, profRes] = await Promise.all([
           fetch('/api/practice-os/packs'),
           fetch('/api/auth/me'),
           fetch('/api/practice-os/leaderboard'),
           fetch('/api/practice-os/username'),
+          fetch('/api/practice-os/access-request'),
+          fetch('/api/practice-os/profile'),
         ]);
         if (pRes.status === 401) { router.push('/login?entry=practice-os'); return; }
+        // If the doctor started signup but never finished onboarding, send them
+        // back into the wizard (it resumes at their saved step) rather than
+        // dropping them on the control center half-set-up.
+        if (profRes.ok) {
+          const prof = await profRes.json();
+          if (prof.success && !prof.onboardComplete) { router.replace('/app/zero-to-practice-builder/onboard'); return; }
+        }
         const pData = await pRes.json();
         if (pData.success) setPacks(pData.packs);
         if (meRes.ok) { const me = await meRes.json(); setName(me.doctor?.displayName || me.doctor?.name || ''); }
         if (lbRes.ok) { const lb = await lbRes.json(); if (lb.success) setLeaderboard(lb); }
-        if (uRes.ok) { const u = await uRes.json(); if (u.success && !u.username) setNeedsUsername(true); }
+        let granted = false;
+        if (aRes.ok) { const a = await aRes.json(); granted = !!a.granted; }
+        if (uRes.ok) { const u = await uRes.json(); if (u.success && !u.username && granted) setNeedsUsername(true); }
       } finally {
         setLoading(false);
       }
@@ -90,6 +107,15 @@ export default function ControlCenter() {
           ? <>Your practice is <strong className="text-[var(--green)]">{overallPct}%</strong> built across your packs. One mission a day gets you the rest.</>
           : <>Pick a builder pack below. Each is a guided programme that produces a real asset — not a certificate.</>}
       </p>
+
+      {/* §8 work awaiting review + §12 streak calendar + §14 reminder window */}
+      <div className="mt-5 space-y-4">
+        <PendingWorkPrompt />
+        <EngagementNudges />
+        <WebsiteStats />
+        <StreakCalendar />
+        <NotificationWindowCard />
+      </div>
 
       {/* No pack yet → offer the same right-fit assessment as signup/landing. */}
       {owned.length === 0 && (

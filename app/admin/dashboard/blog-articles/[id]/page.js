@@ -36,6 +36,8 @@ export default function BlogArticleEditorPage() {
 
     // Modular structure (new).
     pageType: '',
+    diseaseCluster: '',
+    socialLinks: [],
     blocks: [],
     locationBlock: { heading: '', content: '' },
 
@@ -104,6 +106,7 @@ export default function BlogArticleEditorPage() {
           scheduledAt: a.scheduledAt ? (() => { const d = new Date(a.scheduledAt); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); })() : '',
           featuredImage: { url: a.featuredImage?.url || '', alt: a.featuredImage?.alt || '' },
           tags: Array.isArray(a.tags) ? a.tags : [],
+          socialLinks: Array.isArray(a.socialLinks) ? a.socialLinks : [],
           pageType: a.pageType || '',
           // Prefer the new blocks; migrate legacy sections for old articles.
           blocks: (a.blocks && a.blocks.length) ? a.blocks : legacySectionsToBlocks(a),
@@ -211,6 +214,32 @@ export default function BlogArticleEditorPage() {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
     handleChange('slug', slug);
+  };
+
+  // §10 — generate a featured image from the article's topic (charges AI credits).
+  const handleGenerateImage = async () => {
+    if (!formData.title.trim()) {
+      await showAlert({ title: 'Add a title first', message: 'Give the article a title so the image matches its topic.', type: 'error' });
+      return;
+    }
+    setUploading(true);
+    try {
+      const res = await fetch('/api/practice-os/actions/generate-image', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ title: formData.title, context: formData.excerpt || formData.metaDescription }),
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        handleNestedChange('featuredImage', 'url', data.url);
+        await showAlert({ title: 'Image ready', message: 'Generated a featured image from your topic.', type: 'success' });
+      } else if (data.error === 'NoCredits' || data.error === 'PaymentRequired') {
+        await showAlert({ title: 'Not enough credits', message: data.message || 'This needs AI credits.', type: 'error' });
+      } else {
+        throw new Error(data.error || 'Generation failed');
+      }
+    } catch (err) {
+      await showAlert({ title: 'Could not generate', message: err.message || 'Please try again.', type: 'error' });
+    } finally { setUploading(false); }
   };
 
   const handleImageUpload = async (e) => {
@@ -396,6 +425,81 @@ export default function BlogArticleEditorPage() {
               </div>
             </div>
 
+            {/* §10 — disease cluster + page type for the central link registry
+                (automatic internal linking + reusing links in GBP posts). */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Disease cluster</label>
+                <input
+                  type="text"
+                  value={formData.diseaseCluster}
+                  onChange={(e) => handleChange('diseaseCluster', e.target.value.toLowerCase())}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="e.g., gallbladder-stones"
+                />
+                <p className="text-xs text-gray-400 mt-1">Groups related pages so they link to each other automatically.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Page type</label>
+                <select
+                  value={formData.pageType}
+                  onChange={(e) => handleChange('pageType', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">—</option>
+                  <option value="disease">Disease / condition</option>
+                  <option value="treatment">Treatment</option>
+                  <option value="procedure">Procedure</option>
+                  <option value="symptom">Symptom</option>
+                  <option value="location">Location</option>
+                </select>
+              </div>
+            </div>
+
+            {/* §10 — social media links (reels / posts) shown on the page */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">Social media links</label>
+                <button
+                  type="button"
+                  onClick={() => handleChange('socialLinks', [...(formData.socialLinks || []), { label: '', url: '' }])}
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  + Add link
+                </button>
+              </div>
+              {(formData.socialLinks || []).length === 0 && (
+                <p className="text-xs text-gray-400">Add Instagram reels, YouTube videos or post links to show on this page.</p>
+              )}
+              <div className="space-y-2">
+                {(formData.socialLinks || []).map((link, i) => (
+                  <div key={i} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={link.label}
+                      onChange={(e) => { const next = [...formData.socialLinks]; next[i] = { ...next[i], label: e.target.value }; handleChange('socialLinks', next); }}
+                      placeholder="Label (e.g. Watch the reel)"
+                      className="w-1/3 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                    <input
+                      type="url"
+                      value={link.url}
+                      onChange={(e) => { const next = [...formData.socialLinks]; next[i] = { ...next[i], url: e.target.value }; handleChange('socialLinks', next); }}
+                      placeholder="https://instagram.com/reel/…"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleChange('socialLinks', formData.socialLinks.filter((_, j) => j !== i))}
+                      className="px-3 text-red-500 hover:text-red-700 text-sm"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Meta Description (SEO)
@@ -521,10 +625,18 @@ export default function BlogArticleEditorPage() {
                     )}
                   </div>
                 </label>
+                <button
+                  type="button"
+                  onClick={handleGenerateImage}
+                  disabled={uploading}
+                  className="px-4 py-3 bg-[#096b17] hover:bg-[#075110] text-white rounded-lg font-medium transition-colors disabled:opacity-50 whitespace-nowrap"
+                >
+                  ✨ Generate with AI
+                </button>
               </div>
 
               <p className="text-sm text-gray-500 mt-2">
-                Recommended: 1200x630px (JPG, PNG, or WebP, max 5MB)
+                Recommended: 1200x630px (JPG, PNG, or WebP, max 5MB). AI generation uses 3 credits.
               </p>
 
               {/* Alt Text */}
