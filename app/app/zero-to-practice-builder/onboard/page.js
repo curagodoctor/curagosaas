@@ -92,6 +92,8 @@ function Wizard() {
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizFailed, setQuizFailed] = useState(false);
   const [quizPhase, setQuizPhase] = useState('milestone'); // milestone → quiz → ready
+  const [gbpStage, setGbpStage] = useState('choose'); // choose (status) → guide
+  const [gbpChoice, setGbpChoice] = useState('');
   // §5b areas + §5e relevant links
   const [areas, setAreas] = useState([]);
   // Default labels so patients' clinic + socials show by default (spec: Maps,
@@ -686,7 +688,28 @@ function Wizard() {
         )}
 
         {/* STEP: google (GBP setup task flow) */}
-        {st.id === 'google' && (
+        {st.id === 'google' && (gbpStage === 'choose' ? (
+          <div>
+            <p className="pos-label" style={{ color: 'var(--green)' }}>Google Business Profile</p>
+            <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>What would you like to do with your Google Business Profile?</h1>
+            <p className="text-sm text-[var(--muted)] mb-5" style={{ maxWidth: '58ch' }}>Google controls the profile and its policies. We guide you through it — you stay in control of your account.</p>
+            <div className="grid gap-2.5">
+              {[
+                { key: 'none', title: "I don't have a Google Business Profile", sub: "Let's start with the account and profile setup.", cta: 'Start GBP Setup' },
+                { key: 'partial', title: "I have a profile, but it isn't fully set up", sub: 'Complete the important foundation fields first.', cta: 'Complete My Profile' },
+                { key: 'active', title: 'My profile is already set up', sub: "Let's review what is complete and move to the next stage.", cta: 'Review My Profile' },
+                { key: 'risks', title: 'I want to understand the risks first', sub: 'Learn about account suspension, re-verification and other risks before making changes.', cta: 'Learn About GBP Risks' },
+              ].map((o) => (
+                <button key={o.key} onClick={() => { setGbpChoice(o.key); setGbpStage('guide'); }} className="pos-card p-4 text-left">
+                  <span className="block font-semibold text-[15px] text-[var(--ink)]">{o.title}</span>
+                  <span className="block text-[13px] text-[var(--muted)] mt-1">{o.sub}</span>
+                  <span className="pos-label inline-block mt-2" style={{ color: 'var(--green)' }}>{o.cta} →</span>
+                </button>
+              ))}
+            </div>
+            <button onClick={() => go(step - 1)} className="pos-link text-sm mt-5 block" style={{ color: 'var(--muted)' }}>← Back</button>
+          </div>
+        ) : (
           <div>
             <p className="pos-label" style={{ color: 'var(--green)' }}>Google Business Profile</p>
             <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Set up your Google profile — carefully.</h1>
@@ -703,8 +726,9 @@ function Wizard() {
                 <p className="text-[12px] text-[var(--muted)] mt-3">Next up: the commitment check and Get Access.</p>
               </>
             )} />
+            <button onClick={() => setGbpStage('choose')} className="pos-link text-sm mt-4 block" style={{ color: 'var(--muted)' }}>← Back to options</button>
           </div>
-        )}
+        ))}
 
         {/* STEP: quiz → Get Access */}
         {st.id === 'quiz' && (
