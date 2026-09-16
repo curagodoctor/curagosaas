@@ -7,6 +7,8 @@ import { usePathname } from "next/navigation";
 // widget. Everywhere else (public marketing, doctor sites) keeps it.
 const HIDDEN_PREFIXES = [
   "/admin",
+  "/app",
+  "/dominate-organic-search",
   "/platform-admin",
   "/clinic-manager",
   "/seo",

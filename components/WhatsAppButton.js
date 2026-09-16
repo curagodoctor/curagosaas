@@ -12,6 +12,7 @@ const PREFILL = 'Hi, I have a question about CuraGo.';
 const HIDDEN_PREFIXES = [
   '/admin',
   '/app',
+  '/dominate-organic-search', // onboarding/control-center under the product URL
   '/platform-admin',
   '/clinic-manager',
   '/seo',
