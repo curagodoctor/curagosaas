@@ -68,6 +68,7 @@ function Wizard() {
 
   // branch
   const [hasWebsite, setHasWebsite] = useState(null); // 'no' | 'yes'
+  const [branchStage, setBranchStage] = useState(0);  // 0 = question, 1 = the pitch + proceed/not-interested
   const [existing, setExisting] = useState('');
   // profile AI
   const [hint, setHint] = useState('');
@@ -374,29 +375,43 @@ function Wizard() {
       <main className="max-w-2xl mx-auto w-full px-4 sm:px-5 pt-4 pb-3">
         <div className="pos-card" style={{ padding: 'clamp(20px,4vw,32px)', borderRadius: 20, boxShadow: '0 22px 56px rgba(9,107,23,.06)' }}>
         {/* STEP: branch */}
-        {st.id === 'branch' && (
+        {st.id === 'branch' && (branchStage === 0 ? (
           <div>
             <p className="pos-label" style={{ color: 'var(--green)' }}>Getting started</p>
             <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-2" style={{ letterSpacing: '-0.02em' }}>Do you already have a website?</h1>
             <div className="grid gap-2.5 mt-4">
-              <button onClick={() => chooseBranch('no')} className="pos-card p-4 text-left" style={{ borderColor: hasWebsite === 'no' ? 'var(--green)' : 'var(--rule)', background: hasWebsite === 'no' ? 'var(--green-soft)' : 'var(--card)' }}>
+              <button onClick={() => { chooseBranch('no'); setBranchStage(1); }} className="pos-card p-4 text-left" style={{ borderColor: hasWebsite === 'no' ? 'var(--green)' : 'var(--rule)', background: hasWebsite === 'no' ? 'var(--green-soft)' : 'var(--card)' }}>
                 <span className="block font-semibold text-[15px] text-[var(--ink)]">No, not yet</span>
-                <span className="block text-[13px] text-[var(--muted)] mt-1">Perfect — we&apos;ll build one for you, free. No downside.</span>
               </button>
-              <button onClick={() => chooseBranch('yes')} className="pos-card p-4 text-left" style={{ borderColor: hasWebsite === 'yes' ? 'var(--green)' : 'var(--rule)', background: hasWebsite === 'yes' ? 'var(--green-soft)' : 'var(--card)' }}>
+              <button onClick={() => { chooseBranch('yes'); setBranchStage(1); }} className="pos-card p-4 text-left" style={{ borderColor: hasWebsite === 'yes' ? 'var(--green)' : 'var(--rule)', background: hasWebsite === 'yes' ? 'var(--green-soft)' : 'var(--card)' }}>
                 <span className="block font-semibold text-[15px] text-[var(--ink)]">Yes, I have one</span>
-                <span className="block text-[13px] text-[var(--muted)] mt-1">We&apos;ll build your new site here, then help you point your existing domain at it — you keep your domain and its SEO.</span>
               </button>
             </div>
+          </div>
+        ) : (
+          <div>
+            <p className="pos-label" style={{ color: 'var(--green)' }}>{hasWebsite === 'yes' ? 'You already have a website' : 'No website yet'}</p>
+            <h1 className="text-[23px] font-semibold text-[var(--ink)] mt-1 mb-2" style={{ letterSpacing: '-0.02em', lineHeight: 1.25 }}>
+              {hasWebsite === 'yes' ? 'Got it — let us build you a better one.' : 'Perfect. Our AI builds one for you.'}
+            </h1>
+            <p className="text-[15px] text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '58ch' }}>
+              {hasWebsite === 'yes'
+                ? 'Our AI can build a brand-new website on your own subdomain, live instantly. If you like it, you can point your custom domain to it instantly and seamlessly — you keep your domain and its SEO.'
+                : 'In less than 10 minutes, at no cost for life. No downside — give it a shot.'}
+            </p>
             {hasWebsite === 'yes' && (
-              <div className="mt-4">
+              <div className="mb-5">
                 <label className="pos-label">Your current website (optional)</label>
                 <input value={existing} onChange={(e) => setExisting(e.target.value)} placeholder="drrao.com" className="w-full pos-card p-2.5 text-sm mt-1.5" />
               </div>
             )}
-            <button onClick={next} disabled={!hasWebsite} className="pos-action mt-6" style={{ opacity: hasWebsite ? 1 : 0.5 }}>Continue</button>
+            <div className="grid gap-2.5">
+              <button onClick={next} className="pos-action text-center">Yes, proceed</button>
+              <button onClick={() => goToId('google')} className="pos-card p-3.5 text-center text-[15px] font-medium" style={{ color: 'var(--muted)' }}>No, not interested</button>
+            </div>
+            <button onClick={() => setBranchStage(0)} className="pos-link text-sm mt-5" style={{ color: 'var(--muted)' }}>← Back</button>
           </div>
-        )}
+        ))}
 
         {/* STEP: profile — Block 1 · Doctor identity (prototype questions) */}
         {st.id === 'profile' && (
