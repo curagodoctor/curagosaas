@@ -56,11 +56,11 @@ export async function PUT(request) {
 
     let set;
     if (action === 'grant') {
-      set = { 'optimizationAccess.granted': true, 'optimizationAccess.grantedAt': now, 'optimizationAccess.expiresAt': new Date(now.getTime() + 30 * DAY), 'optimizationAccess.permanent': false };
+      set = { 'optimizationAccess.granted': true, 'optimizationAccess.grantedAt': now, 'optimizationAccess.expiresAt': new Date(now.getTime() + 28 * DAY), 'optimizationAccess.permanent': false };
     } else if (action === 'extend') {
       // Add 30 days from whichever is later — now or the current expiry.
       const base = curExpiry && curExpiry > now ? curExpiry : now;
-      set = { 'optimizationAccess.granted': true, 'optimizationAccess.expiresAt': new Date(base.getTime() + 30 * DAY), 'optimizationAccess.permanent': false };
+      set = { 'optimizationAccess.granted': true, 'optimizationAccess.expiresAt': new Date(base.getTime() + 28 * DAY), 'optimizationAccess.permanent': false };
     } else if (action === 'permanent') {
       set = { 'optimizationAccess.granted': true, 'optimizationAccess.permanent': true };
     } else { // deny / revoke

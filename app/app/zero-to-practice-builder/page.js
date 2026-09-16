@@ -18,6 +18,8 @@ import { UsernamePicker } from './_username';
 export default function ControlCenter() {
   const router = useRouter();
   const [packs, setPacks] = useState(null);
+  const [accessStatus, setAccessStatus] = useState('none'); // Dominate Organic Search pack: none | pending | granted
+  const [accessExpiry, setAccessExpiry] = useState(null);
   const [name, setName] = useState('');
   const [leaderboard, setLeaderboard] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -50,7 +52,7 @@ export default function ControlCenter() {
         if (meRes.ok) { const me = await meRes.json(); setName(me.doctor?.displayName || me.doctor?.name || ''); }
         if (lbRes.ok) { const lb = await lbRes.json(); if (lb.success) setLeaderboard(lb); }
         let granted = false;
-        if (aRes.ok) { const a = await aRes.json(); granted = !!a.granted; }
+        if (aRes.ok) { const a = await aRes.json(); granted = !!a.granted; setAccessStatus(a.status || 'none'); setAccessExpiry(a.access?.expiresAt || null); }
         if (uRes.ok) { const u = await uRes.json(); if (u.success && !u.username && granted) setNeedsUsername(true); }
       } finally {
         setLoading(false);
@@ -107,6 +109,27 @@ export default function ControlCenter() {
           ? <>Your practice is <strong className="text-[var(--green)]">{overallPct}%</strong> built across your packs. One mission a day gets you the rest.</>
           : <>Pick a builder pack below. Each is a guided programme that produces a real asset — not a certificate.</>}
       </p>
+
+      {/* Single pack: Dominate Organic Search — under review / active (Phase E) */}
+      {accessStatus === 'pending' && (
+        <div className="pos-card p-5 mt-5 flex items-start gap-3" style={{ borderColor: 'var(--orange)', background: 'var(--orange-soft)' }}>
+          <span className="pos-label shrink-0" style={{ background: 'var(--orange)', color: '#fff', padding: '3px 8px', borderRadius: 6 }}>Under review</span>
+          <div>
+            <p className="text-[15px] font-semibold text-[var(--ink)]">Dominate Organic Search</p>
+            <p className="text-[13.5px] text-[var(--muted)] mt-0.5" style={{ maxWidth: '58ch' }}>Your application is in — we&apos;re reviewing your answers and will reach out within 24 hours if you&apos;re a fit for the founding cohort. Meanwhile, keep your website and Google profile polished.</p>
+          </div>
+        </div>
+      )}
+      {accessStatus === 'granted' && (
+        <div className="pos-card p-5 mt-5 flex items-center justify-between gap-3" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)' }}>
+          <div>
+            <span className="pos-label" style={{ color: 'var(--green)' }}>Your pack · active</span>
+            <p className="text-[15px] font-semibold text-[var(--ink)] mt-1">Dominate Organic Search{accessExpiry ? ` — ${Math.max(0, Math.ceil((new Date(accessExpiry) - Date.now()) / 86400000))} days left this cycle` : ''}</p>
+            <p className="text-[13px] text-[var(--muted)] mt-0.5">We prepare your practice&apos;s work; you review and approve it. 28-day cycle.</p>
+          </div>
+          <button onClick={() => router.push('/app/zero-to-practice-builder/content')} className="pos-action shrink-0">Review my content →</button>
+        </div>
+      )}
 
       {/* §8 work awaiting review + §12 streak calendar + §14 reminder window */}
       <div className="mt-5 space-y-4">
