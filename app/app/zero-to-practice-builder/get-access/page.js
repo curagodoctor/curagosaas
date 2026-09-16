@@ -4,15 +4,41 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import PosNav from '@/components/practice-os/PosNav';
 
-// §7 — the optimization boundary. Free setup is done; to unlock the ongoing
-// optimization work the doctor submits a short request. No payment in v1 — the
-// founder reviews and grants access. Three states: form / pending / granted.
+// §11/§C — the early-access application. One question per page with a progress
+// bar; the founder reviews the answers and grants access. States: questionnaire
+// / submitted / pending / granted.
+const QUESTIONS = [
+  { id: 'location', type: 'text', q: 'Where is your clinic located?', ph: 'City, area' },
+  { id: 'specialty', type: 'text', q: 'What is your specialty?', ph: 'e.g. Surgical gastroenterology' },
+  { id: 'practice_status', type: 'choice', q: 'Your current clinical practice status', options: ['Own clinic', 'Rented or shared clinic', 'Setting up', 'None of the above'] },
+  { id: 'gbp_status', type: 'choice', q: 'Do you currently have a Google Business Profile?', options: ['No', 'Yes, but inactive', 'Yes, active'] },
+  { id: 'website_status', type: 'choice', q: 'Do you currently have a website?', options: ['No', 'Yes, outdated', 'Yes, active'] },
+  { id: 'buy_domain', type: 'choice', q: 'Are you willing to purchase your own domain as part of this process?', options: ['Yes', 'No'] },
+  { id: 'results_timeline', type: 'text', q: 'How soon are you expecting results to show up when it comes to organic search?', ph: 'Your honest expectation' },
+  { id: 'time_fit', type: 'choice', q: 'Beyond setup, this is an ongoing commitment — about 10 minutes a day, or roughly 60 minutes a week, for several months. How will you realistically fit that in?', options: ['Daily', 'Every other day', 'Weekly'] },
+  { id: 'long_horizon', type: 'choice', q: 'Do you see yourself working on this for months to years before any visible results?', options: ['Yes', 'No', 'Not sure'] },
+  { id: 'stop_reason', type: 'textarea', q: 'What would realistically make you stop before that?' },
+  { id: 'perception', type: 'textarea', q: "What is your honest perception of digital presence for doctors right now — necessary, overrated, or something you haven\'t fully figured out yet?" },
+  { id: 'fix_first', type: 'textarea', q: 'If you had to fix one thing first — your GBP, your website, or your reviews — which would it be, and why?' },
+  { id: 'tier_matters', type: 'textarea', q: 'Do you think organic search actually matters for a practice in a tier 2 or tier 3 city, or is it mainly a metro thing in your view?' },
+  { id: 'onetime_or_ongoing', type: 'textarea', q: 'Do you see this as a one-time fix, or something that needs ongoing maintenance? Be honest — what you actually believe, not what sounds right.' },
+  { id: 'biggest_challenge', type: 'textarea', q: 'What is the single biggest challenge you personally face with Google or online visibility for your practice?' },
+  { id: 'change_one_thing', type: 'textarea', q: 'If you could change one thing about how doctors currently handle their online presence, what would it be?' },
+  { id: 'why_founding', type: 'textarea', q: 'Why should you be one of the 5 founding doctors?', note: 'Minimum 400 characters — this matters, please don\'t rush it.', minChars: 400 },
+  { id: 'agreement', type: 'agreement', q: 'Case Study Participation Agreement',
+    text: 'I understand Dominate Organic Search is provided to me at no cost for a month as part of a founding case study, not a giveaway. I agree to genuinely implement the system on my own practice. If my account goes dormant, CuraGo will personally reach out to help me get back on track. If I still do not engage after that, my access will be withdrawn. I agree to provide honest feedback during the process, and I consent to CuraGo using my feedback, testimonials, screenshots, and results for website content, educational, marketing, and case-study purposes.',
+    agree: 'I Agree' },
+];
+
 export default function GetAccessPage() {
   const router = useRouter();
   const [status, setStatus] = useState(null); // 'none' | 'pending' | 'granted' | 'denied'
   const [access, setAccess] = useState({});
-  const [form, setForm] = useState({ name: '', phone: '', specialty: '', city: '', challenge: '', goal: '' });
+  const [prefill, setPrefill] = useState({});
+  const [idx, setIdx] = useState(0);
+  const [answers, setAnswers] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
@@ -22,78 +48,117 @@ export default function GetAccessPage() {
       const d = await res.json();
       setStatus(d.status || 'none');
       setAccess(d.access || {});
-      setForm((f) => ({ ...f, ...(d.prefill || {}) }));
+      setPrefill(d.prefill || {});
+      setAnswers((a) => ({ specialty: d.prefill?.specialty || '', ...a }));
     } catch { setStatus('none'); }
   }, [router]);
   useEffect(() => { load(); }, [load]);
 
-  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-
+  const q = QUESTIONS[idx];
+  const val = answers[q?.id];
+  const answered = q ? (q.type === 'agreement' ? val === true : String(val ?? '').trim().length >= (q.minChars || 1)) : false;
+  const setA = (v) => setAnswers((a) => ({ ...a, [q.id]: v }));
+  const back = () => { setError(''); if (idx > 0) setIdx(idx - 1); };
+  const advance = () => {
+    setError('');
+    if (!answered) { setError(q.minChars ? `Please write at least ${q.minChars} characters.` : 'Please answer to continue.'); return; }
+    if (idx < QUESTIONS.length - 1) setIdx(idx + 1); else submit();
+  };
   const submit = async () => {
-    if (!form.name.trim() || !form.phone.trim()) { setError('Please add your name and phone.'); return; }
     setSubmitting(true); setError('');
     try {
       const res = await fetch('/api/practice-os/access-request', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify(form),
+        body: JSON.stringify({ answers, name: prefill.name, phone: prefill.phone, specialty: answers.specialty }),
       });
       const d = await res.json();
-      if (d.success) setStatus(d.status || 'pending');
+      if (d.success) setSubmitted(true);
       else setError(d.error || 'Could not submit. Please try again.');
     } catch { setError('Something went wrong.'); }
     finally { setSubmitting(false); }
   };
 
+  const pct = Math.round(((idx + 1) / QUESTIONS.length) * 100);
+
   return (
     <div className="max-w-2xl mx-auto px-5 pt-[64px] pb-10">
-      <PosNav breadcrumb="Get access" />
+      <PosNav breadcrumb="Early access" />
 
       {status === null && <p className="text-sm text-[var(--muted)] mt-8">Loading…</p>}
 
       {status === 'granted' && <GrantedActions router={router} access={access} />}
 
       {status === 'pending' && (
-        <div className="mt-8">
-          <div className="pos-card p-6" style={{ borderColor: 'var(--orange)' }}>
-            <p className="pos-label" style={{ color: 'var(--orange)' }}>Request received</p>
-            <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1" style={{ letterSpacing: '-0.02em' }}>We&apos;re reviewing your request</h1>
-            <p className="text-sm text-[var(--muted)] mt-2" style={{ maxWidth: '52ch' }}>
-              We&apos;ll review your details and reach out on WhatsApp to open up the optimization work for you.
-              In the meantime, keep your setup steps polished.
-            </p>
-            <button onClick={() => router.push('/app/zero-to-practice-builder/start')} className="pos-link mt-4" style={{ fontSize: 14 }}>Back to setup →</button>
+        <div className="mt-8"><div className="pos-card p-6" style={{ borderColor: 'var(--orange)' }}>
+          <p className="pos-label" style={{ color: 'var(--orange)' }}>Application received</p>
+          <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1" style={{ letterSpacing: '-0.02em' }}>We&apos;re reviewing your answers</h1>
+          <p className="text-sm text-[var(--muted)] mt-2" style={{ maxWidth: '52ch' }}>We&apos;ll review your answers and, if you&apos;re a fit for the founding cohort, reach out within 24 hours. In the meantime, keep your setup polished.</p>
+          <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-link mt-4" style={{ fontSize: 14 }}>Go to control center →</button>
+        </div></div>
+      )}
+
+      {submitted && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5" style={{ background: 'rgba(16,26,19,.45)' }}>
+          <div className="pos-card p-7 max-w-md w-full text-center" style={{ background: 'var(--card)' }}>
+            <div className="w-12 h-12 rounded-full grid place-items-center mx-auto mb-3" style={{ background: 'var(--green-soft)', color: 'var(--green)', fontSize: 22 }}>✓</div>
+            <h2 className="text-[22px] font-semibold text-[var(--ink)]" style={{ letterSpacing: '-0.02em' }}>Application submitted</h2>
+            <p className="text-sm text-[var(--muted)] mt-2" style={{ lineHeight: 1.6 }}>Thank you. I&apos;ll personally review your answers, and if you fit our criteria for the founding cohort, we&apos;ll reach out to you within 24 hours.</p>
+            <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-action mt-5 w-full">Go to my control center</button>
           </div>
         </div>
       )}
 
-      {(status === 'none' || status === 'denied') && (
-        <>
-          <div className="mt-8 mb-5">
-            <p className="pos-label mb-1">The next step</p>
-            <h1 className="text-[26px] font-semibold text-[var(--ink)]" style={{ letterSpacing: '-0.02em' }}>Unlock ongoing optimization</h1>
-            <p className="text-sm text-[var(--muted)] mt-2" style={{ maxWidth: '52ch' }}>
-              You&apos;ve built the foundation. The optimization work is where we grow your visibility week after week —
-              GBP services, education pages and more, written for you to review and publish. Tell us a little and we&apos;ll open it up.
-            </p>
+      {(status === 'none' || status === 'denied') && !submitted && q && (
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="pos-label" style={{ color: 'var(--green)' }}>Question {idx + 1} of {QUESTIONS.length}</span>
+            <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-link text-[13px]">Save &amp; exit</button>
           </div>
+          <div className="pos-meter mb-6"><span style={{ width: `${pct}%` }} /></div>
 
-          <div className="pos-card p-5 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Your name" value={form.name} onChange={(v) => set('name', v)} />
-              <Field label="Phone (WhatsApp)" value={form.phone} onChange={(v) => set('phone', v)} />
-              <Field label="Specialty" value={form.specialty} onChange={(v) => set('specialty', v)} />
-              <Field label="City" value={form.city} onChange={(v) => set('city', v)} />
+          <div className="pos-card p-6">
+            <h1 className="text-[21px] font-semibold text-[var(--ink)]" style={{ letterSpacing: '-0.01em', lineHeight: 1.25 }}>{q.q}</h1>
+            {q.note && <p className="text-[13px] text-[var(--orange)] mt-1.5">{q.note}</p>}
+
+            <div className="mt-4">
+              {q.type === 'text' && (
+                <input autoFocus value={val || ''} onChange={(e) => setA(e.target.value)} placeholder={q.ph || ''}
+                  onKeyDown={(e) => { if (e.key === 'Enter') advance(); }}
+                  className="w-full rounded-[11px] px-3.5 py-3 text-[15px] outline-none" style={{ border: '1px solid var(--rule)', background: 'var(--paper)' }} />
+              )}
+              {q.type === 'textarea' && (
+                <>
+                  <textarea autoFocus value={val || ''} onChange={(e) => setA(e.target.value)} rows={5}
+                    className="w-full rounded-[11px] px-3.5 py-3 text-[15px] outline-none" style={{ border: '1px solid var(--rule)', background: 'var(--paper)', lineHeight: 1.55 }} />
+                  {q.minChars && <p className="text-[12px] mt-1.5" style={{ color: String(val || '').length >= q.minChars ? 'var(--green)' : 'var(--muted)' }}>{String(val || '').length} / {q.minChars} characters</p>}
+                </>
+              )}
+              {q.type === 'choice' && (
+                <div className="grid gap-2.5">
+                  {q.options.map((opt) => (
+                    <button key={opt} onClick={() => setA(opt)} className="pos-card p-3.5 text-left text-[15px] font-medium"
+                      style={{ borderColor: val === opt ? 'var(--green)' : 'var(--rule)', background: val === opt ? 'var(--green-soft)' : 'var(--card)', color: 'var(--ink)' }}>{opt}</button>
+                  ))}
+                </div>
+              )}
+              {q.type === 'agreement' && (
+                <div>
+                  <p className="text-[13.5px] text-[var(--muted)]" style={{ lineHeight: 1.6 }}>{q.text}</p>
+                  <label className="flex items-start gap-3 mt-4 cursor-pointer">
+                    <input type="checkbox" checked={val === true} onChange={(e) => setA(e.target.checked)} className="mt-0.5 w-5 h-5 rounded" style={{ accentColor: 'var(--green)' }} />
+                    <span className="text-[15px] font-semibold text-[var(--ink)]">{q.agree}</span>
+                  </label>
+                </div>
+              )}
             </div>
-            <Field label="Your biggest challenge in getting found right now" value={form.challenge} onChange={(v) => set('challenge', v)} textarea />
-            <Field label="What would success look like in 6 months?" value={form.goal} onChange={(v) => set('goal', v)} textarea />
 
-            {error && <p className="text-[13px] text-red-600">{error}</p>}
-
-            <button onClick={submit} disabled={submitting} className="pos-action" style={{ opacity: submitting ? 0.5 : 1 }}>
-              {submitting ? 'Submitting…' : 'Request access'}
-            </button>
+            {error && <p className="text-[13px] text-red-600 mt-3">{error}</p>}
+            <div className="flex items-center justify-between gap-3 mt-6">
+              <button onClick={advance} disabled={submitting} className="pos-action">{submitting ? 'Submitting…' : idx < QUESTIONS.length - 1 ? 'Continue' : 'Submit application'}</button>
+              {idx > 0 && <button onClick={back} disabled={submitting} className="pos-link text-sm" style={{ color: 'var(--muted)' }}>← Back</button>}
+            </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

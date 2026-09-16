@@ -55,30 +55,35 @@ export async function POST(request) {
     if (existing) return NextResponse.json({ success: true, status: 'pending' });
 
     const body = await request.json();
+    const answers = body.answers && typeof body.answers === 'object' ? body.answers : {};
     const req = await PracticeOsAccessRequest.create({
       doctorId: doctor._id,
       name: (body.name || doctor.displayName || doctor.name || '').trim(),
       phone: (body.phone || doctor.whatsappNumber || doctor.phone || '').trim(),
       email: doctor.email || '',
-      city: (body.city || '').trim(),
-      specialty: (body.specialty || doctor.specialization || '').trim(),
-      challenge: (body.challenge || '').trim(),
-      goal: (body.goal || '').trim(),
+      // Map the questionnaire onto the summary columns the founder scans first.
+      city: (answers.location || body.city || '').trim(),
+      specialty: (answers.specialty || body.specialty || doctor.specialization || '').trim(),
+      challenge: (answers.biggest_challenge || body.challenge || '').trim(),
+      goal: (answers.why_founding || body.goal || '').trim(),
+      answers,
       status: 'pending',
     });
 
     // Notify the founder by email (best-effort).
     if (FOUNDER_EMAIL) {
+      const answerLines = Object.entries(answers)
+        .filter(([, v]) => String(v ?? '').trim())
+        .map(([k, v]) => `• ${k.replace(/_/g, ' ')}: ${String(v).trim()}`);
       const lines = [
-        `${req.name || 'A doctor'} has requested access to the optimization work.`,
+        `${req.name || 'A doctor'} has applied for early access (founding case study).`,
         ``,
         `Name: ${req.name}`,
         `Phone: ${req.phone}`,
         `Email: ${req.email}`,
-        `City: ${req.city || '—'}`,
-        `Specialty: ${req.specialty || '—'}`,
-        `Biggest challenge: ${req.challenge || '—'}`,
-        `What success looks like: ${req.goal || '—'}`,
+        ``,
+        `— Questionnaire —`,
+        ...(answerLines.length ? answerLines : ['(no answers captured)']),
         ``,
         `Review and grant access in the Command Center → Access Requests.`,
       ].join('\n');

@@ -18,6 +18,7 @@ const PracticeOsAccessRequestSchema = new mongoose.Schema({
   specialty: { type: String, trim: true, default: '' },
   challenge: { type: String, trim: true, default: '' },  // biggest challenge right now
   goal: { type: String, trim: true, default: '' },       // what success looks like
+  answers: { type: mongoose.Schema.Types.Mixed, default: {} }, // full 20-question early-access questionnaire
   status: { type: String, enum: ['pending', 'granted', 'denied'], default: 'pending', index: true },
   decidedAt: { type: Date, default: null },
   decidedBy: { type: String, trim: true, default: '' },
