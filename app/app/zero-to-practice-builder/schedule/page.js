@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import PosNav from '@/components/practice-os/PosNav';
+import NotificationWindowCard from '@/components/practice-os/NotificationWindowCard';
 
 // The Schedule screen — one card per owned+started pack that has a next task.
 // The doctor sees when their next task is scheduled and can move it, constrained
@@ -84,6 +85,12 @@ export default function SchedulePage() {
       <p className="text-[16px] text-[var(--muted)] mt-3 leading-relaxed" style={{ maxWidth: '54ch' }}>
         Pick when your next mission lands. You can move it to today, tomorrow, or the day after — one mission at a time.
       </p>
+
+      {/* §11 — reminder timing lives here in the Schedule section, not on the
+          control center. */}
+      <div className="mt-7">
+        <NotificationWindowCard />
+      </div>
 
       <div className="mt-9 flex flex-col gap-5">
         {schedulable.length === 0 ? (

@@ -9,7 +9,6 @@ import StreakCalendar from '@/components/practice-os/StreakCalendar';
 import PendingWorkPrompt from '@/components/practice-os/PendingWorkPrompt';
 import WebsiteStats from '@/components/practice-os/WebsiteStats';
 import EngagementNudges from '@/components/practice-os/EngagementNudges';
-import NotificationWindowCard from '@/components/practice-os/NotificationWindowCard';
 import { UsernamePicker } from './_username';
 
 // The Control Center — the logged-in landing. Left: welcome + the doctor's
@@ -137,7 +136,6 @@ export default function ControlCenter() {
         <EngagementNudges />
         <WebsiteStats />
         <StreakCalendar />
-        <NotificationWindowCard />
       </div>
 
       {/* No pack yet → offer the same right-fit assessment as signup/landing. */}
