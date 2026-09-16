@@ -11,6 +11,7 @@ import DiseaseIconsScrollSection from './sections/DiseaseIconsScrollSection';
 import CustomTextSection from './sections/CustomTextSection';
 import CTAButtonSection from './sections/CTAButtonSection';
 import BookingFormSection from './sections/BookingFormSection';
+import LeadFormSection from './sections/LeadFormSection';
 import ClinicInfoSection from './sections/ClinicInfoSection';
 import FooterSection from './sections/FooterSection';
 import WhatsAppStickyButton from './sections/WhatsAppStickyButton';
@@ -31,6 +32,7 @@ const SECTION_COMPONENTS = {
   custom_text: CustomTextSection,
   cta_button: CTAButtonSection,
   booking_form: BookingFormSection,
+  lead_form: LeadFormSection,
   clinic_info: ClinicInfoSection,
   footer: FooterSection,
   whatsapp_sticky: WhatsAppStickyButton,
