@@ -105,10 +105,6 @@ function SignupPageInner() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    }
-
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -171,7 +167,9 @@ function SignupPageInner() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.name,
+          // Name is set later in the profile step; use the email prefix as a
+          // placeholder so the account has a usable label until then.
+          name: (formData.name || '').trim() || formData.email.split('@')[0],
           email: formData.email,
           phone: formData.phone.replace(/\D/g, ''),
           subdomain: formData.subdomain,
@@ -250,14 +248,14 @@ function SignupPageInner() {
         {/* Left Side - Branding */}
         <div className="hidden lg:flex lg:w-5/12 items-center justify-center p-12" style={{ backgroundColor: 'var(--green-deep)' }}>
           <div className="max-w-md text-white">
-            <h2 className="serif text-[44px] leading-[1.05] mb-6">Start the Zero to Practice Builder.</h2>
+            <h2 className="serif text-[44px] leading-[1.05] mb-6">Get found on Google.</h2>
             <p className="text-xl mb-8" style={{ color: 'var(--green-lite)' }}>
-              One free account to build the practice patients can find — the guided Builder, plus your own clinic website.
+              One free account to build the practice patients can find — a guided setup, plus your own clinic website.
             </p>
 
             <div className="space-y-6">
               {[
-                { t: 'The Zero to Practice Builder', d: 'A guided programme that walks you through getting found, chosen and booked — one step a day, done inside the platform.', p: 'M5 4h14v16l-7-4-7 4z' },
+                { t: 'A guided setup', d: 'We walk you through getting found, chosen and booked — one step at a time, done inside the platform.', p: 'M5 4h14v16l-7-4-7 4z' },
                 { t: 'Your free clinic website', d: 'A beautiful, mobile-friendly site on your own subdomain — live in minutes, free to start.', p: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
                 { t: 'Upgrade when you need more', d: 'Start free, then add WhatsApp automation, online payments and other integrations on a paid plan — only if you want them.', p: 'M12 2l2.4 5 5.6.6-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.6z' },
               ].map((f) => (
@@ -292,30 +290,6 @@ function SignupPageInner() {
               <p style={{ color: 'var(--muted)' }}>Get your professional clinic website live in minutes</p>
             </div>
 
-            {/* Right-fit assessment — prominent so doctors take the 2-minute check
-                before creating an account. Same flow as the landing cohort CTA. */}
-            <div className="rounded-2xl p-5 mb-6" style={{ background: 'linear-gradient(150deg, #FFF6EF, #FFEFE2)', border: '1.5px solid var(--orange, #F26A1B)', boxShadow: '0 8px 24px rgba(242,106,27,.15)' }}>
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full shrink-0" style={{ background: 'var(--orange, #F26A1B)' }}>
-                  <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                </span>
-                <span className="text-[11px] font-mono uppercase tracking-widest" style={{ color: 'var(--orange, #F26A1B)' }}>Before you sign up</span>
-              </div>
-              <p className="text-[16px] font-semibold leading-snug mb-1" style={{ color: 'var(--ink, #101A13)' }}>
-                Not sure if it&apos;s for you? Take the 2-minute fit check first.
-              </p>
-              <p className="text-[13.5px] mb-4" style={{ color: 'var(--muted, #5E6B5F)' }}>
-                A few quick questions tell you whether the Practice Builder cohort is the right fit — before you commit.
-              </p>
-              <Link
-                href="/join-cohort?source=signup"
-                className="flex items-center justify-center gap-2 w-full text-white font-semibold text-[15px] px-6 py-3.5 rounded-xl transition-transform hover:scale-[1.01]"
-                style={{ background: 'var(--orange, #F26A1B)', boxShadow: '0 8px 22px rgba(242,106,27,.35)' }}
-              >
-                See if Practice Builder is the right fit for you
-                <span>→</span>
-              </Link>
-            </div>
 
             <div className="flex items-center gap-3 mb-6">
               <span className="flex-1 h-px" style={{ background: 'var(--rule, #DDE4D9)' }} />
@@ -345,18 +319,7 @@ function SignupPageInner() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-                {/* Name */}
-                <div>
-                  <label htmlFor="name" className="mono block text-[11px] tracking-[0.1em] uppercase mb-2" style={{ color: 'var(--muted)' }}>Full Name</label>
-                  <input
-                    type="text" id="name" name="name" value={formData.name} onChange={handleChange} placeholder="Dr. Priya Sharma"
-                    className="w-full px-4 py-3 rounded-[10px] outline-none transition-all" style={fieldStyle(errors.name)}
-                    onFocus={focusOn} onBlur={focusOff}
-                  />
-                  {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
-                </div>
-
-                {/* Email & Phone */}
+                {/* Email & Phone (name is captured later in the profile step) */}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="email" className="mono block text-[11px] tracking-[0.1em] uppercase mb-2" style={{ color: 'var(--muted)' }}>Email Address</label>
@@ -463,7 +426,7 @@ function SignupPageInner() {
                     <><span className="animate-spin">&#9696;</span> Creating your account…</>
                   ) : (
                     <>
-                      Create My Clinic Website
+                      Sign up now
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                       </svg>

@@ -257,7 +257,7 @@ export default function DominateLanding() {
 
             <div className="offer featured">
               <div className="offer-label">STEP 2 · DOMINATE ORGANIC SEARCH</div>
-              <div className="price">₹5,000 <small>/ month</small></div>
+              <div className="price">₹5,000 <small>/ month</small> <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1.5, color: 'var(--orange)', marginLeft: 6 }}>FOUNDER PRICE</span></div>
               <h3>Let CuraGo do the ongoing work with you.</h3>
               <p>Everything in Free, plus the ongoing optimisation and workflow that keeps building.</p>
               <div className="checks">
@@ -266,7 +266,8 @@ export default function DominateLanding() {
               </div>
               <div className="approval"><b>CURAGO</b> prepares → <b>YOU</b> review → <b>YOU</b> approve → <b>CURAGO</b> keeps building ↺</div>
               <p style={{ marginTop: 13, fontSize: 10, color: '#b9cdbd' }}>Your involvement is designed to be at least once a week, depending on how you choose to work.</p>
-              <button className="fullbtn" onClick={start}>Start Now — ₹5,000/month →</button>
+              <button className="fullbtn" onClick={start}>₹5,000 · Start now →</button>
+              <p style={{ marginTop: 12, fontSize: 12, color: '#d7e6da', lineHeight: 1.5 }}>Accepting a limited number of doctors for the case study — finish the basic steps to apply.</p>
             </div>
           </div>
         </div>
