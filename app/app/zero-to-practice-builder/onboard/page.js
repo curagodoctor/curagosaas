@@ -664,17 +664,16 @@ function Wizard() {
                 <a href="/admin/dashboard/ai-generate" className="pos-card inline-block px-4 py-3 text-[14px] font-semibold" style={{ borderColor: 'var(--green)', color: 'var(--green)' }}>Edit in the AI builder →</a>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="pos-card p-4">
-                <p className="pos-num text-2xl text-[var(--green)]">{creditsLeft ?? 10}</p>
-                <p className="text-[13px] text-[var(--muted)] mt-0.5">AI credits, ready to use</p>
-              </div>
-              <div className="pos-card p-4">
-                <p className="text-[14px] font-semibold text-[var(--ink)]">First article</p>
-                {firstArticleId
-                  ? <a href={`/admin/dashboard/blog-articles/${firstArticleId}`} className="text-[13px] font-medium inline-block mt-0.5" style={{ color: 'var(--green)' }}>Review &amp; publish →</a>
-                  : <p className="text-[13px] text-[var(--muted)] mt-0.5">Preparing… ready in a moment.</p>}
-              </div>
+            {/* First article — sits beneath the website card, full width */}
+            <div className="pos-card p-4 mb-4">
+              <p className="text-[14px] font-semibold text-[var(--ink)]">Your first article</p>
+              {firstArticleId
+                ? <p className="text-[13px] text-[var(--muted)] mt-0.5">Published from your practice. <a href={`/admin/dashboard/blog-articles/${firstArticleId}`} className="font-medium" style={{ color: 'var(--green)' }}>Review &amp; edit →</a></p>
+                : <p className="text-[13px] text-[var(--muted)] mt-0.5">Preparing your first article… it&apos;ll appear here shortly.</p>}
+            </div>
+            <div className="pos-card p-4 mb-4">
+              <p className="pos-num text-2xl text-[var(--green)]">{creditsLeft ?? 10}</p>
+              <p className="text-[13px] text-[var(--muted)] mt-0.5">AI credits, ready to use</p>
             </div>
             <div className="pos-card p-4 mb-5">
               <p className="text-[14px] font-semibold text-[var(--ink)]">Optional: connect Google Search Console</p>

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/access';
 import { assertHasCredits, chargeAiCredits, getRemainingCredits } from '@/lib/practice-os/aiCredits';
@@ -78,14 +78,8 @@ export async function POST(request) {
 
     const doc = await Doctor.findById(doctor._id).select('displayName name specialization').lean();
 
-    // §10 — the first (onboarding) article ships published, with an auto-generated
-    // featured image, so the doctor sees a real live page. Later articles stay
-    // drafts for the doctor to review/publish.
-    let featuredImage;
-    if (firstArticle) {
-      try { featuredImage = await generateFeaturedImage(doctor._id, title); } catch { /* best-effort */ }
-    }
-
+    // §10 — the first (onboarding) article ships published so the doctor sees a
+    // real live page. Later articles stay drafts for the doctor to review/publish.
     const article = await BlogArticle.create({
       doctorId: doctor._id,
       title,
@@ -96,10 +90,21 @@ export async function POST(request) {
       blocks,
       diseaseCluster: cluster,
       pageType: type,
-      ...(featuredImage ? { featuredImage: { url: featuredImage, alt: title } } : {}),
       status: firstArticle ? 'published' : 'draft',
       ...(firstArticle ? { publishedAt: new Date() } : {}),
     });
+
+    // The featured image is generated AFTER the response is sent (it takes 30-60s),
+    // so the wizard gets the article id immediately instead of waiting on the image.
+    if (firstArticle) {
+      const articleId = article._id;
+      after(async () => {
+        try {
+          const url = await generateFeaturedImage(doctor._id, title);
+          if (url) await BlogArticle.updateOne({ _id: articleId }, { $set: { featuredImage: { url, alt: title } } });
+        } catch { /* best-effort */ }
+      });
+    }
 
     const remaining = firstArticle
       ? await getRemainingCredits(doctor._id)
