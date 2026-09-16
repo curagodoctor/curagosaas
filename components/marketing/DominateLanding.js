@@ -922,15 +922,35 @@ export default function DominateLanding() {
   useEffect(() => {
     const root = document.querySelector('.dos');
     if (!root) return;
-    const go = () => router.push('/signup?entry=practice-os');
-    const login = () => router.push('/login?entry=practice-os');
     const nav = root.querySelector('.navlinks');
-    const cleans = [];
-    root.querySelectorAll('[data-start]').forEach((el) => { el.addEventListener('click', go); cleans.push(() => el.removeEventListener('click', go)); });
-    root.querySelectorAll('[data-login]').forEach((el) => { el.addEventListener('click', login); cleans.push(() => el.removeEventListener('click', login)); });
-    root.querySelectorAll('[data-togglenav]').forEach((el) => { const h = () => nav && nav.classList.toggle('open'); el.addEventListener('click', h); cleans.push(() => el.removeEventListener('click', h)); });
-    root.querySelectorAll('[data-closenav]').forEach((el) => { const h = () => nav && nav.classList.remove('open'); el.addEventListener('click', h); cleans.push(() => el.removeEventListener('click', h)); });
-    return () => cleans.forEach((c) => c());
+    let signedIn = false;
+
+    // (Re)wire click behaviour. Uses onclick so re-running after the auth check
+    // is idempotent. When signed in, CTAs go to the app and Login is hidden — so
+    // a logged-in doctor never sees "Login/Sign up" and think they're logged out.
+    const wire = () => {
+      const dash = () => router.push('/app/zero-to-practice-builder');
+      root.querySelectorAll('[data-start]').forEach((el) => {
+        if (signedIn && el.classList.contains('navbtn')) el.textContent = 'My dashboard';
+        el.onclick = signedIn ? dash : () => router.push('/signup?entry=practice-os');
+      });
+      root.querySelectorAll('[data-login]').forEach((el) => {
+        el.style.display = signedIn ? 'none' : '';
+        el.onclick = signedIn ? dash : () => router.push('/login?entry=practice-os');
+      });
+      root.querySelectorAll('[data-togglenav]').forEach((el) => { el.onclick = () => nav && nav.classList.toggle('open'); });
+      root.querySelectorAll('[data-closenav]').forEach((el) => { el.onclick = () => nav && nav.classList.remove('open'); });
+    };
+    wire();
+
+    // Detect an existing session (cookie persists on the homepage — this only
+    // updates the nav; it never logs anyone out).
+    let alive = true;
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && d && d.doctor) { signedIn = true; wire(); } })
+      .catch(() => {});
+    return () => { alive = false; };
   }, [router]);
 
   return (
