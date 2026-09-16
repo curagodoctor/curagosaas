@@ -16,6 +16,14 @@ const nextConfig = {
       },
     ],
   },
+  // Serve the Practice-OS app under the product name so the URL reads
+  // /dominate-organic-search instead of /app/zero-to-practice-builder.
+  async rewrites() {
+    return [
+      { source: '/dominate-organic-search', destination: '/app/zero-to-practice-builder' },
+      { source: '/dominate-organic-search/:path*', destination: '/app/zero-to-practice-builder/:path*' },
+    ];
+  },
 };
 
 export default nextConfig;

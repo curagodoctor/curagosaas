@@ -340,6 +340,10 @@ function Wizard() {
           <img src="/curago-logo.png" alt="CuraGo" className="h-7 w-auto" />
           <div className="flex items-center gap-2.5">
             <span className="pos-label" style={{ color: 'var(--muted)' }}>{PHASES[st.phase + 1] || 'Setup'}</span>
+            {step > 0 && (
+              <button onClick={() => { if (window.confirm('Start the setup again from the beginning? Your saved details are kept.')) go(0); }}
+                className="text-[13px] font-medium" style={{ color: 'var(--muted)' }}>Start over</button>
+            )}
             <button onClick={() => router.push('/app/zero-to-practice-builder')}
               className="text-[13px] font-semibold rounded-[10px] px-3 py-1.5"
               style={{ border: '1px solid var(--rule)', color: 'var(--muted)', background: 'var(--card)' }}>Exit</button>

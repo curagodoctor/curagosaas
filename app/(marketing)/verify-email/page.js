@@ -107,7 +107,7 @@ function VerifyEmailContent() {
       // Into the onboarding wizard (branch → profile → website → GBP → access);
       // the wizard collects the subdomain, so email signup no longer needs it.
       setTimeout(() => {
-        router.push('/app/zero-to-practice-builder/onboard');
+        router.push('/dominate-organic-search/onboard');
       }, 1500);
     } catch (err) {
       setError(err.message);

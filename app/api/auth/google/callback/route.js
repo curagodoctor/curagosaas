@@ -92,7 +92,7 @@ export async function GET(request) {
     // (branch → profile → website → GBP → access), which handles the subdomain.
     const needsOnboarding = entry === 'website-builder' && !doctor.subdomain;
     const dest = needsOnboarding
-      ? '/app/zero-to-practice-builder/onboard'
+      ? '/dominate-organic-search/onboard'
       : landing;
     const token = generateDoctorToken(doctor);
     const res = redirectTo(origin, dest);
