@@ -65,7 +65,8 @@ h1,h2,h3,h4{letter-spacing:-.055em}
 .patient-card strong{display:block;font-size:24px;line-height:1.02;letter-spacing:-1px;margin-top:8px}
 /* MARQUEE */
 .marquee{border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;white-space:nowrap;padding:17px 0;background:#f1eee5}
-.track{display:inline-flex;gap:31px;animation:marquee 24s linear infinite;font-weight:900;letter-spacing:1.7px;font-size:10px;color:var(--green)}
+.track{display:flex;width:max-content;animation:marquee 24s linear infinite;font-weight:900;letter-spacing:1.7px;font-size:10px;color:var(--green)}
+.mq{display:inline-flex;align-items:center;gap:31px;padding-right:31px;white-space:nowrap}
 .track b{color:var(--orange)}
 @keyframes marquee{to{transform:translateX(-50%)}}
 /* GENERAL */
@@ -653,8 +654,8 @@ const BODY = `<nav class="nav">
 </header>
 
 <div class="marquee"><div class="track">
- BUILD YOUR PRESENCE <b>✦</b> GET DISCOVERED <b>✦</b> BUILD TRUST <b>✦</b> KEEP BUILDING <b>✦</b>
- BUILD YOUR PRESENCE <b>✦</b> GET DISCOVERED <b>✦</b> BUILD TRUST <b>✦</b> KEEP BUILDING <b>✦</b>
+<span class="mq">BUILD YOUR PRESENCE <b>✦</b> GET DISCOVERED <b>✦</b> BUILD TRUST <b>✦</b> KEEP BUILDING <b>✦</b></span>
+<span class="mq">BUILD YOUR PRESENCE <b>✦</b> GET DISCOVERED <b>✦</b> BUILD TRUST <b>✦</b> KEEP BUILDING <b>✦</b></span>
 </div></div>
 
 <section class="section reveal" id="why">
@@ -663,7 +664,7 @@ const BODY = `<nav class="nav">
   <h2 class="section-title">Google is<br>opportunity.</h2>
   <p class="section-intro">Google is the front door of your clinical practice. And unlike something you have to pay for every time a patient sees it, organic presence can keep getting stronger.</p>
   <div class="stats">
-    <div class="stat"><b>77%</b><h3>Search before booking</h3><p>Google / Think with Google research reported that 77% of patients used search before scheduling a hospital appointment.</p></div>
+    <div class="stat"><b>77%</b><h3>Search before booking</h3><p>Think with Google research reported that 77% of patients used search before scheduling a hospital appointment.</p></div>
     <div class="stat"><b>LOW</b><h3>Cost per discovery</h3><p>Organic visibility doesn't require paying for every individual click.</p></div>
     <div class="stat"><b>BUILD</b><h3>Not restart</h3><p>Keep strengthening the foundation instead of starting from zero every day.</p></div>
     <div class="stat"><b>∞</b><h3>Compounds</h3><p>The work you do today can continue contributing to tomorrow's presence.</p></div>
