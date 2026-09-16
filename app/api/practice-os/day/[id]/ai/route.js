@@ -6,7 +6,8 @@ import AiCreditLedger from '@/models/practice-os/AiCreditLedger';
 import PracticeOsChatMessage from '@/models/practice-os/PracticeOsChatMessage';
 import { getDay } from '@/lib/practice-os/engine';
 import { runMissionAssistant, isAiConfigured } from '@/lib/practice-os/ai';
-import { getDoctorProfileContext, getDoctorProfileFields } from '@/lib/practice-os/profile';
+import { getDoctorProfileContext, getDoctorProfileFields, isProfileReadyForAi } from '@/lib/practice-os/profile';
+import { getRemainingCredits } from '@/lib/practice-os/aiCredits';
 import { recordAiUse } from '@/lib/practice-os/performance';
 import { findModule } from '@/lib/practice-os/modules';
 
@@ -110,6 +111,19 @@ export async function POST(request, { params }) {
         : PracticeOsChatMessage.find({ doctorId: doctor._id, missionId: id, sessionId }).sort({ createdAt: 1 }).limit(20).lean(),
     ]);
     const history = priorMessages.map((m) => ({ role: m.role, content: m.content }));
+
+    // Guard: on a thin/fresh profile the assistant has nothing real to work from
+    // and would invent generic, unrelated content. Send them to complete their
+    // profile first — no credit charged.
+    if (!isProfileReadyForAi(profileFields)) {
+      return NextResponse.json({
+        success: true,
+        needsProfile: true,
+        reply: "Before I can write anything useful for you, I need to know your practice. Head to **Profile** and add your specialty, the conditions you treat and the procedures you perform — then ask me again and everything I draft will be grounded in your real practice, not generic.",
+        creditsRemaining: await getRemainingCredits(doctor._id),
+      });
+    }
+
     const activeModule = moduleId ? findModule(found.modules || [], moduleId) : null;
     const result = await runMissionAssistant({ mission: found.day, module: activeModule, userPrompt: prompt, profileContext, profileFields, history });
     if (!result.success) {

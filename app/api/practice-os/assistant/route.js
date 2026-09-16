@@ -3,7 +3,7 @@ import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/access';
 import { assertHasCredits, chargeAiCredits, getRemainingCredits } from '@/lib/practice-os/aiCredits';
 import { runAssistant, isAiConfigured } from '@/lib/practice-os/ai';
-import { getDoctorProfileContext, getDoctorProfileFields } from '@/lib/practice-os/profile';
+import { getDoctorProfileContext, getDoctorProfileFields, isProfileReadyForAi } from '@/lib/practice-os/profile';
 import PracticeOsChatMessage from '@/models/practice-os/PracticeOsChatMessage';
 
 export const runtime = 'nodejs';
@@ -52,6 +52,17 @@ export async function POST(request) {
       PracticeOsChatMessage.find({ doctorId: doctor._id, missionId: null, sessionId: GLOBAL_SESSION }).sort({ createdAt: 1 }).limit(20).lean(),
     ]);
     const history = prior.map((m) => ({ role: m.role, content: m.content }));
+
+    // Guard: a fresh/thin profile would produce generic, unrelated output. Send
+    // them to finish their profile first — no credit charged.
+    if (!isProfileReadyForAi(profileFields)) {
+      return NextResponse.json({
+        success: true,
+        needsProfile: true,
+        reply: "Before I can write anything useful for you, I need to know your practice. Head to **Profile** and add your specialty, the conditions you treat and the procedures you perform — then ask me again and everything I draft will be grounded in your real practice, not generic.",
+        creditsRemaining: await getRemainingCredits(doctor._id),
+      });
+    }
 
     const result = await runAssistant({ userPrompt: prompt, profileContext, profileFields, history });
     if (!result.success) return NextResponse.json({ success: false, error: result.error }, { status: 502 });
