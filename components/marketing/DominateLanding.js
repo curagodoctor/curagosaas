@@ -696,8 +696,8 @@ const BODY = `<nav class="nav">
       </div>
       <div class="node">
         <div class="node-label">LOCAL CLINIC</div>
-        <h3>Your GBP</h3>
-        <p>Your Google Business Profile — the local version of your practice, tied to where the patient is searching.</p>
+        <h3>Your Google Business Profile</h3>
+        <p>Your GBP — the local version of your practice, tied to where the patient is searching.</p>
         <div class="chips"><span class="chip">Location</span><span class="chip">Services</span><span class="chip">Reviews</span><span class="chip">Products</span><span class="chip">Booking</span></div>
       </div>
     </div>
