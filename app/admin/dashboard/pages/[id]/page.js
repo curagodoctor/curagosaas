@@ -1204,7 +1204,7 @@ export default function PageBuilderEditor() {
             setSelectedSectionIndex(null);
             setShowConfig(true);
           }}
-          className="lg:hidden fixed bottom-6 right-6 z-30 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
+          className="lg:hidden fixed bottom-24 left-5 z-40 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
           title="Page Settings"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
