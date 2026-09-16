@@ -72,6 +72,7 @@ function Wizard() {
   const [clinicPhotos, setClinicPhotos] = useState([]);
   // subdomain
   const [subdomain, setSubdomain] = useState('');
+  const [existingSubdomain, setExistingSubdomain] = useState('');
   const [subStatus, setSubStatus] = useState(null);
   const [subMsg, setSubMsg] = useState('');
   // website generation
@@ -98,6 +99,7 @@ function Wizard() {
         if (d.success) {
           setFields(d.fields || {}); setSummary(d.summary || '');
           if (d.hasWebsite) setHasWebsite(d.hasWebsite);
+          if (d.subdomain) { setSubdomain(d.subdomain); setExistingSubdomain(d.subdomain); }
           // Resume where they left off. Never resume ONTO the auto-running
           // 'generate' step (it would re-charge credits) — land on 'live' instead.
           let s = Number(d.onboardStep) || 0;
@@ -419,7 +421,18 @@ function Wizard() {
         )}
 
         {/* STEP: subdomain */}
-        {st.id === 'subdomain' && (
+        {st.id === 'subdomain' && (existingSubdomain ? (
+          // Guard: address already chosen (existing account) — confirm, don't re-ask.
+          <div>
+            <p className="pos-label" style={{ color: 'var(--green)' }}>Website address</p>
+            <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Your website address is set.</h1>
+            <p className="text-sm text-[var(--muted)] mb-4">You already chose this — no need to pick it again. You can connect a custom domain later from Settings.</p>
+            <div className="pos-card p-4 flex items-center gap-2" style={{ background: 'var(--green-soft)', borderColor: 'var(--green)' }}>
+              <span className="text-[15px] font-semibold text-[var(--ink)]">{existingSubdomain}.curago.in</span>
+            </div>
+            <button onClick={next} className="pos-action mt-6">Continue</button>
+          </div>
+        ) : (
           <div>
             <p className="pos-label" style={{ color: 'var(--green)' }}>Website address</p>
             <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Choose your website address.</h1>
@@ -436,7 +449,7 @@ function Wizard() {
             {err && <p className="text-[13px] text-red-600 mt-2">{err}</p>}
             <button onClick={claimSub} disabled={busy === 'sub' || subStatus !== 'ok'} className="pos-action mt-6" style={{ opacity: subStatus === 'ok' ? 1 : 0.5 }}>{busy === 'sub' ? 'Setting up…' : 'Create my website'}</button>
           </div>
-        )}
+        ))}
 
         {/* STEP: clinical */}
         {st.id === 'clinical' && (

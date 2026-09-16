@@ -16,6 +16,7 @@ export async function GET(request) {
     // so values a doctor entered via mission evidence inputs also show in the
     // profile form — no need to re-enter them here.
     const fields = await getDoctorProfileFields(doctor._id);
+    const doc = await Doctor.findById(doctor._id).select('subdomain customDomain').lean();
     return NextResponse.json({
       success: true,
       fields,
@@ -23,6 +24,9 @@ export async function GET(request) {
       summary: profile.credentials?.summary || '',
       hasCv: !!profile.credentials?.rawFileUrl,
       cvUrl: profile.credentials?.rawFileUrl || '',
+      // Existing website address, if any — the wizard won't re-ask for it.
+      subdomain: doc?.subdomain || '',
+      customDomain: doc?.customDomain || '',
       // Onboarding wizard resume state (so a mid-flow refresh doesn't restart).
       onboardStep: Number(profile.variables?.onboardStep) || 0,
       hasWebsite: profile.variables?.hasWebsite || null,
