@@ -55,10 +55,10 @@ export default function GlobalAssistant() {
     return () => { on = false; };
   }, []);
 
-  // Auto-open once when the doctor enters a builder page.
-  useEffect(() => {
-    if (isBuilder && autoedRef.current !== pathname) { autoedRef.current = pathname; setOpen(true); }
-  }, [isBuilder, pathname]);
+  // Do NOT auto-open — the assistant stays a collapsed button until the doctor
+  // opens it (auto-popping after sign-in was unwanted). autoedRef retained to
+  // avoid an unused-import churn.
+  useEffect(() => { autoedRef.current = pathname; }, [pathname]);
 
   const scrollToEnd = useCallback(() => {
     requestAnimationFrame(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; });

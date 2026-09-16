@@ -10,6 +10,23 @@ import Doctor from '@/models/Doctor';
 
 const PAGE_TYPES = ['', 'disease', 'treatment', 'procedure', 'location', 'symptom'];
 
+// Best-effort editorial featured image from the article topic (no credit charge —
+// this only runs for the free first onboarding article). Returns a URL or null.
+async function generateFeaturedImage(doctorId, topic) {
+  if (!process.env.OPENAI_API_KEY) return null;
+  try {
+    const { put } = await import('@vercel/blob');
+    const OpenAI = (await import('openai')).default;
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const prompt = `A clean, professional, editorial illustration for a patient-education medical article about "${topic}". Calm, trustworthy healthcare aesthetic, soft natural lighting, muted greens and warm neutrals. No text, no words, no letters, no logos, no watermarks. Not graphic or gory.`;
+    const result = await client.images.generate({ model: process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1', prompt, size: '1536x1024', n: 1 });
+    const b64 = result?.data?.[0]?.b64_json;
+    if (!b64) return null;
+    const blob = await put(`blog-ai/${doctorId}/${Date.now()}-first.png`, Buffer.from(b64, 'base64'), { access: 'public', addRandomSuffix: false, contentType: 'image/png' });
+    return blob.url;
+  } catch { return null; }
+}
+
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
@@ -60,6 +77,15 @@ export async function POST(request) {
     }
 
     const doc = await Doctor.findById(doctor._id).select('displayName name specialization').lean();
+
+    // §10 — the first (onboarding) article ships published, with an auto-generated
+    // featured image, so the doctor sees a real live page. Later articles stay
+    // drafts for the doctor to review/publish.
+    let featuredImage;
+    if (firstArticle) {
+      try { featuredImage = await generateFeaturedImage(doctor._id, title); } catch { /* best-effort */ }
+    }
+
     const article = await BlogArticle.create({
       doctorId: doctor._id,
       title,
@@ -70,14 +96,15 @@ export async function POST(request) {
       blocks,
       diseaseCluster: cluster,
       pageType: type,
-      // Draft — the doctor reviews and publishes it themselves.
-      status: 'draft',
+      ...(featuredImage ? { featuredImage: { url: featuredImage, alt: title } } : {}),
+      status: firstArticle ? 'published' : 'draft',
+      ...(firstArticle ? { publishedAt: new Date() } : {}),
     });
 
     const remaining = firstArticle
       ? await getRemainingCredits(doctor._id)
       : (await chargeAiCredits(doctor._id, { label: 'draft-blog' })).remaining;
-    return NextResponse.json({ success: true, id: String(article._id), title: article.title, creditsRemaining: remaining });
+    return NextResponse.json({ success: true, id: String(article._id), title: article.title, published: firstArticle, creditsRemaining: remaining });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     if (error.message === 'PaymentRequired') return NextResponse.json({ success: false, error: 'PaymentRequired' }, { status: 402 });
