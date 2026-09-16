@@ -597,8 +597,10 @@ img { max-width:100%; }
 .dos .acd b{color:var(--lime);font-weight:900;padding:0 4px}
 .dos .hero-tier{display:block;font-weight:800;color:#fff;opacity:.95;font-size:clamp(14px,1.7vw,17px);letter-spacing:-.01em;margin-top:2px}
 .dos .hero-tagline{margin:16px 0 4px;font-size:13.5px;font-weight:700;color:var(--lime)}
-.dos .road{display:flex;flex-direction:column;gap:12px}
-.dos .road .step{display:block}
+.dos .roadmap-wrap{overflow-x:visible}
+.dos .road{min-width:0;height:auto;display:flex;flex-direction:column;gap:12px;padding:0;position:static}
+.dos .road .step{width:auto;display:block;border-radius:14px}
+.dos .road-label{position:static;margin-top:16px;justify-content:center}
 .dos .foot-links{display:flex;flex-wrap:wrap;gap:16px;font-size:11px;font-weight:700;color:#9fafa4}
 .dos .foot-links a:hover{color:#fff}
 
