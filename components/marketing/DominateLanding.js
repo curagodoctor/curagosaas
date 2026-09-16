@@ -625,6 +625,7 @@ const BODY = `<nav class="nav">
       <div class="kicker">FREE TO START · ~20 MINUTES</div>
       <h1>Get found<br><span>on Google.</span></h1>
       <p class="hero-copy"><span class="acd">Appear <b>→</b> Compete <b>→</b> Dominate</span><span class="hero-tier">Made for surgeons and specialists building practices in Tier 2 cities or smaller cities.</span></p>
+      <div class="hero-tagline">Appear at no cost in around 20 mins. Compete and Dominate if you are ready.</div>
       <div class="hero-actions">
         <button class="btn btn-orange" data-start="1">Start Now →</button>
         <a class="hero-secondary" href="#google">See how it works</a>
