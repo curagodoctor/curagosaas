@@ -35,6 +35,16 @@ const STEPS = [
   { id: 'quiz', phase: 3 },
 ];
 
+// §2 Block 1 — the identity questions, worded exactly as the September prototype
+// ("Who are you, as patients should see you?"), mapped to our profile fields.
+const IDENTITY_Q = [
+  { key: 'doctor_name', label: 'How should your name appear to patients?', ph: 'Dr. Your Name' },
+  { key: 'specialty', label: 'What is your specialty?', ph: 'e.g. Orthopaedics' },
+  { key: 'qualifications', label: 'What are your qualifications?', ph: 'MBBS, MS' },
+  { key: 'additional_qualifications', label: 'Any additional qualifications?', ph: 'Fellowship, diploma', optional: true },
+  { key: 'years_experience', label: 'How many years have you been practising?', ph: '12' },
+];
+
 // §11 — the commitment check before Get Access.
 const QUIZ = [
   { title: 'Are you serious about being found by your patients on Google?', body: 'Not curious — serious. This only works for doctors who genuinely want to be discoverable.', yes: 'Yes, I am serious', no: 'Not right now' },
@@ -285,32 +295,42 @@ function Wizard() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--paper)' }}>
-      {/* Phase rail + progress */}
-      <div className="sticky top-0 z-10" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--rule)' }}>
-        <div className="max-w-2xl mx-auto px-5 py-3">
-          <div className="flex items-center gap-1.5 mb-2.5 flex-wrap">
-            {PHASES.map((p, i) => {
-              const cur = st.phase + 1;      // Account (index 0) is already done
-              const active = i === cur;
-              const done = i < cur;
-              return (
-                <div key={p} className="flex items-center gap-1.5 rounded-[10px] pl-1 pr-2.5 py-1"
-                  style={{ background: active ? 'var(--green-soft)' : 'transparent', border: `1px solid ${active ? 'var(--green)' : 'transparent'}` }}>
-                  <span className="grid place-items-center rounded-md shrink-0"
-                    style={{ width: 20, height: 20, fontFamily: 'var(--mono)', fontSize: 10.5, fontWeight: 600,
-                      background: done || active ? 'var(--green)' : 'var(--rule-soft)', color: done || active ? '#fff' : 'var(--muted)' }}>
-                    {done ? '✓' : i + 1}
-                  </span>
-                  <span className="pos-label" style={{ color: active ? 'var(--green)' : done ? 'var(--ink)' : 'var(--muted)' }}>{p}</span>
-                </div>
-              );
-            })}
+      {/* Top bar — logo · phase · Exit, with an orange progress line */}
+      <header className="sticky top-0 z-20" style={{ background: 'var(--card)', borderBottom: '1px solid var(--rule)' }}>
+        <div className="max-w-2xl mx-auto px-4 sm:px-5 py-3 flex items-center justify-between gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/curago-logo.png" alt="CuraGo" className="h-7 w-auto" />
+          <div className="flex items-center gap-2.5">
+            <span className="pos-label" style={{ color: 'var(--muted)' }}>{PHASES[st.phase + 1] || 'Setup'}</span>
+            <button onClick={() => router.push('/app/zero-to-practice-builder')}
+              className="text-[13px] font-semibold rounded-[10px] px-3 py-1.5"
+              style={{ border: '1px solid var(--rule)', color: 'var(--muted)', background: 'var(--card)' }}>Exit</button>
           </div>
-          <div className="pos-meter"><span style={{ width: `${pct}%` }} /></div>
         </div>
+        <div style={{ height: 4, background: 'var(--rule-soft)' }}>
+          <div style={{ height: '100%', background: 'var(--orange)', width: `${pct}%`, transition: 'width .3s ease' }} />
+        </div>
+      </header>
+
+      {/* Phase rail — pills (Account done · current filled · rest outlined) */}
+      <div className="max-w-2xl mx-auto w-full px-4 sm:px-5 pt-4 flex flex-wrap gap-2">
+        {PHASES.map((p, i) => {
+          const cur = st.phase + 1;      // Account (index 0) is already done
+          const active = i === cur;
+          const done = i < cur;
+          return (
+            <span key={p} className="pos-label" style={{
+              padding: '6px 10px', borderRadius: 7,
+              background: active ? 'var(--green)' : done ? 'var(--green-soft)' : 'transparent',
+              color: active ? '#fff' : done ? 'var(--green)' : 'var(--muted)',
+              border: `1px solid ${active ? 'var(--green)' : done ? 'transparent' : 'var(--rule)'}`,
+            }}>{p}</span>
+          );
+        })}
       </div>
 
-      <div className="max-w-2xl mx-auto px-5 py-7">
+      <main className="max-w-2xl mx-auto w-full px-4 sm:px-5 pt-4 pb-3">
+        <div className="pos-card" style={{ padding: 'clamp(20px,4vw,32px)', borderRadius: 20, boxShadow: '0 22px 56px rgba(9,107,23,.06)' }}>
         {/* STEP: branch */}
         {st.id === 'branch' && (
           <div>
@@ -336,33 +356,34 @@ function Wizard() {
           </div>
         )}
 
-        {/* STEP: profile */}
+        {/* STEP: profile — Block 1 · Doctor identity (prototype questions) */}
         {st.id === 'profile' && (
           <div>
-            <p className="pos-label" style={{ color: 'var(--green)' }}>Your profile</p>
-            <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1" style={{ letterSpacing: '-0.02em' }}>Tell us about you — we&apos;ll write it up.</h1>
-            <p className="text-sm text-[var(--muted)] mt-1.5 mb-4">Your identity details stay exactly as you type them. Your expertise, diseases and procedures are drafted by AI from a line of input — edit anything.</p>
+            <p className="pos-label" style={{ color: 'var(--orange)' }}>Block 1 · Doctor identity</p>
+            <h1 className="font-extrabold text-[var(--ink)] mt-2.5 mb-3" style={{ fontSize: 'clamp(24px,5vw,34px)', letterSpacing: '-0.03em', lineHeight: 1.08 }}>Who are you, as patients should see you?</h1>
+            <p className="text-[15.5px] text-[var(--muted)] mb-6" style={{ lineHeight: 1.6, maxWidth: '58ch' }}>These are source-of-truth fields. They are stored exactly as you provide them — never rewritten into something more impressive.</p>
 
-            {/* AI hint → draft */}
-            <div className="pos-card p-4 mb-5">
-              <label className="pos-label">In your words (e.g. &quot;surgical gastro, 12 yrs, Mumbai&quot;)</label>
-              <textarea value={hint} onChange={(e) => setHint(e.target.value)} rows={2} className="w-full pos-card p-2.5 text-sm mt-1.5" placeholder="A line about your specialty and focus" />
-              <button onClick={draft} disabled={!!busy} className="pos-action mt-3" style={{ padding: '9px 16px' }}>{busy === 'draft' ? 'Writing…' : '✨ Draft my expertise, diseases & procedures'}</button>
+            <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))' }}>
+              {IDENTITY_Q.map((q) => (
+                <label key={q.key} className="block">
+                  <span className="flex items-baseline gap-2 mb-1.5">
+                    <span className="text-[13px] font-semibold text-[var(--ink)]">{q.label}</span>
+                    {q.optional && <span className="pos-label" style={{ color: 'var(--muted)' }}>Optional</span>}
+                  </span>
+                  <input value={fields[q.key] || ''} onChange={(e) => setField(q.key, e.target.value)} placeholder={q.ph}
+                    className="w-full rounded-[11px] px-3.5 py-3 text-[14.5px] outline-none"
+                    style={{ border: '1px solid var(--rule)', background: 'var(--paper)' }}
+                    onFocus={(e) => { e.target.style.outline = '2px solid var(--orange)'; e.target.style.outlineOffset = '1px'; }}
+                    onBlur={(e) => { e.target.style.outline = 'none'; }} />
+                </label>
+              ))}
             </div>
 
-            <p className="pos-label mb-2">Identity — taken as you type it</p>
-            <div className="space-y-4">{fieldsBy(PRO, IDENTITY_KEYS).map((f) => <Field key={f.key} f={f} value={fields[f.key] || ''} onChange={(v) => setField(f.key, v)} onToggleTag={(o) => toggleTag(f.key, o)} />)}</div>
-
-            <p className="pos-label mt-6 mb-2" style={{ color: 'var(--green)' }}>Generated from your answers — edit freely</p>
-            <div className="space-y-4">{fieldsBy(PRO, GENERATED_KEYS).map((f) => <Field key={f.key} f={f} value={fields[f.key] || ''} onChange={(v) => setField(f.key, v)} onToggleTag={(o) => toggleTag(f.key, o)} />)}</div>
-
-            <details className="mt-6">
-              <summary className="pos-label cursor-pointer">Optional — awards, publications, registration</summary>
-              <div className="space-y-4 mt-3">{fieldsBy(PRO, OPTIONAL_KEYS).map((f) => <Field key={f.key} f={f} value={fields[f.key] || ''} onChange={(v) => setField(f.key, v)} onToggleTag={(o) => toggleTag(f.key, o)} />)}</div>
-            </details>
-
-            {err && <p className="text-[13px] text-red-600 mt-3">{err}</p>}
-            <button onClick={async () => { if (await saveProfile()) next(); }} disabled={!!busy} className="pos-action mt-6">{busy === 'save' ? 'Saving…' : 'Save & continue'}</button>
+            {err && <p className="text-[13px] text-red-600 mt-4">{err}</p>}
+            <div className="flex items-center justify-between gap-3 mt-7">
+              <button onClick={async () => { if (await saveProfile()) next(); }} disabled={!!busy} className="pos-action">{busy === 'save' ? 'Saving…' : 'Save and continue'}</button>
+              {step > 0 && <button onClick={() => go(step - 1)} disabled={!!busy} className="pos-link text-sm disabled:opacity-40" style={{ color: 'var(--muted)' }}>← Back</button>}
+            </div>
           </div>
         )}
 
@@ -602,6 +623,11 @@ function Wizard() {
         {st.phase === 0 && step > 0 && st.id !== 'summary' && (
           <button onClick={() => go(step - 1)} disabled={!!busy} className="pos-link text-sm mt-6 disabled:opacity-40">← Back</button>
         )}
+        </div>
+      </main>
+
+      <div className="px-5 pb-10 pt-1 text-center">
+        <button onClick={() => router.push('/')} className="text-[13.5px] hover:underline" style={{ color: 'var(--muted)' }}>Back to the CuraGo site</button>
       </div>
     </div>
   );
