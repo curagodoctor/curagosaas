@@ -313,12 +313,74 @@ function SignupPageInner() {
                 Continue with Google
               </a>
 
-              <p className="mt-5 text-center text-[13px]" style={{ color: 'var(--muted)', lineHeight: 1.6 }}>
-                By continuing you confirm you are a <strong>licensed healthcare professional</strong> and agree to our{' '}
-                <Link href="/terms" className="font-medium hover:underline" style={{ color: 'var(--green)' }}>Terms</Link>{' '}
-                and{' '}
-                <Link href="/privacy" className="font-medium hover:underline" style={{ color: 'var(--green)' }}>Privacy Policy</Link>.
-              </p>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t" style={{ borderColor: 'var(--rule)' }} /></div>
+                <div className="relative flex justify-center"><span className="px-3 text-sm" style={{ backgroundColor: 'var(--card)', color: 'var(--muted)' }}>or sign up with email</span></div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="mono block text-[11px] tracking-[0.1em] uppercase mb-2" style={{ color: 'var(--muted)' }}>Email</label>
+                    <input type="email" name="email" autoComplete="email" value={formData.email} onChange={handleChange} placeholder="you@clinic.com"
+                      className="w-full px-4 py-3 rounded-[10px] outline-none" style={{ border: `1px solid ${errors.email ? '#dc2626' : 'var(--rule)'}`, backgroundColor: '#fff' }}
+                      onFocus={(e) => { e.target.style.outline = '2px solid var(--orange)'; e.target.style.outlineOffset = '1px'; }} onBlur={(e) => { e.target.style.outline = 'none'; }} />
+                    {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                  </div>
+                  <div>
+                    <label className="mono block text-[11px] tracking-[0.1em] uppercase mb-2" style={{ color: 'var(--muted)' }}>Phone</label>
+                    <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="10-digit number"
+                      className="w-full px-4 py-3 rounded-[10px] outline-none" style={{ border: `1px solid ${errors.phone ? '#dc2626' : 'var(--rule)'}`, backgroundColor: '#fff' }}
+                      onFocus={(e) => { e.target.style.outline = '2px solid var(--orange)'; e.target.style.outlineOffset = '1px'; }} onBlur={(e) => { e.target.style.outline = 'none'; }} />
+                    {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mono block text-[11px] tracking-[0.1em] uppercase mb-2" style={{ color: 'var(--muted)' }}>Password</label>
+                  <div className="relative">
+                    <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleChange} placeholder="Min 8 characters"
+                      className="w-full px-4 pr-16 py-3 rounded-[10px] outline-none" style={{ border: `1px solid ${errors.password ? '#dc2626' : 'var(--rule)'}`, backgroundColor: '#fff' }}
+                      onFocus={(e) => { e.target.style.outline = '2px solid var(--orange)'; e.target.style.outlineOffset = '1px'; }} onBlur={(e) => { e.target.style.outline = 'none'; }} />
+                    <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute inset-y-0 right-0 pr-4 flex items-center text-sm font-medium" style={{ color: 'var(--muted)' }}>{showPassword ? 'Hide' : 'Show'}</button>
+                  </div>
+                  {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+                </div>
+
+                <div>
+                  <label className="mono block text-[11px] tracking-[0.1em] uppercase mb-2" style={{ color: 'var(--muted)' }}>Confirm password</label>
+                  <input type={showPassword ? 'text' : 'password'} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="Re-enter password"
+                    className="w-full px-4 py-3 rounded-[10px] outline-none" style={{ border: `1px solid ${errors.confirmPassword ? '#dc2626' : 'var(--rule)'}`, backgroundColor: '#fff' }}
+                    onFocus={(e) => { e.target.style.outline = '2px solid var(--orange)'; e.target.style.outlineOffset = '1px'; }} onBlur={(e) => { e.target.style.outline = 'none'; }} />
+                  {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
+                </div>
+
+                <div className="space-y-2.5 pt-1">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="isLicensedProfessional" checked={formData.isLicensedProfessional} onChange={handleChange} className="mt-0.5 w-5 h-5 rounded" style={{ accentColor: 'var(--green)' }} />
+                    <span className="text-sm" style={{ color: 'var(--ink)' }}>I confirm that I am a <strong>licensed healthcare professional</strong>.</span>
+                  </label>
+                  {errors.isLicensedProfessional && <p className="text-sm text-red-600 ml-8">{errors.isLicensedProfessional}</p>}
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="acceptTerms" checked={formData.acceptTerms} onChange={handleChange} className="mt-0.5 w-5 h-5 rounded" style={{ accentColor: 'var(--green)' }} />
+                    <span className="text-sm" style={{ color: 'var(--ink)' }}>I agree to the <Link href="/terms" className="font-medium hover:underline" style={{ color: 'var(--green)' }}>Terms</Link> and <Link href="/privacy" className="font-medium hover:underline" style={{ color: 'var(--green)' }}>Privacy Policy</Link>.</span>
+                  </label>
+                  {errors.acceptTerms && <p className="text-sm text-red-600 ml-8">{errors.acceptTerms}</p>}
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="acceptVerification" checked={formData.acceptVerification} onChange={handleChange} className="mt-0.5 w-5 h-5 rounded" style={{ accentColor: 'var(--green)' }} />
+                    <span className="text-sm" style={{ color: 'var(--ink)' }}>I understand my profile/website is subject to an <strong>internal verification</strong> process.</span>
+                  </label>
+                  {errors.acceptVerification && <p className="text-sm text-red-600 ml-8">{errors.acceptVerification}</p>}
+                </div>
+
+                {errors.submit && (
+                  <div className="px-4 py-3 rounded-[10px] text-sm" style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c' }}>{errors.submit}</div>
+                )}
+
+                <button type="submit" disabled={isLoading} className="w-full text-white py-4 rounded-[11px] font-bold text-lg transition-all disabled:opacity-60" style={{ backgroundColor: 'var(--orange)' }}>
+                  {isLoading ? 'Creating your account…' : 'Sign up now'}
+                </button>
+              </form>
             </div>
 
             <p className="mt-6 text-center text-sm" style={{ color: 'var(--muted)' }}>

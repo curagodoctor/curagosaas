@@ -585,7 +585,7 @@ img { max-width:100%; }
 .dos h2, .dos .section-title, .dos .final h2 { font-weight:900; }
 /* nav alignment: links push right, Login/Sign up cluster on the far right */
 .dos .navlinks{margin-left:auto;align-items:center}
-.dos .navcta{display:flex;gap:8px;align-items:center}
+.dos .navcta{display:flex;gap:8px;align-items:center;margin-left:24px}
 .dos .navcta .navbtn{padding:10px 16px}
 .dos .navlinks-cta{display:none}           /* desktop: buttons live in .navcta */
 @media(max-width:860px){
