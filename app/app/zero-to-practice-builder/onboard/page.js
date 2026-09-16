@@ -91,6 +91,7 @@ function Wizard() {
   // commitment quiz
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizFailed, setQuizFailed] = useState(false);
+  const [quizPhase, setQuizPhase] = useState('milestone'); // milestone → quiz → ready
   // §5b areas + §5e relevant links
   const [areas, setAreas] = useState([]);
   // Default labels so patients' clinic + socials show by default (spec: Maps,
@@ -707,7 +708,56 @@ function Wizard() {
 
         {/* STEP: quiz → Get Access */}
         {st.id === 'quiz' && (
-          quizFailed ? (
+          quizPhase === 'milestone' ? (
+            // MILESTONE — "You're ready to appear" ladder, before the commitment check.
+            <div>
+              <p className="pos-label" style={{ color: 'var(--orange)' }}>Milestone</p>
+              <h1 className="text-[26px] font-semibold text-[var(--ink)] mt-1 mb-2" style={{ letterSpacing: '-0.02em' }}>You&apos;re ready to appear.</h1>
+              <p className="text-[15px] text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '58ch' }}>Your basic organic presence is now in place. But appearing is only the beginning. The next question is: can you compete?</p>
+              <div className="grid gap-2.5 mb-6">
+                {[
+                  { tag: 'Done', title: 'Appear', sub: 'Foundation in place. Patients can find you.', done: true },
+                  { tag: 'Next', title: 'Compete', sub: 'Depth around your expertise, published on a schedule.' },
+                  { tag: 'Later', title: 'Dominate', sub: 'Your practice becomes the source patients keep returning to.' },
+                ].map((r) => (
+                  <div key={r.title} className="pos-card p-4 flex items-start gap-3" style={{ borderColor: r.done ? 'var(--green)' : 'var(--rule)', background: r.done ? 'var(--green-soft)' : 'var(--card)' }}>
+                    <span className="pos-label shrink-0" style={{ padding: '3px 8px', borderRadius: 6, background: r.done ? 'var(--green)' : 'var(--rule-soft)', color: r.done ? '#fff' : 'var(--muted)' }}>{r.tag}</span>
+                    <div>
+                      <p className="text-[15px] font-semibold text-[var(--ink)]">{r.title}</p>
+                      <p className="text-[13px] text-[var(--muted)] mt-0.5">{r.sub}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => { setQuizIdx(0); setQuizFailed(false); setQuizPhase('quiz'); }} className="pos-action">Answer three questions</button>
+              <button onClick={() => go(step - 1)} className="pos-link text-sm mt-5 block" style={{ color: 'var(--muted)' }}>← Back</button>
+            </div>
+          ) : quizPhase === 'ready' ? (
+            // ALL THREE · YES — the early-access offer, before the application form.
+            <div>
+              <p className="pos-label" style={{ color: 'var(--green)' }}>All three · Yes</p>
+              <h1 className="text-[26px] font-semibold text-[var(--ink)] mt-1 mb-2" style={{ letterSpacing: '-0.02em' }}>You&apos;re a fit. Get early access.</h1>
+              <p className="text-[15px] text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '58ch' }}>Three yeses means the weekly loop will actually run. Here&apos;s what early access gives you.</p>
+              <div className="pos-card p-5 mb-5" style={{ background: 'var(--green-soft)', borderColor: 'var(--green)' }}>
+                <p className="pos-label" style={{ color: 'var(--green)' }}>Early access · Founder price</p>
+                <p className="text-[22px] font-semibold text-[var(--ink)] mt-1" style={{ letterSpacing: '-0.02em' }}>No cost <span className="text-[15px] font-normal text-[var(--muted)]">for the first month</span></p>
+                <p className="text-[13px] text-[var(--muted)] mt-0.5">Then ₹5,000 / month — founder price, locked in.</p>
+                <div className="mt-4 space-y-2">
+                  {[
+                    'Full Dominate Organic Search access for the first month, at no cost.',
+                    'After that, ₹5,000/month — the founder price, locked in for as long as you stay.',
+                    'No bulk payment. Cancel anytime, finish the running month.',
+                    'Your website, content and Control Center stay yours either way.',
+                  ].map((t) => (
+                    <p key={t} className="text-[13.5px] text-[var(--ink)] flex gap-2" style={{ lineHeight: 1.5 }}><span style={{ color: 'var(--green)' }}>✓</span>{t}</p>
+                  ))}
+                </div>
+              </div>
+              <p className="pos-label mb-3" style={{ color: 'var(--muted)' }}>Short application · one question at a time · reviewed by the founder</p>
+              <button onClick={() => finishOnboarding('/app/zero-to-practice-builder/get-access')} className="pos-action">Get Early Access →</button>
+              <button onClick={() => setQuizPhase('milestone')} className="pos-link text-sm mt-5 block" style={{ color: 'var(--muted)' }}>← Back</button>
+            </div>
+          ) : quizFailed ? (
             <div>
               <p className="pos-label" style={{ color: 'var(--orange)' }}>Not yet</p>
               <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-2" style={{ letterSpacing: '-0.02em' }}>Access needs a yes to all three.</h1>
@@ -725,7 +775,7 @@ function Wizard() {
               <p className="text-sm text-[var(--muted)] mb-5" style={{ lineHeight: 1.6 }}>{QUIZ[quizIdx].body}</p>
               <div className="flex flex-wrap gap-3">
                 <button
-                  onClick={() => { if (quizIdx >= 2) finishOnboarding('/app/zero-to-practice-builder/get-access'); else setQuizIdx(quizIdx + 1); }}
+                  onClick={() => { if (quizIdx >= 2) setQuizPhase('ready'); else setQuizIdx(quizIdx + 1); }}
                   className="pos-action" style={{ flex: '1 1 200px' }}>
                   {QUIZ[quizIdx].yes}
                 </button>
@@ -733,7 +783,7 @@ function Wizard() {
                   {QUIZ[quizIdx].no}
                 </button>
               </div>
-              {quizIdx > 0 && <button onClick={() => setQuizIdx(quizIdx - 1)} className="pos-link text-sm mt-5">← Previous question</button>}
+              <button onClick={() => { if (quizIdx > 0) setQuizIdx(quizIdx - 1); else setQuizPhase('milestone'); }} className="pos-link text-sm mt-5">← Back</button>
             </div>
           )
         )}
