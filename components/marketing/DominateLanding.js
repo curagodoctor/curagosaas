@@ -832,33 +832,39 @@ const BODY = `<nav class="nav">
 
   <div class="offer-grid">
     <div class="offer">
-      <div class="offer-label">STEP 1 · THE FOUNDATION</div>
-      <div class="price">FREE <small>~20 min</small></div>
-      <h3>Build your organic presence.</h3>
-      <p>Get the infrastructure you need to start.</p>
+      <div class="offer-label">STEP 1 · APPEAR</div>
+      <div class="price">FREE</div>
+      <h3>Be present when patients look for you.</h3>
+      <p>Get the foundation you need to establish your practice online.</p>
       <div class="checks">
-        <div class="check"><i>✓</i> AI-built clinical practice website</div><div class="check"><i>✓</i> GBP setup guidance</div>
-        <div class="check"><i>✓</i> Live on subdomain, or connect a custom domain instantly</div><div class="check"><i>✓</i> Your own dashboard</div>
-        <div class="check"><i>✓</i> In-built booking management software</div><div class="check"><i>✓</i> Blog &amp; page builder</div>
+        <div class="check"><i>✓</i> AI-Built Clinical Practice Website</div><div class="check"><i>✓</i> Instant Subdomain + Easy Custom Domain Connection</div>
+        <div class="check"><i>✓</i> Pages &amp; Blog Builder</div><div class="check"><i>✓</i> Clinical Practice Dashboard &amp; CRM</div>
+        <div class="check"><i>✓</i> Booking &amp; Enquiry Management</div><div class="check"><i>✓</i> Team Access</div>
+        <div class="check"><i>✓</i> Email Automation</div><div class="check"><i>✓</i> Payment Integration</div>
+        <div class="check"><i>✓</i> GBP Setup Guidance</div><div class="check"><i>✓</i> Review Request System</div>
       </div>
-      <div class="approval"><b>No subscription. No expiry. No lock-in.</b></div>
+      <div class="approval"><b>Build it once. Use it yourself. Grow from here.</b></div>
+      <p style="margin-top:10px;font-size:11px;color:var(--muted)">No subscription. No expiry. No lock-in.</p>
       <button class="fullbtn" data-start="1">Start Free →</button>
     </div>
 
     <div class="offer featured">
       <div class="offer-label">STEP 2 · DOMINATE ORGANIC SEARCH</div>
       <div class="price">₹5,000 <small>/ month</small> <span class="founder">FOUNDER PRICE</span></div>
-      <h3>Let CuraGo do the ongoing work with you.</h3>
-      <p>Everything in Free, plus:</p>
+      <h3>Let CuraGo's AI do the work.</h3>
+      <p>Your digital presence doesn't stop at being online. CuraGo's AI continuously works with your practice to build, optimise and improve it.</p>
       <div class="checks">
-        <div class="check"><i>✓</i> Ongoing organic search optimisation</div><div class="check"><i>✓</i> Guided GBP optimisation</div>
-        <div class="check"><i>✓</i> AI website and blog page builders</div><div class="check"><i>✓</i> Monthly competitor progress report</div>
-        <div class="check"><i>✓</i> CuraGo workspace</div><div class="check"><i>✓</i> CuraGo content planner</div>
+        <div class="check"><i>✓</i> Complete Organic Search Mapping</div><div class="check"><i>✓</i> 12-Month Organic Growth Roadmap</div>
+        <div class="check"><i>✓</i> Practice-Specific SEO Strategy</div><div class="check"><i>✓</i> Semantic &amp; Entity-First Search Strategy</div>
+        <div class="check"><i>✓</i> Website + Google Ecosystem Strategy</div><div class="check"><i>✓</i> Automatic Internal Interlinking</div>
+        <div class="check"><i>✓</i> AEO &amp; GEO-Ready Content Architecture</div><div class="check"><i>✓</i> Guided Google Business Profile Optimisation</div>
+        <div class="check"><i>✓</i> Competitor &amp; Search Monitoring</div><div class="check"><i>✓</i> Continuous Optimisation &amp; Iteration</div>
+        <div class="check"><i>✓</i> Doctor + AI Quality Control</div><div class="check"><i>✓</i> Monthly Progress &amp; Growth Report</div>
       </div>
-      <div class="approval"><b>CURAGO</b> prepares → <b>YOU</b> review → <b>YOU</b> approve → <b>CURAGO</b> keeps building ↺</div>
-      <p style="margin-top:13px;font-size:10px;color:#b9cdbd">Your involvement is designed to be at least once a week, depending on how you choose to work.</p>
-      <button class="fullbtn" data-start="1">₹5,000 · Start now →</button>
-      <p style="margin-top:12px;font-size:11px;color:#d7e6da;line-height:1.5">Accepting a limited number of doctors for the case study — finish the basic steps to apply.</p>
+      <div class="approval"><b>CURAGO's AI</b> prepares → <b>YOU</b> review → <b>YOU</b> approve → <b>CURAGO</b> keeps building ↻</div>
+      <p style="margin-top:13px;font-size:11px;color:#d7e6da;line-height:1.5"><b>Founder Price: ₹5,000/month.</b> Available for a limited time.</p>
+      <button class="fullbtn" data-start="1">Get Early Access (no cost for a month) →</button>
+      <p style="margin-top:12px;font-size:11px;color:#b9cdbd;line-height:1.5">You don't have to figure out what to do next. CuraGo does it with you.</p>
     </div>
   </div>
 </div>
