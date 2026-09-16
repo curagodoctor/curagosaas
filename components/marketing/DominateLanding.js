@@ -593,14 +593,10 @@ img { max-width:100%; }
   .dos .navcta{display:none}               /* mobile: buttons move into the menu */
   .dos .navlinks.open .navlinks-cta{display:inline-flex!important;width:100%;justify-content:center}
 }
-.dos .acd{display:inline-block;font-size:clamp(30px,4.4vw,48px);font-weight:900;letter-spacing:-.05em;color:#fff;line-height:1.02;margin-bottom:12px}
+.dos .acd{display:inline-block;font-size:clamp(22px,3.1vw,34px);font-weight:900;letter-spacing:-.04em;color:#fff;line-height:1.05;margin-bottom:12px}
 .dos .acd b{color:var(--lime);font-weight:900;padding:0 4px}
 .dos .hero-tier{display:block;font-weight:800;color:#fff;opacity:.95;font-size:clamp(14px,1.7vw,17px);letter-spacing:-.01em;margin-top:2px}
 .dos .hero-tagline{margin:16px 0 4px;font-size:13.5px;font-weight:700;color:var(--lime)}
-.dos .roadmap-wrap{overflow-x:visible}
-.dos .road{min-width:0;height:auto;display:flex;flex-direction:column;gap:12px;padding:0;position:static}
-.dos .road .step{width:auto;display:block;border-radius:14px}
-.dos .road-label{position:static;margin-top:16px;justify-content:center}
 .dos .foot-links{display:flex;flex-wrap:wrap;gap:16px;font-size:11px;font-weight:700;color:#9fafa4}
 .dos .foot-links a:hover{color:#fff}
 
@@ -628,7 +624,7 @@ const BODY = `<nav class="nav">
     <div class="reveal">
       <div class="kicker">FREE TO START · ~20 MINUTES</div>
       <h1>Get found<br><span>on Google.</span></h1>
-      <p class="hero-copy">Appear. Compete. Dominate.<br>Made for surgeons and specialists building practices in Tier 2 cities or smaller cities — and designed for all doctors, including dentists and dental surgeons.</p>
+      <p class="hero-copy"><span class="acd">Appear <b>→</b> Compete <b>→</b> Dominate</span><span class="hero-tier">Made for surgeons and specialists building practices in Tier 2 cities or smaller cities.</span></p>
       <div class="hero-actions">
         <button class="btn btn-orange" data-start="1">Start Now →</button>
         <a class="hero-secondary" href="#google">See how it works</a>
@@ -656,8 +652,8 @@ const BODY = `<nav class="nav">
 </header>
 
 <div class="marquee"><div class="track">
-<span class="mq">BUILD YOUR PRESENCE <b>✦</b> GET DISCOVERED <b>✦</b> BUILD TRUST <b>✦</b> KEEP BUILDING <b>✦</b></span>
-<span class="mq">BUILD YOUR PRESENCE <b>✦</b> GET DISCOVERED <b>✦</b> BUILD TRUST <b>✦</b> KEEP BUILDING <b>✦</b></span>
+<span class="mq">BUILD YOUR PRESENCE <b>✦</b> GET DISCOVERED <b>✦</b> BUILD TRUST <b>✦</b> KEEP BUILDING <b>✦</b> BUILD YOUR PRESENCE <b>✦</b> GET DISCOVERED <b>✦</b> BUILD TRUST <b>✦</b> KEEP BUILDING <b>✦</b> BUILD YOUR PRESENCE <b>✦</b> GET DISCOVERED <b>✦</b> BUILD TRUST <b>✦</b> KEEP BUILDING <b>✦</b></span>
+<span class="mq">BUILD YOUR PRESENCE <b>✦</b> GET DISCOVERED <b>✦</b> BUILD TRUST <b>✦</b> KEEP BUILDING <b>✦</b> BUILD YOUR PRESENCE <b>✦</b> GET DISCOVERED <b>✦</b> BUILD TRUST <b>✦</b> KEEP BUILDING <b>✦</b> BUILD YOUR PRESENCE <b>✦</b> GET DISCOVERED <b>✦</b> BUILD TRUST <b>✦</b> KEEP BUILDING <b>✦</b></span>
 </div></div>
 
 <section class="section reveal" id="why">
