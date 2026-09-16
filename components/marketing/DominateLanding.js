@@ -743,7 +743,7 @@ const BODY = `<nav class="nav">
 <div class="container">
   <div class="eyebrow">03 · HOW TO WORK ON GOOGLE</div>
   <h2 class="section-title">Google has to<br><span style="color:var(--lime)">understand you.</span></h2>
-  <p class="section-intro">So we don't chase a mysterious algorithm. We keep giving Google a clearer, more complete picture of your practice — then keep strengthening it.</p>
+  <p class="section-intro">We keep giving Google a clearer, more complete picture of your practice — then keep strengthening it.</p>
 
   <div class="work-v5">
     <div class="work-stage">
