@@ -20,7 +20,7 @@ function shade(count) {
 
 export default function StreakCalendar() {
   const [data, setData] = useState(null); // { days, current, longest, total }
-  const [view, setView] = useState('month');
+  const [view, setView] = useState('year');
   const [monthOffset, setMonthOffset] = useState(0); // 0 = current month
 
   useEffect(() => {
@@ -81,7 +81,7 @@ function MonthGrid({ days, todayKey, monthOffset, setMonthOffset }) {
   for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
 
   return (
-    <div>
+    <div className="max-w-[320px]">
       <div className="flex items-center justify-between mb-2">
         <button onClick={() => setMonthOffset(monthOffset - 1)} className="pos-link text-[13px]">←</button>
         <span className="text-[13px] font-medium text-[var(--ink)]">{MONTHS[month]} {year}</span>

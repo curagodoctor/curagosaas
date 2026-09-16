@@ -101,7 +101,7 @@ export default function WorkspaceDrawer() {
           </Link>
           <button
             onClick={() => setOpen(true)}
-            className="fixed z-40 bottom-5 right-5 text-white rounded-full shadow-lg inline-flex items-center gap-2 px-4 py-3 text-[14px] font-semibold"
+            className="fixed z-40 bottom-5 left-5 text-white rounded-full shadow-lg inline-flex items-center gap-2 px-4 py-3 text-[14px] font-semibold"
             style={{ background: 'var(--green)' }}
             aria-label="Open workspace notes"
           >
