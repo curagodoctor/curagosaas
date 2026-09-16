@@ -583,8 +583,15 @@ img { max-width:100%; }
 
 /* --- CuraGo edits --- */
 .dos h2, .dos .section-title, .dos .final h2 { font-weight:900; }
-.dos .navlinks .navbtn{padding:9px 15px}
-.dos .navlinks.open .navbtn{display:inline-flex!important;width:100%;justify-content:center}
+/* nav alignment: links push right, Login/Sign up cluster on the far right */
+.dos .navlinks{margin-left:auto;align-items:center}
+.dos .navcta{display:flex;gap:8px;align-items:center}
+.dos .navcta .navbtn{padding:10px 16px}
+.dos .navlinks-cta{display:none}           /* desktop: buttons live in .navcta */
+@media(max-width:860px){
+  .dos .navcta{display:none}               /* mobile: buttons move into the menu */
+  .dos .navlinks.open .navlinks-cta{display:inline-flex!important;width:100%;justify-content:center}
+}
 .dos .acd{display:inline-block;font-size:clamp(30px,4.4vw,48px);font-weight:900;letter-spacing:-.05em;color:#fff;line-height:1.02;margin-bottom:12px}
 .dos .acd b{color:var(--lime);font-weight:900;padding:0 4px}
 .dos .hero-tier{display:block;font-weight:800;color:#fff;opacity:.95;font-size:clamp(14px,1.7vw,17px);letter-spacing:-.01em;margin-top:2px}
@@ -603,6 +610,10 @@ const BODY = `<nav class="nav">
     <a href="#why" data-closenav="1">Why Google</a>
     <a href="#system" data-closenav="1">How to work on Google</a>
     <a href="#offer" data-closenav="1">How CuraGo helps</a>
+    <button class="btn btn-white navbtn navlinks-cta" data-login="1">Login</button>
+    <button class="btn btn-orange navbtn navlinks-cta" data-start="1">Sign up</button>
+  </div>
+  <div class="navcta">
     <button class="btn btn-white navbtn" data-login="1">Login</button>
     <button class="btn btn-orange navbtn" data-start="1">Sign up</button>
   </div>
