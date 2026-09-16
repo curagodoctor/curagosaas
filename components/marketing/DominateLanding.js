@@ -625,11 +625,10 @@ const BODY = `<nav class="nav">
     <div class="reveal">
       <div class="kicker">FREE TO START · ~20 MINUTES</div>
       <h1>Get found<br><span>on Google.</span></h1>
-      <p class="hero-copy"><span class="acd">Appear <b>&#8594;</b> Compete <b>&#8594;</b> Dominate</span><span class="hero-tier">Made for surgeons and specialists building practices in Tier 2 cities and smaller cities.</span></p>
-      <div class="hero-tagline">Appear at no cost in around 20 mins. Compete and Dominate if you are ready.</div>
+      <p class="hero-copy">Appear. Compete. Dominate.<br>Made for surgeons and specialists building practices in Tier 2 cities or smaller cities — and designed for all doctors, including dentists and dental surgeons.</p>
       <div class="hero-actions">
-        <button class="btn btn-orange" data-start="1">Start for free →</button>
-        <a class="hero-secondary" href="#offer">How CuraGo helps</a>
+        <button class="btn btn-orange" data-start="1">Start Now →</button>
+        <a class="hero-secondary" href="#google">See how it works</a>
       </div>
       <div class="micro">No subscription. No payment required to build the foundation.</div>
     </div>
