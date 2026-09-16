@@ -225,28 +225,25 @@ function SignupPageInner() {
     <div className="authRoot min-h-screen flex flex-col">
       <style dangerouslySetInnerHTML={{ __html: AUTH_CSS }} />
 
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b" style={{ backgroundColor: 'var(--paper)', borderColor: 'var(--rule)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-3.5">
-            <Link href="/" className="flex items-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/curago-logo.png" alt="CuraGo" className="h-7 sm:h-9 w-auto" />
-            </Link>
-            <div className="flex items-center gap-4">
-              <span className="hidden sm:inline text-[15px]" style={{ color: 'var(--muted)' }}>Already have an account?</span>
-              <Link href={loginHref} className="text-white px-4 py-2 rounded-[10px] font-semibold transition-all" style={{ backgroundColor: 'var(--green)' }}>
-                Sign In
-              </Link>
-            </div>
+      {/* Onboarding wizard shell — this is step 1 (Account) of the Start-free flow */}
+      <header className="fixed top-0 left-0 right-0 z-50" style={{ backgroundColor: 'var(--card)', borderBottom: '1px solid var(--rule)' }}>
+        <div className="max-w-2xl mx-auto px-4 sm:px-5 flex items-center justify-between gap-3 py-3">
+          <Link href="/" className="flex items-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/curago-logo.png" alt="CuraGo" className="h-7 w-auto" />
+          </Link>
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline text-[13px]" style={{ color: 'var(--muted)' }}>Already have an account?</span>
+            <Link href={loginHref} className="text-[13px] font-semibold rounded-[10px] px-3 py-1.5" style={{ border: '1px solid var(--rule)', color: 'var(--ink)' }}>Sign in</Link>
           </div>
         </div>
-      </nav>
+        <div style={{ height: 4, background: 'var(--rule-soft)' }}><div style={{ height: '100%', background: 'var(--orange)', width: '8%', transition: 'width .3s' }} /></div>
+      </header>
 
       {/* Main Content */}
       <div className="flex-1 flex pt-16">
-        {/* Left Side - Branding */}
-        <div className="hidden lg:flex lg:w-5/12 items-center justify-center p-12" style={{ backgroundColor: 'var(--green-deep)' }}>
+        {/* Left branding hidden — the account step now uses the wizard shell */}
+        <div className="hidden" style={{ backgroundColor: 'var(--green-deep)' }}>
           <div className="max-w-md text-white">
             <h2 className="serif text-[44px] leading-[1.05] mb-6">Get found on Google.</h2>
             <p className="text-xl mb-8" style={{ color: 'var(--green-lite)' }}>
@@ -275,27 +272,21 @@ function SignupPageInner() {
           </div>
         </div>
 
-        {/* Right Side - Signup Form */}
-        <div className="w-full lg:w-7/12 flex items-start justify-center p-6 sm:p-12 overflow-y-auto" style={{ backgroundColor: 'var(--paper)' }}>
+        {/* Account step — full width in the wizard shell */}
+        <div className="w-full flex items-start justify-center px-4 sm:px-5 overflow-y-auto" style={{ backgroundColor: 'var(--paper)' }}>
           <div className="w-full max-w-lg">
-            <div className="text-center mb-8">
-              <div className="lg:hidden mb-6">
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'var(--green-deep)' }}>
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                </div>
-              </div>
-              <h1 className="serif text-[34px] leading-tight mb-2">Create your clinic website</h1>
-              <p style={{ color: 'var(--muted)' }}>Get your professional clinic website live in minutes</p>
+            {/* Phase rail — ACCOUNT active */}
+            <div className="flex flex-wrap gap-2 pt-4 mb-5">
+              {['Account', 'Profile', 'Website', 'Google', 'Access'].map((p, i) => (
+                <span key={p} className="mono text-[10.5px] uppercase" style={{ letterSpacing: '.12em', padding: '6px 10px', borderRadius: 7, background: i === 0 ? 'var(--green)' : 'transparent', color: i === 0 ? '#fff' : 'var(--muted)', border: `1px solid ${i === 0 ? 'var(--green)' : 'var(--rule)'}` }}>{p}</span>
+              ))}
+            </div>
+            <div className="mb-6">
+              <p className="mono text-[11px] uppercase mb-1.5" style={{ letterSpacing: '.14em', color: 'var(--orange)' }}>Step 1 · Account</p>
+              <h1 className="serif text-[30px] leading-tight" style={{ letterSpacing: '-0.02em' }}>Create your CuraGo account</h1>
+              <p className="text-sm mt-1.5" style={{ color: 'var(--muted)' }}>One account for your website, content and Google tools. Continue with Google, or sign up with email.</p>
             </div>
 
-
-            <div className="flex items-center gap-3 mb-6">
-              <span className="flex-1 h-px" style={{ background: 'var(--rule, #DDE4D9)' }} />
-              <span className="text-[12px]" style={{ color: 'var(--muted, #5E6B5F)' }}>or create your account</span>
-              <span className="flex-1 h-px" style={{ background: 'var(--rule, #DDE4D9)' }} />
-            </div>
 
             <div className="rounded-2xl p-8" style={{ backgroundColor: 'var(--card)', border: '1px solid var(--rule)', boxShadow: '0 1px 3px rgba(16,26,19,.05)' }}>
               {/* Continue with Google — fastest path, no subdomain needed */}
