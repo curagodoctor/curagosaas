@@ -471,9 +471,9 @@ export default function DashboardPage() {
           </div>
 
           {/* AI-Powered */}
-          <div className="border border-gray-200 rounded-xl p-5 opacity-60 relative">
-            <span className="absolute top-3 right-3 bg-gray-200 text-gray-600 text-xs font-medium px-2 py-0.5 rounded-full">
-              Coming Soon
+          <div className="border border-gray-200 rounded-xl p-5 relative">
+            <span className="absolute top-3 right-3 bg-green-100 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full">
+              Live
             </span>
             <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-3">
               <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -482,14 +482,14 @@ export default function DashboardPage() {
             </div>
             <h3 className="font-semibold text-gray-900 mb-1">AI-Powered</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Use AI to auto-generate your clinic website. Fill a quick form, upload docs, and get a professional site instantly.
+              Use AI to auto-generate your clinic website. Answer a few questions and get a professional site you can edit and publish.
             </p>
-            <button
-              disabled
-              className="block w-full text-center bg-gray-200 text-gray-500 py-2.5 rounded-lg font-medium cursor-not-allowed"
+            <a
+              href="/admin/dashboard/ai-generate"
+              className="block w-full text-center bg-purple-600 text-white py-2.5 rounded-lg font-medium hover:bg-purple-700 transition-colors"
             >
-              Coming Soon
-            </button>
+              Open AI builder
+            </a>
           </div>
         </div>
       </div>
