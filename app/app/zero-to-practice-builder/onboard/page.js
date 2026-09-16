@@ -18,17 +18,23 @@ const PRACTICE = SECTIONS.find((s) => s.id === 'practice') || { fields: [] };
 const IDENTITY_KEYS = ['doctor_name', 'designation', 'specialty', 'subspecialty', 'qualifications', 'additional_qualifications', 'years_experience', 'languages', 'gender'];
 const GENERATED_KEYS = ['expertise', 'diseases', 'procedures', 'usp', 'interests'];
 const OPTIONAL_KEYS = ['awards', 'publications', 'registration'];
+// Phase A profile flow groups (spec order).
+const MAP_KEYS = ['expertise', 'diseases', 'procedures'];   // "with this create" — generated lists
+const USP_KEYS = ['usp', 'interests'];                       // describe your USP / interests
+const AWARDS_KEYS = ['awards', 'publications', 'registration']; // shown unchanged, optional
 const fieldsBy = (section, keys) => keys.map((k) => section.fields.find((f) => f.key === k)).filter(Boolean);
 
 // Wizard steps (PROFILE + WEBSITE phases so far).
 const STEPS = [
   { id: 'branch', phase: 0 },
-  { id: 'profile', phase: 0 },
-  { id: 'photos', phase: 0 },
-  { id: 'subdomain', phase: 0 },
-  { id: 'clinical', phase: 0 },
-  { id: 'links', phase: 0 },
-  { id: 'summary', phase: 0 },
+  { id: 'profile', phase: 0 },   // Block 1 · identity (untouched)
+  { id: 'map', phase: 0 },       // with this, create expertise/diseases/procedures
+  { id: 'usp', phase: 0 },       // USP + areas of interest
+  { id: 'photos', phase: 0 },    // 3 landscape + 1 profile
+  { id: 'clinical', phase: 0 },  // edit further — clinical details
+  { id: 'awards', phase: 0 },    // edit further — awards/research/publications
+  { id: 'links', phase: 0 },     // Maps/GBP/IG/FB/LinkedIn
+  { id: 'subdomain', phase: 0 }, // choose subdomain → create website + blog
   { id: 'generate', phase: 1 },
   { id: 'live', phase: 1 },
   { id: 'google', phase: 2 },
@@ -86,7 +92,15 @@ function Wizard() {
   const [quizFailed, setQuizFailed] = useState(false);
   // §5b areas + §5e relevant links
   const [areas, setAreas] = useState([]);
-  const [relevantLinks, setRelevantLinks] = useState([]);
+  // Default labels so patients' clinic + socials show by default (spec: Maps,
+  // GBP, Instagram, Facebook, LinkedIn). Saved values overwrite these on load.
+  const [relevantLinks, setRelevantLinks] = useState([
+    { label: 'Google Maps link', url: '' },
+    { label: 'Google Business Profile', url: '' },
+    { label: 'Instagram', url: '' },
+    { label: 'Facebook', url: '' },
+    { label: 'LinkedIn', url: '' },
+  ]);
 
   const st = STEPS[step];
 
@@ -165,6 +179,28 @@ function Wizard() {
     } catch { setErr('Something went wrong.'); }
     finally { setBusy(''); }
   };
+
+  // Phase A — "with this, create" the expertise / diseases / procedures lists
+  // from the identity block (specialty + qualifications + experience).
+  const generateMap = useCallback(async () => {
+    setBusy('map'); setErr('');
+    try {
+      const hintText = [fields.specialty, fields.qualifications, fields.additional_qualifications, fields.years_experience && `${fields.years_experience} years experience`].filter(Boolean).join(', ');
+      const res = await fetch('/api/practice-os/profile/draft-section', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ sectionId: 'pro', hint: hintText }),
+      });
+      const d = await res.json();
+      if (d.success) setFields((f) => ({ ...f, ...d.values }));
+      else setErr(d.error === 'PaymentRequired' ? 'This needs AI access.' : (d.error || 'Could not generate.'));
+    } catch { setErr('Something went wrong.'); }
+    finally { setBusy(''); }
+  }, [fields.specialty, fields.qualifications, fields.additional_qualifications, fields.years_experience]);
+
+  // Auto-generate the practice map the first time the doctor reaches it.
+  useEffect(() => {
+    if (st.id === 'map' && !busy && fields.specialty && !fields.diseases && !fields.expertise) generateMap();
+  }, [st.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const saveProfile = async (thenSummary = false) => {
     setBusy('save'); setErr('');
@@ -389,6 +425,43 @@ function Wizard() {
           </div>
         )}
 
+        {/* STEP: map — with this, create the practice lists */}
+        {st.id === 'map' && (
+          <div>
+            <p className="pos-label" style={{ color: 'var(--orange)' }}>Block 2 · Your practice map</p>
+            <h1 className="font-extrabold text-[var(--ink)] mt-2.5 mb-3" style={{ fontSize: 'clamp(24px,5vw,34px)', letterSpacing: '-0.03em', lineHeight: 1.08 }}>With this, we&apos;ve mapped your practice.</h1>
+            <p className="text-[15.5px] text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '58ch' }}>From your specialty and experience, CuraGo drafted your areas of expertise, the diseases you treat and the procedures you perform. Edit anything — then save.</p>
+            {busy === 'map' && !fields.diseases ? (
+              <div className="pos-card p-6 text-center"><div className="w-8 h-8 mx-auto rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /><p className="text-sm text-[var(--muted)] mt-3">Mapping your practice…</p></div>
+            ) : (
+              <>
+                <div className="space-y-4">{fieldsBy(PRO, MAP_KEYS).map((f) => <Field key={f.key} f={f} value={fields[f.key] || ''} onChange={(v) => setField(f.key, v)} onToggleTag={(o) => toggleTag(f.key, o)} />)}</div>
+                <button onClick={generateMap} disabled={!!busy} className="pos-link text-sm mt-3">↻ Regenerate from my specialty</button>
+              </>
+            )}
+            {err && <p className="text-[13px] text-red-600 mt-3">{err}</p>}
+            <div className="flex items-center gap-3 mt-6">
+              <button onClick={async () => { if (await saveProfile()) next(); }} disabled={!!busy} className="pos-action">{busy === 'save' ? 'Saving…' : 'Save and continue'}</button>
+              <button onClick={() => go(step - 1)} disabled={!!busy} className="pos-link text-sm" style={{ color: 'var(--muted)' }}>← Back</button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP: usp — describe your USP + interests */}
+        {st.id === 'usp' && (
+          <div>
+            <p className="pos-label" style={{ color: 'var(--orange)' }}>Block 3 · What sets you apart</p>
+            <h1 className="font-extrabold text-[var(--ink)] mt-2.5 mb-3" style={{ fontSize: 'clamp(24px,5vw,34px)', letterSpacing: '-0.03em', lineHeight: 1.08 }}>Describe your strength and interests.</h1>
+            <p className="text-[15.5px] text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '58ch' }}>In a line or two — what makes your practice different, and the areas you want to be known for. We&apos;ll shape it into your website.</p>
+            <div className="space-y-4">{fieldsBy(PRO, USP_KEYS).map((f) => <Field key={f.key} f={f} value={fields[f.key] || ''} onChange={(v) => setField(f.key, v)} onToggleTag={(o) => toggleTag(f.key, o)} />)}</div>
+            {err && <p className="text-[13px] text-red-600 mt-3">{err}</p>}
+            <div className="flex items-center gap-3 mt-6">
+              <button onClick={async () => { if (await saveProfile()) next(); }} disabled={!!busy} className="pos-action">{busy === 'save' ? 'Saving…' : 'Save and continue'}</button>
+              <button onClick={() => go(step - 1)} disabled={!!busy} className="pos-link text-sm" style={{ color: 'var(--muted)' }}>← Back</button>
+            </div>
+          </div>
+        )}
+
         {/* STEP: photos */}
         {st.id === 'photos' && (
           <div>
@@ -488,12 +561,27 @@ function Wizard() {
           </div>
         )}
 
+        {/* STEP: awards — edit further (optional, shown unchanged) */}
+        {st.id === 'awards' && (
+          <div>
+            <p className="pos-label" style={{ color: 'var(--green)' }}>Edit further</p>
+            <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Awards, research and publications.</h1>
+            <p className="text-sm text-[var(--muted)] mb-4">Optional. Anything you add appears exactly as you enter it — nothing rewritten. Skip if you have none.</p>
+            <div className="space-y-4">{fieldsBy(PRO, AWARDS_KEYS).map((f) => <Field key={f.key} f={f} value={fields[f.key] || ''} onChange={(v) => setField(f.key, v)} onToggleTag={(o) => toggleTag(f.key, o)} />)}</div>
+            {err && <p className="text-[13px] text-red-600 mt-3">{err}</p>}
+            <div className="flex items-center gap-3 mt-6">
+              <button onClick={async () => { if (await saveProfile()) next(); }} disabled={!!busy} className="pos-action">{busy === 'save' ? 'Saving…' : 'Save and continue'}</button>
+              <button onClick={next} className="pos-link text-sm" style={{ color: 'var(--muted)' }}>Skip →</button>
+            </div>
+          </div>
+        )}
+
         {/* STEP: relevant links (§5e) */}
         {st.id === 'links' && (
           <div>
-            <p className="pos-label" style={{ color: 'var(--green)' }}>Relevant links</p>
-            <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Any links worth adding?</h1>
-            <p className="text-sm text-[var(--muted)] mb-4">Optional — your existing profiles, articles, videos or press. Skip and come back anytime.</p>
+            <p className="pos-label" style={{ color: 'var(--green)' }}>Your links</p>
+            <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Add your map and social links.</h1>
+            <p className="text-sm text-[var(--muted)] mb-4">Paste your Google Maps link (so patients see your clinic on the map), your Google Business Profile, and your Instagram, Facebook and LinkedIn. All optional — skip and come back anytime.</p>
             <div className="space-y-2">
               {relevantLinks.map((l, i) => (
                 <div key={i} className="flex gap-2">
