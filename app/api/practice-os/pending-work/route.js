@@ -15,12 +15,12 @@ export async function GET(request) {
     await connectDB();
 
     const [blogDrafts, pageDrafts] = await Promise.all([
-      BlogArticle.find({ doctorId: doctor._id, status: 'draft' }).select('title updatedAt createdAt').sort({ createdAt: 1 }).lean(),
+      BlogArticle.find({ doctorId: doctor._id, status: 'draft' }).select('title excerpt updatedAt createdAt').sort({ createdAt: 1 }).lean(),
       // A page with AI draft sections waiting for approval.
       BookingPage.countDocuments({ doctorId: doctor._id, 'draftSections.0': { $exists: true } }).catch(() => 0),
     ]);
 
-    const items = blogDrafts.map((b) => ({ type: 'article', title: b.title, id: String(b._id) }));
+    const items = blogDrafts.map((b) => ({ type: 'article', title: b.title, excerpt: String(b.excerpt || '').slice(0, 180), id: String(b._id) }));
     const count = items.length + (pageDrafts || 0);
 
     let oldestDays = 0;

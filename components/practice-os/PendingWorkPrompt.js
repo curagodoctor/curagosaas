@@ -45,6 +45,19 @@ export default function PendingWorkPrompt() {
             : `${data.count} ${data.count === 1 ? 'item is' : 'items are'} ready for your review.`}
       </p>
       {backlog && summary && <p className="text-[13px] text-[var(--muted)] mt-1">We&apos;ve created {summary} — look them over and publish.</p>}
+
+      {/* Preview of what's waiting — the actual content, not just counts (§8) */}
+      {data.articles?.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {data.articles.slice(0, 2).map((a) => (
+            <div key={a.id} className="pos-card p-3" style={{ background: 'var(--card)' }}>
+              <p className="text-[14px] font-semibold text-[var(--ink)]" style={{ lineHeight: 1.3 }}>{a.title}</p>
+              {a.excerpt && <p className="text-[12.5px] text-[var(--muted)] mt-1" style={{ lineHeight: 1.5 }}>{a.excerpt}…</p>}
+            </div>
+          ))}
+        </div>
+      )}
+
       <button onClick={goToFirst} className="pos-action mt-3">
         {backlog ? "Look at what we've created" : 'Review & publish'}
       </button>
