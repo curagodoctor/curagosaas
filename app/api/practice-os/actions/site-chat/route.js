@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/access';
 import { assertHasCredits, chargeAiCredits } from '@/lib/practice-os/aiCredits';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
+import { proposeSiteEdits } from '@/lib/practice-os/siteEdits';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -28,67 +29,17 @@ export async function POST(request) {
     await assertHasCredits(doctor._id);
 
     const fields = await getDoctorProfileFields(doctor._id);
-    // Compact section list for the prompt: index + type + current config.
-    const brief = (Array.isArray(sections) ? sections : []).slice(0, 40)
-      .map((s, i) => ({ index: i, type: s.type, config: s.config || {} }));
 
-    const OpenAI = (await import('openai')).default;
-    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-    const system = `You are the CuraGo website assistant for an Indian doctor. Their website is built from typed "sections", each with a JSON "config".
-Rules:
-- Keep everything NMC-compliant: informative, professional, no superlatives, no comparative or guaranteed-outcome claims, no soliciting patients.
-- When the doctor asks to change something, update EVERY section the request touches — a request may affect one section or several (e.g. "make the whole site warmer" → edit About + Benefits + Footer). For each affected section return ONLY the config fields that change (a partial patch) using the SAME field names as the current config — do NOT repeat unchanged fields, and do NOT rename or restructure fields. Never invent contact details, prices, or credentials that aren't in the profile.
-- To ADD a NEW section (only when the doctor asks for a new block/section that doesn't already exist), return it in an "adds" array. Each add: {"type": one of ["custom_text","benefits_list","faqs","cta_button","testimonials"], "config": object, "after": number (insert AFTER this existing section index; omit to append near the end)}. Config shapes — custom_text: {title, content}; benefits_list: {title, subtitle, items:[{title, description}]}; faqs: {title, faqs:[{question, answer}]}; cta_button: {title, buttonText, buttonLink}; testimonials: {title, testimonials:[{name, text}]}. Populate real, NMC-compliant content from the profile. Never add header, footer, or booking sections.
-- If the message is a question, a greeting, or you cannot map it to any section, return empty "edits" and "adds" arrays and just reply.
-Return ONLY a JSON object: {"reply": string (1-3 short sentences, plain), "edits": [{"index": number, "config": object}], "adds": [{"type": string, "config": object, "after": number}] }.`;
-
-    const profileLine = Object.entries(fields || {})
-      .filter(([, v]) => v != null && String(v).trim())
-      .slice(0, 30)
-      .map(([k, v]) => `${k}: ${String(v).slice(0, 160)}`)
-      .join('\n');
-    const context = `Doctor profile (use where relevant, don't invent):\n${profileLine || '(none)'}\n\nCurrent website sections:\n${JSON.stringify(brief).slice(0, 12000)}`;
-
-    const historyMsgs = (Array.isArray(history) ? history : []).slice(-8)
-      .map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: String(m.content || '').slice(0, 1500) }))
-      .filter((m) => m.content);
-
-    const completion = await client.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-      max_tokens: 1600,
-      temperature: 0.4,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: context },
-        ...historyMsgs,
-        { role: 'user', content: String(message).slice(0, 2000) },
-      ],
-    });
-
-    const raw = (completion.choices?.[0]?.message?.content || '').trim();
-    let data;
-    try { data = JSON.parse(raw); } catch { return NextResponse.json({ success: false, error: 'Could not understand that — try rephrasing.' }, { status: 502 }); }
-
-    // Validate the proposed edits against the sections we actually sent. Accept
-    // the new `edits` array; fall back to a legacy single `edit` object.
-    const rawEdits = Array.isArray(data.edits) ? data.edits : (data.edit ? [data.edit] : []);
-    const edits = rawEdits
-      .filter((e) => e && typeof e === 'object' && Number.isInteger(e.index) && e.index >= 0 && e.index < brief.length && e.config && typeof e.config === 'object')
-      .map((e) => ({ index: e.index, type: brief[e.index].type, config: e.config }));
-
-    // New sections the AI proposes to add (only a safe, content-driven subset).
-    const ADD_TYPES = ['custom_text', 'benefits_list', 'faqs', 'cta_button', 'testimonials'];
-    const adds = (Array.isArray(data.adds) ? data.adds : [])
-      .filter((a) => a && typeof a === 'object' && ADD_TYPES.includes(a.type) && a.config && typeof a.config === 'object')
-      .map((a) => ({ type: a.type, config: a.config, after: Number.isInteger(a.after) ? a.after : null }));
+    // Shared engine — same brain the unified assistant uses.
+    const proposed = await proposeSiteEdits({ sections, message, profileFields: fields, history });
+    if (!proposed.ok) return NextResponse.json({ success: false, error: proposed.error || 'Could not understand that — try rephrasing.' }, { status: 502 });
+    const { edits, adds } = proposed;
 
     // Charge one credit per assistant turn (whether or not it proposed edits).
-    const { remaining } = await chargeAiCredits(doctor._id, { label: 'site-chat', tokens: completion.usage?.total_tokens || 0 });
+    const { remaining } = await chargeAiCredits(doctor._id, { label: 'site-chat', tokens: proposed.usage?.total_tokens || 0 });
 
     // `edit` kept for backward compatibility with older clients.
-    return NextResponse.json({ success: true, reply: String(data.reply || '').slice(0, 1200), edits, adds, edit: edits[0] || null, creditsRemaining: remaining });
+    return NextResponse.json({ success: true, reply: proposed.reply, edits, adds, edit: edits[0] || null, creditsRemaining: remaining });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     if (error.message === 'PaymentRequired') return NextResponse.json({ success: false, error: 'PaymentRequired' }, { status: 402 });
