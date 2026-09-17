@@ -12,6 +12,7 @@ import GbpGuideTab from '@/components/practice-os-admin/GbpGuideTab';
 const TABS = [
   { id: 'import', label: 'Bulk Upload' },
   { id: 'curriculum', label: 'Builder Packs' },
+  { id: 'dailyPlan', label: 'Daily Plan' },
   { id: 'knowledge', label: 'Knowledge Base' },
   { id: 'profileFields', label: 'Profile Fields' },
   { id: 'access', label: 'Access Requests' },
@@ -69,6 +70,7 @@ export default function PracticeOSPage() {
       {tab === 'curriculum' && (
         <CurriculumTab frameworks={frameworks} loading={loading} onNew={() => setShowNew(true)} onChanged={loadFrameworks} />
       )}
+      {tab === 'dailyPlan' && <DailyPlanTab frameworks={frameworks} />}
       {tab === 'knowledge' && <KnowledgeBaseTab frameworks={frameworks} />}
       {tab === 'profileFields' && <ProfileFieldsTab />}
       {tab === 'access' && <AccessRequestsTab />}
@@ -77,6 +79,96 @@ export default function PracticeOSPage() {
       {tab === 'doctors' && <DoctorsTab />}
 
       {showNew && <NewFrameworkModal onClose={() => setShowNew(false)} onDone={loadFrameworks} />}
+    </div>
+  );
+}
+
+/* ---------------- Daily Plan ---------------- */
+// Read-only day-by-day view of a pack's missions (e.g. the 56-day engine).
+function DailyPlanTab({ frameworks = [] }) {
+  const CAT_COLORS = {
+    'GBP Post': '#F26A1B', 'Blog page': '#3B82F6', 'Services': '#096B17', 'Product': '#7C3AED', 'Photos': '#0891B2',
+  };
+  // Default to the framework with the most missions (usually the daily engine).
+  const [fwId, setFwId] = useState('');
+  const [missions, setMissions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!fwId && frameworks.length) {
+      const dominate = frameworks.find((f) => /dominate organic search/i.test(f.title));
+      setFwId(String((dominate || frameworks[0])._id));
+    }
+  }, [frameworks, fwId]);
+
+  useEffect(() => {
+    if (!fwId) return;
+    setLoading(true);
+    fetch(`/api/platform/practice-os/missions?frameworkId=${fwId}`)
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setMissions(d.missions || []); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [fwId]);
+
+  // Group by dayNumber, ordered.
+  const byDay = {};
+  for (const m of missions) { const day = m.dayNumber || 0; (byDay[day] = byDay[day] || []).push(m); }
+  const days = Object.keys(byDay).map(Number).sort((a, b) => a - b);
+  const counts = missions.reduce((acc, m) => { acc[m.category] = (acc[m.category] || 0) + 1; return acc; }, {});
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div>
+          <h2 className="font-semibold text-gray-900">Daily Plan</h2>
+          <p className="text-sm text-gray-500">The day-by-day task engine for this pack. Click a day to edit its mission.</p>
+        </div>
+        <select value={fwId} onChange={(e) => setFwId(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+          {frameworks.map((f) => <option key={f._id} value={f._id}>{f.title}</option>)}
+        </select>
+      </div>
+
+      {/* Category legend + counts */}
+      <div className="flex flex-wrap gap-3 mb-5">
+        {Object.entries(counts).map(([cat, n]) => (
+          <span key={cat} className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600">
+            <span className="w-2.5 h-2.5 rounded-full" style={{ background: CAT_COLORS[cat] || '#9ca3af' }} />
+            {cat} · {n}
+          </span>
+        ))}
+        <span className="text-xs text-gray-400">Total: {missions.length}</span>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-gray-500">Loading…</p>
+      ) : days.length === 0 ? (
+        <p className="text-sm text-gray-500">No missions in this pack yet.</p>
+      ) : (
+        <div className="space-y-2">
+          {days.map((day) => (
+            <div key={day} className="flex items-start gap-3">
+              <div className="w-14 shrink-0 pt-2 text-right">
+                <span className="text-xs font-bold text-gray-400 uppercase">Day</span>
+                <div className="text-lg font-bold text-gray-900 leading-none">{day}</div>
+              </div>
+              <div className="flex-1 space-y-2">
+                {byDay[day].map((m) => (
+                  <Link
+                    key={m._id}
+                    href={`/dashboard/practice-os/missions/${m._id}`}
+                    className="flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-2.5 hover:border-gray-300 hover:shadow-sm transition"
+                  >
+                    <span className="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full text-white" style={{ background: CAT_COLORS[m.category] || '#9ca3af' }}>{m.category}</span>
+                    <span className="flex-1 text-sm text-gray-800 truncate">{m.missionText}</span>
+                    <span className={`shrink-0 text-xs font-medium ${m.status === 'published' ? 'text-green-600' : 'text-gray-400'}`}>{m.status}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -76,6 +76,15 @@ const FrameworkSchema = new mongoose.Schema({
     enum: ['mission', 'task'],
     default: 'mission',
   },
+  // Unlock pacing. 'sequence' (default): the next task opens 24h after the
+  // previous is completed — one at a time, can't fall "behind". 'calendar': one
+  // new task unlocks every calendar day from the start regardless of completion,
+  // so unfinished tasks accumulate as a pickable backlog.
+  pacing: {
+    type: String,
+    enum: ['sequence', 'calendar'],
+    default: 'sequence',
+  },
   order: {
     type: Number,
     default: 0,
