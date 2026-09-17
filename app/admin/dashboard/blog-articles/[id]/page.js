@@ -304,8 +304,8 @@ export default function BlogArticleEditorPage() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e, statusOverride) => {
+    if (e?.preventDefault) e.preventDefault();
     setSaving(true);
 
     try {
@@ -314,11 +314,15 @@ export default function BlogArticleEditorPage() {
         : `/api/admin/blog-articles/${params.id}`;
       const method = isNew ? 'POST' : 'PATCH';
 
+      // An explicit "Publish" / "Unpublish" action overrides the status dropdown.
+      const status = statusOverride || formData.status;
+
       // Normalize the schedule: only send a real time when actually scheduling;
       // convert the local datetime-input value to an absolute instant (ISO).
       const payload = {
         ...formData,
-        scheduledAt: formData.status === 'scheduled' && formData.scheduledAt
+        status,
+        scheduledAt: status === 'scheduled' && formData.scheduledAt
           ? new Date(formData.scheduledAt).toISOString()
           : null,
       };
@@ -333,9 +337,10 @@ export default function BlogArticleEditorPage() {
       const data = await response.json();
 
       if (response.ok) {
+        if (statusOverride) handleChange('status', statusOverride);
         await showAlert({
           title: 'Success',
-          message: `Article ${isNew ? 'created' : 'updated'} successfully!`,
+          message: status === 'published' ? 'Article published — it is live on your website.' : `Article ${isNew ? 'created' : 'saved'} successfully!`,
           type: 'success'
         });
         router.push('/admin/dashboard/blog-articles');
@@ -375,10 +380,21 @@ export default function BlogArticleEditorPage() {
       </button>
 
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">
-          {isNew ? 'Create New Article' : 'Edit Article'}
-        </h1>
-        <p className="text-gray-600 mt-2">Fill in the standardized sections for your medical blog</p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <h1 className="text-3xl font-bold text-gray-800">
+            {isNew ? 'Create New Article' : 'Edit Article'}
+          </h1>
+          {!isNew && (
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${formData.status === 'published' ? 'bg-green-100 text-green-700' : formData.status === 'scheduled' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+              {formData.status === 'published' ? '● Live on your website' : formData.status === 'scheduled' ? 'Scheduled' : 'Draft — not live'}
+            </span>
+          )}
+        </div>
+        <p className="text-gray-600 mt-2">
+          {!isNew && formData.status === 'published'
+            ? 'This article is already published. Edit and Save changes to update it, or Unpublish to take it down.'
+            : 'Fill in the standardized sections for your medical blog, then Publish to go live.'}
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -802,13 +818,34 @@ export default function BlogArticleEditorPage() {
           >
             Cancel
           </button>
+          {/* Save keeps the current status; the green button is the explicit
+              publish/unpublish action so it's obvious how to go live. */}
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-6 py-3 bg-gray-800 hover:bg-black text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? 'Saving...' : (isNew ? 'Create Article' : 'Update Article')}
+            {saving ? 'Saving…' : (isNew ? 'Create' : 'Save changes')}
           </button>
+          {formData.status === 'published' ? (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => handleSubmit(null, 'draft')}
+              className="flex-1 px-6 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50"
+            >
+              Unpublish
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => handleSubmit(null, 'published')}
+              className="flex-1 px-6 py-3 bg-[#096b17] hover:bg-[#0a5714] text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+            >
+              {saving ? 'Publishing…' : 'Publish'}
+            </button>
+          )}
         </div>
       </form>
     </div>
