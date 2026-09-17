@@ -8,7 +8,6 @@ import { useState, useEffect } from 'react';
 const IST = { timeZone: 'Asia/Kolkata' };
 const keyOf = (d) => d.toLocaleDateString('en-CA', IST);
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Green intensity by how much was done that day.
 function shade(count) {
@@ -111,38 +110,49 @@ function MonthGrid({ days, todayKey, monthOffset, setMonthOffset }) {
 }
 
 function YearHeatmap({ days, todayKey }) {
-  // 53 weeks ending this week; columns = weeks, rows = Sun..Sat.
-  const today = new Date();
-  const end = new Date(today);
-  end.setDate(end.getDate() + (6 - end.getDay())); // end of this week (Sat)
+  // 53 week-columns ending with the current week; rows = Sun..Sat. Dates are
+  // stepped with setDate (calendar-accurate — no millisecond drift) and keyed in
+  // IST to match the activity API.
+  const today = new Date(); today.setHours(12, 0, 0, 0);
+  const start = new Date(today);
+  start.setDate(start.getDate() - start.getDay() - 52 * 7); // Sunday, 52 weeks back
   const weeks = [];
-  const cursor = new Date(end.getTime() - 52 * 7 * DAY_MS);
-  cursor.setDate(cursor.getDate() - cursor.getDay()); // back to Sunday
+  const cursor = new Date(start);
   for (let w = 0; w < 53; w++) {
     const col = [];
-    for (let d = 0; d < 7; d++) {
-      col.push(new Date(cursor));
-      cursor.setDate(cursor.getDate() + 1);
-    }
+    for (let d = 0; d < 7; d++) { col.push(new Date(cursor)); cursor.setDate(cursor.getDate() + 1); }
     weeks.push(col);
   }
+  // Month label above the column where a new month first appears.
+  const monthLabels = weeks.map((col, ci) => {
+    const first = col[0];
+    const prevFirst = ci > 0 ? weeks[ci - 1][0] : null;
+    return (!prevFirst || first.getMonth() !== prevFirst.getMonth()) && first.getDate() <= 7 ? MONTHS[first.getMonth()] : '';
+  });
   return (
     <div className="overflow-x-auto">
-      <div className="flex gap-[3px]" style={{ minWidth: 'max-content' }}>
-        {weeks.map((col, ci) => (
-          <div key={ci} className="flex flex-col gap-[3px]">
-            {col.map((date, ri) => {
-              const k = keyOf(date);
-              const count = days[k] || 0;
-              const future = date > today;
-              return (
-                <div key={ri} className="rounded-[2px]"
-                  style={{ width: 11, height: 11, background: future ? 'transparent' : shade(count), outline: k === todayKey ? '1.5px solid var(--orange)' : 'none', outlineOffset: '-1.5px' }}
-                  title={`${k}: ${count} completed`} />
-              );
-            })}
-          </div>
-        ))}
+      <div style={{ minWidth: 'max-content' }}>
+        <div className="flex gap-[3px] mb-1">
+          {monthLabels.map((lbl, ci) => (
+            <div key={ci} style={{ width: 11 }} className="text-[8px] text-[var(--muted)] overflow-visible whitespace-nowrap">{lbl}</div>
+          ))}
+        </div>
+        <div className="flex gap-[3px]">
+          {weeks.map((col, ci) => (
+            <div key={ci} className="flex flex-col gap-[3px]">
+              {col.map((date, ri) => {
+                const k = keyOf(date);
+                const count = days[k] || 0;
+                const future = k > todayKey;
+                return (
+                  <div key={ri} className="rounded-[2px]"
+                    style={{ width: 11, height: 11, background: future ? 'transparent' : shade(count), outline: k === todayKey ? '1.5px solid var(--orange)' : 'none', outlineOffset: '-1.5px' }}
+                    title={`${k}: ${count} completed`} />
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

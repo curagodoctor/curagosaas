@@ -19,6 +19,7 @@ export default function ControlCenter() {
   const [packs, setPacks] = useState(null);
   const [accessStatus, setAccessStatus] = useState('none'); // Dominate Organic Search pack: none | pending | granted
   const [accessExpiry, setAccessExpiry] = useState(null);
+  const [activeDays, setActiveDays] = useState(0);
   const [name, setName] = useState('');
   const [leaderboard, setLeaderboard] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,13 +31,14 @@ export default function ControlCenter() {
   useEffect(() => {
     (async () => {
       try {
-        const [pRes, meRes, lbRes, uRes, aRes, profRes] = await Promise.all([
+        const [pRes, meRes, lbRes, uRes, aRes, profRes, actRes] = await Promise.all([
           fetch('/api/practice-os/packs'),
           fetch('/api/auth/me'),
           fetch('/api/practice-os/leaderboard'),
           fetch('/api/practice-os/username'),
           fetch('/api/practice-os/access-request'),
           fetch('/api/practice-os/profile'),
+          fetch('/api/practice-os/activity'),
         ]);
         if (pRes.status === 401) { router.push('/login?entry=practice-os'); return; }
         // If the doctor started signup but never finished onboarding, send them
@@ -50,6 +52,7 @@ export default function ControlCenter() {
         if (pData.success) setPacks(pData.packs);
         if (meRes.ok) { const me = await meRes.json(); setName(me.doctor?.displayName || me.doctor?.name || ''); }
         if (lbRes.ok) { const lb = await lbRes.json(); if (lb.success) setLeaderboard(lb); }
+        if (actRes.ok) { const act = await actRes.json(); if (act.success) setActiveDays(act.total || 0); }
         let granted = false;
         if (aRes.ok) { const a = await aRes.json(); granted = !!a.granted; setAccessStatus(a.status || 'none'); setAccessExpiry(a.access?.expiresAt || null); }
         if (uRes.ok) { const u = await uRes.json(); if (u.success && !u.username && granted) setNeedsUsername(true); }
@@ -80,9 +83,6 @@ export default function ControlCenter() {
   const started = owned.filter((p) => p.started);
   const totalXp = started.reduce((s, p) => s + (p.xp || 0), 0);
   const bestStreak = started.reduce((m, p) => Math.max(m, p.streak || 0), 0);
-  const overallPct = started.length
-    ? Math.round(started.reduce((s, p) => s + (p.progress?.percent || 0), 0) / started.length)
-    : 0;
   // Today's mission = the next-up mission for EVERY started pack that has one,
   // so a doctor running multiple packs sees each pack's next mission, not just
   // the first. (#29)
@@ -104,9 +104,9 @@ export default function ControlCenter() {
         Welcome back, {firstName}.
       </h1>
       <p className="text-[16px] text-[var(--muted)] mt-3 leading-relaxed" style={{ maxWidth: '54ch' }}>
-        {started.length
-          ? <>Your practice is <strong className="text-[var(--green)]">{overallPct}%</strong> built across your packs. One mission a day gets you the rest.</>
-          : <>Pick a builder pack below. Each is a guided programme that produces a real asset — not a certificate.</>}
+        {activeDays > 0
+          ? <>You&apos;ve worked on your practice <strong className="text-[var(--green)]">{activeDays}</strong> {activeDays === 1 ? 'day' : 'days'}. Keep the momentum — a little each day compounds.</>
+          : <>Your control center. Finish your setup and start building your organic presence — a little each day.</>}
       </p>
 
       {/* Single pack: Dominate Organic Search — under review / active (Phase E) */}
