@@ -18,6 +18,7 @@ const SectionSchema = new mongoose.Schema({
       'custom_text',
       'cta_button',
       'booking_form',
+      'lead_form',
       'clinic_info',
       'professional_fees',
       'footer',
