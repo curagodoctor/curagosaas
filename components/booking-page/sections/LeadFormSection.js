@@ -25,9 +25,12 @@ export default function LeadFormSection({
     }
     setState('sending'); setError('');
     try {
+      // Fall back to the subdomain from the hostname (e.g. drrao.curago.in) so the
+      // form resolves the clinic even when the section config has no id.
+      const sub = subdomain || (typeof window !== 'undefined' ? window.location.hostname.split('.')[0] : '');
       const res = await fetch('/api/site/lead', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, doctorId, subdomain }),
+        body: JSON.stringify({ ...form, doctorId, subdomain: sub }),
       });
       const d = await res.json();
       if (d.success) setState('done');
@@ -41,7 +44,7 @@ export default function LeadFormSection({
   };
 
   return (
-    <section style={{ padding: '48px 20px', background: '#f7f9f5' }}>
+    <section id="lead_form" style={{ padding: '48px 20px', background: '#f7f9f5' }}>
       <div style={{ maxWidth: 520, margin: '0 auto', background: '#fff', border: '1px solid #e5e9e3', borderRadius: 20, padding: 'clamp(22px,4vw,34px)', boxShadow: '0 18px 44px rgba(9,107,23,.06)' }}>
         {state === 'done' ? (
           <div style={{ textAlign: 'center', padding: '18px 0' }}>
