@@ -186,12 +186,13 @@ export default function ControlCenter() {
         <div className="min-w-0 order-2 lg:order-1 space-y-4">
           <WebsiteStats />
           <StreakCalendar />
-          {/* Builder Packs — only when there's something to show. */}
-          {packs && packs.length > 0 && (
+          {/* Builder Packs — heading + list shown ONLY when the doctor actually
+              owns a pack; hidden entirely otherwise. */}
+          {owned.length > 0 && (
             <div>
               <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)] mb-3 mt-2">Your packs</h2>
               <div className="flex flex-col gap-5">
-                {packs.map((p) => <PackCard key={p.id} pack={p} />)}
+                {owned.map((p) => <PackCard key={p.id} pack={p} />)}
               </div>
             </div>
           )}

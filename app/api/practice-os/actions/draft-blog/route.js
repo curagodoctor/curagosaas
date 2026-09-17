@@ -91,6 +91,9 @@ export async function POST(request) {
       title,
       slug,
       excerpt: String(d.excerpt || '').slice(0, 300),
+      // Auto meta description: prefer an explicit one from the model, else the
+      // excerpt, capped at the 160-char SEO limit.
+      metaDescription: String(d.metaDescription || d.excerpt || '').slice(0, 160),
       category: String(d.category || fields.specialty || '').slice(0, 60),
       author: { name: doc?.displayName || doc?.name || '', designation: doc?.specialization || '' },
       blocks,
@@ -101,12 +104,15 @@ export async function POST(request) {
     });
 
     // The featured image is generated AFTER the response is sent (it takes 30-60s),
-    // so the wizard gets the article id immediately instead of waiting on the image.
-    if (firstArticle) {
+    // so the caller gets the article id immediately instead of waiting on the
+    // image. §10 — done for EVERY article (image generated from the page topic),
+    // not just the first onboarding one.
+    {
       const articleId = article._id;
+      const imgTopic = cluster || type ? `${title} (${[type, cluster].filter(Boolean).join(' · ')})` : title;
       after(async () => {
         try {
-          const url = await generateFeaturedImage(doctor._id, title);
+          const url = await generateFeaturedImage(doctor._id, imgTopic);
           if (url) await BlogArticle.updateOne({ _id: articleId }, { $set: { featuredImage: { url, alt: title } } });
         } catch { /* best-effort */ }
       });
