@@ -18,6 +18,7 @@ import DiseaseIconsScrollConfig from "@/components/admin/booking-pages/config-fo
 import CustomTextConfig from "@/components/admin/booking-pages/config-forms/CustomTextConfig";
 import CTAButtonConfig from "@/components/admin/booking-pages/config-forms/CTAButtonConfig";
 import BookingFormConfig from "@/components/admin/booking-pages/config-forms/BookingFormConfig";
+import LeadFormConfig from "@/components/admin/booking-pages/config-forms/LeadFormConfig";
 import ClinicInfoConfig from "@/components/admin/booking-pages/config-forms/ClinicInfoConfig";
 import FooterConfig from "@/components/admin/booking-pages/config-forms/FooterConfig";
 import HeaderConfig from "@/components/admin/booking-pages/config-forms/HeaderConfig";
@@ -265,6 +266,23 @@ const SECTION_TYPES = [
     defaultConfig: {
       customTitle: "",
       customSubtitle: "",
+    },
+  },
+  {
+    type: "lead_form",
+    name: "Lead Form",
+    navName: "Enquire",
+    navGroup: null, // Top-level
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    ),
+    description: "Simple enquiry form — captures leads as Contacts",
+    defaultConfig: {
+      title: "Request a call back",
+      subtitle: "Leave your details and the clinic will get in touch.",
+      buttonText: "Send my details",
     },
   },
   {
@@ -1067,6 +1085,7 @@ export default function PageBuilderEditor() {
                   custom_text: CustomTextConfig,
                   cta_button: CTAButtonConfig,
                   booking_form: BookingFormConfig,
+                  lead_form: LeadFormConfig,
                   clinic_info: ClinicInfoConfig,
                   professional_fees: ProfessionalFeesConfig,
                   footer: FooterConfig,
