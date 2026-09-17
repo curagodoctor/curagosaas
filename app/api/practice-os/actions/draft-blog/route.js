@@ -41,13 +41,17 @@ export async function POST(request) {
   try {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
-    await assertAiAccess(doctor._id);
     const { context, diseaseCluster, pageType } = await request.json();
     if (!context || !context.trim()) return NextResponse.json({ success: false, error: 'Tell me what the article should be about.' }, { status: 400 });
     // §7 — the first auto-drafted article is a free onboarding gift; the doctor's
-    // 10 credits are for their own subsequent AI usage. Only meter later articles.
+    // 10 credits are for their own subsequent AI usage. The free first article
+    // must NOT be blocked by the paid-tier or credit checks (onboarding may have
+    // already spent the free credits on profile drafting). Only meter later ones.
     const firstArticle = (await BlogArticle.countDocuments({ doctorId: doctor._id })) === 0;
-    if (!firstArticle) await assertHasCredits(doctor._id);
+    if (!firstArticle) {
+      await assertAiAccess(doctor._id);
+      await assertHasCredits(doctor._id);
+    }
 
     const cluster = String(diseaseCluster || '').trim().toLowerCase();
     const type = PAGE_TYPES.includes(pageType) ? pageType : '';
