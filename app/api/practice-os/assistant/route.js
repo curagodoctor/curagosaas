@@ -64,6 +64,16 @@ export async function POST(request) {
       });
     }
 
+    // Unified assistant — if the doctor asks to CREATE a page/blog, hand off to
+    // the blog engine (the client calls draft-blog with this topic). Editing the
+    // website is routed to the AI builder.
+    if (/\b(write|create|draft|generate|make|prepare)\b[^?]*\b(blog|article|page|post|educational)\b/i.test(prompt)) {
+      return NextResponse.json({ success: true, reply: 'On it — drafting that page now. It will open for you to review and publish.', action: { type: 'write_page', topic: prompt }, creditsRemaining: await getRemainingCredits(doctor._id) });
+    }
+    if (/\b(edit|change|update|redesign|rewrite)\b[^?]*\b(website|homepage|home page|site|section)\b/i.test(prompt)) {
+      return NextResponse.json({ success: true, reply: "You can edit your website with AI here — tell me the change and apply it in the builder.", action: { type: 'edit_website', link: '/admin/dashboard/ai-generate' }, creditsRemaining: await getRemainingCredits(doctor._id) });
+    }
+
     const result = await runAssistant({ userPrompt: prompt, profileContext, profileFields, history });
     if (!result.success) return NextResponse.json({ success: false, error: result.error }, { status: 502 });
 

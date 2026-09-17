@@ -24,6 +24,23 @@ const BUILDER_PREFIXES = [
   '/app/zero-to-practice-builder/content',
 ];
 
+// Render assistant text with markdown links [label](url) and **bold** as real
+// elements (so the "Review & publish →" action links are clickable).
+function renderRich(text) {
+  const str = String(text || '');
+  const re = /\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*/g;
+  const parts = [];
+  let last = 0, m, k = 0;
+  while ((m = re.exec(str)) !== null) {
+    if (m.index > last) parts.push(str.slice(last, m.index));
+    if (m[1] && m[2]) parts.push(<a key={k++} href={m[2]} style={{ color: 'var(--ga-green)', fontWeight: 600, textDecoration: 'underline' }}>{m[1]}</a>);
+    else if (m[3]) parts.push(<strong key={k++}>{m[3]}</strong>);
+    last = re.lastIndex;
+  }
+  if (last < str.length) parts.push(str.slice(last));
+  return parts;
+}
+
 export default function GlobalAssistant() {
   const pathname = usePathname() || '';
   const isBuilder = BUILDER_PREFIXES.some((p) => pathname.startsWith(p));
@@ -77,7 +94,27 @@ export default function GlobalAssistant() {
         body: JSON.stringify({ prompt: body }),
       });
       const d = await res.json();
-      if (d.success) { setMessages((m) => [...m, { role: 'assistant', content: d.reply }]); if (typeof d.creditsRemaining === 'number') setCredits(d.creditsRemaining); }
+      if (d.success) {
+        setMessages((m) => [...m, { role: 'assistant', content: d.reply }]);
+        if (typeof d.creditsRemaining === 'number') setCredits(d.creditsRemaining);
+        // Unified assistant actions: write a page (hand off to the blog engine)
+        // or route to the website builder.
+        if (d.action?.type === 'write_page') {
+          try {
+            const r2 = await fetch('/api/practice-os/actions/draft-blog', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+              body: JSON.stringify({ context: d.action.topic, pageType: 'disease' }),
+            });
+            const b = await r2.json();
+            if (b.success && b.id) {
+              setMessages((m) => [...m, { role: 'assistant', content: `Drafted **${b.title || 'your page'}**. [Review & publish →](/admin/dashboard/blog-articles/${b.id})` }]);
+              if (typeof b.creditsRemaining === 'number') setCredits(b.creditsRemaining);
+            } else setMessages((m) => [...m, { role: 'assistant', content: b.message || b.error || 'Could not draft the page.' }]);
+          } catch { setMessages((m) => [...m, { role: 'assistant', content: 'Could not draft the page just now.' }]); }
+        } else if (d.action?.type === 'edit_website' && d.action.link) {
+          setMessages((m) => [...m, { role: 'assistant', content: `[Open the AI website builder →](${d.action.link})` }]);
+        }
+      }
       else setError(d.message || d.error || 'Could not send.');
     } catch { setError('Something went wrong.'); }
     finally { setSending(false); scrollToEnd(); }
@@ -128,7 +165,7 @@ export default function GlobalAssistant() {
               <div key={i} className={m.role === 'user' ? 'text-right' : 'text-left'}>
                 <div className="inline-block max-w-[85%] text-left rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap"
                   style={m.role === 'user' ? { background: 'var(--ga-green)', color: '#fff', borderBottomRightRadius: 4 } : { background: 'var(--ga-soft)', color: 'var(--ga-ink)', borderBottomLeftRadius: 4 }}>
-                  {m.content}
+                  {renderRich(m.content)}
                 </div>
               </div>
             ))}
