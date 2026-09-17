@@ -132,6 +132,28 @@ export default function ControlCenter() {
         </div>
       )}
 
+      {/* Pending tasks — accumulated daily missions across started packs the
+          doctor can pick up. Sits up top so it's the first actionable thing. */}
+      {todaysMissions.length > 0 && (
+        <div className="mt-6">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)] mb-3">Pending tasks <span className="text-[var(--muted)]">· {todaysMissions.length}</span></h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {todaysMissions.map((p) => (
+              <Link key={p.id} href={`/app/zero-to-practice-builder/track?pack=${p.id}`} className="pos-card p-4 flex items-start gap-3 hover:shadow-md transition-shadow group" style={{ borderColor: 'var(--orange)' }}>
+                <span className="w-9 h-9 rounded-xl grid place-items-center shrink-0" style={{ background: 'var(--orange-soft)' }}>
+                  <svg className="w-[18px] h-[18px]" style={{ color: 'var(--orange)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[11px] text-[var(--muted)]">{p.title} · Day {p.nextUp.dayNumber}{p.nextUp.category ? ` · ${p.nextUp.category}` : ''}</p>
+                  <p className="font-semibold text-[14.5px] text-[var(--ink)] leading-snug mt-0.5">{p.nextUp.title}</p>
+                  <span className="text-[13px] font-medium mt-1 inline-block" style={{ color: 'var(--orange)' }}>Start task →</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Work awaiting review + engagement nudges */}
       <div className="mt-4 space-y-4">
         <PendingWorkPrompt />
