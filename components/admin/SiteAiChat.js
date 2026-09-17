@@ -15,7 +15,7 @@ const label = (t) => SECTION_LABELS[t] || (t || 'section').replace(/_/g, ' ');
 // Website-builder AI chat. Proposes an edit to one section; the doctor clicks
 // "Apply" and it's written into the editor's local state (live preview) — they
 // then Save/Publish with the normal button. No direct DB writes here.
-export default function SiteAiChat({ sections = [], onApplyEdit }) {
+export default function SiteAiChat({ sections = [], onApplyEdit, onAddSection }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: 'assistant', content: "Hi! Tell me what to change on your website — e.g. \"make the About section warmer\" or \"add an FAQ about appointment timings\"." },
@@ -48,8 +48,9 @@ export default function SiteAiChat({ sections = [], onApplyEdit }) {
         setMessages((m) => [...m, { role: 'assistant', content: msg }]);
       } else {
         const edits = Array.isArray(d.edits) ? d.edits : (d.edit ? [d.edit] : []);
-        setMessages((m) => [...m, { role: 'assistant', content: d.reply || (edits.length ? 'Here are the suggested changes.' : '') }]);
-        if (edits.length) setPending({ edits });
+        const adds = Array.isArray(d.adds) ? d.adds : [];
+        setMessages((m) => [...m, { role: 'assistant', content: d.reply || (edits.length || adds.length ? 'Here are the suggested changes.' : '') }]);
+        if (edits.length || adds.length) setPending({ edits, adds });
       }
     } catch {
       setMessages((m) => [...m, { role: 'assistant', content: 'The assistant is unavailable right now.' }]);
@@ -57,10 +58,13 @@ export default function SiteAiChat({ sections = [], onApplyEdit }) {
   };
 
   const apply = () => {
-    if (!pending?.edits?.length) return;
-    pending.edits.forEach((e) => onApplyEdit?.(e.index, e.config));
-    const names = pending.edits.map((e) => label(e.type)).join(', ');
-    setMessages((m) => [...m, { role: 'assistant', content: `Applied to ${names} — review in the preview, then Save to publish.` }]);
+    const edits = pending?.edits || [];
+    const adds = pending?.adds || [];
+    if (!edits.length && !adds.length) return;
+    edits.forEach((e) => onApplyEdit?.(e.index, e.config));
+    adds.forEach((a) => onAddSection?.(a.type, a.config, a.after));
+    const names = [...edits.map((e) => label(e.type)), ...adds.map((a) => `new ${label(a.type)}`)].join(', ');
+    setMessages((m) => [...m, { role: 'assistant', content: `Applied: ${names} — review in the preview, then Save to publish.` }]);
     setPending(null);
   };
 
@@ -96,14 +100,14 @@ export default function SiteAiChat({ sections = [], onApplyEdit }) {
             </div>
           </div>
         ))}
-        {pending?.edits?.length > 0 && (
+        {(pending?.edits?.length > 0 || pending?.adds?.length > 0) && (
           <div className="border border-[#096b17]/30 bg-[#096b17]/5 rounded-xl p-3">
             <p className="text-[11px] font-semibold text-[#096b17] uppercase tracking-wide mb-1">
-              Suggested {pending.edits.length === 1 ? 'change' : `changes (${pending.edits.length})`} · {pending.edits.map((e) => label(e.type)).join(', ')}
+              Suggested · {[...(pending.edits || []).map((e) => label(e.type)), ...(pending.adds || []).map((a) => `new ${label(a.type)}`)].join(', ')}
             </p>
             <p className="text-[12px] text-gray-600 mb-2">Apply to preview, then Save to publish.</p>
             <div className="flex gap-2">
-              <button onClick={apply} className="px-3 py-1.5 bg-[#096b17] text-white rounded-lg text-[13px] font-medium hover:bg-[#075512]">Apply {pending.edits.length > 1 ? 'changes' : 'change'}</button>
+              <button onClick={apply} className="px-3 py-1.5 bg-[#096b17] text-white rounded-lg text-[13px] font-medium hover:bg-[#075512]">Apply</button>
               <button onClick={() => setPending(null)} className="px-3 py-1.5 text-gray-500 text-[13px] hover:text-gray-700">Discard</button>
             </div>
           </div>

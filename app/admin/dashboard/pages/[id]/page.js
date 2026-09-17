@@ -572,6 +572,21 @@ export default function PageBuilderEditor() {
     setHasUnsavedChanges(true);
   };
 
+  // Insert a NEW section proposed by the AI assistant (merged onto the type's
+  // defaults), after the given index (or at the end). Kept in local state until save.
+  const addSectionFromAi = (type, aiConfig, after) => {
+    const def = SECTION_TYPES.find((s) => s.type === type);
+    const config = { ...(def?.defaultConfig || {}), ...(aiConfig || {}) };
+    const newSection = { _id: `temp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, type, visible: true, config };
+    setPageData((prev) => {
+      const list = [...prev.sections];
+      const pos = Number.isInteger(after) && after >= 0 && after < list.length ? after + 1 : list.length;
+      list.splice(pos, 0, newSection);
+      return { ...prev, sections: list.map((s, i) => ({ ...s, order: i })) };
+    });
+    setHasUnsavedChanges(true);
+  };
+
   // Move section up
   const moveSectionUp = (index) => {
     if (index === 0) return;
@@ -1214,7 +1229,7 @@ export default function PageBuilderEditor() {
         </button>
 
         {/* AI website assistant — proposes edits, applied into local state for review before Save */}
-        <SiteAiChat sections={pageData.sections} onApplyEdit={updateSectionConfig} />
+        <SiteAiChat sections={pageData.sections} onApplyEdit={updateSectionConfig} onAddSection={addSectionFromAi} />
       </div>
     </div>
   );
