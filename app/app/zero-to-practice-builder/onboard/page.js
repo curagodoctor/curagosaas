@@ -345,7 +345,7 @@ function Wizard() {
           <div className="flex items-center gap-2.5">
             <span className="pos-label" style={{ color: 'var(--muted)' }}>{PHASES[st.phase + 1] || 'Setup'}</span>
             {step > 0 && (
-              <button onClick={() => { if (window.confirm('Start the setup again from the beginning? Your saved details are kept.')) go(0); }}
+              <button onClick={() => { if (window.confirm('Start the setup again from the beginning? Your saved details are kept.')) { setBranchStage(0); setQuizPhase('milestone'); setQuizIdx(0); setQuizFailed(false); go(0); } }}
                 className="text-[13px] font-medium" style={{ color: 'var(--muted)' }}>Start over</button>
             )}
             <button onClick={() => router.push('/app/zero-to-practice-builder')}
