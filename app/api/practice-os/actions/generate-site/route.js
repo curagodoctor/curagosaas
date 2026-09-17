@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/access';
 import { assertHasCredits, chargeAiCredits, getRemainingCredits } from '@/lib/practice-os/aiCredits';
 import { structureLongContent } from '@/lib/practice-os/ai';
+import { WEBSITE_RULES } from '@/lib/practice-os/contentRules';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 import BookingPage from '@/models/BookingPage';
 import Doctor from '@/models/Doctor';
@@ -18,8 +19,10 @@ export async function POST(request) {
   try {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
-    // AI is a paid-tier feature.
-    await assertAiAccess(doctor._id);
+    // NOTE: the paid-tier (assertAiAccess) + credit checks are deferred until we
+    // know whether this is the FREE first build. The very first website build
+    // during onboarding must never be blocked by payment/credits — otherwise a
+    // brand-new doctor (no paid pack, no credits yet) can't get past the wizard.
 
     const body = await request.json().catch(() => ({}));
     const force = !!body.force;
@@ -48,7 +51,7 @@ export async function POST(request) {
     // Guard: never overwrite a website the doctor has already customized. If the
     // home page exists and is user-edited, refuse unless they explicitly force it.
     // (Checked BEFORE charging credits so a customized-skip costs nothing.)
-    const existing = await BookingPage.findOne({ doctorId: doctor._id, slug: 'home' }).select('userEdited').lean();
+    const existing = await BookingPage.findOne({ doctorId: doctor._id, slug: 'home' }).select('userEdited aiGeneratedAt').lean();
     if (existing?.userEdited && !force) {
       return NextResponse.json({
         success: false,
@@ -61,9 +64,16 @@ export async function POST(request) {
     // §7 — the very first website build is a free onboarding gift: the doctor's
     // 10 credits are for their own AI usage afterwards, not the automatic build.
     // Only meter (and require credits for) re-generations.
-    const firstBuild = !existing;
-    // Block when today's credit pool is empty (throws NoCredits → 402 below).
-    if (!firstBuild) await assertHasCredits(doctor._id);
+    // The subdomain step seeds a bare `createdBy:'system'` scaffold, so a page
+    // usually already exists here. A page that has NEVER been AI-generated or
+    // hand-edited is still the free first build (i.e. the onboarding build).
+    const firstBuild = !existing || (!existing.aiGeneratedAt && !existing.userEdited);
+    // Re-generations are a paid, credit-metered feature. The free first build
+    // skips both checks so onboarding always succeeds.
+    if (!firstBuild) {
+      await assertAiAccess(doctor._id);
+      await assertHasCredits(doctor._id); // throws NoCredits → 402 below
+    }
 
     const fields = await getDoctorProfileFields(doctor._id);
     // A readable summary of everything we know about the doctor, for grounding.
@@ -82,9 +92,19 @@ export async function POST(request) {
       // No single pack context for the site — pull global knowledge chunks.
       frameworkId: null,
       topic: `${fields.specialty || doc?.specialization || ''} ${fields.expertise || ''} ${fields.diseases || ''}`.trim(),
-    });
-    if (!gen.success) return NextResponse.json({ success: false, error: gen.error }, { status: 502 });
-    const g = gen.data || {};
+      // The fixed website layout + per-section content rules (E-E-A-T, section
+      // depth, the governing test) from the Website Builder rule book.
+      extraRules: WEBSITE_RULES,
+    }).catch((e) => ({ success: false, error: e?.message || 'generation error' }));
+    // Robustness: the AI copy step must never hard-fail onboarding. On the first
+    // build, fall back to the default scaffold (built from the doctor's real data)
+    // so a website is ALWAYS created — the doctor can regenerate the copy later.
+    // Only a re-generation surfaces the error (the live page is left untouched).
+    if (!gen.success) {
+      if (!firstBuild) return NextResponse.json({ success: false, error: gen.error }, { status: 502 });
+      console.warn('[generate-site] AI copy failed on first build — publishing default scaffold:', gen.error);
+    }
+    const g = gen.success ? (gen.data || {}) : {};
 
     // Merge generated copy into a section set, writing to each section's REAL
     // config fields (matching lib/defaultTemplate.js / the section renderers).
@@ -153,6 +173,9 @@ export async function POST(request) {
       page.versions = [snapshot, ...(page.versions || [])].slice(0, 10);
       page.draftSections = generated;
       page.draftMeta = { source: 'ai', createdAt: now };
+      // Mark that AI has now generated for this page so subsequent builds are
+      // metered (the seeded scaffold's first AI build is the free one).
+      page.aiGeneratedAt = now;
       page.markModified('draftSections');
       page.markModified('versions');
       await page.save();

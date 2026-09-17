@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/access';
 import { assertHasCredits, chargeAiCredits, getRemainingCredits } from '@/lib/practice-os/aiCredits';
 import { structureLongContent } from '@/lib/practice-os/ai';
+import { BLOG_RULES } from '@/lib/practice-os/contentRules';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 import { relatedReadingBlock } from '@/lib/practice-os/blogLinks';
 import BlogArticle from '@/models/BlogArticle';
@@ -57,6 +58,7 @@ export async function POST(request) {
       source: context,
       profileFields: fields,
       topic: context,
+      extraRules: BLOG_RULES,
     });
     if (!gen.success) return NextResponse.json({ success: false, error: gen.error }, { status: 502 });
 

@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/access';
 import { assertHasCredits, chargeAiCredits } from '@/lib/practice-os/aiCredits';
 import { structureContent } from '@/lib/practice-os/ai';
+import { BLOG_RULES } from '@/lib/practice-os/contentRules';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 import BlogArticle from '@/models/BlogArticle';
 import Doctor from '@/models/Doctor';
@@ -27,6 +28,7 @@ export async function POST(request) {
       instruction: 'Turn the source content into a patient-facing blog article. Return JSON: {"title": string (<=90 chars, no clickbait), "excerpt": string (<=180 chars), "category": string, "blocks": [{"heading": string, "content": string (2-4 short paragraphs, plain text)}] } with 3-6 blocks. Informative and NMC-compliant — no superlatives, no guarantees.',
       source: text,
       profileFields: fields,
+      extraRules: BLOG_RULES,
     });
     if (!gen.success) return NextResponse.json({ success: false, error: gen.error }, { status: 502 });
 

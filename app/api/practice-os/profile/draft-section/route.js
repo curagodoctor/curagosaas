@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor } from '@/lib/practice-os/access';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 import { structureContent } from '@/lib/practice-os/ai';
+import { PROFILE_RULES } from '@/lib/practice-os/contentRules';
 import ProfileFieldConfig from '@/models/practice-os/ProfileFieldConfig';
 import { mergeProfileSections } from '@/lib/practice-os/profile-fields-defaults';
 import Doctor from '@/models/Doctor';
@@ -43,6 +44,7 @@ export async function POST(request) {
       instruction: `You are drafting ONE section ("${section.title}") of an Indian doctor's professional profile. Write a clear, professional, patient-friendly draft for each field below, based on the doctor's input and what we already know. Return ONLY a JSON object keyed by the EXACT field keys. For fields offering a choice list, return one or more of the given options (comma-separated).\n\nBE COMPREHENSIVE AND THOROUGH — this is the doctor's practice map. For the list fields, generate a RICH, COMPLETE, comma-separated list that genuinely reflects the full scope of this specialty, ordered from most common to least. Minimum counts (generate AT LEAST this many, more where the specialty supports it): areas of expertise — at least 6 items; diseases/conditions treated — 12–20 items; procedures/treatments — 12–20 items. Do not stop below the minimum. Every item must be genuinely relevant to this specialty (never padding). Omit a field only if you genuinely cannot infer it. Do NOT invent credentials, registration numbers, prices, or specific statistics that were not provided. NMC-compliant — no superlatives or guarantees.\n\nFields to fill:\n${fieldSpec}`,
       source: `Doctor: ${doc?.displayName || doc?.name || ''} (${doc?.specialization || ''}).\nWhat we already know:\n${known || '(little so far)'}\n\nThe doctor's input for this section:\n${hint || '(none — infer from what we already know)'}`,
       profileFields: existing,
+      extraRules: PROFILE_RULES,
     });
     if (!gen.success) return NextResponse.json({ success: false, error: gen.error }, { status: 502 });
 
