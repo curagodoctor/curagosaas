@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/access';
+import { requirePracticeOsDoctor } from '@/lib/practice-os/access';
 import BookingPage from '@/models/BookingPage';
 
 export const runtime = 'nodejs';
@@ -45,7 +45,9 @@ export async function POST(request) {
   try {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
-    await assertAiAccess(doctor._id);
+    // NOTE: no AI-access gate here. approve/discard/restore/save only MANAGE a
+    // draft the doctor already has — no AI generation happens — so publishing
+    // must work on the free tier too. (Generation itself is gated in generate-site.)
     const { action, index, sections } = await request.json();
 
     const page = await BookingPage.findOne({ doctorId: doctor._id, slug: 'home' });

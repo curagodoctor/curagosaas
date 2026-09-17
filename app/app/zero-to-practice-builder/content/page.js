@@ -16,13 +16,22 @@ export default function ContentPage() {
 
   const load = useCallback(async () => {
     try {
-      const [acc, pend] = await Promise.all([
+      const [acc, pend, cl] = await Promise.all([
         fetch('/api/practice-os/access-request', { credentials: 'include' }).then((r) => r.json()),
         fetch('/api/practice-os/pending-work', { credentials: 'include' }).then((r) => r.json()),
+        fetch('/api/practice-os/clusters', { credentials: 'include' }).then((r) => r.json()),
       ]);
+      // Content is generated FROM the approved diseases + treatments — so the
+      // disease-cluster review (the metadata step) must be done first. If the
+      // doctor has clusters but hasn't approved any yet, send them there.
+      const clusters = cl.success ? (cl.clusters || []) : [];
+      if (clusters.length > 0 && !clusters.some((c) => c.approved)) {
+        router.replace('/app/zero-to-practice-builder/clusters');
+        return;
+      }
       setState({ access: acc.granted, items: pend.articles || [], pageDrafts: pend.pageDrafts || 0 });
     } catch { setState({ access: false, items: [], pageDrafts: 0 }); }
-  }, []);
+  }, [router]);
   useEffect(() => { load(); }, [load]);
 
   const generateNext = async () => {
