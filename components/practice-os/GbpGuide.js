@@ -25,6 +25,7 @@ export default function GbpGuide({ renderFooter }) {
   const [blocks, setBlocks] = useState(null);
   const [progress, setProgress] = useState({});
   const [active, setActive] = useState(0);
+  const [unlocked, setUnlocked] = useState(0); // highest block reached — go in order
 
   useEffect(() => {
     (async () => {
@@ -56,15 +57,16 @@ export default function GbpGuide({ renderFooter }) {
 
   return (
     <>
-      {/* Block tabs */}
+      {/* Block tabs — sequential: future blocks are locked until you reach them */}
       <div className="flex gap-2 flex-wrap mb-4">
         {blocks.map((b, i) => {
           const done = b.tasks.every((_, j) => progress[`${b.key}:${j}`]);
+          const locked = i > unlocked;
           return (
-            <button key={b.key} onClick={() => setActive(i)}
+            <button key={b.key} onClick={() => { if (!locked) setActive(i); }} disabled={locked}
               className="text-[13px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"
-              style={{ background: i === active ? 'var(--green)' : 'transparent', color: i === active ? '#fff' : 'var(--muted)', border: `1px solid ${i === active ? 'var(--green)' : 'var(--rule)'}` }}>
-              {done && <span style={{ color: i === active ? '#fff' : 'var(--green)' }}>✓</span>}
+              style={{ background: i === active ? 'var(--green)' : 'transparent', color: i === active ? '#fff' : locked ? 'var(--rule)' : 'var(--muted)', border: `1px solid ${i === active ? 'var(--green)' : 'var(--rule)'}`, cursor: locked ? 'not-allowed' : 'pointer', opacity: locked ? 0.55 : 1 }}>
+              {locked ? <span aria-hidden>🔒</span> : done && <span style={{ color: i === active ? '#fff' : 'var(--green)' }}>✓</span>}
               {b.label}
               {b.mandatory && <span className="pos-label" style={{ background: 'var(--orange)', color: '#fff', padding: '1px 5px', borderRadius: 4, fontSize: 9 }}>MUST</span>}
             </button>
@@ -99,6 +101,22 @@ export default function GbpGuide({ renderFooter }) {
           </div>
         </div>
       )}
+
+      {/* Sequential advance: you can't jump ahead — complete this block or skip it */}
+      {blocks[active] && active < blocks.length - 1 && (() => {
+        const b = blocks[active];
+        const blockDone = b.tasks.every((_, j) => progress[`${b.key}:${j}`]);
+        const advance = () => { const n = active + 1; setActive(n); setUnlocked((u) => Math.max(u, n)); };
+        return (
+          <div className="flex items-center gap-3 mt-4">
+            <button onClick={advance} disabled={b.mandatory && !blockDone} className="pos-action" style={{ opacity: b.mandatory && !blockDone ? 0.5 : 1 }}>
+              {blockDone ? 'Continue →' : 'Next →'}
+            </button>
+            {!b.mandatory && !blockDone && <button onClick={advance} className="pos-link text-sm" style={{ color: 'var(--muted)' }}>Skip this block →</button>}
+            {b.mandatory && !blockDone && <span className="text-[13px]" style={{ color: 'var(--orange)' }}>Complete this mandatory block to continue.</span>}
+          </div>
+        );
+      })()}
 
       {renderFooter && renderFooter(mandatoryComplete())}
     </>
