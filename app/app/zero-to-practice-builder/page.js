@@ -93,6 +93,8 @@ export default function ControlCenter() {
     .sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor));
   const firstName = (name || 'there').replace(/^Dr\.?\s*/i, 'Dr. ').split(' ').slice(0, 2).join(' ');
 
+  const cycleDaysLeft = accessExpiry ? Math.max(0, Math.ceil((new Date(accessExpiry) - Date.now()) / 86400000)) : null;
+
   return (
     <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-6 max-w-[1240px] mx-auto">
       {/* Shared top nav */}
@@ -100,18 +102,18 @@ export default function ControlCenter() {
 
       {/* Welcome */}
       <p className="pos-label mb-2">Control Center</p>
-      <h1 className="text-[30px] md:text-[38px] font-semibold text-[var(--ink)] leading-tight" style={{ letterSpacing: '-0.027em' }}>
+      <h1 className="text-[28px] sm:text-[32px] md:text-[38px] font-semibold text-[var(--ink)] leading-tight" style={{ letterSpacing: '-0.027em' }}>
         Welcome back, {firstName}.
       </h1>
-      <p className="text-[16px] text-[var(--muted)] mt-3 leading-relaxed" style={{ maxWidth: '54ch' }}>
+      <p className="text-[15px] sm:text-[16px] text-[var(--muted)] mt-2.5 leading-relaxed" style={{ maxWidth: '54ch' }}>
         {activeDays > 0
           ? <>You&apos;ve worked on your practice <strong className="text-[var(--green)]">{activeDays}</strong> {activeDays === 1 ? 'day' : 'days'}. Keep the momentum — a little each day compounds.</>
           : <>Your control center. Finish your setup and start building your organic presence — a little each day.</>}
       </p>
 
-      {/* Single pack: Dominate Organic Search — under review / active (Phase E) */}
+      {/* Primary status band — the Dominate Organic Search pack */}
       {accessStatus === 'pending' && (
-        <div className="pos-card p-5 mt-5 flex items-start gap-3" style={{ borderColor: 'var(--orange)', background: 'var(--orange-soft)' }}>
+        <div className="pos-card p-5 mt-6 flex items-start gap-3" style={{ borderColor: 'var(--orange)', background: 'var(--orange-soft)' }}>
           <span className="pos-label shrink-0" style={{ background: 'var(--orange)', color: '#fff', padding: '3px 8px', borderRadius: 6 }}>Under review</span>
           <div>
             <p className="text-[15px] font-semibold text-[var(--ink)]">Dominate Organic Search</p>
@@ -120,135 +122,84 @@ export default function ControlCenter() {
         </div>
       )}
       {accessStatus === 'granted' && (
-        <div className="pos-card p-5 mt-5 flex items-center justify-between gap-3" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)' }}>
+        <div className="pos-card p-5 mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)' }}>
           <div>
             <span className="pos-label" style={{ color: 'var(--green)' }}>Your pack · active</span>
-            <p className="text-[15px] font-semibold text-[var(--ink)] mt-1">Dominate Organic Search{accessExpiry ? ` — ${Math.max(0, Math.ceil((new Date(accessExpiry) - Date.now()) / 86400000))} days left this cycle` : ''}</p>
+            <p className="text-[15px] font-semibold text-[var(--ink)] mt-1">Dominate Organic Search{cycleDaysLeft != null ? ` — ${cycleDaysLeft} days left this cycle` : ''}</p>
             <p className="text-[13px] text-[var(--muted)] mt-0.5">We prepare your practice&apos;s work; you review and approve it. 28-day cycle.</p>
           </div>
-          <button onClick={() => router.push('/app/zero-to-practice-builder/content')} className="pos-action shrink-0">Review my content →</button>
+          <button onClick={() => router.push('/app/zero-to-practice-builder/content')} className="pos-action shrink-0 self-start sm:self-auto">Review my content →</button>
         </div>
       )}
 
-      {/* §8 work awaiting review + §12 streak calendar + §14 reminder window */}
-      <div className="mt-5 space-y-4">
+      {/* Work awaiting review + engagement nudges */}
+      <div className="mt-4 space-y-4">
         <PendingWorkPrompt />
         <EngagementNudges />
-        <WebsiteStats />
-        <StreakCalendar />
       </div>
 
-      {/* No pack yet → offer the same right-fit assessment as signup/landing. */}
-      {owned.length === 0 && (
+      {/* Your tools — the primary navigation, as a responsive card grid.
+          Website Builder leads (green, full-width on desktop), the rest follow. */}
+      <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)] mt-8 mb-3">Your tools</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        {/* Website Builder — the headline tool, spans full width. */}
         <Link
-          href="/join-cohort?source=control-center"
-          className="inline-flex items-center gap-2.5 rounded-xl px-4 py-3 mt-5 transition-colors hover:shadow-sm"
-          style={{ background: 'var(--green-soft, rgba(9,107,23,.08))', border: '1px solid var(--green)' }}
+          href="/admin/dashboard"
+          className="col-span-2 sm:col-span-3 rounded-2xl p-5 sm:p-6 block hover:shadow-lg transition-shadow group"
+          style={{ background: 'linear-gradient(135deg, var(--green), #053d0b)', color: '#fff' }}
         >
-          <svg className="w-5 h-5 shrink-0" style={{ color: 'var(--green)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          <span className="text-[14.5px] font-medium text-[var(--ink)]">See if Practice Builder is the right fit for you</span>
-          <span className="text-[var(--green)] font-semibold">→</span>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="pos-label" style={{ color: 'rgba(255,255,255,.72)' }}>Your website</p>
+              <p className="font-semibold text-[18px] sm:text-[20px] mt-1 leading-snug">Open Website Builder</p>
+              <p className="text-[12.5px] sm:text-[13.5px] mt-1.5 leading-relaxed" style={{ color: 'rgba(255,255,255,.85)', maxWidth: '46ch' }}>
+                Build and edit your patient-facing site — pages, blog, bookings and the AI editor.
+              </p>
+            </div>
+            <span className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:translate-x-0.5" style={{ background: 'rgba(255,255,255,.15)' }}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+            </span>
+          </div>
         </Link>
-      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-6 lg:gap-8 mt-9">
-        {/* Main — the packs. On mobile the rail's actionable boxes (today's
-            mission, progress) sit ABOVE this instead of buried at the bottom. (#22) */}
-        <div className="min-w-0 order-2 lg:order-1">
-          <h2 className="text-[16px] font-semibold text-[var(--ink)] mb-4" style={{ letterSpacing: '-0.01em' }}>Builder Packs</h2>
-          {(!packs || packs.length === 0) ? (
-            <div className="pos-card p-10 text-center text-[var(--muted)]">No packs are available yet. Check back soon.</div>
-          ) : (
-            <div className="flex flex-col gap-5">
-              {packs.map((p) => <PackCard key={p.id} pack={p} />)}
+        {[
+          { label: 'Content Planner', href: '/app/zero-to-practice-builder/planner', desc: 'Plan ideas → scripts → posts', accent: 'var(--orange)', soft: 'var(--orange-soft)', d: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+          { label: 'Google Business Profile', href: '/app/zero-to-practice-builder/gbp', desc: 'Get found on Google Maps', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z' },
+          { label: 'Workspace', href: '/app/zero-to-practice-builder/workspace', desc: 'Private notes as you build', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' },
+          { label: 'Schedule', href: '/app/zero-to-practice-builder/schedule', desc: 'When your next task lands', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+          { label: 'My Profile', href: '/app/zero-to-practice-builder/profile', desc: 'Your source-of-truth details', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
+          { label: 'Leaderboard', href: '/app/zero-to-practice-builder/leaderboard', desc: 'Where your cohort stands', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+        ].map((t) => (
+          <Link key={t.href} href={t.href} className="pos-card p-4 sm:p-5 flex flex-col hover:shadow-md transition-shadow group">
+            <span className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: t.soft }}>
+              <svg className="w-[18px] h-[18px]" style={{ color: t.accent }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d={t.d} /></svg>
+            </span>
+            <span className="text-[14.5px] font-semibold text-[var(--ink)] leading-snug">{t.label}</span>
+            <span className="text-[12px] text-[var(--muted)] mt-0.5 leading-snug">{t.desc}</span>
+          </Link>
+        ))}
+      </div>
+
+      {/* Progress + status — two columns on desktop, stacked on mobile.
+          Actionable items (today's mission) come first on mobile. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 lg:gap-8 mt-8">
+        <div className="min-w-0 order-2 lg:order-1 space-y-4">
+          <WebsiteStats />
+          <StreakCalendar />
+          {/* Builder Packs — only when there's something to show. */}
+          {packs && packs.length > 0 && (
+            <div>
+              <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)] mb-3 mt-2">Your packs</h2>
+              <div className="flex flex-col gap-5">
+                {packs.map((p) => <PackCard key={p.id} pack={p} />)}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Rail — aggregate progress */}
         <aside className="min-w-0 order-1 lg:order-2">
           <div className="lg:sticky lg:top-6 space-y-4">
-            {/* Website Builder — the other product, surfaced as an appealing card
-                (replaces the old nav button). */}
-            <Link
-              href="/admin/dashboard"
-              className="pos-card p-5 block hover:shadow-md transition-shadow group"
-              style={{ background: 'linear-gradient(150deg, var(--green), #053d0b)', color: '#fff', border: 'none' }}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="pos-label" style={{ color: 'rgba(255,255,255,.72)' }}>Your website</p>
-                  <p className="font-semibold text-[16px] mt-1 leading-snug">Open Website Builder</p>
-                  <p className="text-[12.5px] mt-1.5 leading-relaxed" style={{ color: 'rgba(255,255,255,.85)' }}>
-                    Build and edit your patient-facing site — pages, bookings and more.
-                  </p>
-                </div>
-                <span className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-transform group-hover:translate-x-0.5" style={{ background: 'rgba(255,255,255,.15)' }}>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                </span>
-              </div>
-            </Link>
-
-            {/* Open Workspace — a prominent card matching the Website Builder one. */}
-            <Link
-              href="/app/zero-to-practice-builder/workspace"
-              className="pos-card p-5 block hover:shadow-md transition-shadow group"
-              style={{ borderColor: 'var(--green)' }}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="pos-label" style={{ color: 'var(--green)' }}>Your notes</p>
-                  <p className="font-semibold text-[16px] mt-1 leading-snug text-[var(--ink)]">Open Workspace</p>
-                  <p className="text-[12.5px] mt-1.5 leading-relaxed text-[var(--muted)]">
-                    Jot and organise your notes as you build — private to you.
-                  </p>
-                </div>
-                <span className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-transform group-hover:translate-x-0.5" style={{ background: 'var(--green-soft, rgba(9,107,23,.08))' }}>
-                  <svg className="w-4 h-4" style={{ color: 'var(--green)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                </span>
-              </div>
-            </Link>
-
-            {/* The remaining tools as independent, prominent buttons. */}
-            <div className="grid grid-cols-1 gap-2.5">
-              {[
-                ['Schedule', '/app/zero-to-practice-builder/schedule', 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'],
-                ['My profile', '/app/zero-to-practice-builder/profile', 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
-                ['Leaderboard', '/app/zero-to-practice-builder/leaderboard', 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'],
-              ].map(([label, href, d]) => (
-                <Link key={href} href={href} className="pos-card flex items-center gap-3 px-4 py-3.5 hover:shadow-md transition-shadow group">
-                  <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'var(--green-soft, rgba(9,107,23,.08))' }}>
-                    <svg className="w-[18px] h-[18px]" style={{ color: 'var(--green)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d={d} /></svg>
-                  </span>
-                  <span className="text-[14.5px] font-medium text-[var(--ink)] flex-1">{label}</span>
-                  <svg className="w-4 h-4 text-[var(--muted)] transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                </Link>
-              ))}
-            </div>
-
-            <p className="pos-label">Your progress</p>
-
-            {/* XP + streak */}
-            <div className="pos-card p-5" style={{ background: 'var(--green)', color: '#fff', border: 'none' }}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="pos-label" style={{ color: 'rgba(255,255,255,.7)' }}>Total XP</span>
-                <span className="pos-num text-lg">{totalXp.toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="pos-label" style={{ color: 'rgba(255,255,255,.7)' }}>Best streak</span>
-                <span className="text-[15px] font-medium">{bestStreak > 0 ? `🔥 ${bestStreak}` : '—'}</span>
-              </div>
-            </div>
-
-            {/* Packs owned */}
-            <div className="pos-card p-5">
-              <div className="grid grid-cols-2 gap-3 text-center">
-                <div><p className="pos-num text-2xl text-[var(--ink)]">{owned.length}</p><p className="text-[10px] text-[var(--muted)] uppercase tracking-wide">packs owned</p></div>
-                <div><p className="pos-num text-2xl text-[var(--ink)]">{started.length}</p><p className="text-[10px] text-[var(--muted)] uppercase tracking-wide">in progress</p></div>
-              </div>
-            </div>
-
-            {/* Today's mission — one per started pack */}
+            {/* Today's mission — one per started pack (most actionable, so first) */}
             {todaysMissions.length > 0 && (
               <div className="pos-card p-5" style={{ background: 'linear-gradient(150deg, #fff, var(--green-soft))', borderColor: 'var(--green)' }}>
                 <p className="pos-label mb-3" style={{ color: 'var(--orange)' }}>{todaysMissions.length === 1 ? "Today's mission" : "Today's missions"}</p>
@@ -265,6 +216,20 @@ export default function ControlCenter() {
                 </div>
               </div>
             )}
+
+            <p className="pos-label">Your progress</p>
+
+            {/* XP + streak */}
+            <div className="pos-card p-5" style={{ background: 'var(--green)', color: '#fff', border: 'none' }}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="pos-label" style={{ color: 'rgba(255,255,255,.7)' }}>Total XP</span>
+                <span className="pos-num text-lg">{totalXp.toLocaleString('en-IN')}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="pos-label" style={{ color: 'rgba(255,255,255,.7)' }}>Best streak</span>
+                <span className="text-[15px] font-medium">{bestStreak > 0 ? `🔥 ${bestStreak}` : '—'}</span>
+              </div>
+            </div>
 
             {/* Scheduled events */}
             <ScheduledCard scheduled={scheduled} />
