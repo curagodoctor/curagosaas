@@ -31,6 +31,10 @@ export async function GET(request) {
       onboardStep: Number(profile.variables?.onboardStep) || 0,
       hasWebsite: profile.variables?.hasWebsite || null,
       onboardComplete: !!profile.variables?.onboardComplete,
+      // Commitment-filter pass. onboardComplete is only set once the qualifying
+      // application is submitted, so quizPassed lets us resume a doctor straight
+      // to the application form instead of re-asking the three questions.
+      quizPassed: !!profile.variables?.quizPassed,
     });
   } catch (error) {
     return errorResponse(error);
@@ -44,12 +48,13 @@ export async function PATCH(request) {
   try {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
-    const { onboardStep, hasWebsite, onboardComplete } = await request.json();
+    const { onboardStep, hasWebsite, onboardComplete, quizPassed } = await request.json();
     const profile = await getOrCreateProfile(doctor._id);
     profile.variables = profile.variables || {};
     if (Number.isInteger(onboardStep)) profile.variables.onboardStep = onboardStep;
     if (hasWebsite === 'yes' || hasWebsite === 'no') profile.variables.hasWebsite = hasWebsite;
     if (typeof onboardComplete === 'boolean') profile.variables.onboardComplete = onboardComplete;
+    if (typeof quizPassed === 'boolean') profile.variables.quizPassed = quizPassed;
     profile.markModified('variables');
     await profile.save();
     return NextResponse.json({ success: true });

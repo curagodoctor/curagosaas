@@ -118,6 +118,10 @@ function Wizard() {
           setFields(d.fields || {}); setSummary(d.summary || '');
           if (d.hasWebsite) setHasWebsite(d.hasWebsite);
           if (d.subdomain) { setSubdomain(d.subdomain); setExistingSubdomain(d.subdomain); }
+          // If they cleared the commitment filter but never submitted the
+          // qualifying application, resume them straight to that form (the last
+          // gate) rather than replaying the whole wizard.
+          if (d.quizPassed && !d.onboardComplete) { router.replace('/app/zero-to-practice-builder/get-access'); return; }
           // Resume where they left off. Never resume ONTO the auto-running
           // 'generate' step (it would re-charge credits) — land on 'live' instead.
           let s = Number(d.onboardStep) || 0;
@@ -157,16 +161,23 @@ function Wizard() {
       body: JSON.stringify({ hasWebsite: v }),
     }).catch(() => {});
   };
-  // Onboarding is done once the commitment quiz passes → the control center stops
-  // sending them back here. Wait for the flag to persist before navigating away.
-  const finishOnboarding = async (dest) => {
+  // Passing the 3-question commitment filter records `quizPassed` but does NOT
+  // finish onboarding — onboarding is only complete once the qualifying
+  // application is submitted (set in the get-access page). Recording quizPassed
+  // lets a returning doctor resume straight to the application form.
+  const proceedToApplication = async () => {
     try {
       await fetch('/api/practice-os/profile', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ onboardComplete: true }),
+        body: JSON.stringify({ quizPassed: true }),
       });
     } catch { /* non-blocking */ }
-    router.push(dest);
+    router.push('/app/zero-to-practice-builder/get-access');
+  };
+
+  const signOut = async () => {
+    try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch { /* ignore */ }
+    router.push('/login?entry=practice-os');
   };
 
   // ---- profile AI draft + save ----
@@ -348,9 +359,9 @@ function Wizard() {
               <button onClick={() => { if (window.confirm('Start the setup again from the beginning? Your saved details are kept.')) { setBranchStage(0); setQuizPhase('milestone'); setQuizIdx(0); setQuizFailed(false); go(0); } }}
                 className="text-[13px] font-medium" style={{ color: 'var(--muted)' }}>Start over</button>
             )}
-            <button onClick={() => router.push('/app/zero-to-practice-builder')}
+            <button onClick={signOut}
               className="text-[13px] font-semibold rounded-[10px] px-3 py-1.5"
-              style={{ border: '1px solid var(--rule)', color: 'var(--muted)', background: 'var(--card)' }}>Exit</button>
+              style={{ border: '1px solid var(--rule)', color: 'var(--muted)', background: 'var(--card)' }}>Sign out</button>
           </div>
         </div>
         <div style={{ height: 4, background: 'var(--rule-soft)' }}>
@@ -402,12 +413,6 @@ function Wizard() {
                 ? 'Our AI can build a brand-new website on your own subdomain, live instantly. If you like it, you can point your custom domain to it instantly and seamlessly — you keep your domain and its SEO.'
                 : 'In less than 10 minutes, at no cost for life. No downside — give it a shot.'}
             </p>
-            {hasWebsite === 'yes' && (
-              <div className="mb-5">
-                <label className="pos-label">Your current website (optional)</label>
-                <input value={existing} onChange={(e) => setExisting(e.target.value)} placeholder="drrao.com" className="w-full pos-card p-2.5 text-sm mt-1.5" />
-              </div>
-            )}
             <div className="grid gap-2.5">
               <button onClick={next} className="pos-action text-center">Yes, proceed</button>
               <button onClick={() => goToId('google')} className="pos-card p-3.5 text-center text-[15px] font-medium" style={{ color: 'var(--muted)' }}>No, not interested</button>
@@ -517,15 +522,20 @@ function Wizard() {
 
         {/* STEP: subdomain */}
         {st.id === 'subdomain' && (existingSubdomain ? (
-          // Guard: address already chosen (existing account) — confirm, don't re-ask.
+          // Existing account — they already have a website here. Let them keep it,
+          // rebuild it with AI, or change the address. (Old users choose.)
           <div>
             <p className="pos-label" style={{ color: 'var(--green)' }}>Website address</p>
-            <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Your website address is set.</h1>
-            <p className="text-sm text-[var(--muted)] mb-4">You already chose this — no need to pick it again. You can connect a custom domain later from Settings.</p>
-            <div className="pos-card p-4 flex items-center gap-2" style={{ background: 'var(--green-soft)', borderColor: 'var(--green)' }}>
+            <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>You already have a website here.</h1>
+            <p className="text-sm text-[var(--muted)] mb-4">Keep the site you already have, or let our AI rebuild it from your updated profile. You can point a custom domain at it later from Settings.</p>
+            <div className="pos-card p-4 flex items-center gap-2 mb-4" style={{ background: 'var(--green-soft)', borderColor: 'var(--green)' }}>
               <span className="text-[15px] font-semibold text-[var(--ink)]">{existingSubdomain}.curago.in</span>
             </div>
-            <button onClick={next} className="pos-action mt-6">Continue</button>
+            <div className="grid gap-2.5">
+              <button onClick={() => goToId('google')} className="pos-action text-center">Keep my current website</button>
+              <button onClick={next} className="pos-card p-3.5 text-center text-[15px] font-medium" style={{ color: 'var(--ink)' }}>Rebuild it with AI</button>
+              <button onClick={() => { setExistingSubdomain(''); setSubdomain(''); setSubStatus(null); setSubMsg(''); }} className="pos-link text-sm mt-1" style={{ color: 'var(--muted)' }}>Change my address →</button>
+            </div>
           </div>
         ) : (
           <div>
@@ -756,7 +766,7 @@ function Wizard() {
                 </div>
               </div>
               <p className="pos-label mb-3" style={{ color: 'var(--muted)' }}>Short application · one question at a time · reviewed by the founder</p>
-              <button onClick={() => finishOnboarding('/app/zero-to-practice-builder/get-access')} className="pos-action">Get Early Access →</button>
+              <button onClick={proceedToApplication} className="pos-action">Get Early Access →</button>
               <button onClick={() => setQuizPhase('milestone')} className="pos-link text-sm mt-5 block" style={{ color: 'var(--muted)' }}>← Back</button>
             </div>
           ) : quizFailed ? (
@@ -766,7 +776,7 @@ function Wizard() {
               <p className="text-sm text-[var(--muted)] mb-5" style={{ maxWidth: '52ch' }}>Organic search is a long mission, not a sprint. Your website, first article and Google foundation stay yours either way — come back when the ten minutes a day are genuinely available.</p>
               <div className="flex flex-wrap gap-3">
                 <button onClick={() => { setQuizIdx(0); setQuizFailed(false); }} className="pos-action">Answer again</button>
-                <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-link" style={{ fontSize: 14 }}>Back to my control center →</button>
+                <button onClick={signOut} className="pos-link" style={{ fontSize: 14, color: 'var(--muted)' }}>Sign out</button>
               </div>
             </div>
           ) : (

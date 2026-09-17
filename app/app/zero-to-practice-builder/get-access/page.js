@@ -59,6 +59,10 @@ export default function GetAccessPage() {
   const answered = q ? (q.type === 'agreement' ? val === true : String(val ?? '').trim().length >= (q.minChars || 1)) : false;
   const setA = (v) => setAnswers((a) => ({ ...a, [q.id]: v }));
   const back = () => { setError(''); if (idx > 0) setIdx(idx - 1); };
+  const signOut = async () => {
+    try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch { /* ignore */ }
+    router.push('/login?entry=practice-os');
+  };
   const advance = () => {
     setError('');
     if (!answered) { setError(q.minChars ? `Please write at least ${q.minChars} characters.` : 'Please answer to continue.'); return; }
@@ -72,7 +76,17 @@ export default function GetAccessPage() {
         body: JSON.stringify({ answers, name: prefill.name, phone: prefill.phone, specialty: answers.specialty }),
       });
       const d = await res.json();
-      if (d.success) setSubmitted(true);
+      if (d.success) {
+        // Submitting the qualifying application is the true end of onboarding —
+        // only now does the control center stop sending them back to the wizard.
+        try {
+          await fetch('/api/practice-os/profile', {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+            body: JSON.stringify({ onboardComplete: true }),
+          });
+        } catch { /* non-blocking */ }
+        setSubmitted(true);
+      }
       else setError(d.error || 'Could not submit. Please try again.');
     } catch { setError('Something went wrong.'); }
     finally { setSubmitting(false); }
@@ -112,7 +126,7 @@ export default function GetAccessPage() {
         <div className="mt-6">
           <div className="flex items-center justify-between mb-2">
             <span className="pos-label" style={{ color: 'var(--green)' }}>Question {idx + 1} of {QUESTIONS.length}</span>
-            <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-link text-[13px]">Save &amp; exit</button>
+            <button onClick={signOut} className="pos-link text-[13px]" style={{ color: 'var(--muted)' }}>Sign out</button>
           </div>
           <div className="pos-meter mb-6"><span style={{ width: `${pct}%` }} /></div>
 
