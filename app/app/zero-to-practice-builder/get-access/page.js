@@ -248,9 +248,11 @@ function GrantedActions({ router, access }) {
         <p className="pos-label" style={{ color: 'var(--green)' }}>You&apos;re in</p>
         <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1" style={{ letterSpacing: '-0.02em' }}>Optimization is unlocked</h1>
         <p className="text-sm text-[var(--muted)] mt-2">{statusLine}</p>
+        <p className="text-[13.5px] text-[var(--ink)] mt-3" style={{ maxWidth: '58ch' }}>First, review the diseases you treat and their treatments — this is what we build your pages, posts and GBP services from.</p>
         {msg && <p className="text-[13px] text-[var(--muted)] mt-3">{msg}</p>}
         <div className="flex flex-wrap items-center gap-3 mt-4">
-          <button onClick={generateNext} disabled={busy} className="pos-action" style={{ opacity: busy ? 0.5 : 1 }}>
+          <button onClick={() => router.push('/app/zero-to-practice-builder/clusters')} className="pos-action">Review my diseases &amp; treatments →</button>
+          <button onClick={generateNext} disabled={busy} className="pos-card px-4 py-3 text-[14px] font-semibold" style={{ opacity: busy ? 0.5 : 1 }}>
             {busy ? 'Generating…' : '✨ Generate my next page'}
           </button>
           {showSubscribe && (
