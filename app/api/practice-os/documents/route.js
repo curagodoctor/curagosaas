@@ -34,6 +34,10 @@ export async function GET(request) {
       kind: d.kind || 'note',
       status: d.status || 'idea',
       plannedFor: d.plannedFor || '',
+      remindAt: d.remindAt || null,
+      // The Content Planner needs the full script body to edit inline; notes only
+      // need a stripped preview for the list.
+      content: d.kind === 'reel' ? (d.content || '') : undefined,
       createdAt: d.createdAt,
       updatedAt: d.updatedAt,
       // Notes may be rich text (HTML) — strip tags/entities for the list preview.
@@ -57,9 +61,14 @@ export async function POST(request) {
     const title = (body.title || '').trim() || 'Untitled';
     const content = typeof body.content === 'string' ? body.content : '';
     const kind = body.kind === 'reel' ? 'reel' : 'note';
+    const ALLOWED = ['idea', 'script', 'approved', 'scheduled', 'posted'];
     const document = await PracticeOsDocument.create({
       doctorId: doctor._id, title, content, kind,
-      ...(kind === 'reel' ? { status: body.status || 'approved', plannedFor: body.plannedFor || '' } : {}),
+      ...(kind === 'reel' ? {
+        status: ALLOWED.includes(body.status) ? body.status : 'idea',
+        plannedFor: body.plannedFor || '',
+        remindAt: body.remindAt ? new Date(body.remindAt) : null,
+      } : {}),
     });
     return NextResponse.json({ success: true, document });
   } catch (error) {

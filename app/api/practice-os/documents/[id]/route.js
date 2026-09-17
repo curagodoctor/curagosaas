@@ -37,8 +37,13 @@ export async function PUT(request, { params }) {
     if (typeof body.title === 'string') update.title = body.title.trim() || 'Untitled';
     if (typeof body.content === 'string') update.content = body.content;
     // Content Planner fields (reel scripts).
-    if (['idea', 'approved', 'scheduled', 'posted'].includes(body.status)) update.status = body.status;
+    if (['idea', 'script', 'approved', 'scheduled', 'posted'].includes(body.status)) update.status = body.status;
     if (typeof body.plannedFor === 'string') update.plannedFor = body.plannedFor;
+    // Self-reminder (nullable). Reset reminderSent when the time changes so it fires again.
+    if ('remindAt' in body) {
+      update.remindAt = body.remindAt ? new Date(body.remindAt) : null;
+      update.reminderSent = false;
+    }
     const document = await PracticeOsDocument.findOneAndUpdate(
       { _id: id, doctorId: doctor._id },
       { $set: update },

@@ -252,7 +252,40 @@ export async function GET(request) {
       }
     }
 
-    return NextResponse.json({ processed, sent, results });
+    // ---- Content Planner reminders ----------------------------------------
+    // Send any self-reminders the doctor set on a planned content item that are
+    // now due. Isolated so a failure here never affects the mission reminders.
+    let contentReminders = 0;
+    try {
+      const PracticeOsDocument = (await import('@/models/practice-os/PracticeOsDocument')).default;
+      const due = await PracticeOsDocument.find({
+        kind: 'reel', reminderSent: { $ne: true }, remindAt: { $ne: null, $lte: now },
+      }).limit(200).lean();
+      for (const d of due) {
+        try {
+          const doctor = await Doctor.findById(d.doctorId).select('email displayName name').lean();
+          if (doctor?.email) {
+            await sendPracticeOsReminderEmail({
+              email: doctor.email,
+              name: doctor.displayName || doctor.name,
+              subject: 'A content reminder from your planner',
+              heading: 'Time to work on your content',
+              body: `You set a reminder for "${d.title}". Open your Content Planner to refine, schedule, or record it.`,
+              ctaLabel: 'Open Content Planner',
+              ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://curago.in'}/app/zero-to-practice-builder/planner`,
+            });
+          }
+          await PracticeOsDocument.updateOne({ _id: d._id }, { $set: { reminderSent: true } });
+          contentReminders++;
+        } catch (itemErr) {
+          console.error(`[PracticeOS Reminders] Content reminder failed for ${d._id}:`, itemErr);
+        }
+      }
+    } catch (contentErr) {
+      console.error('[PracticeOS Reminders] Content reminders pass failed:', contentErr);
+    }
+
+    return NextResponse.json({ processed, sent, results, contentReminders });
   } catch (error) {
     console.error('[PracticeOS Reminders] Error:', error);
     return NextResponse.json(
