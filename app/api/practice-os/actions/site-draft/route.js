@@ -25,7 +25,11 @@ export async function GET(request) {
       liveSections: page.sections || [],
       draftMeta: page.draftMeta || null,
       versionCount: (page.versions || []).length,
-      versions: (page.versions || []).map((v, i) => ({ index: i, savedAt: v.savedAt, source: v.source, sectionCount: (v.sections || []).length })),
+      versions: (page.versions || []).map((v, i) => ({
+        index: i, savedAt: v.savedAt, source: v.source, sectionCount: (v.sections || []).length,
+        // Lightweight summary so the doctor can VIEW a version before restoring.
+        sections: (v.sections || []).map((s) => ({ type: s.type, title: s.config?.title || s.config?.heading || s.config?.aboutTitle || '' })),
+      })),
       aiGeneratedAt: page.aiGeneratedAt || null,
     });
   } catch (error) {

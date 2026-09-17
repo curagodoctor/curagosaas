@@ -12,6 +12,7 @@ export default function AIGeneratePage() {
   const [credits, setCredits] = useState(null); // { access, remaining }
   const [home, setHome] = useState(null);        // site-draft GET result
   const [busy, setBusy] = useState('');
+  const [viewIdx, setViewIdx] = useState(null);  // which version's sections are expanded
   const [msg, setMsg] = useState(null);          // { type:'ok'|'err', text }
   const [blogCtx, setBlogCtx] = useState('');
 
@@ -140,9 +141,22 @@ export default function AIGeneratePage() {
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Version history</p>
                 <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
                   {home.versions.map((v) => (
-                    <li key={v.index} className="flex items-center justify-between px-3 py-2 text-sm">
-                      <span className="text-gray-600">{v.source || 'version'} · {v.sectionCount} sections</span>
-                      <button onClick={() => draftAction('restore', v.index)} disabled={!!busy} className="text-blue-600 hover:underline disabled:opacity-50">Restore</button>
+                    <li key={v.index} className="px-3 py-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600">{v.source || 'version'} · {v.sectionCount} sections</span>
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => setViewIdx(viewIdx === v.index ? null : v.index)} className="text-gray-600 hover:underline">{viewIdx === v.index ? 'Hide' : 'View'}</button>
+                          <button onClick={() => draftAction('restore', v.index)} disabled={!!busy} className="text-blue-600 hover:underline disabled:opacity-50">Restore</button>
+                        </div>
+                      </div>
+                      {viewIdx === v.index && (
+                        <ol className="mt-2 pl-4 list-decimal text-xs text-gray-500 space-y-0.5">
+                          {(v.sections || []).map((s, si) => (
+                            <li key={si}><span className="font-medium text-gray-700">{s.type?.replace(/_/g, ' ')}</span>{s.title ? ` — ${s.title}` : ''}</li>
+                          ))}
+                          {(!v.sections || v.sections.length === 0) && <li className="list-none text-gray-400">No section details.</li>}
+                        </ol>
+                      )}
                     </li>
                   ))}
                 </ul>
