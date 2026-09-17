@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/access';
 import { assertHasCredits, chargeAiCredits, getRemainingCredits } from '@/lib/practice-os/aiCredits';
-import { runAssistant, isAiConfigured } from '@/lib/practice-os/ai';
+import { runAssistant, isAiConfigured, structureContent } from '@/lib/practice-os/ai';
 import { getDoctorProfileContext, getDoctorProfileFields, isProfileReadyForAi } from '@/lib/practice-os/profile';
 import { proposeSiteEdits, applySiteChanges } from '@/lib/practice-os/siteEdits';
 import PracticeOsChatMessage from '@/models/practice-os/PracticeOsChatMessage';
@@ -88,6 +88,21 @@ export async function POST(request) {
         return NextResponse.json({ success: true, reply: `${proposed.reply || 'Done.'} Saved as a draft (${changed}). [Review & publish →](/admin/dashboard/ai-generate)`, creditsRemaining: remaining });
       }
       return NextResponse.json({ success: true, reply: proposed.reply || "Tell me the specific change and I'll apply it — e.g. 'make the About section warmer' or 'add an FAQ about appointment timings'.", creditsRemaining: await getRemainingCredits(doctor._id) });
+    }
+
+    // Draft GBP content (posts / services / description) — the doctor copies it
+    // into their Google Business Profile.
+    if (/\b(gbp|google business|business profile|google post)\b/i.test(prompt) && /\b(post|service|services|description|write|draft|create|generate)\b/i.test(prompt)) {
+      const gen = await structureContent({
+        instruction: 'Write Google Business Profile content for this Indian doctor based on the request. Return JSON: {"heading": string (short), "text": string (<=1400 chars, plain, patient-friendly, NMC-compliant — no superlatives, no guarantees, no soliciting; end with a soft line like "Book an appointment to know more.")}. Ground it only in the doctor\'s profile — never invent services, prices or credentials.',
+        source: prompt,
+        profileFields,
+      });
+      if (gen.success && gen.data?.text) {
+        const { remaining } = await chargeAiCredits(doctor._id, { label: 'assistant-gbp', tokens: 0 });
+        const heading = gen.data.heading ? `**${gen.data.heading}**\n\n` : '';
+        return NextResponse.json({ success: true, reply: `Here's a GBP post you can copy into Google Business Profile:\n\n${heading}${gen.data.text}`, creditsRemaining: remaining });
+      }
     }
 
     const result = await runAssistant({ userPrompt: prompt, profileContext, profileFields, history });
