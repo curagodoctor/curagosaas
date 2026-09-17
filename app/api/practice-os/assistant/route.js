@@ -4,6 +4,7 @@ import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/acces
 import { assertHasCredits, chargeAiCredits, getRemainingCredits } from '@/lib/practice-os/aiCredits';
 import { runAssistant, isAiConfigured } from '@/lib/practice-os/ai';
 import { getDoctorProfileContext, getDoctorProfileFields, isProfileReadyForAi } from '@/lib/practice-os/profile';
+import { proposeSiteEdits, applySiteChanges } from '@/lib/practice-os/siteEdits';
 import PracticeOsChatMessage from '@/models/practice-os/PracticeOsChatMessage';
 
 export const runtime = 'nodejs';
@@ -70,8 +71,23 @@ export async function POST(request) {
     if (/\b(write|create|draft|generate|make|prepare)\b[^?]*\b(blog|article|page|post|educational)\b/i.test(prompt)) {
       return NextResponse.json({ success: true, reply: 'On it — drafting that page now. It will open for you to review and publish.', action: { type: 'write_page', topic: prompt }, creditsRemaining: await getRemainingCredits(doctor._id) });
     }
-    if (/\b(edit|change|update|redesign|rewrite)\b[^?]*\b(website|homepage|home page|site|section)\b/i.test(prompt)) {
-      return NextResponse.json({ success: true, reply: "You can edit your website with AI here — tell me the change and apply it in the builder.", action: { type: 'edit_website', link: '/admin/dashboard/ai-generate' }, creditsRemaining: await getRemainingCredits(doctor._id) });
+    if (/\b(edit|change|update|redesign|rewrite|add)\b[^?]*\b(website|homepage|home page|site|section|about|services|faq)\b/i.test(prompt)) {
+      const BookingPage = (await import('@/models/BookingPage')).default;
+      const page = await BookingPage.findOne({ doctorId: doctor._id, slug: 'home' });
+      if (!page) {
+        return NextResponse.json({ success: true, reply: "You don't have a website yet — build one first from the AI builder.", action: { type: 'edit_website', link: '/admin/dashboard/ai-generate' }, creditsRemaining: await getRemainingCredits(doctor._id) });
+      }
+      const proposed = await proposeSiteEdits({ sections: page.sections || [], message: prompt, profileFields, history });
+      if (proposed.ok && (proposed.edits.length || proposed.adds.length)) {
+        page.draftSections = applySiteChanges(page.sections || [], proposed.edits, proposed.adds);
+        page.draftMeta = { source: 'ai-assistant', createdAt: new Date() };
+        page.markModified('draftSections');
+        await page.save();
+        const { remaining } = await chargeAiCredits(doctor._id, { label: 'assistant-site-edit', tokens: proposed.usage?.total_tokens || 0 });
+        const changed = [...proposed.edits.map((e) => e.type), ...proposed.adds.map((a) => `new ${a.type}`)].join(', ');
+        return NextResponse.json({ success: true, reply: `${proposed.reply || 'Done.'} Saved as a draft (${changed}). [Review & publish →](/admin/dashboard/ai-generate)`, creditsRemaining: remaining });
+      }
+      return NextResponse.json({ success: true, reply: proposed.reply || "Tell me the specific change and I'll apply it — e.g. 'make the About section warmer' or 'add an FAQ about appointment timings'.", creditsRemaining: await getRemainingCredits(doctor._id) });
     }
 
     const result = await runAssistant({ userPrompt: prompt, profileContext, profileFields, history });
