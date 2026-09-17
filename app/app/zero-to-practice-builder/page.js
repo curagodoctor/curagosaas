@@ -87,6 +87,12 @@ export default function ControlCenter() {
   // so a doctor running multiple packs sees each pack's next mission, not just
   // the first. (#29)
   const todaysMissions = started.filter((p) => p.nextUp);
+  // The full pickable backlog across started packs — for calendar-paced packs
+  // this is every unlocked-but-incomplete task; for sequence packs it's the one
+  // next task. Each entry keeps its pack so we can link + label it.
+  const pendingTasks = started.flatMap((p) =>
+    ((p.pending && p.pending.length ? p.pending : (p.nextUp ? [p.nextUp] : [])).map((m) => ({ pack: p, m })))
+  );
   // Upcoming scheduled missions across packs, soonest first.
   const scheduled = started
     .filter((p) => p.scheduledFor && p.nextUp)
@@ -132,25 +138,27 @@ export default function ControlCenter() {
         </div>
       )}
 
-      {/* Pending tasks — accumulated daily missions across started packs the
-          doctor can pick up. Sits up top so it's the first actionable thing. */}
-      {todaysMissions.length > 0 && (
+      {/* Pending tasks — the pickable backlog across started packs. For a
+          calendar-paced pack this accumulates a task per day; sits up top as the
+          first actionable thing. */}
+      {pendingTasks.length > 0 && (
         <div className="mt-6">
-          <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)] mb-3">Pending tasks <span className="text-[var(--muted)]">· {todaysMissions.length}</span></h2>
+          <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)] mb-3">Pending tasks <span className="text-[var(--muted)]">· {pendingTasks.length}</span></h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {todaysMissions.map((p) => (
-              <Link key={p.id} href={`/app/zero-to-practice-builder/track?pack=${p.id}`} className="pos-card p-4 flex items-start gap-3 hover:shadow-md transition-shadow group" style={{ borderColor: 'var(--orange)' }}>
+            {pendingTasks.slice(0, 12).map(({ pack, m }) => (
+              <Link key={m.id} href={`/app/zero-to-practice-builder/focus/${m.id}?pack=${pack.id}`} className="pos-card p-4 flex items-start gap-3 hover:shadow-md transition-shadow group" style={{ borderColor: 'var(--orange)' }}>
                 <span className="w-9 h-9 rounded-xl grid place-items-center shrink-0" style={{ background: 'var(--orange-soft)' }}>
                   <svg className="w-[18px] h-[18px]" style={{ color: 'var(--orange)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[11px] text-[var(--muted)]">{p.title} · Day {p.nextUp.dayNumber}{p.nextUp.category ? ` · ${p.nextUp.category}` : ''}</p>
-                  <p className="font-semibold text-[14.5px] text-[var(--ink)] leading-snug mt-0.5">{p.nextUp.title}</p>
+                  <p className="text-[11px] text-[var(--muted)]">Day {m.dayNumber}{m.category ? ` · ${m.category}` : ''}</p>
+                  <p className="font-semibold text-[14.5px] text-[var(--ink)] leading-snug mt-0.5">{m.title}</p>
                   <span className="text-[13px] font-medium mt-1 inline-block" style={{ color: 'var(--orange)' }}>Start task →</span>
                 </div>
               </Link>
             ))}
           </div>
+          {pendingTasks.length > 12 && <p className="text-[12px] text-[var(--muted)] mt-2">+{pendingTasks.length - 12} more — open the pack to see all.</p>}
         </div>
       )}
 

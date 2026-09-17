@@ -26,8 +26,8 @@ if (!GO) {
 } else {
   await db.collection('frameworks').updateOne(
     { _id: fw._id },
-    { $set: { isActive: true, isPublished: true, tier: 'optimization', mode: 'mission', updatedAt: new Date() } },
+    { $set: { isActive: true, isPublished: true, tier: 'optimization', mode: 'mission', pacing: 'calendar', updatedAt: new Date() } },
   );
-  console.log('\nActivated + published. Granted doctors can now start the pack; missions unlock one per day.');
+  console.log('\nActivated + published (calendar-paced). Granted doctors can now start the pack; a new task unlocks each day and unfinished ones accumulate.');
 }
 await mongoose.disconnect();
