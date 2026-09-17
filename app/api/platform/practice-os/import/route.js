@@ -55,6 +55,18 @@ export async function POST(request) {
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer);
 
+    // --- 56-day "Rolling Daily Engine" format (a different template: Day_Number
+    //     + Mission_Category headers, no Mission_ID, plus Title/Success rotation
+    //     sheets). Detected and handled separately from Mission_Content_Master. ---
+    const engineSheet = workbook.getWorksheet('Rolling 56-Day Engine')
+      || workbook.worksheets.find((ws) => {
+        const hdr = buildColumnMap(ws.getRow(1));
+        return hdr.daynumber && hdr.missioncategory && !hdr.missionid;
+      });
+    if (engineSheet) {
+      return await importRollingEngine(workbook, engineSheet, { frameworkId, frameworkName });
+    }
+
     // --- locate the Mission_Content_Master sheet (by name, else the one whose
     //     header row contains Mission_ID) ---
     let missionSheet = workbook.worksheets.find(
@@ -375,4 +387,122 @@ export async function POST(request) {
     console.error('[Practice OS Import]', error);
     return NextResponse.json({ success: false, error: 'Failed to import missions' }, { status: 500 });
   }
+}
+
+// Import the "Rolling 56-Day Engine" workbook. One row = one daily mission; the
+// Title/Success columns reference rotation sheets, so we bake ONE fixed variation
+// per mission (deterministic per-category rotation). Upserts by { frameworkId,
+// code }. Mirrors scripts/import-56day-engine.mjs so CLI + UI stay in sync.
+async function importRollingEngine(workbook, sheet, { frameworkId, frameworkName }) {
+  // Resolve the target pack.
+  let framework;
+  if (frameworkId) {
+    framework = await Framework.findById(frameworkId);
+    if (!framework) return NextResponse.json({ success: false, error: 'Selected Builder Pack was not found. Refresh and choose a pack.' }, { status: 400 });
+  } else if (frameworkName) {
+    const fwSlug = slugify(frameworkName) || 'dominate-organic-search';
+    framework = await Framework.findOneAndUpdate(
+      { slug: fwSlug }, { $setOnInsert: { title: frameworkName, slug: fwSlug } },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+  } else {
+    return NextResponse.json({ success: false, error: 'Choose a Builder Pack to import into before uploading.' }, { status: 400 });
+  }
+
+  // Rotation maps: category -> [variations] (Category, Variation_Number, Text).
+  const readRot = (name) => {
+    const ws = workbook.getWorksheet(name);
+    const byCat = {};
+    if (ws) ws.eachRow((row, i) => {
+      if (i === 1) return;
+      const cat = String(row.getCell(1).text || '').trim();
+      const txt = String(row.getCell(3).text || '').trim();
+      if (cat && txt) (byCat[cat] = byCat[cat] || []).push(txt);
+    });
+    return byCat;
+  };
+  const titleRot = readRot('Title Rotations');
+  const successRot = readRot('Success Rotations');
+
+  const col = buildColumnMap(sheet.getRow(1));
+  // A cell that is ONLY a template token ("{{primary_button_text}}") carries no
+  // real content — treat as empty (kept: real text with an inline {{treatment_one}}).
+  const cellOf = (row, key) => {
+    const idx = col[key];
+    if (!idx) return '';
+    const s = String(row.getCell(idx).text || '').trim();
+    return /^\{\{[^}]*\}\}(\s*\(.*\))?$/.test(s) ? '' : s;
+  };
+
+  const catOccur = {};
+  const perDay = {};
+  let created = 0, updated = 0;
+  const errors = [];
+  const rows = [];
+  sheet.eachRow((row, i) => { if (i > 1) rows.push(row); });
+
+  for (const row of rows) {
+    try {
+      const dayRaw = String(row.getCell(col.daynumber).text || '').trim();
+      const m = dayRaw.match(/(\d+)/);
+      if (!m) continue;
+      const day = parseInt(m[1], 10);
+      const category = String(row.getCell(col.missioncategory).text || '').trim();
+      if (!category) continue;
+
+      perDay[day] = (perDay[day] || 0) + 1;
+      const missionNumber = perDay[day];
+      const occ = (catOccur[category] = (catOccur[category] || 0));
+      catOccur[category] = occ + 1;
+
+      const titles = titleRot[category] || [];
+      const successes = successRot[category] || [];
+      const bakedTitle = titles.length ? titles[occ % titles.length] : `${category} — Day ${day}`;
+      const bakedSuccess = successes.length ? successes[occ % successes.length] : 'Published — nicely done.';
+      const description = cellOf(row, 'description');
+
+      const inputs = buildInputs([
+        { label: cellOf(row, 'input1'), compulsory: cellOf(row, 'input1compulsory') },
+        { label: cellOf(row, 'input2'), compulsory: cellOf(row, 'input2compulsory') },
+        { label: cellOf(row, 'input3'), compulsory: cellOf(row, 'input3compulsory') },
+        { label: cellOf(row, 'input4'), compulsory: cellOf(row, 'input4compulsory') },
+      ]);
+      const code = `dos-day${day}-m${missionNumber}`;
+      const doc = {
+        frameworkId: framework._id,
+        weekNumber: Math.ceil(day / 7),
+        dayNumber: day,
+        missionNumber,
+        code,
+        category,
+        missionText: bakedTitle,
+        briefDescription: description,
+        objective: description,
+        purpose: description,
+        aiContext: { systemPrompt: cellOf(row, 'promptoutputwithplaceholder'), model: '' },
+        inputs,
+        successMessage: bakedSuccess,
+        scoreComponent: /blog/i.test(category) ? 'website' : 'gbp',
+        estimatedMinutes: 30,
+        reward: { points: 10, badge: '', message: bakedSuccess },
+        status: parseStatus(cellOf(row, 'status')),
+        isActive: true,
+        unlockDelayDays: 1,
+        meta: { source: 'rolling-56day-engine', instructionNote: cellOf(row, 'missioninputsfromdoctor') },
+      };
+
+      const existing = await Mission.findOne({ frameworkId: framework._id, code });
+      if (existing) { await Mission.updateOne({ _id: existing._id }, { $set: doc }); updated += 1; }
+      else { await Mission.create(doc); created += 1; }
+    } catch (rowError) {
+      errors.push({ error: rowError.message });
+    }
+  }
+
+  await Framework.updateOne({ _id: framework._id }, { $set: { totalDays: 56 } });
+  return NextResponse.json({
+    success: true, created, updated, skipped: errors.length,
+    total: created + updated + errors.length, frameworks: 1, modules: 0, resources: 0,
+    format: 'rolling-56day-engine', errors: errors.slice(0, 20),
+  });
 }

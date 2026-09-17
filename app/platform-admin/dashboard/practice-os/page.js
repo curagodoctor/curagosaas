@@ -271,6 +271,7 @@ function BulkUpload({ frameworks = [], onImported }) {
         <div className="space-y-1">
           <p className="font-semibold">Spreadsheet guidelines</p>
           <p>One row = one <strong>module</strong>. Rows that share the same <strong>Week + Day</strong> become one mission with multiple modules. Content imports into the <strong>Builder Pack you select below</strong> — nothing is created automatically. Re-uploading updates existing missions in place.</p>
+          <p className="text-blue-700">Also supported: the <strong>Rolling 56-Day Engine</strong> format (Day_Number + Mission_Category with Title/Success rotation sheets) — auto-detected, one row per daily task, rotations baked in.</p>
         </div>
       </div>
 
