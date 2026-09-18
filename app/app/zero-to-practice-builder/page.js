@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import WorkspaceDrawer from '@/components/practice-os/WorkspaceDrawer';
 import PosNav from '@/components/practice-os/PosNav';
 import StreakCalendar from '@/components/practice-os/StreakCalendar';
 import PendingWorkPrompt from '@/components/practice-os/PendingWorkPrompt';
@@ -270,8 +269,8 @@ export default function ControlCenter() {
         </aside>
       </div>
 
-      {/* Notes/workspace, available on every screen */}
-      <WorkspaceDrawer />
+      {/* Notes/workspace + assistant now mount globally in the app layout via the
+          single floating FAB. */}
     </div>
   );
 }

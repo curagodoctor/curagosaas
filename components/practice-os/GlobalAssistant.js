@@ -55,6 +55,13 @@ export default function GlobalAssistant() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+
+  // The single floating FAB opens the assistant via this event (no own launcher).
+  useEffect(() => {
+    const openAssistant = () => setOpen(true);
+    window.addEventListener('pos:open-assistant', openAssistant);
+    return () => window.removeEventListener('pos:open-assistant', openAssistant);
+  }, []);
   const [editOpen, setEditOpen] = useState(false); // inline-edit sub-window
   const [editText, setEditText] = useState('');
   const scrollRef = useRef(null);
@@ -132,16 +139,7 @@ export default function GlobalAssistant() {
 
   return (
     <div style={VARS}>
-      {/* Collapsed launcher */}
-      {!open && (
-        <button onClick={() => setOpen(true)} aria-label="Open assistant"
-          className="fixed z-[60] bottom-5 right-5 flex items-center gap-2 rounded-full shadow-lg pl-4 pr-5 py-3"
-          style={{ background: 'var(--ga-green)', color: '#fff' }}>
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.84L3 20l1.05-3.5A7.9 7.9 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-          <span className="text-sm font-semibold">Assistant</span>
-        </button>
-      )}
-
+      {/* Launcher removed — opened by the single floating FAB. */}
       {open && (
         <div className="fixed z-[60] flex flex-col shadow-2xl bottom-0 right-0 left-0 h-[80vh] rounded-t-2xl sm:bottom-5 sm:right-5 sm:left-auto sm:w-[380px] sm:h-[560px] sm:rounded-2xl"
           style={{ background: 'var(--ga-card)', border: '1px solid var(--ga-rule)' }}>
