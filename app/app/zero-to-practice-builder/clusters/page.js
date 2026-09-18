@@ -10,26 +10,23 @@ import PosNav from '@/components/practice-os/PosNav';
 //                is CONTINUOUS across diseases (01, 02, 03…).
 //  2. gbp      — post the approved treatments as GBP services.
 const TREAT_CAP = 20;
-const FOREST = '#0a3d16';
 const LEAF_SOFT = 'var(--green-soft, rgba(9,107,23,.09))';
 
 function ClustersInner() {
   const router = useRouter();
   const [clusters, setClusters] = useState(null);
   const [idx, setIdx] = useState(0);
-  const [stage, setStage] = useState('disease'); // 'disease' | 'gbp'
   const [generating, setGenerating] = useState(false);
   const [genErr, setGenErr] = useState('');
   const [busy, setBusy] = useState('');
   const [newTreat, setNewTreat] = useState('');
-  const [copied, setCopied] = useState(false);
   const triedGen = useRef(false);
 
   const doGenerate = useCallback(async () => {
     setGenerating(true); setGenErr('');
     try {
       const d = await fetch('/api/practice-os/clusters/generate', { method: 'POST', credentials: 'include' }).then((r) => r.json());
-      if (d.success) { setClusters(d.clusters || []); setIdx(0); setStage('disease'); }
+      if (d.success) { setClusters(d.clusters || []); setIdx(0); }
       else if (d.error === 'PaymentRequired') setGenErr('This is part of the optimization program — request access first.');
       else if (d.error === 'NoCredits') setGenErr(d.message || "You've used today's AI credits.");
       else setGenErr(d.error || 'Could not generate your diseases.');
@@ -52,7 +49,6 @@ function ClustersInner() {
   const serialOffset = (clusters || []).slice(0, idx).reduce((n, c) => n + (c.treatments?.length || 0), 0);
   const approvedClusters = (clusters || []).filter((c) => c.approved);
   const approvedCount = approvedClusters.length;
-  const serviceLines = approvedClusters.flatMap((c) => (c.treatments || []).map((t) => `${t.name} — ${c.name}`));
 
   const patchLocal = (id, body) => setClusters((arr) => arr.map((c) => c._id === id ? { ...c, ...body } : c));
   const save = async (id, body) => {
@@ -89,13 +85,9 @@ function ClustersInner() {
   const approveAndContinue = async () => {
     if (!cur) return;
     await save(cur._id, { name: cur.name, treatments: cur.treatments, approved: true });
-    if (idx >= total - 1) { setStage('gbp'); window.scrollTo(0, 0); }
-    else { setIdx(idx + 1); window.scrollTo(0, 0); }
-  };
-
-  const copyServices = () => {
-    const text = serviceLines.map((l, i) => `${String(i + 1).padStart(2, '0')}. ${l}`).join('\n');
-    try { navigator.clipboard?.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* ignore */ }
+    // Last disease approved → straight into the content/control center.
+    if (idx >= total - 1) { router.push('/app/zero-to-practice-builder'); return; }
+    setIdx(idx + 1); window.scrollTo(0, 0);
   };
 
   const mono = { fontFamily: 'var(--font-mono, ui-monospace, monospace)' };
@@ -105,7 +97,7 @@ function ClustersInner() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--paper)' }}>
       <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-12 max-w-[860px] mx-auto">
-        <PosNav breadcrumb={stage === 'gbp' ? 'Google Business Profile' : 'Practice map review'} />
+        <PosNav breadcrumb="Practice map review" />
 
         {/* ---- empty / generating ---- */}
         {clusters.length === 0 ? (
@@ -123,7 +115,7 @@ function ClustersInner() {
               </>
             )}
           </div>
-        ) : stage === 'disease' && cur ? (
+        ) : cur ? (
           <>
             {/* ---- DISEASE REVIEW ---- */}
             <div className="pos-card" style={{ borderRadius: 24, boxShadow: '0 22px 56px rgba(9,107,23,.06)', overflow: 'hidden' }}>
@@ -192,57 +184,7 @@ function ClustersInner() {
               </div>
             </div>
           </>
-        ) : (
-          <>
-            {/* ---- GBP: POST AS SERVICES ---- */}
-            <div style={{ background: FOREST, color: '#fff', borderRadius: 30, padding: 'clamp(22px,3vw,38px)' }} className="mt-2">
-              <div style={{ ...mono, fontSize: 11, letterSpacing: '.18em', color: 'rgba(255,255,255,.75)', fontWeight: 600, marginBottom: 12 }}>NEXT ACTION · GOOGLE BUSINESS PROFILE</div>
-              <h1 style={{ fontSize: 'clamp(24px,3.2vw,38px)', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1.05, margin: '0 0 12px' }}>Your Google Business Profile needs an update.</h1>
-              <p style={{ fontSize: 16.5, color: 'rgba(255,255,255,.82)', lineHeight: 1.6, margin: 0, maxWidth: 640 }}>You approved {approvedCount} disease{approvedCount === 1 ? '' : 's'} and {serviceLines.length} treatment{serviceLines.length === 1 ? '' : 's'}. Post them as services on your profile so the local clinic matches the global one.</p>
-            </div>
-
-            <div className="pos-card mt-4" style={{ borderRadius: 30, boxShadow: '0 22px 56px rgba(10,77,24,.07)', padding: 'clamp(20px,2.6vw,32px)', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div className="flex flex-wrap items-center justify-between gap-2.5">
-                <span style={{ ...mono, fontSize: 10.5, letterSpacing: '.14em', color: 'var(--muted)' }}>SERVICES TO POST</span>
-                <span style={{ ...mono, fontSize: 10.5, color: 'var(--muted)' }}>{serviceLines.length} ITEMS</span>
-              </div>
-              <div style={{ border: '1px solid var(--rule)', borderRadius: 16, background: 'var(--paper)', padding: 18, maxHeight: 340, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 7 }}>
-                {serviceLines.map((l, i) => (
-                  <div key={i} className="flex gap-2.5 items-baseline">
-                    <span style={{ flex: '0 0 28px', ...mono, fontSize: 11.5, color: 'var(--muted)' }}>{String(i + 1).padStart(2, '0')}</span>
-                    <span style={{ fontSize: 14.5, color: 'var(--ink)', lineHeight: 1.5 }}>{l}</span>
-                  </div>
-                ))}
-                {serviceLines.length === 0 && <span style={{ fontSize: 13.5, color: 'var(--muted)' }}>No approved treatments yet.</span>}
-              </div>
-
-              <div className="flex flex-wrap gap-2.5 items-center">
-                <button onClick={copyServices} style={{ background: FOREST, color: '#fff', border: 0, fontWeight: 700, fontSize: 15.5, padding: '15px 26px', borderRadius: 999, cursor: 'pointer', whiteSpace: 'nowrap' }}>{copied ? 'Copied ✓' : 'Copy all services'}</button>
-                <a href="https://business.google.com/" target="_blank" rel="noreferrer" style={{ background: 'var(--orange)', color: '#fff', fontWeight: 700, fontSize: 15.5, padding: '15px 26px', borderRadius: 999, textDecoration: 'none', whiteSpace: 'nowrap' }}>Open Google Business Profile →</a>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid var(--rule)', paddingTop: 16 }}>
-                <div style={{ ...mono, fontSize: 10.5, letterSpacing: '.14em', color: 'var(--muted)' }}>HOW TO POST</div>
-                {[
-                  ['01', 'Open your Google Business Profile and go to Edit profile → Services.'],
-                  ['02', 'Paste one service per line — keep the disease name in the description so the service matches what patients search.'],
-                  ['03', 'Link each service back to the matching page on your website.'],
-                  ['04', 'Save. Google usually reflects new services within a day or two.'],
-                ].map(([n, t]) => (
-                  <div key={n} className="flex gap-2.5 items-start">
-                    <span style={{ flex: '0 0 auto', ...mono, fontSize: 11.5, color: 'var(--green)', fontWeight: 700, marginTop: 2 }}>{n}</span>
-                    <span style={{ fontSize: 14.5, color: 'var(--muted)', lineHeight: 1.55 }}>{t}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2.5 items-center mt-4">
-              <button onClick={() => { setStage('disease'); setIdx(0); window.scrollTo(0, 0); }} style={{ background: '#fff', color: 'var(--muted)', border: '1px solid var(--rule)', fontWeight: 600, fontSize: 15, padding: '15px 22px', borderRadius: 999, cursor: 'pointer', whiteSpace: 'nowrap' }}>← Back to disease review</button>
-              <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-action">Continue to my content →</button>
-            </div>
-          </>
-        )}
+        ) : null}
       </div>
     </div>
   );
