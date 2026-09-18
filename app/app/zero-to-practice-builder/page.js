@@ -87,7 +87,6 @@ export default function ControlCenter() {
   // Today's mission = the next-up mission for EVERY started pack that has one,
   // so a doctor running multiple packs sees each pack's next mission, not just
   // the first. (#29)
-  const todaysMissions = started.filter((p) => p.nextUp);
   // The full pickable backlog across started packs — for calendar-paced packs
   // this is every unlocked-but-incomplete task; for sequence packs it's the one
   // next task. Each entry keeps its pack so we can link + label it.
@@ -99,14 +98,11 @@ export default function ControlCenter() {
     .filter((p) => p.scheduledFor && p.nextUp)
     .sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor));
   const firstName = (name || 'there').replace(/^Dr\.?\s*/i, 'Dr. ').split(' ').slice(0, 2).join(' ');
-  // The Dominate daily engine (optimization tier). "Review my content" and the
-  // pending tasks open the day's task in the MODULES UI (not the packs flow).
-  const dominatePack = (packs || []).find((p) => p.tier === 'optimization');
+  // The Dominate daily engine opens each day's task in the new clean /day
+  // interface (the AI-content screen), NOT the old modules/track/focus UI.
   const reviewContentHref = pendingTasks[0]
     ? `/app/zero-to-practice-builder/day/${pendingTasks[0].m.id}?pack=${pendingTasks[0].pack.id}`
-    : dominatePack
-      ? `/app/zero-to-practice-builder/track?pack=${dominatePack.id}`
-      : '/app/zero-to-practice-builder/content';
+    : '/app/zero-to-practice-builder/content';
 
   const cycleDaysLeft = accessExpiry ? Math.max(0, Math.ceil((new Date(accessExpiry) - Date.now()) / 86400000)) : null;
 
@@ -243,24 +239,8 @@ export default function ControlCenter() {
 
         <aside className="min-w-0 order-1 lg:order-2">
           <div className="lg:sticky lg:top-6 space-y-4">
-            {/* Today's mission — one per started pack (most actionable, so first) */}
-            {todaysMissions.length > 0 && (
-              <div className="pos-card p-5" style={{ background: 'linear-gradient(150deg, #fff, var(--green-soft))', borderColor: 'var(--green)' }}>
-                <p className="pos-label mb-3" style={{ color: 'var(--orange)' }}>{todaysMissions.length === 1 ? "Today's mission" : "Today's missions"}</p>
-                <div className="space-y-4">
-                  {todaysMissions.map((p, i) => (
-                    <div key={p.id} className={i > 0 ? 'pt-4 border-t' : ''} style={i > 0 ? { borderColor: 'var(--rule-soft)' } : undefined}>
-                      <p className="text-[11px] text-[var(--muted)] mb-0.5">{p.title} · Day {p.nextUp.dayNumber}</p>
-                      <p className="font-semibold text-[15px] text-[var(--ink)] leading-snug mb-3">{p.nextUp.title}</p>
-                      <Link href={`/app/zero-to-practice-builder/track?pack=${p.id}`} className="pos-action pos-focusable block text-center" style={{ background: 'var(--green)' }}>
-                        Open mission
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
+            {/* (Today's task lives in the "Pending tasks" section up top — it opens
+                the new /day interface, so no duplicate mission card here.) */}
             <p className="pos-label">Your progress</p>
 
             {/* XP + streak */}

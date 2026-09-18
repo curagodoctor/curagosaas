@@ -22,6 +22,8 @@ const BUILDER_PREFIXES = [
   '/app/zero-to-practice-builder/onboard',
   '/app/zero-to-practice-builder/focus',
   '/app/zero-to-practice-builder/content',
+  '/app/zero-to-practice-builder/day',
+  '/app/zero-to-practice-builder/clusters',
 ];
 
 // Render assistant text with markdown links [label](url) and **bold** as real
