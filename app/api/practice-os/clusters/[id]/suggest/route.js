@@ -33,10 +33,16 @@ export async function POST(request, { params }) {
     const suggested = Array.isArray(gen.data?.treatments) ? gen.data.treatments.map((t) => String(t).trim()).filter(Boolean) : [];
     if (!suggested.length) return NextResponse.json({ success: false, error: 'No suggestions — try adding treatments manually.' }, { status: 502 });
 
-    // Merge (dedupe case-insensitively), keeping existing entries + their source.
-    const have = new Set(cluster.treatments.map((t) => t.name.toLowerCase()));
-    for (const name of suggested) {
-      if (!have.has(name.toLowerCase())) { cluster.treatments.push({ name, source: 'ai' }); have.add(name.toLowerCase()); }
+    const body = await request.json().catch(() => ({}));
+    if (body.replace) {
+      // "Regenerate with AI" — replace this disease's treatments with fresh ones.
+      cluster.treatments = suggested.slice(0, 2).map((name) => ({ name, source: 'ai' }));
+    } else {
+      // Merge (dedupe case-insensitively), keeping existing entries + their source.
+      const have = new Set(cluster.treatments.map((t) => t.name.toLowerCase()));
+      for (const name of suggested) {
+        if (!have.has(name.toLowerCase())) { cluster.treatments.push({ name, source: 'ai' }); have.add(name.toLowerCase()); }
+      }
     }
     await cluster.save();
     const { remaining } = await chargeAiCredits(doctor._id, { label: 'cluster-suggest', tokens: gen.usage?.total_tokens || 0 });
