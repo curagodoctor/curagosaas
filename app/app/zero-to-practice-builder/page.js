@@ -217,13 +217,15 @@ export default function ControlCenter() {
         <div className="min-w-0 order-2 lg:order-1 space-y-4">
           <WebsiteStats />
           <StreakCalendar />
-          {/* Builder Packs — heading + list shown ONLY when the doctor actually
-              owns a pack; hidden entirely otherwise. */}
-          {owned.length > 0 && (
+          {/* Builder Packs — only real curriculum packs. The Dominate Organic
+              Search daily engine is optimization-tier and is NOT a pack: it's the
+              chatbot content engine (surfaced as Pending tasks above), so it's
+              excluded here. */}
+          {owned.filter((p) => p.tier !== 'optimization').length > 0 && (
             <div>
               <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)] mb-3 mt-2">Your packs</h2>
               <div className="flex flex-col gap-5">
-                {owned.map((p) => <PackCard key={p.id} pack={p} />)}
+                {owned.filter((p) => p.tier !== 'optimization').map((p) => <PackCard key={p.id} pack={p} />)}
               </div>
             </div>
           )}
