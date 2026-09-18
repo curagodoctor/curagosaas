@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor } from '@/lib/practice-os/access';
 import BlogArticle from '@/models/BlogArticle';
 import BookingPage from '@/models/BookingPage';
+import Doctor from '@/models/Doctor';
 
 export const runtime = 'nodejs';
 
@@ -14,11 +15,21 @@ export async function GET(request) {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
 
-    const [blogDrafts, pageDrafts] = await Promise.all([
+    const [blogDrafts, pageDrafts, publishedBlogs, doc] = await Promise.all([
       BlogArticle.find({ doctorId: doctor._id, status: 'draft' }).select('title excerpt updatedAt createdAt').sort({ createdAt: 1 }).lean(),
       // A page with AI draft sections waiting for approval.
       BookingPage.countDocuments({ doctorId: doctor._id, 'draftSections.0': { $exists: true } }).catch(() => 0),
+      // Recently published articles — for the control-center preview.
+      BlogArticle.find({ doctorId: doctor._id, status: 'published' }).select('title slug publishedAt updatedAt').sort({ publishedAt: -1, updatedAt: -1 }).limit(6).lean(),
+      Doctor.findById(doctor._id).select('subdomain customDomain customDomainVerified').lean(),
     ]);
+
+    const base = doc?.customDomain && doc?.customDomainVerified ? `https://${doc.customDomain}` : (doc?.subdomain ? `https://${doc.subdomain}.curago.in` : '');
+    const published = (publishedBlogs || []).map((b) => ({
+      id: String(b._id), title: b.title, slug: b.slug,
+      url: base ? `${base}/blog/${b.slug}` : `/blog/${b.slug}`,
+      publishedAt: b.publishedAt || b.updatedAt,
+    }));
 
     const items = blogDrafts.map((b) => ({ type: 'article', title: b.title, excerpt: String(b.excerpt || '').slice(0, 180), id: String(b._id) }));
     const count = items.length + (pageDrafts || 0);
@@ -30,7 +41,7 @@ export async function GET(request) {
     }
     const state = count === 0 ? 'clear' : (oldestDays >= 2 ? 'backlog' : 'ready');
 
-    return NextResponse.json({ success: true, count, state, oldestDays, articles: items.slice(0, 5), pageDrafts: pageDrafts || 0 });
+    return NextResponse.json({ success: true, count, state, oldestDays, articles: items.slice(0, 5), pageDrafts: pageDrafts || 0, published });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     console.error('[pending-work]', error);

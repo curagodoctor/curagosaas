@@ -9,6 +9,7 @@ import StreakCalendar from '@/components/practice-os/StreakCalendar';
 import PendingWorkPrompt from '@/components/practice-os/PendingWorkPrompt';
 import WebsiteStats from '@/components/practice-os/WebsiteStats';
 import EngagementNudges from '@/components/practice-os/EngagementNudges';
+import PublishedContent from '@/components/practice-os/PublishedContent';
 import { UsernamePicker } from './_username';
 
 // The Control Center — the logged-in landing. Left: welcome + the doctor's
@@ -98,6 +99,14 @@ export default function ControlCenter() {
     .filter((p) => p.scheduledFor && p.nextUp)
     .sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor));
   const firstName = (name || 'there').replace(/^Dr\.?\s*/i, 'Dr. ').split(' ').slice(0, 2).join(' ');
+  // The Dominate daily engine (optimization tier). "Review my content" and the
+  // pending tasks open the day's task in the MODULES UI (not the packs flow).
+  const dominatePack = (packs || []).find((p) => p.tier === 'optimization');
+  const reviewContentHref = pendingTasks[0]
+    ? `/app/zero-to-practice-builder/focus/${pendingTasks[0].m.id}?pack=${pendingTasks[0].pack.id}`
+    : dominatePack
+      ? `/app/zero-to-practice-builder/track?pack=${dominatePack.id}`
+      : '/app/zero-to-practice-builder/content';
 
   const cycleDaysLeft = accessExpiry ? Math.max(0, Math.ceil((new Date(accessExpiry) - Date.now()) / 86400000)) : null;
 
@@ -134,7 +143,7 @@ export default function ControlCenter() {
             <p className="text-[15px] font-semibold text-[var(--ink)] mt-1">Dominate Organic Search{cycleDaysLeft != null ? ` — ${cycleDaysLeft} days left this cycle` : ''}</p>
             <p className="text-[13px] text-[var(--muted)] mt-0.5">We prepare your practice&apos;s work; you review and approve it. 28-day cycle.</p>
           </div>
-          <button onClick={() => router.push('/app/zero-to-practice-builder/content')} className="pos-action shrink-0 self-start sm:self-auto">Review my content →</button>
+          <button onClick={() => router.push(reviewContentHref)} className="pos-action shrink-0 self-start sm:self-auto">Review my content →</button>
         </div>
       )}
 
@@ -215,6 +224,7 @@ export default function ControlCenter() {
           Actionable items (today's mission) come first on mobile. */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 lg:gap-8 mt-8">
         <div className="min-w-0 order-2 lg:order-1 space-y-4">
+          <PublishedContent />
           <WebsiteStats />
           <StreakCalendar />
           {/* Builder Packs — only real curriculum packs. The Dominate Organic
