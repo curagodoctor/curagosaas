@@ -499,7 +499,20 @@ async function importRollingEngine(workbook, sheet, { frameworkId, frameworkName
     }
   }
 
-  await Framework.updateOne({ _id: framework._id }, { $set: { totalDays: 56 } });
+  // Configure the framework as a live daily-engine pack so an admin upload
+  // matches customer usage with no manual DB steps: optimization tier (behind the
+  // access grant), calendar pacing (a task unlocks each day and unfinished ones
+  // accumulate), mission mode, and published + active so it's immediately usable.
+  await Framework.updateOne(
+    { _id: framework._id },
+    { $set: { totalDays: 56, tier: 'optimization', mode: 'mission', pacing: 'calendar', isActive: true, isPublished: true } },
+  );
+  // There is ONE live daily engine at a time. Retire any other optimization packs
+  // so a granted doctor auto-enrolls in this one only (no duplicate daily tasks).
+  await Framework.updateMany(
+    { _id: { $ne: framework._id }, tier: 'optimization' },
+    { $set: { isActive: false, isPublished: false } },
+  );
   return NextResponse.json({
     success: true, created, updated, skipped: errors.length,
     total: created + updated + errors.length, frameworks: 1, modules: 0, resources: 0,
