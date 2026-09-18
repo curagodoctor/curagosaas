@@ -24,6 +24,10 @@ export default function ControlCenter() {
   const [leaderboard, setLeaderboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pendingOpen, setPendingOpen] = useState(true);
+  // Whether the doctor has approved their disease/treatment map yet. Until they
+  // do, the daily content has nothing real to draft from — so we route them to
+  // the disease review first.
+  const [diseasesReviewed, setDiseasesReviewed] = useState(true);
   // §11 — the leaderboard join is compulsory, but placed at the OPTIMIZATION
   // boundary: only doctors who've been granted access must pick a name before
   // proceeding. Free/setup doctors aren't gated.
@@ -57,6 +61,14 @@ export default function ControlCenter() {
         let granted = false;
         if (aRes.ok) { const a = await aRes.json(); granted = !!a.granted; setAccessStatus(a.status || 'none'); setAccessExpiry(a.access?.expiresAt || null); }
         if (uRes.ok) { const u = await uRes.json(); if (u.success && !u.username && granted) setNeedsUsername(true); }
+        // Granted doctors must map their diseases + treatments before any daily
+        // content — check whether they've approved any cluster yet.
+        if (granted) {
+          try {
+            const cl = await fetch('/api/practice-os/clusters', { credentials: 'include' }).then((r) => r.json());
+            setDiseasesReviewed(cl.success && (cl.clusters || []).some((c) => c.approved));
+          } catch { /* ignore */ }
+        }
       } finally {
         setLoading(false);
       }
@@ -98,11 +110,13 @@ export default function ControlCenter() {
     .filter((p) => p.scheduledFor && p.nextUp)
     .sort((a, b) => new Date(a.scheduledFor) - new Date(b.scheduledFor));
   const firstName = (name || 'there').replace(/^Dr\.?\s*/i, 'Dr. ').split(' ').slice(0, 2).join(' ');
-  // The Dominate daily engine opens each day's task in the new clean /day
-  // interface (the AI-content screen), NOT the old modules/track/focus UI.
-  const reviewContentHref = pendingTasks[0]
-    ? `/app/zero-to-practice-builder/day/${pendingTasks[0].m.id}?pack=${pendingTasks[0].pack.id}`
-    : '/app/zero-to-practice-builder/content';
+  // Granted doctors do the disease/treatment review FIRST; only then does the
+  // daily content open in the /day interface.
+  const reviewContentHref = !diseasesReviewed
+    ? '/app/zero-to-practice-builder/clusters'
+    : pendingTasks[0]
+      ? `/app/zero-to-practice-builder/day/${pendingTasks[0].m.id}?pack=${pendingTasks[0].pack.id}`
+      : '/app/zero-to-practice-builder/content';
 
   const cycleDaysLeft = accessExpiry ? Math.max(0, Math.ceil((new Date(accessExpiry) - Date.now()) / 86400000)) : null;
 
@@ -137,16 +151,20 @@ export default function ControlCenter() {
           <div>
             <span className="pos-label" style={{ color: 'var(--green)' }}>Your pack · active</span>
             <p className="text-[15px] font-semibold text-[var(--ink)] mt-1">Dominate Organic Search{cycleDaysLeft != null ? ` — ${cycleDaysLeft} days left this cycle` : ''}</p>
-            <p className="text-[13px] text-[var(--muted)] mt-0.5">We prepare your practice&apos;s work; you review and approve it. 28-day cycle.</p>
+            <p className="text-[13px] text-[var(--muted)] mt-0.5">
+              {diseasesReviewed
+                ? 'We prepare your practice’s work; you review and approve it. 28-day cycle.'
+                : 'First, review the diseases you treat and their treatments — everything we draft is built from these.'}
+            </p>
           </div>
-          <button onClick={() => router.push(reviewContentHref)} className="pos-action shrink-0 self-start sm:self-auto">Review my content →</button>
+          <button onClick={() => router.push(reviewContentHref)} className="pos-action shrink-0 self-start sm:self-auto">{diseasesReviewed ? 'Review my content →' : 'Review my diseases & treatments →'}</button>
         </div>
       )}
 
       {/* Pending tasks — the pickable backlog across started packs. For a
           calendar-paced pack this accumulates a task per day; sits up top as the
           first actionable thing. */}
-      {pendingTasks.length > 0 && (
+      {pendingTasks.length > 0 && diseasesReviewed && (
         <div className="mt-6">
           <button onClick={() => setPendingOpen((v) => !v)} className="w-full flex items-center justify-between mb-3 group" aria-expanded={pendingOpen}>
             <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)]">Pending tasks <span className="text-[var(--orange)]">· {pendingTasks.length}</span></h2>

@@ -23,9 +23,10 @@ export default function ContentPage() {
       ]);
       // Content is generated FROM the approved diseases + treatments — so the
       // disease-cluster review (the metadata step) must be done first. If the
-      // doctor has clusters but hasn't approved any yet, send them there.
+      // doctor hasn't approved any disease yet (none exist or none approved),
+      // send them to the review.
       const clusters = cl.success ? (cl.clusters || []) : [];
-      if (clusters.length > 0 && !clusters.some((c) => c.approved)) {
+      if (acc.granted && !clusters.some((c) => c.approved)) {
         router.replace('/app/zero-to-practice-builder/clusters');
         return;
       }
