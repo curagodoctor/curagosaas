@@ -4,6 +4,23 @@ import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import PosNav from '@/components/practice-os/PosNav';
 
+// The assistant writes light Markdown. GBP posts / services are copy-pasted into
+// Google, which shows literal ** and ### — so flatten Markdown to clean plain
+// text for copying.
+function toPlainText(md) {
+  return String(md || '')
+    .replace(/^\s*#{1,6}\s+/gm, '')                 // headings
+    .replace(/\*\*([^*]+)\*\*/g, '$1')              // bold
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1$2')      // italics
+    .replace(/`([^`]+)`/g, '$1')                    // inline code
+    .replace(/^\s*[-*+]\s+/gm, '• ')                // bullets
+    .replace(/^\s*>\s?/gm, '')                      // quotes
+    .replace(/^\s*-{3,}\s*$/gm, '')                 // horizontal rules
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 ($2)') // links → text (url)
+    .replace(/\n{3,}/g, '\n\n')                     // collapse blank runs
+    .trim();
+}
+
 // The daily-task interface. No lecture, no notes, no modules — the AI response
 // for the day's task is generated automatically and shown here. The doctor can
 // chat to suggest changes, edit it, copy it, or push it live as a blog page.
@@ -25,6 +42,7 @@ function DayInner() {
   const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(false);
   const [publish, setPublish] = useState(null);   // null | 'saving' | { url }
+  const [finishing, setFinishing] = useState(false);
   const [err, setErr] = useState('');
   const started = useRef(false);
 
@@ -80,7 +98,7 @@ function DayInner() {
     setSending(false);
   };
 
-  const copy = () => { try { navigator.clipboard?.writeText(content); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* ignore */ } };
+  const copy = () => { try { navigator.clipboard?.writeText(toPlainText(content)); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* ignore */ } };
 
   const pushBlog = async () => {
     if (publish === 'saving' || !content.trim()) return;
@@ -95,6 +113,8 @@ function DayInner() {
   };
 
   const finishDay = async () => {
+    if (finishing) return;
+    setFinishing(true);
     try { await fetch(`/api/practice-os/day/${missionId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ action: 'complete' }) }); } catch { /* non-blocking */ }
     router.push('/app/zero-to-practice-builder');
   };
@@ -130,9 +150,12 @@ function DayInner() {
 
         {/* Actions */}
         <div className="flex flex-wrap gap-2.5 mt-4">
-          <button onClick={copy} disabled={!content.trim()} className="pos-card px-4 py-2.5 text-[14px] font-medium" style={{ opacity: content.trim() ? 1 : 0.5 }}>{copied ? 'Copied ✓' : 'Copy'}</button>
-          <button onClick={pushBlog} disabled={publish === 'saving' || !content.trim()} className="pos-action" style={{ background: 'var(--green)' }}>{publish === 'saving' ? 'Publishing…' : 'Push as blog page'}</button>
-          <button onClick={finishDay} className="pos-action">Finish task →</button>
+          <button onClick={copy} disabled={!content.trim() || finishing} className="pos-card px-4 py-2.5 text-[14px] font-medium" style={{ opacity: content.trim() ? 1 : 0.5 }}>{copied ? 'Copied ✓' : 'Copy'}</button>
+          <button onClick={pushBlog} disabled={publish === 'saving' || !content.trim() || finishing} className="pos-action" style={{ background: 'var(--green)' }}>{publish === 'saving' ? 'Publishing…' : 'Push as blog page'}</button>
+          <button onClick={finishDay} disabled={finishing} className="pos-action inline-flex items-center gap-2" style={{ opacity: finishing ? 0.75 : 1 }}>
+            {finishing && <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin inline-block" />}
+            {finishing ? 'Finishing…' : 'Finish task →'}
+          </button>
         </div>
         {publish?.url && (
           <p className="text-[13px] mt-2" style={{ color: 'var(--green)' }}>Published live. <a href={publish.url} target="_blank" rel="noreferrer" className="pos-link underline">Preview →</a></p>
