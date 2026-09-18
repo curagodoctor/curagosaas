@@ -24,6 +24,7 @@ export default function ControlCenter() {
   const [name, setName] = useState('');
   const [leaderboard, setLeaderboard] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [pendingOpen, setPendingOpen] = useState(true);
   // §11 — the leaderboard join is compulsory, but placed at the OPTIMIZATION
   // boundary: only doctors who've been granted access must pick a name before
   // proceeding. Free/setup doctors aren't gated.
@@ -148,7 +149,11 @@ export default function ControlCenter() {
           first actionable thing. */}
       {pendingTasks.length > 0 && (
         <div className="mt-6">
-          <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)] mb-3">Pending tasks <span className="text-[var(--muted)]">· {pendingTasks.length}</span></h2>
+          <button onClick={() => setPendingOpen((v) => !v)} className="w-full flex items-center justify-between mb-3 group" aria-expanded={pendingOpen}>
+            <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)]">Pending tasks <span className="text-[var(--orange)]">· {pendingTasks.length}</span></h2>
+            <svg className="w-4 h-4 text-[var(--muted)] transition-transform" style={{ transform: pendingOpen ? 'rotate(180deg)' : 'none' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          </button>
+          {pendingOpen && (<>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {pendingTasks.slice(0, 12).map(({ pack, m }) => (
               <Link key={m.id} href={`/app/zero-to-practice-builder/day/${m.id}?pack=${pack.id}`} className="pos-card p-4 flex items-start gap-3 hover:shadow-md transition-shadow group" style={{ borderColor: 'var(--orange)' }}>
@@ -164,6 +169,7 @@ export default function ControlCenter() {
             ))}
           </div>
           {pendingTasks.length > 12 && <p className="text-[12px] text-[var(--muted)] mt-2">+{pendingTasks.length - 12} more — open the pack to see all.</p>}
+          </>)}
         </div>
       )}
 

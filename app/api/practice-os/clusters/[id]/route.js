@@ -29,6 +29,8 @@ export async function PUT(request, { params }) {
       { _id: id, doctorId: doctor._id }, { $set: update }, { new: true },
     ).lean();
     if (!cluster) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
+    // Keep the profile's diseases/procedures in sync with the approved clusters.
+    try { const { syncClustersToProfile } = await import('@/lib/practice-os/profile'); await syncClustersToProfile(doctor._id); } catch { /* best-effort */ }
     return NextResponse.json({ success: true, cluster });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
