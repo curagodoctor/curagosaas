@@ -54,11 +54,16 @@ function DayInner() {
         body: JSON.stringify({ prompt: p, moduleId: modId, auto: !!auto }),
       });
       const d = await res.json();
-      if (d.needsProfile) { setErr('Add your specialty, conditions and procedures in Profile first — then reopen this task.'); return null; }
-      if (d.success && d.reply) { setContent(d.reply); return d.reply; }
-      if (d.error === 'NoCredits') setErr(d.message || "You've used today's AI credits.");
+      if (d.needsProfile) { setErr(d.reply || 'Add your specialty, conditions and procedures in Profile first — then reopen this task.'); return null; }
+      // This endpoint returns the assistant text as `text` (needsProfile uses
+      // `reply`) — accept either. A silent `skipped:true` (auto double-fire guard)
+      // has no text, so fall through and reload the saved thread instead.
+      const answer = d.text || d.reply;
+      if (d.success && answer) { setContent(answer); return answer; }
+      if (d.skipped) return null;
+      if (d.error === 'NoCredits' || d.creditsRemaining === 0) setErr(d.message || d.error || "You've used today's AI credits.");
       else if (d.error === 'PaymentRequired') setErr('This needs an active plan.');
-      else setErr(d.error || 'Could not generate.');
+      else if (d.error) setErr(d.error);
       return null;
     } catch { setErr('The assistant is unavailable right now.'); return null; }
     finally { setGenerating(false); }
@@ -86,6 +91,21 @@ function DayInner() {
     finally { setLoading(false); }
   }, [missionId, router, fire]);
   useEffect(() => { load(); }, [load]);
+
+  const regenerate = async () => {
+    if (!prompt || generating) return;
+    setThread([]); setContent(''); setGenerating(true); setErr('');
+    try {
+      const res = await fetch(`/api/practice-os/day/${missionId}/ai`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ prompt, moduleId, newSession: true }),
+      });
+      const d = await res.json();
+      const answer = d.text || d.reply;
+      if (d.success && answer) setContent(answer);
+      else setErr(d.message || d.error || 'Could not generate.');
+    } catch { setErr('The assistant is unavailable right now.'); } finally { setGenerating(false); }
+  };
 
   const send = async () => {
     const msg = chatInput.trim();
@@ -134,7 +154,9 @@ function DayInner() {
         <div className="pos-card mt-5 p-0 overflow-hidden" style={{ borderColor: 'var(--green)' }}>
           <div className="flex items-center justify-between px-4 py-2.5" style={{ background: 'var(--green-soft, rgba(9,107,23,.08))', borderBottom: '1px solid var(--rule-soft)' }}>
             <span className="pos-label" style={{ color: 'var(--green)' }}>Generated content · editable</span>
-            {generating && <span className="text-[12px] text-[var(--muted)] flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin inline-block" />Writing…</span>}
+            {generating
+              ? <span className="text-[12px] text-[var(--muted)] flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin inline-block" />Writing…</span>
+              : <button onClick={regenerate} className="text-[12px] font-medium" style={{ color: 'var(--orange)' }}>↻ Regenerate</button>}
           </div>
           <textarea
             value={content}
