@@ -161,7 +161,7 @@ function ClustersInner() {
 
                 <div className="flex flex-wrap gap-2.5 items-center">
                   <button onClick={approveAndContinue} style={{ background: 'var(--orange)', color: '#fff', border: 0, fontWeight: 700, fontSize: 16, padding: '16px 30px', borderRadius: 999, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                    {idx === total - 1 ? 'Approve and finish' : 'Approve and continue →'}
+                    {idx === total - 1 ? 'Approve & let’s begin →' : 'Approve and continue →'}
                   </button>
                   <button onClick={regenerate} disabled={busy === 'regen'} style={{ background: '#fff', color: 'var(--muted)', border: '1px solid var(--rule)', fontWeight: 600, fontSize: 15, padding: '15px 22px', borderRadius: 999, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                     {busy === 'regen' ? 'Regenerating…' : 'Regenerate with AI'}

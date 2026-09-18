@@ -103,7 +103,7 @@ export default function ControlCenter() {
   // pending tasks open the day's task in the MODULES UI (not the packs flow).
   const dominatePack = (packs || []).find((p) => p.tier === 'optimization');
   const reviewContentHref = pendingTasks[0]
-    ? `/app/zero-to-practice-builder/focus/${pendingTasks[0].m.id}?pack=${pendingTasks[0].pack.id}`
+    ? `/app/zero-to-practice-builder/day/${pendingTasks[0].m.id}?pack=${pendingTasks[0].pack.id}`
     : dominatePack
       ? `/app/zero-to-practice-builder/track?pack=${dominatePack.id}`
       : '/app/zero-to-practice-builder/content';
@@ -155,14 +155,14 @@ export default function ControlCenter() {
           <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)] mb-3">Pending tasks <span className="text-[var(--muted)]">· {pendingTasks.length}</span></h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {pendingTasks.slice(0, 12).map(({ pack, m }) => (
-              <Link key={m.id} href={`/app/zero-to-practice-builder/focus/${m.id}?pack=${pack.id}`} className="pos-card p-4 flex items-start gap-3 hover:shadow-md transition-shadow group" style={{ borderColor: 'var(--orange)' }}>
+              <Link key={m.id} href={`/app/zero-to-practice-builder/day/${m.id}?pack=${pack.id}`} className="pos-card p-4 flex items-start gap-3 hover:shadow-md transition-shadow group" style={{ borderColor: 'var(--orange)' }}>
                 <span className="w-9 h-9 rounded-xl grid place-items-center shrink-0" style={{ background: 'var(--orange-soft)' }}>
                   <svg className="w-[18px] h-[18px]" style={{ color: 'var(--orange)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                 </span>
                 <div className="min-w-0">
                   <p className="text-[11px] text-[var(--muted)]">Day {m.dayNumber}{m.category ? ` · ${m.category}` : ''}</p>
                   <p className="font-semibold text-[14.5px] text-[var(--ink)] leading-snug mt-0.5">{m.title}</p>
-                  <span className="text-[13px] font-medium mt-1 inline-block" style={{ color: 'var(--orange)' }}>Start task →</span>
+                  <span className="text-[13px] font-medium mt-1 inline-block" style={{ color: 'var(--orange)' }}>See day {m.dayNumber} →</span>
                 </div>
               </Link>
             ))}
