@@ -16,28 +16,10 @@ export async function GET(request) {
   try {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
-    let clusters = await PracticeOsDiseaseCluster.find({ doctorId: doctor._id }).sort({ order: 1, createdAt: 1 }).lean();
-
-    if (clusters.length === 0) {
-      const fields = await getDoctorProfileFields(doctor._id);
-      const diseases = splitList(fields.diseases).slice(0, 24);
-      const procedures = splitList(fields.procedures);
-      if (diseases.length) {
-        const docs = diseases.map((name, i) => ({
-          doctorId: doctor._id,
-          name,
-          slug: slugify(name),
-          // Seed with the doctor's stated procedures as a shared pool; the doctor
-          // trims per disease and/or uses "suggest with AI" to tailor them.
-          treatments: procedures.slice(0, 6).map((p) => ({ name: p, source: 'profile' })),
-          approved: false,
-          order: i,
-        }));
-        // Insert, ignoring slug-dup races.
-        try { await PracticeOsDiseaseCluster.insertMany(docs, { ordered: false }); } catch { /* ignore dups */ }
-        clusters = await PracticeOsDiseaseCluster.find({ doctorId: doctor._id }).sort({ order: 1, createdAt: 1 }).lean();
-      }
-    }
+    // The paid disease mapping is generated fresh from the specialty via
+    // POST /clusters/generate (the doctor's page triggers it when empty), so GET
+    // just returns whatever exists — no profile-based seeding here.
+    const clusters = await PracticeOsDiseaseCluster.find({ doctorId: doctor._id }).sort({ order: 1, createdAt: 1 }).lean();
     return NextResponse.json({ success: true, clusters });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });

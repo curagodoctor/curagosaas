@@ -26,7 +26,7 @@ export async function POST(request, { params }) {
 
     const fields = await getDoctorProfileFields(doctor._id);
     const gen = await structureContent({
-      instruction: `List the treatments/procedures THIS doctor would offer for "${cluster.name}", grounded in their specialty and the procedures they already listed. Return JSON: {"treatments": string[] } — 3 to 8 items, each a real treatment/procedure name relevant to this disease and this doctor's scope. Prefer procedures the doctor already stated; add clearly-relevant ones only. Never invent procedures outside their specialty.`,
+      instruction: `List the SPECIFIC treatments THIS doctor would offer for "${cluster.name}" — minimum 1, maximum 2, genuinely used for THIS disease (never generic). Return JSON: {"treatments": string[] } (1-2 items) grounded in the doctor's specialty${cluster.name ? '' : ''}. Never invent procedures outside their specialty.`,
       source: `Disease: ${cluster.name}\nSpecialty: ${fields.specialty || ''}\nProcedures the doctor listed: ${fields.procedures || '(none)'}\nAreas of expertise: ${fields.expertise || ''}`,
       profileFields: fields,
     });

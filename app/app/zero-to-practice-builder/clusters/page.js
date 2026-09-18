@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect, useCallback } from 'react';
+import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import PosNav from '@/components/practice-os/PosNav';
 
@@ -15,18 +15,39 @@ function ClustersInner() {
   const [busy, setBusy] = useState('');
   const [newTreat, setNewTreat] = useState('');
   const [err, setErr] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [genErr, setGenErr] = useState('');
+  const triedGen = useRef(false);
+
+  // The paid disease mapping: generate 10 diseases fresh from the specialty, each
+  // with 1-2 disease-specific treatments. Replaces the current set.
+  const doGenerate = useCallback(async () => {
+    setGenerating(true); setGenErr('');
+    try {
+      const d = await fetch('/api/practice-os/clusters/generate', { method: 'POST', credentials: 'include' }).then((r) => r.json());
+      if (d.success) { setClusters(d.clusters || []); setIdx(0); }
+      else if (d.error === 'PaymentRequired') setGenErr('This is part of the optimization program — request access first.');
+      else if (d.error === 'NoCredits') setGenErr(d.message || "You've used today's AI credits.");
+      else setGenErr(d.error || 'Could not generate your diseases.');
+    } catch { setGenErr('Something went wrong.'); } finally { setGenerating(false); }
+  }, []);
 
   const load = useCallback(async () => {
     try {
       const d = await fetch('/api/practice-os/clusters', { credentials: 'include' }).then((r) => r.json());
-      if (d.success) setClusters(d.clusters || []);
-      else setClusters([]);
+      const cl = d.success ? (d.clusters || []) : [];
+      setClusters(cl);
+      // First visit → generate the 10 diseases from the specialty automatically.
+      if (cl.length === 0 && !triedGen.current) { triedGen.current = true; doGenerate(); }
     } catch { setClusters([]); }
-  }, []);
+  }, [doGenerate]);
   useEffect(() => { load(); }, [load]);
 
   const cur = clusters?.[idx];
   const approvedCount = (clusters || []).filter((c) => c.approved).length;
+  // Treatment numbering is CONTINUOUS across diseases (disease 1: 1-3, disease 2
+  // continues at 4…), so compute how many treatments precede the current disease.
+  const serialBase = (clusters || []).slice(0, idx).reduce((n, c) => n + (c.treatments?.length || 0), 0);
 
   const save = async (id, body, optimistic) => {
     if (optimistic) setClusters((arr) => arr.map((c) => c._id === id ? { ...c, ...optimistic } : c));
@@ -88,8 +109,19 @@ function ClustersInner() {
 
       {clusters.length === 0 ? (
         <div className="pos-card p-8 text-center mt-8">
-          <p className="text-[var(--muted)] text-sm">We couldn&apos;t find any diseases on your profile yet. Add the conditions you treat in your profile, or add one here.</p>
-          <button onClick={addDisease} className="pos-action mt-4">+ Add a disease</button>
+          {generating ? (
+            <>
+              <div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin mx-auto mb-3" />
+              <p className="text-[var(--ink)] text-sm font-medium">Mapping your practice…</p>
+              <p className="text-[var(--muted)] text-[13px] mt-1">Generating the 10 diseases you treat and their treatments, from your specialty.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-[var(--muted)] text-sm">{genErr || 'Let’s map the diseases you treat, generated from your specialty.'}</p>
+              <button onClick={doGenerate} className="pos-action mt-4">Generate my diseases</button>
+              <button onClick={addDisease} className="pos-link text-sm mt-3 block mx-auto" style={{ color: 'var(--muted)' }}>Or add one manually</button>
+            </>
+          )}
         </div>
       ) : (
         <>
@@ -110,7 +142,7 @@ function ClustersInner() {
               <div className="space-y-2">
                 {(cur.treatments || []).map((t, i) => (
                   <div key={i} className="flex items-center gap-2 pos-card px-3 py-2">
-                    <span className="pos-num text-[12px] text-[var(--muted)] w-6">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="pos-num text-[12px] text-[var(--muted)] w-6">{String(serialBase + i + 1).padStart(2, '0')}</span>
                     <span className="flex-1 text-[14px] text-[var(--ink)]">{t.name}</span>
                     {t.source === 'ai' && <span className="pos-label text-[9px]" style={{ color: 'var(--orange)' }}>AI</span>}
                     <button onClick={() => removeTreatment(i)} className="text-[var(--muted)] hover:text-red-600 text-lg leading-none">×</button>
@@ -139,7 +171,10 @@ function ClustersInner() {
           <div className="mt-6">
             <div className="flex items-center justify-between mb-2">
               <p className="pos-label">Approved so far <span className="text-[var(--muted)]">· {approvedCount} of {clusters.length}</span></p>
-              <button onClick={addDisease} className="pos-link text-[12px]">+ Add disease</button>
+              <div className="flex items-center gap-3">
+                <button onClick={() => { if (window.confirm('Regenerate all diseases from your specialty? This replaces your current list.')) doGenerate(); }} disabled={generating} className="pos-link text-[12px]" style={{ color: 'var(--orange)' }}>{generating ? 'Regenerating…' : '↻ Regenerate'}</button>
+                <button onClick={addDisease} className="pos-link text-[12px]">+ Add disease</button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               {clusters.map((c, i) => (
