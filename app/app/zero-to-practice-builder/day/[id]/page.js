@@ -44,6 +44,10 @@ function DayInner() {
   const [publish, setPublish] = useState(null);   // null | 'saving' | { url }
   const [finishing, setFinishing] = useState(false);
   const [err, setErr] = useState('');
+  const [links, setLinks] = useState([]);          // relevant links (mission buttons)
+  const [evidenceRequired, setEvidenceRequired] = useState(false);
+  const [evidence, setEvidence] = useState({ link: '', notes: '' });
+  const [image, setImage] = useState(null);        // null | 'gen' | { url }
   const started = useRef(false);
 
   const fire = useCallback(async (p, modId, auto) => {
@@ -79,6 +83,12 @@ function DayInner() {
       const modId = mod?.id || null;
       const p = mod?.aiPrompt || (Array.isArray(mod?.aiPrompts) ? mod.aiPrompts[0] : '') || m.aiContext?.systemPrompt || '';
       setModuleId(modId); setPrompt(p);
+      // Relevant links (mission/module buttons, already placeholder-filled) shown
+      // at the bottom, and evidence config (only if enabled in the backend).
+      const btns = [...(m.buttons || []), ...(mod?.buttons || [])].filter((b) => b && (b.url || b.label));
+      setLinks(btns);
+      setEvidenceRequired(!!m.evidence?.required);
+      if (day.progress?.record) setEvidence({ link: (day.progress.record.links || [])[0] || '', notes: day.progress.record.notes || '' });
 
       // Existing thread — if the AI already answered, show it; else generate now.
       const t = await fetch(`/api/practice-os/day/${missionId}/ai?moduleId=${modId || ''}`, { credentials: 'include' }).then((r) => r.json());
@@ -120,6 +130,31 @@ function DayInner() {
 
   const copy = () => { try { navigator.clipboard?.writeText(toPlainText(content)); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* ignore */ } };
 
+  const genImage = async () => {
+    if (image === 'gen') return;
+    setImage('gen'); setErr('');
+    try {
+      const d = await fetch(`/api/practice-os/day/${missionId}/image`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ topic: mission?.title }),
+      }).then((r) => r.json());
+      if (d.success && d.url) setImage({ url: d.url });
+      else { setImage(null); setErr(d.message || d.error || 'Could not generate the image.'); }
+    } catch { setImage(null); setErr('Could not generate the image.'); }
+  };
+
+  const downloadImage = async () => {
+    if (!image?.url) return;
+    try {
+      const res = await fetch(image.url);
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `gbp-image-${Date.now()}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    } catch { window.open(image.url, '_blank'); }
+  };
+
   const pushBlog = async () => {
     if (publish === 'saving' || !content.trim()) return;
     setPublish('saving'); setErr('');
@@ -134,8 +169,14 @@ function DayInner() {
 
   const finishDay = async () => {
     if (finishing) return;
+    // Evidence gate — only when the backend marks it required.
+    if (evidenceRequired && !evidence.link.trim() && !evidence.notes.trim()) {
+      setErr('Please add your evidence (a link or a note) before finishing.');
+      return;
+    }
     setFinishing(true);
-    try { await fetch(`/api/practice-os/day/${missionId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ action: 'complete' }) }); } catch { /* non-blocking */ }
+    const record = { links: evidence.link.trim() ? [evidence.link.trim()] : [], notes: evidence.notes.trim(), screenshots: [] };
+    try { await fetch(`/api/practice-os/day/${missionId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ action: 'complete', record }) }); } catch { /* non-blocking */ }
     router.push('/app/zero-to-practice-builder');
   };
 
@@ -174,6 +215,26 @@ function DayInner() {
           )}
         </div>
 
+        {/* Image for the post — generate + download (mainly for GBP posts). */}
+        <div className="pos-card mt-4 p-4">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <p className="pos-label" style={{ color: 'var(--green)' }}>Image for this post</p>
+              <p className="text-[12.5px] text-[var(--muted)] mt-0.5">Generate an image from this content, then download it to post alongside your update.</p>
+            </div>
+            <button onClick={genImage} disabled={image === 'gen'} className="pos-card px-4 py-2.5 text-[14px] font-medium shrink-0" style={{ opacity: image === 'gen' ? 0.6 : 1 }}>
+              {image === 'gen' ? 'Generating…' : (image?.url ? '↻ Regenerate image' : '✨ Generate image')}
+            </button>
+          </div>
+          {image?.url && (
+            <div className="mt-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={image.url} alt="Generated" className="rounded-xl w-full max-w-[420px]" style={{ border: '1px solid var(--rule)' }} />
+              <button onClick={downloadImage} className="pos-action mt-3" style={{ background: 'var(--green)' }}>Download image ↓</button>
+            </div>
+          )}
+        </div>
+
         {err && <p className="text-[13px] text-red-600 mt-2">{err}</p>}
 
         {/* Actions */}
@@ -208,6 +269,50 @@ function DayInner() {
             <button onClick={send} disabled={sending || !chatInput.trim()} className="pos-action m-1 px-4" style={{ opacity: chatInput.trim() ? 1 : 0.5 }}>{sending ? '…' : 'Send'}</button>
           </div>
         </div>
+
+        {/* Relevant links — where to post + the doctor's own pages/links. */}
+        {(() => {
+          const cat = mission?.category || '';
+          const defaults = /gbp|google|service|product|photo/i.test(cat)
+            ? [{ label: 'Open Google Business Profile', url: 'https://business.google.com/' }]
+            : [];
+          const allLinks = [...defaults, ...links].filter((b) => b && b.url);
+          if (!allLinks.length) return null;
+          return (
+            <div className="mt-8">
+              <p className="pos-label mb-2">Relevant links</p>
+              <div className="flex flex-wrap gap-2">
+                {allLinks.map((b, i) => (
+                  <a key={i} href={b.url} target="_blank" rel="noreferrer" className="pos-card px-4 py-2.5 text-[14px] font-medium inline-flex items-center gap-2" style={{ color: 'var(--green)' }}>
+                    {b.label || b.url} <span aria-hidden>↗</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Evidence — only shown when the backend marks this task as needing it. */}
+        {evidenceRequired && (
+          <div className="mt-8 pos-card p-5" style={{ borderColor: 'var(--orange)' }}>
+            <p className="pos-label" style={{ color: 'var(--orange)' }}>Evidence required</p>
+            <p className="text-[13px] text-[var(--muted)] mt-0.5 mb-3">Add proof that you completed this task — a link to the live post, and/or a short note.</p>
+            <input
+              value={evidence.link}
+              onChange={(e) => setEvidence((v) => ({ ...v, link: e.target.value }))}
+              placeholder="Link to the published post / page (optional)"
+              className="w-full pos-card p-2.5 text-sm mb-2"
+            />
+            <textarea
+              value={evidence.notes}
+              onChange={(e) => setEvidence((v) => ({ ...v, notes: e.target.value }))}
+              placeholder="A short note about what you did (optional)"
+              rows={2}
+              className="w-full pos-card p-2.5 text-sm"
+              style={{ resize: 'vertical' }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Push-as-blog confirmation — stays open until the doctor closes it. */}

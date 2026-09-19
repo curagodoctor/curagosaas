@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { after } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/access';
 import { assertHasCredits, chargeAiCredits } from '@/lib/practice-os/aiCredits';
@@ -55,6 +56,19 @@ export async function POST(request) {
     });
 
     const { remaining } = await chargeAiCredits(doctor._id, { label: 'publish-blog' });
+
+    // Auto-generate a featured image (after the response, so publish is instant).
+    if (!article.featuredImage?.url) {
+      const articleId = article._id;
+      after(async () => {
+        try {
+          const { generateAiImage } = await import('@/lib/practice-os/images');
+          const imgUrl = await generateAiImage(doctor._id, title, { kind: 'blog' });
+          if (imgUrl) await BlogArticle.updateOne({ _id: articleId }, { $set: { featuredImage: { url: imgUrl, alt: title } } });
+        } catch { /* best-effort */ }
+      });
+    }
+
     const url = doc?.subdomain ? `https://${doc.subdomain}.curago.in/blog/${slug}` : `/blog/${slug}`;
     return NextResponse.json({ success: true, id: String(article._id), url, slug, title: article.title, creditsRemaining: remaining });
   } catch (error) {
