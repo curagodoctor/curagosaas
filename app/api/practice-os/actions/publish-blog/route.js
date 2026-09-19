@@ -27,7 +27,7 @@ export async function POST(request) {
 
     const fields = await getDoctorProfileFields(doctor._id);
     const gen = await structureContent({
-      instruction: 'Turn the source content into a patient-facing blog article. Return JSON: {"title": string (<=90 chars, no clickbait), "excerpt": string (<=180 chars), "category": string, "blocks": [{"heading": string, "content": string (2-4 short paragraphs, plain text)}] } with 3-6 blocks. Informative and NMC-compliant — no superlatives, no guarantees.',
+      instruction: 'Turn the source content into a patient-facing blog article. Return JSON: {"title": string (<=90 chars, no clickbait), "excerpt": string (<=180 chars), "metaDescription": string (<=155 chars, SEO), "imageAlt": string (<=120 chars, describes a fitting featured image), "category": string, "blocks": [{"heading": string, "content": string (2-4 short paragraphs, plain text)}] (3-6 blocks — the BODY only, do NOT put an FAQ block here), "faqs": [{"question": string, "answer": string (2-3 sentences)}] (3-5 short Q&As)}. Informative and NMC-compliant — no superlatives, no guarantees.',
       source: text,
       profileFields: fields,
       extraRules: BLOG_RULES,
@@ -40,9 +40,16 @@ export async function POST(request) {
     // Ensure global slug uniqueness.
     if (await BlogArticle.findOne({ slug }).select('_id').lean()) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
 
-    const blocks = Array.isArray(d.blocks)
-      ? d.blocks.filter((b) => b && (b.heading || b.content)).map((b) => ({ heading: String(b.heading || '').slice(0, 160), content: String(b.content || '') }))
-      : [];
+    // Body blocks — drop any the model still labelled as FAQ (those belong in the
+    // FAQ section, not the body).
+    const blocks = (Array.isArray(d.blocks) ? d.blocks : [])
+      .filter((b) => b && (b.heading || b.content) && !/^\s*faq/i.test(String(b.heading || '')))
+      .map((b) => ({ heading: String(b.heading || '').slice(0, 160), content: String(b.content || '') }));
+    const faqs = (Array.isArray(d.faqs) ? d.faqs : [])
+      .filter((f) => f && (f.question || f.answer))
+      .map((f) => ({ question: String(f.question || '').slice(0, 300), answer: String(f.answer || '').slice(0, 1200) }));
+    const metaDescription = String(d.metaDescription || d.excerpt || '').slice(0, 160);
+    const imageAlt = String(d.imageAlt || title).slice(0, 160);
 
     const doc = await Doctor.findById(doctor._id).select('subdomain displayName name specialization').lean();
     const article = await BlogArticle.create({
@@ -50,12 +57,15 @@ export async function POST(request) {
       title,
       slug,
       excerpt: String(d.excerpt || '').slice(0, 300),
+      metaDescription,
       category: String(d.category || fields.specialty || '').slice(0, 60),
       author: { name: doc?.displayName || doc?.name || '', designation: doc?.specialization || '' },
       blocks,
+      ...(faqs.length ? { faqSection: { heading: 'FAQs: Clear Answers for Patients', faqs } } : {}),
       status: 'published',
-      // Use the image the doctor already generated, if any.
-      ...(providedImage ? { featuredImage: { url: providedImage, alt: title } } : {}),
+      publishedAt: new Date(),
+      // Use the image the doctor already generated (with a real alt), if any.
+      ...(providedImage ? { featuredImage: { url: providedImage, alt: imageAlt } } : {}),
     });
 
     const { remaining } = await chargeAiCredits(doctor._id, { label: 'publish-blog' });
@@ -67,7 +77,7 @@ export async function POST(request) {
         try {
           const { generateAiImage } = await import('@/lib/practice-os/images');
           const imgUrl = await generateAiImage(doctor._id, title, { kind: 'blog' });
-          if (imgUrl) await BlogArticle.updateOne({ _id: articleId }, { $set: { featuredImage: { url: imgUrl, alt: title } } });
+          if (imgUrl) await BlogArticle.updateOne({ _id: articleId }, { $set: { featuredImage: { url: imgUrl, alt: imageAlt } } });
         } catch { /* best-effort */ }
       });
     }
