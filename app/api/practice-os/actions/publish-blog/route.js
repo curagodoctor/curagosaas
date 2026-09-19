@@ -6,6 +6,7 @@ import { assertHasCredits, chargeAiCredits } from '@/lib/practice-os/aiCredits';
 import { structureContent } from '@/lib/practice-os/ai';
 import { BLOG_RULES } from '@/lib/practice-os/contentRules';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
+import { syncBlogLinksToProfile } from '@/lib/practice-os/blogLinks';
 import BlogArticle from '@/models/BlogArticle';
 import Doctor from '@/models/Doctor';
 
@@ -69,6 +70,9 @@ export async function POST(request) {
     });
 
     const { remaining } = await chargeAiCredits(doctor._id, { label: 'publish-blog' });
+
+    // Store this page's link in the profile section + refresh the placeholder set.
+    await syncBlogLinksToProfile(doctor._id);
 
     // Auto-generate a featured image (after the response, so publish is instant).
     if (!article.featuredImage?.url) {

@@ -58,7 +58,7 @@ export async function POST(request) {
 
     const fields = await getDoctorProfileFields(doctor._id);
     const gen = await structureLongContent({
-      instruction: 'Write a COMPREHENSIVE, in-depth patient-facing blog article grounded in the doctor\'s profile and knowledge base. Return JSON: {"title": string (<=90 chars, no clickbait), "excerpt": string (<=180 chars), "category": string, "blocks": [{"heading": string, "content": string (3-6 substantial paragraphs of plain text each)}] } with 6-10 blocks covering the topic thoroughly (what it is, causes, symptoms, when to see a doctor, diagnosis, treatment options, prevention/aftercare, FAQs). Informative and NMC-compliant — educational, no superlatives, no guarantees, no soliciting.',
+      instruction: 'Write a COMPREHENSIVE, in-depth patient-facing blog article grounded in the doctor\'s profile and knowledge base. Return JSON: {"title": string (<=90 chars, no clickbait), "excerpt": string (<=180 chars), "metaDescription": string (<=155 chars, SEO), "imageAlt": string (<=120 chars, describes a fitting featured image), "category": string, "blocks": [{"heading": string, "content": string (3-6 substantial paragraphs of plain text each)}] (the BODY only — do NOT put an FAQ block here), "faqs": [{"question": string, "answer": string (2-3 sentences)}] (4-6 short Q&As)} with 6-9 body blocks covering the topic thoroughly (what it is, causes, symptoms, when to see a doctor, diagnosis, treatment options, prevention/aftercare). Informative and NMC-compliant — educational, no superlatives, no guarantees, no soliciting.',
       source: context,
       profileFields: fields,
       topic: context,
@@ -71,8 +71,11 @@ export async function POST(request) {
     let slug = slugify(d.slug || title) || `article-${Date.now()}`;
     if (await BlogArticle.findOne({ slug }).select('_id').lean()) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
 
+    // Body blocks only — drop any FAQ-labelled block (FAQs live in faqSection).
     const blocks = Array.isArray(d.blocks)
-      ? d.blocks.filter((b) => b && (b.heading || b.content)).map((b) => ({ heading: String(b.heading || '').slice(0, 160), content: String(b.content || '') }))
+      ? d.blocks
+          .filter((b) => b && (b.heading || b.content) && !/^\s*faq/i.test(String(b.heading || '')))
+          .map((b) => ({ heading: String(b.heading || '').slice(0, 160), content: String(b.content || '') }))
       : [];
 
     // §10 auto internal linking — append a "Related reading" block pointing at the
@@ -81,6 +84,11 @@ export async function POST(request) {
       const related = await relatedReadingBlock(doctor._id, cluster);
       if (related) blocks.push(related);
     }
+
+    const faqs = (Array.isArray(d.faqs) ? d.faqs : [])
+      .filter((f) => f && (f.question || f.answer))
+      .map((f) => ({ question: String(f.question || '').slice(0, 300), answer: String(f.answer || '').slice(0, 1200) }));
+    const imageAlt = String(d.imageAlt || '').slice(0, 160);
 
     const doc = await Doctor.findById(doctor._id).select('displayName name specialization').lean();
 
@@ -97,6 +105,7 @@ export async function POST(request) {
       category: String(d.category || fields.specialty || '').slice(0, 60),
       author: { name: doc?.displayName || doc?.name || '', designation: doc?.specialization || '' },
       blocks,
+      ...(faqs.length ? { faqSection: { heading: 'FAQs: Clear Answers for Patients', faqs } } : {}),
       diseaseCluster: cluster,
       pageType: type,
       status: firstArticle ? 'published' : 'draft',
@@ -113,9 +122,17 @@ export async function POST(request) {
       after(async () => {
         try {
           const url = await generateFeaturedImage(doctor._id, imgTopic);
-          if (url) await BlogArticle.updateOne({ _id: articleId }, { $set: { featuredImage: { url, alt: title } } });
+          if (url) await BlogArticle.updateOne({ _id: articleId }, { $set: { featuredImage: { url, alt: imageAlt || title } } });
         } catch { /* best-effort */ }
       });
+    }
+
+    // The first article ships published — mirror its link into the profile.
+    if (firstArticle && cluster) {
+      try {
+        const { syncBlogLinksToProfile } = await import('@/lib/practice-os/blogLinks');
+        await syncBlogLinksToProfile(doctor._id);
+      } catch { /* best-effort */ }
     }
 
     const remaining = firstArticle

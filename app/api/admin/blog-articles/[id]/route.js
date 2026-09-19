@@ -108,6 +108,15 @@ export async function PATCH(request, { params }) {
       );
     }
 
+    // Keep the profile's blog-link placeholders in sync whenever publish state
+    // (or the cluster/slug that keys a link) may have changed.
+    if (article.diseaseCluster) {
+      try {
+        const { syncBlogLinksToProfile } = await import('@/lib/practice-os/blogLinks');
+        await syncBlogLinksToProfile(article.doctorId);
+      } catch { /* best-effort */ }
+    }
+
     return NextResponse.json({
       message: 'Blog article updated successfully',
       article,
