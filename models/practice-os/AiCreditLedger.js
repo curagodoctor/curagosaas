@@ -39,6 +39,8 @@ const AiCreditLedgerSchema = new mongoose.Schema({
   },
   dailyLimit: { type: Number, default: DAILY_LIMIT },
   dailyBalance: { type: Number, default: DAILY_LIMIT },
+  // Admin override — when true, AI usage is unmetered (no daily cap).
+  unlimited: { type: Boolean, default: false },
   // Date (midnight) the balance was last reset to dailyLimit.
   lastResetDate: { type: Date },
   usage: { type: [UsageSchema], default: [] },

@@ -78,7 +78,7 @@ export async function POST(request, { params }) {
 
     // Credit check — one prompt = one credit, reset daily (PRD §8).
     const ledger = await AiCreditLedger.getOrCreateForToday(doctor._id);
-    if (ledger.dailyBalance <= 0) {
+    if (!ledger.unlimited && ledger.dailyBalance <= 0) {
       return NextResponse.json(
         { success: false, error: 'You\'ve used all of today\'s AI credits. They reset tomorrow.', creditsRemaining: 0 },
         { status: 429 }

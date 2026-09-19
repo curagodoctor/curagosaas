@@ -1013,6 +1013,7 @@ function DoctorsTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState(null);
+  const [creditsFor, setCreditsFor] = useState(null); // { doctorId, name }
 
   useEffect(() => {
     (async () => {
@@ -1046,17 +1047,18 @@ function DoctorsTab() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Streak</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Active</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AI Credits</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {loading ? (
               [...Array(4)].map((_, i) => (
-                <tr key={i} className="animate-pulse"><td className="px-6 py-4" colSpan={7}><div className="h-4 bg-gray-100 rounded w-1/3" /></td></tr>
+                <tr key={i} className="animate-pulse"><td className="px-6 py-4" colSpan={8}><div className="h-4 bg-gray-100 rounded w-1/3" /></td></tr>
               ))
             ) : error ? (
-              <tr><td colSpan={7} className="px-6 py-12 text-center text-red-600">{error}</td></tr>
+              <tr><td colSpan={8} className="px-6 py-12 text-center text-red-600">{error}</td></tr>
             ) : users.length === 0 ? (
-              <tr><td colSpan={7} className="px-6 py-12 text-center text-gray-500">No doctors enrolled yet.</td></tr>
+              <tr><td colSpan={8} className="px-6 py-12 text-center text-gray-500">No doctors enrolled yet.</td></tr>
             ) : (
               users.map((u) => (
                 <tr key={u.doctorId} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelected(u.doctorId)}>
@@ -1074,6 +1076,9 @@ function DoctorsTab() {
                   <td className="px-6 py-4 text-gray-600">{u.performance}</td>
                   <td className="px-6 py-4 text-gray-600">{u.currentStreak}</td>
                   <td className="px-6 py-4 text-gray-500 text-sm">{fmtDate(u.lastActiveAt)}</td>
+                  <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => setCreditsFor({ doctorId: u.doctorId, name: u.name })} className="text-blue-600 hover:text-blue-700 text-sm font-medium">Edit credits</button>
+                  </td>
                 </tr>
               ))
             )}
@@ -1082,6 +1087,67 @@ function DoctorsTab() {
       </div>
 
       {selected && <DoctorDetailModal doctorId={selected} onClose={() => setSelected(null)} />}
+      {creditsFor && <CreditsModal doctorId={creditsFor.doctorId} name={creditsFor.name} onClose={() => setCreditsFor(null)} />}
+    </div>
+  );
+}
+
+// Admin editor for a doctor's daily AI credits — set unlimited, or set an exact
+// remaining balance for today.
+function CreditsModal({ doctorId, name, onClose }) {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [unlimited, setUnlimited] = useState(false);
+  const [balance, setBalance] = useState(0);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const d = await fetch(`/api/platform/practice-os/doctors/${doctorId}/credits`).then((r) => r.json());
+        if (d.success) { setUnlimited(!!d.credits.unlimited); setBalance(d.credits.dailyBalance ?? 0); }
+      } catch { /* ignore */ } finally { setLoading(false); }
+    })();
+  }, [doctorId]);
+
+  const save = async () => {
+    setSaving(true); setMsg('');
+    try {
+      const d = await fetch(`/api/platform/practice-os/doctors/${doctorId}/credits`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unlimited, dailyBalance: Number(balance) || 0 }),
+      }).then((r) => r.json());
+      if (d.success) { setMsg('Saved.'); setTimeout(onClose, 700); }
+      else setMsg(d.error || 'Could not save.');
+    } catch { setMsg('Something went wrong.'); } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/40" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-lg font-semibold text-gray-900">AI credits — {name}</h3>
+        <p className="text-sm text-gray-500 mt-0.5">Doctors get 10 credits/day by default. Give unlimited access, or set today&apos;s remaining balance.</p>
+        {loading ? (
+          <p className="text-sm text-gray-500 mt-4">Loading…</p>
+        ) : (
+          <div className="mt-4 space-y-4">
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input type="checkbox" checked={unlimited} onChange={(e) => setUnlimited(e.target.checked)} className="w-5 h-5" style={{ accentColor: '#096b17' }} />
+              <span className="text-sm font-medium text-gray-900">Unlimited AI credits (no daily cap)</span>
+            </label>
+            <div className={unlimited ? 'opacity-40 pointer-events-none' : ''}>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Remaining credits today</label>
+              <input type="number" min={0} value={balance} onChange={(e) => setBalance(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+              <p className="text-xs text-gray-400 mt-1">Refills by 10/day automatically. Set this to top up now.</p>
+            </div>
+            {msg && <p className={`text-sm ${msg === 'Saved.' ? 'text-green-600' : 'text-red-600'}`}>{msg}</p>}
+            <div className="flex items-center gap-3 pt-1">
+              <button onClick={save} disabled={saving} className="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">{saving ? 'Saving…' : 'Save'}</button>
+              <button onClick={onClose} className="text-sm text-gray-500">Cancel</button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
