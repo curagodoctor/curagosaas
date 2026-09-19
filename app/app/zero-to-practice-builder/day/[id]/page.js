@@ -160,7 +160,9 @@ function DayInner() {
     setPublish('saving'); setErr('');
     try {
       const d = await fetch('/api/practice-os/actions/publish-blog', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ text: content }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        // Attach the image the doctor generated here, so the blog uses it.
+        body: JSON.stringify({ text: content, imageUrl: image?.url || '' }),
       }).then((r) => r.json());
       if (d.success) setPublish({ url: d.url, id: d.id, title: d.title }); // opens the confirmation modal
       else { setPublish(null); setErr(d.error || 'Could not publish.'); }
@@ -276,7 +278,9 @@ function DayInner() {
           const defaults = /gbp|google|service|product|photo/i.test(cat)
             ? [{ label: 'Open Google Business Profile', url: 'https://business.google.com/' }]
             : [];
-          const allLinks = [...defaults, ...links].filter((b) => b && b.url);
+          // Only show links with a REAL http(s) URL — drop unfilled {{token}} buttons.
+          const isRealUrl = (u) => /^https?:\/\//i.test(String(u || '').trim());
+          const allLinks = [...defaults, ...links].filter((b) => b && isRealUrl(b.url));
           if (!allLinks.length) return null;
           return (
             <div className="mt-8">

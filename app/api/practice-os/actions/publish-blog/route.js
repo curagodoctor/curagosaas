@@ -20,8 +20,9 @@ export async function POST(request) {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
     await assertAiAccess(doctor._id);
-    const { text } = await request.json();
+    const { text, imageUrl } = await request.json();
     if (!text || !text.trim()) return NextResponse.json({ success: false, error: 'Nothing to publish.' }, { status: 400 });
+    const providedImage = /^https?:\/\//i.test(String(imageUrl || '').trim()) ? String(imageUrl).trim() : '';
     await assertHasCredits(doctor._id);
 
     const fields = await getDoctorProfileFields(doctor._id);
@@ -53,6 +54,8 @@ export async function POST(request) {
       author: { name: doc?.displayName || doc?.name || '', designation: doc?.specialization || '' },
       blocks,
       status: 'published',
+      // Use the image the doctor already generated, if any.
+      ...(providedImage ? { featuredImage: { url: providedImage, alt: title } } : {}),
     });
 
     const { remaining } = await chargeAiCredits(doctor._id, { label: 'publish-blog' });
