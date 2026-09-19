@@ -21,7 +21,7 @@ const KIND_STYLE = {
 
 // renderFooter(mandatoryComplete) lets the caller supply its own CTA (the wizard
 // shows a gated "Continue"; the standalone page shows a "back to setup" link).
-export default function GbpGuide({ renderFooter }) {
+export default function GbpGuide({ renderFooter, onDone }) {
   const [blocks, setBlocks] = useState(null);
   const [progress, setProgress] = useState({});
   const [active, setActive] = useState(0);
@@ -102,18 +102,28 @@ export default function GbpGuide({ renderFooter }) {
         </div>
       )}
 
-      {/* Sequential advance: you can't jump ahead — complete this block or skip it */}
-      {blocks[active] && active < blocks.length - 1 && (() => {
+      {/* One nav row: Back · Next/Skip through blocks · Finish on the last one.
+          You go in order; a mandatory block must be done to move past it. */}
+      {blocks[active] && (() => {
         const b = blocks[active];
         const blockDone = b.tasks.every((_, j) => progress[`${b.key}:${j}`]);
-        const advance = () => { const n = active + 1; setActive(n); setUnlocked((u) => Math.max(u, n)); };
+        const isLast = active === blocks.length - 1;
+        const goNext = () => { const n = active + 1; setActive(n); setUnlocked((u) => Math.max(u, n)); };
+        const goBack = () => setActive((a) => Math.max(0, a - 1));
+        const mustDone = mandatoryComplete();
         return (
-          <div className="flex items-center gap-3 mt-4">
-            <button onClick={advance} disabled={b.mandatory && !blockDone} className="pos-action" style={{ opacity: b.mandatory && !blockDone ? 0.5 : 1 }}>
-              {blockDone ? 'Continue →' : 'Next →'}
-            </button>
-            {!b.mandatory && !blockDone && <button onClick={advance} className="pos-link text-sm" style={{ color: 'var(--muted)' }}>Skip this block →</button>}
+          <div className="flex items-center flex-wrap gap-3 mt-4">
+            {active > 0 && <button onClick={goBack} className="pos-link text-sm" style={{ color: 'var(--muted)' }}>← Back</button>}
+            {isLast ? (
+              <button onClick={() => { if (mustDone) onDone?.(); }} disabled={!mustDone} className="pos-action" style={{ opacity: mustDone ? 1 : 0.5 }}>Finish &amp; continue →</button>
+            ) : (
+              <button onClick={goNext} disabled={b.mandatory && !blockDone} className="pos-action" style={{ opacity: b.mandatory && !blockDone ? 0.5 : 1 }}>
+                {blockDone ? 'Continue →' : 'Next →'}
+              </button>
+            )}
+            {!isLast && !b.mandatory && !blockDone && <button onClick={goNext} className="pos-link text-sm" style={{ color: 'var(--muted)' }}>Skip this block →</button>}
             {b.mandatory && !blockDone && <span className="text-[13px]" style={{ color: 'var(--orange)' }}>Complete this mandatory block to continue.</span>}
+            {isLast && !mustDone && <span className="text-[13px]" style={{ color: 'var(--orange)' }}>Finish the mandatory block to continue.</span>}
           </div>
         );
       })()}

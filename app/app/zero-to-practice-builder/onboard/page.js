@@ -704,17 +704,10 @@ function Wizard() {
             <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Set up your Google profile — carefully.</h1>
             <p className="text-sm text-[var(--muted)] mb-4">You make the changes in your own Google account. We guide you, and mark which fields are dangerous <b>before</b> you touch them. Start with the mandatory block.</p>
 
-            <GbpGuide renderFooter={(mandatoryComplete) => (
-              <>
-                {!mandatoryComplete && (
-                  <p className="text-[13px] mt-3" style={{ color: 'var(--orange)' }}>Finish the mandatory <b>Suspension risk</b> block to continue.</p>
-                )}
-                <button onClick={next} disabled={!mandatoryComplete} className="pos-action mt-5" style={{ opacity: mandatoryComplete ? 1 : 0.5 }}>
-                  Continue
-                </button>
-                <p className="text-[12px] text-[var(--muted)] mt-3">Next up: the commitment check and Get Access.</p>
-              </>
-            )} />
+            {/* The guide handles its own Back / Next / Skip / Finish — finishing
+                the last block advances to the commitment check. */}
+            <GbpGuide onDone={next} />
+            <p className="text-[12px] text-[var(--muted)] mt-3">Next up: the commitment check and Get Access.</p>
           </div>
         )}
 

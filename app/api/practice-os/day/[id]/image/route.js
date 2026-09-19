@@ -23,9 +23,9 @@ export async function POST(request, { params }) {
     const mission = await Mission.findById(id).select('category missionText').lean();
     const body = await request.json().catch(() => ({}));
     const topic = String(body.topic || mission?.missionText || mission?.category || 'medical practice').slice(0, 300);
-    const kind = /gbp|google/i.test(mission?.category || '') ? 'gbp' : 'post';
-
-    const url = await generateAiImage(doctor._id, topic, { kind });
+    // Always landscape so the image fits the blog's featured slot (16:10) without
+    // truncation; landscape also posts fine to GBP.
+    const url = await generateAiImage(doctor._id, topic, { kind: 'blog' });
     if (!url) return NextResponse.json({ success: false, error: 'Could not generate an image — try again.' }, { status: 502 });
 
     const { remaining } = await chargeAiCredits(doctor._id, { label: 'day-image' });
