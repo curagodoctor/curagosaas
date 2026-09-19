@@ -15,12 +15,14 @@ export async function GET(request) {
     await connectDB();
     const settings = await PracticeOsSettings.getSettings();
     const blocks = Array.isArray(settings.gbpGuide) && settings.gbpGuide.length ? settings.gbpGuide : DEFAULT_GBP_GUIDE;
-    const profile = await PracticeOsProfile.findOne({ doctorId: doctor._id }).select('gbpProgress gbpRiskAcknowledgedAt').lean();
+    const profile = await PracticeOsProfile.findOne({ doctorId: doctor._id }).select('gbpProgress gbpRiskAcknowledgedAt gbpAiResponses').lean();
     return NextResponse.json({
       success: true,
       blocks,
       progress: profile?.gbpProgress || {},
       riskAcknowledged: !!profile?.gbpRiskAcknowledgedAt,
+      // Cached per-block AI responses ({ [blockKey]: text }).
+      aiResponses: profile?.gbpAiResponses || {},
     });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });

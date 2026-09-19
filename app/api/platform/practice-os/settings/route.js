@@ -50,6 +50,7 @@ export async function PUT(request) {
           title: String(b.title || '').trim(),
           desc: String(b.desc || '').trim(),
           mandatory: !!b.mandatory,
+          aiPrompt: String(b.aiPrompt || '').trim(),
           tasks: (Array.isArray(b.tasks) ? b.tasks : [])
             .map((t) => ({ label: String(t.label || '').trim(), hint: String(t.hint || '').trim(), kind: KINDS.includes(t.kind) ? t.kind : 'EDITABLE' }))
             .filter((t) => t.label),

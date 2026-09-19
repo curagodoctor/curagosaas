@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 // §8 — the guided Google Business Profile flow. The doctor makes the changes in
 // their OWN Google account; we do NOT connect via OAuth. We just guide them, tag
@@ -26,16 +26,44 @@ export default function GbpGuide({ renderFooter, onDone }) {
   const [progress, setProgress] = useState({});
   const [active, setActive] = useState(0);
   const [unlocked, setUnlocked] = useState(0); // highest block reached — go in order
+  const [aiResponses, setAiResponses] = useState({}); // { [blockKey]: text }
+  const [aiBusy, setAiBusy] = useState('');           // blockKey currently generating
+  const [aiInput, setAiInput] = useState('');
+  const fired = useRef(new Set());                     // blocks whose prompt auto-ran
 
   useEffect(() => {
     (async () => {
       try {
         const d = await fetch('/api/practice-os/gbp-guide', { credentials: 'include' }).then((r) => r.json());
-        if (d.success) { setBlocks(d.blocks || []); setProgress(d.progress || {}); }
+        if (d.success) { setBlocks(d.blocks || []); setProgress(d.progress || {}); setAiResponses(d.aiResponses || {}); }
         else setBlocks([]);
       } catch { setBlocks([]); }
     })();
   }, []);
+
+  // Run a block's AI prompt (or a refine message), grounded in the profile.
+  const runBlockAi = useCallback(async (blockKey, message) => {
+    setAiBusy(blockKey);
+    try {
+      const d = await fetch('/api/practice-os/gbp-guide/ai', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ blockKey, message: message || '' }),
+      }).then((r) => r.json());
+      if (d.success && d.reply) setAiResponses((r) => ({ ...r, [blockKey]: d.reply }));
+      else setAiResponses((r) => ({ ...r, [blockKey]: (message ? r[blockKey] : '') || (d.message || d.error || 'Could not generate.') }));
+    } catch { /* ignore */ } finally { setAiBusy(''); }
+  }, []);
+
+  // When a block with an AI prompt becomes active and has no cached response yet,
+  // run it once automatically.
+  useEffect(() => {
+    if (!blocks || !blocks[active]) return;
+    const b = blocks[active];
+    if (b.aiPrompt && !aiResponses[b.key] && !fired.current.has(b.key)) {
+      fired.current.add(b.key);
+      runBlockAi(b.key);
+    }
+  }, [blocks, active, aiResponses, runBlockAi]);
 
   const mandatoryComplete = useCallback((prog = progress) => {
     const m = (blocks || []).find((b) => b.mandatory);
@@ -99,6 +127,42 @@ export default function GbpGuide({ renderFooter, onDone }) {
               );
             })}
           </div>
+
+          {/* AI response — only for blocks that have an admin-set AI prompt. Runs
+              once when the block loads; the doctor can read, edit and refine it. */}
+          {blocks[active].aiPrompt && (
+            <div className="p-3 border-t" style={{ borderColor: 'var(--rule)' }}>
+              <div className="flex items-center justify-between mb-2">
+                <p className="pos-label" style={{ color: 'var(--green)' }}>AI briefing for this step</p>
+                {aiBusy === blocks[active].key
+                  ? <span className="text-[12px] text-[var(--muted)] flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin inline-block" />Thinking…</span>
+                  : aiResponses[blocks[active].key] && <button onClick={() => runBlockAi(blocks[active].key)} className="text-[12px] font-medium" style={{ color: 'var(--orange)' }}>↻ Regenerate</button>}
+              </div>
+              {aiBusy === blocks[active].key && !aiResponses[blocks[active].key] ? (
+                <p className="text-[13px] text-[var(--muted)]">Generating a briefing from your practice profile…</p>
+              ) : (
+                <textarea
+                  value={aiResponses[blocks[active].key] || ''}
+                  onChange={(e) => setAiResponses((r) => ({ ...r, [blocks[active].key]: e.target.value }))}
+                  rows={7}
+                  className="w-full p-3 text-[13.5px] rounded-lg"
+                  style={{ border: '1px solid var(--rule)', background: 'var(--paper)', resize: 'vertical', lineHeight: 1.55, color: 'var(--ink)' }}
+                  placeholder="The AI briefing will appear here."
+                />
+              )}
+              {/* Small refine chat */}
+              <div className="flex items-stretch gap-2 mt-2">
+                <input
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && aiInput.trim()) { const k = blocks[active].key; runBlockAi(k, aiInput.trim()); setAiInput(''); } }}
+                  placeholder="Ask to change it — e.g. add more categories, make it shorter…"
+                  className="flex-1 rounded-lg px-3 py-2 text-[13px]" style={{ border: '1px solid var(--rule)', background: 'var(--card)', outline: 'none' }}
+                />
+                <button onClick={() => { const k = blocks[active].key; if (aiInput.trim()) { runBlockAi(k, aiInput.trim()); setAiInput(''); } }} disabled={aiBusy === blocks[active].key || !aiInput.trim()} className="pos-action px-4" style={{ opacity: aiInput.trim() ? 1 : 0.5 }}>Send</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -70,6 +70,8 @@ const PracticeOsProfileSchema = new mongoose.Schema({
   // the acknowledgement of the mandatory suspension-risk block.
   gbpProgress: { type: mongoose.Schema.Types.Mixed, default: {} },
   gbpRiskAcknowledgedAt: { type: Date, default: null },
+  // Cached per-block AI responses for the GBP guide ({ [blockKey]: text }).
+  gbpAiResponses: { type: mongoose.Schema.Types.Mixed, default: {} },
 }, { timestamps: true });
 
 export default mongoose.models.PracticeOsProfile

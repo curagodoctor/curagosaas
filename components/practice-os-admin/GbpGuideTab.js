@@ -22,7 +22,7 @@ export default function GbpGuideTab() {
 
   const upBlock = (i, field, v) => setBlocks((bs) => bs.map((b, j) => (j === i ? { ...b, [field]: v } : b)));
   const upTask = (bi, ti, field, v) => setBlocks((bs) => bs.map((b, j) => (j === bi ? { ...b, tasks: b.tasks.map((t, k) => (k === ti ? { ...t, [field]: v } : t)) } : b)));
-  const addBlock = () => setBlocks((bs) => [...bs, { key: '', label: 'New block', title: '', desc: '', mandatory: false, tasks: [] }]);
+  const addBlock = () => setBlocks((bs) => [...bs, { key: '', label: 'New block', title: '', desc: '', mandatory: false, aiPrompt: '', tasks: [] }]);
   const rmBlock = (i) => setBlocks((bs) => bs.filter((_, j) => j !== i));
   const addTask = (bi) => setBlocks((bs) => bs.map((b, j) => (j === bi ? { ...b, tasks: [...b.tasks, { label: '', hint: '', kind: 'EDITABLE' }] } : b)));
   const rmTask = (bi, ti) => setBlocks((bs) => bs.map((b, j) => (j === bi ? { ...b, tasks: b.tasks.filter((_, k) => k !== ti) } : b)));
@@ -67,6 +67,21 @@ export default function GbpGuideTab() {
               <input value={b.title} onChange={(e) => upBlock(bi, 'title', e.target.value)} placeholder="Heading" className="border border-gray-200 rounded-lg px-3 py-2 text-sm" />
             </div>
             <input value={b.desc} onChange={(e) => upBlock(bi, 'desc', e.target.value)} placeholder="Description" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3" />
+
+            {/* Per-block AI prompt: when set, this runs once (grounded in the
+                doctor's profile) as the block loads for the doctor, and the
+                response shows beneath the tasks. Leave blank for no AI. */}
+            <div className="mb-3">
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">AI prompt (optional)</label>
+              <textarea
+                value={b.aiPrompt || ''}
+                onChange={(e) => upBlock(bi, 'aiPrompt', e.target.value)}
+                rows={3}
+                placeholder="e.g. Based on the doctor's specialty and city, suggest GBP categories and attributes… (leave blank for no AI on this block)"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+              />
+              <p className="text-xs text-gray-400 mt-1">Runs once when the doctor opens this block, grounded in their profile. The doctor can then edit/refine the response.</p>
+            </div>
 
             <div className="space-y-2">
               {b.tasks.map((t, ti) => (
