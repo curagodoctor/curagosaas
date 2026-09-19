@@ -4,6 +4,8 @@ import { requirePracticeOsDoctor } from '@/lib/practice-os/access';
 import PracticeOsSettings from '@/models/practice-os/PracticeOsSettings';
 import PracticeOsProfile from '@/models/practice-os/PracticeOsProfile';
 import { DEFAULT_GBP_GUIDE } from '@/lib/practice-os/gbpGuide';
+import { getDoctorProfileFields } from '@/lib/practice-os/profile';
+import { fillPlaceholders } from '@/lib/practice-os/template';
 
 export const runtime = 'nodejs';
 
@@ -14,7 +16,15 @@ export async function GET(request) {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
     const settings = await PracticeOsSettings.getSettings();
-    const blocks = Array.isArray(settings.gbpGuide) && settings.gbpGuide.length ? settings.gbpGuide : DEFAULT_GBP_GUIDE;
+    const rawBlocks = Array.isArray(settings.gbpGuide) && settings.gbpGuide.length ? settings.gbpGuide : DEFAULT_GBP_GUIDE;
+    // Resolve {{placeholders}} in the guide copy from the doctor's profile.
+    const fields = await getDoctorProfileFields(doctor._id);
+    const blocks = rawBlocks.map((b) => ({
+      ...b,
+      title: fillPlaceholders(b.title, fields),
+      desc: fillPlaceholders(b.desc, fields),
+      tasks: (b.tasks || []).map((t) => ({ ...t, label: fillPlaceholders(t.label, fields), hint: fillPlaceholders(t.hint, fields) })),
+    }));
     const profile = await PracticeOsProfile.findOne({ doctorId: doctor._id }).select('gbpProgress gbpRiskAcknowledgedAt gbpAiResponses').lean();
     return NextResponse.json({
       success: true,

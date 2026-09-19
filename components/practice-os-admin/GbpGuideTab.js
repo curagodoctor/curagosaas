@@ -85,13 +85,15 @@ export default function GbpGuideTab() {
 
             <div className="space-y-2">
               {b.tasks.map((t, ti) => (
-                <div key={ti} className="flex flex-wrap gap-2 items-center">
-                  <input value={t.label} onChange={(e) => upTask(bi, ti, 'label', e.target.value)} placeholder="Task" className="flex-1 min-w-[160px] border border-gray-200 rounded-lg px-3 py-2 text-sm" />
-                  <input value={t.hint} onChange={(e) => upTask(bi, ti, 'hint', e.target.value)} placeholder="Hint" className="flex-1 min-w-[160px] border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                <div key={ti} className="flex flex-wrap gap-2 items-start">
+                  {/* Expandable (2-line) fields so long task text isn't truncated;
+                      supports {{placeholders}} that resolve from the doctor's profile. */}
+                  <textarea value={t.label} onChange={(e) => upTask(bi, ti, 'label', e.target.value)} placeholder="Task (supports {{placeholders}})" rows={2} className="flex-1 min-w-[200px] border border-gray-200 rounded-lg px-3 py-2 text-sm resize-y" />
+                  <textarea value={t.hint} onChange={(e) => upTask(bi, ti, 'hint', e.target.value)} placeholder="Hint (supports {{placeholders}})" rows={2} className="flex-1 min-w-[200px] border border-gray-200 rounded-lg px-3 py-2 text-sm resize-y" />
                   <select value={t.kind} onChange={(e) => upTask(bi, ti, 'kind', e.target.value)} className="border border-gray-200 rounded-lg px-2 py-2 text-sm">
                     {KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
                   </select>
-                  <button onClick={() => rmTask(bi, ti)} className="text-red-500 hover:text-red-700 text-sm px-1">✕</button>
+                  <button onClick={() => rmTask(bi, ti)} className="text-red-500 hover:text-red-700 text-sm px-1 mt-2">✕</button>
                 </div>
               ))}
             </div>

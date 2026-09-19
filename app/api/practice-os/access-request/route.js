@@ -56,6 +56,12 @@ export async function POST(request) {
 
     const body = await request.json();
     const answers = body.answers && typeof body.answers === 'object' ? body.answers : {};
+    // Save the WhatsApp number to the doctor (last-10-digits) so reminders use it.
+    const wa = String(answers.whatsapp || body.whatsapp || '').replace(/\D/g, '').slice(-10);
+    if (wa.length === 10) {
+      const Doctor = (await import('@/models/Doctor')).default;
+      await Doctor.updateOne({ _id: doctor._id }, { $set: { whatsappNumber: wa } }).catch(() => {});
+    }
     const req = await PracticeOsAccessRequest.create({
       doctorId: doctor._id,
       name: (body.name || doctor.displayName || doctor.name || '').trim(),

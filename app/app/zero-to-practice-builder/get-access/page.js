@@ -9,6 +9,7 @@ import PosNav from '@/components/practice-os/PosNav';
 // / submitted / pending / granted.
 const QUESTIONS = [
   { id: 'location', type: 'text', q: 'Where is your clinic located?', ph: 'City, area' },
+  { id: 'whatsapp', type: 'phone', q: 'Your WhatsApp number', body: 'We’ll send your daily reminders and updates here.', ph: '10-digit number' },
   { id: 'specialty', type: 'text', q: 'What is your specialty?', ph: 'e.g. Surgical gastroenterology' },
   { id: 'practice_status', type: 'choice', q: 'Your current clinical practice status', options: ['Own clinic', 'Rented or shared clinic', 'Setting up', 'None of the above'] },
   { id: 'gbp_status', type: 'choice', q: 'Do you currently have a Google Business Profile?', options: ['No', 'Yes, but inactive', 'Yes, active'] },
@@ -24,10 +25,15 @@ const QUESTIONS = [
   { id: 'onetime_or_ongoing', type: 'textarea', q: 'Do you see this as a one-time fix, or something that needs ongoing maintenance? Be honest — what you actually believe, not what sounds right.' },
   { id: 'biggest_challenge', type: 'textarea', q: 'What is the single biggest challenge you personally face with Google or online visibility for your practice?' },
   { id: 'change_one_thing', type: 'textarea', q: 'If you could change one thing about how doctors currently handle their online presence, what would it be?' },
-  { id: 'why_founding', type: 'textarea', q: 'Why should you be one of the 5 founding doctors?', note: 'Minimum 400 characters — this matters, please don\'t rush it.', minChars: 400 },
+  { id: 'why_founding', type: 'textarea', q: 'Why should you be one of the 5 founding doctors?', note: 'A few honest lines is enough (min 50 characters).', minChars: 50 },
   { id: 'agreement', type: 'agreement', q: 'Case Study Participation Agreement',
-    text: 'I understand Dominate Organic Search is provided to me at no cost for a month as part of a founding case study, not a giveaway. I agree to genuinely implement the system on my own practice. If my account goes dormant, CuraGo will personally reach out to help me get back on track. If I still do not engage after that, my access will be withdrawn. I agree to provide honest feedback during the process, and I consent to CuraGo using my feedback, testimonials, screenshots, and results for website content, educational, marketing, and case-study purposes.',
-    agree: 'I Agree' },
+    // Each point is its own tick — all must be checked. **bold** is emphasised.
+    points: [
+      'I understand **Dominate Organic Search** is provided to me **at no cost for a month** as part of a founding case study — **not a giveaway**.',
+      'I agree to **genuinely implement** the system on my own practice.',
+      'If my account goes **dormant**, CuraGo will personally reach out to help me get back on track.',
+      'I agree to provide **honest feedback**, and I **consent** to CuraGo using my feedback, testimonials, screenshots and results for website, educational, marketing and case-study purposes.',
+    ] },
 ];
 
 export default function GetAccessPage() {
@@ -56,8 +62,18 @@ export default function GetAccessPage() {
 
   const q = QUESTIONS[idx];
   const val = answers[q?.id];
-  const answered = q ? (q.type === 'agreement' ? val === true : String(val ?? '').trim().length >= (q.minChars || 1)) : false;
+  const answered = (() => {
+    if (!q) return false;
+    if (q.type === 'agreement') return Array.isArray(val) && val.length === q.points.length && val.every(Boolean);
+    if (q.type === 'phone') return /^\d{10}$/.test(String(val || ''));
+    return String(val ?? '').trim().length >= (q.minChars || 1);
+  })();
   const setA = (v) => setAnswers((a) => ({ ...a, [q.id]: v }));
+  const toggleAgree = (i) => setAnswers((a) => {
+    const cur = Array.isArray(a[q.id]) ? [...a[q.id]] : new Array(q.points.length).fill(false);
+    cur[i] = !cur[i];
+    return { ...a, [q.id]: cur };
+  });
   const back = () => { setError(''); if (idx > 0) setIdx(idx - 1); };
   const signOut = async () => {
     try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch { /* ignore */ }
@@ -65,7 +81,14 @@ export default function GetAccessPage() {
   };
   const advance = () => {
     setError('');
-    if (!answered) { setError(q.minChars ? `Please write at least ${q.minChars} characters.` : 'Please answer to continue.'); return; }
+    if (!answered) {
+      setError(
+        q.type === 'phone' ? 'Enter a valid 10-digit WhatsApp number.'
+          : q.type === 'agreement' ? 'Please tick each point to continue.'
+            : q.minChars ? `Please write at least ${q.minChars} characters.` : 'Please answer to continue.',
+      );
+      return;
+    }
     if (idx < QUESTIONS.length - 1) setIdx(idx + 1); else submit();
   };
   const submit = async () => {
@@ -73,7 +96,7 @@ export default function GetAccessPage() {
     try {
       const res = await fetch('/api/practice-os/access-request', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ answers, name: prefill.name, phone: prefill.phone, specialty: answers.specialty }),
+        body: JSON.stringify({ answers, name: prefill.name, phone: prefill.phone, specialty: answers.specialty, whatsapp: answers.whatsapp }),
       });
       const d = await res.json();
       if (d.success) {
@@ -132,6 +155,7 @@ export default function GetAccessPage() {
 
           <div className="pos-card p-6">
             <h1 className="text-[21px] font-semibold text-[var(--ink)]" style={{ letterSpacing: '-0.01em', lineHeight: 1.25 }}>{q.q}</h1>
+            {q.body && <p className="text-[13.5px] text-[var(--muted)] mt-1.5">{q.body}</p>}
             {q.note && <p className="text-[13px] text-[var(--orange)] mt-1.5">{q.note}</p>}
 
             <div className="mt-4">
@@ -139,6 +163,16 @@ export default function GetAccessPage() {
                 <input autoFocus value={val || ''} onChange={(e) => setA(e.target.value)} placeholder={q.ph || ''}
                   onKeyDown={(e) => { if (e.key === 'Enter') advance(); }}
                   className="w-full rounded-[11px] px-3.5 py-3 text-[15px] outline-none" style={{ border: '1px solid var(--rule)', background: 'var(--paper)' }} />
+              )}
+              {q.type === 'phone' && (
+                <div className="flex items-stretch rounded-[11px] overflow-hidden" style={{ border: '1px solid var(--rule)', background: 'var(--paper)' }}>
+                  <span className="flex items-center px-3.5 text-[15px] font-medium" style={{ background: 'var(--rule-soft)', color: 'var(--ink)', borderRight: '1px solid var(--rule)' }}>+91</span>
+                  <input autoFocus inputMode="numeric" value={val || ''}
+                    onChange={(e) => setA(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    onKeyDown={(e) => { if (e.key === 'Enter') advance(); }}
+                    placeholder={q.ph || '10-digit number'} maxLength={10}
+                    className="flex-1 px-3.5 py-3 text-[15px] outline-none bg-transparent" />
+                </div>
               )}
               {q.type === 'textarea' && (
                 <>
@@ -156,12 +190,19 @@ export default function GetAccessPage() {
                 </div>
               )}
               {q.type === 'agreement' && (
-                <div>
-                  <p className="text-[13.5px] text-[var(--muted)]" style={{ lineHeight: 1.6 }}>{q.text}</p>
-                  <label className="flex items-start gap-3 mt-4 cursor-pointer">
-                    <input type="checkbox" checked={val === true} onChange={(e) => setA(e.target.checked)} className="mt-0.5 w-5 h-5 rounded" style={{ accentColor: 'var(--green)' }} />
-                    <span className="text-[15px] font-semibold text-[var(--ink)]">{q.agree}</span>
-                  </label>
+                <div className="space-y-2.5">
+                  {q.points.map((pt, i) => {
+                    const on = Array.isArray(val) && val[i];
+                    return (
+                      <label key={i} className="flex items-start gap-3 p-3 rounded-[11px] cursor-pointer"
+                        style={{ border: `1px solid ${on ? 'var(--green)' : 'var(--rule)'}`, background: on ? 'var(--green-soft)' : 'var(--card)' }}>
+                        <input type="checkbox" checked={!!on} onChange={() => toggleAgree(i)} className="mt-0.5 w-5 h-5 rounded shrink-0" style={{ accentColor: 'var(--green)' }} />
+                        <span className="text-[14px] text-[var(--ink)]" style={{ lineHeight: 1.55 }}
+                          dangerouslySetInnerHTML={{ __html: pt.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>') }} />
+                      </label>
+                    );
+                  })}
+                  <p className="text-[12px] text-[var(--muted)] mt-1">Tick each point to submit.</p>
                 </div>
               )}
             </div>
