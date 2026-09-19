@@ -130,9 +130,15 @@ function ClustersInner() {
 
               <div style={{ padding: 'clamp(18px,2.4vw,28px) clamp(18px,2.6vw,34px) clamp(20px,2.6vw,32px)', display: 'flex', flexDirection: 'column', gap: 18 }}>
                 <label className="block">
-                  <span className="block" style={{ ...mono, fontSize: 10.5, letterSpacing: '.14em', color: 'var(--muted)', marginBottom: 8 }}>DISEASE {String(idx + 1).padStart(2, '0')}</span>
+                  <span className="flex items-center gap-2" style={{ marginBottom: 8 }}>
+                    <span style={{ ...mono, fontSize: 10.5, letterSpacing: '.14em', color: 'var(--muted)' }}>DISEASE {String(idx + 1).padStart(2, '0')}</span>
+                    {cur.tier === 'authority'
+                      ? <span style={{ ...mono, fontSize: 9.5, letterSpacing: '.1em', color: 'var(--orange)', background: 'var(--orange-soft, rgba(242,106,27,.08))', border: '1px solid var(--orange)', padding: '3px 7px', borderRadius: 5 }}>HIGH-AUTHORITY</span>
+                      : <span style={{ ...mono, fontSize: 9.5, letterSpacing: '.1em', color: 'var(--green)', background: LEAF_SOFT, border: '1px solid var(--green)', padding: '3px 7px', borderRadius: 5 }}>HIGH-DEMAND</span>}
+                  </span>
                   <input type="text" value={cur.name} onChange={(e) => setName(e.target.value)} onBlur={() => save(cur._id, { name: cur.name })}
                     style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--rule)', borderRadius: 14, padding: '16px 17px', fontSize: 19, fontWeight: 700, letterSpacing: '-.02em', color: 'var(--ink)', background: 'var(--paper)', outline: 'none' }} />
+                  {cur.reason && <span className="block" style={{ fontSize: 13, color: 'var(--muted)', marginTop: 8, lineHeight: 1.5 }}>Why it&apos;s here: {cur.reason}</span>}
                 </label>
 
                 <div>

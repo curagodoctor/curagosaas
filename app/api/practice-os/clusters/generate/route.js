@@ -30,7 +30,21 @@ export async function POST(request) {
     if (!specialty) return NextResponse.json({ success: false, error: 'Add your specialty in your profile first.' }, { status: 400 });
 
     const gen = await structureContent({
-      instruction: `You are mapping an Indian doctor's practice for content generation. Use their specialty "${specialty}"${fields.subspecialty ? ` and subspecialty "${fields.subspecialty}"` : ''} as the base, and PREFER the procedures and areas of expertise the doctor actually listed below when choosing treatments. Generate EXACTLY 10 distinct diseases/conditions this doctor treats — ordered most-common first. For EACH disease, list its SPECIFIC treatments (minimum 1, ideally 2 where clinically appropriate, maximum 2) that a doctor of this specialty genuinely performs for THAT disease: use the doctor's OWN listed procedures wherever they apply, and standard, medically-accurate specialty procedures otherwise. Treatments must be disease-specific (never generic, never repeated across diseases unless truly the same), each a real procedure with correct medical terminology paired with a plain patient-facing name. Return JSON: {"diseases": [{"name": string, "treatments": string[] (1-2 items)}]} with exactly 10 diseases. NMC-compliant — factual, no superlatives, no outcome claims.`,
+      instruction: `From the specialty "${specialty}"${fields.subspecialty ? ` (subspecialty "${fields.subspecialty}")` : ''}, generate the core DISEASE and TREATMENT architecture for an INDEPENDENT specialist practising in an Indian Tier-1 or Tier-2 city. This is architecture only — clinically coherent, commercially meaningful, SEO-useful — NOT a keyword list, NOT content.
+
+DISEASE SELECTION — generate EXACTLY 10 distinct diseases/clinical conditions.
+Prioritise, in this order: (1) common conditions with high patient demand and strong consultation/procedure potential; (2) conditions commonly managed or operated on by THIS specialty in real-world Indian practice; (3) conditions with meaningful treatment/procedure value; (4) a SMALLER number of complex/high-value conditions that establish specialist authority even at lower volume.
+Weight the list toward COMMON + HIGH-DEMAND + HIGH-PRACTICE-VALUE, with only a small component of COMPLEX + HIGH-AUTHORITY. Do NOT optimise for rare diseases merely because they are medically interesting.
+Each disease must be a DISTINCT patient problem with distinct symptoms, evaluation, treatment and search intent. Do NOT split one disease into artificial SEO variants (use "Gallstones" not gallbladder-stones/polyps as separate diseases; "Appendicitis" not acute/chronic; "Colorectal cancer" not colon vs rectal; "Arthritis" not separate knee/hip/shoulder pages when they are the same disease universe). But keep grouping CLINICALLY VALID — never merge genuinely distinct diseases just to reduce page count.
+Order the 10 by priority (highest-demand/most-common first; the small complex/high-authority set last). Mark each disease's tier: "common" for the high-demand/high-practice-value drivers, "authority" for the complex/high-authority ones. Give each a one-line reason for inclusion.
+
+TREATMENT DERIVATION — for each finalised disease, derive its clinically appropriate treatments/procedures. Each treatment MUST be: medically distinct; clinically legitimate; relevant to the specialty; genuinely appropriate for THAT disease; within the practical scope of an independent specialist; and consistent with current medical standards. A disease may have 1 to 4 treatments — as many DISTINCT procedures as the specialist would actually perform for it, and no more (e.g. Colorectal cancer → laparoscopic right/left hemicolectomy, anterior resection; Gallstones → laparoscopic cholecystectomy; GERD → laparoscopic Nissen fundoplication).
+Do NOT create separate treatments for wording/keyword variations. Do NOT list a recognised treatment the specialist would not personally perform (e.g. do NOT auto-attach RFA to liver cancer just because RFA exists for it) — include only treatments appropriate to this specialty and this specialist's actual surgical scope.
+PREFER the doctor's OWN listed procedures/expertise wherever they legitimately apply to a disease; use standard, medically-accurate specialty procedures otherwise. Use correct medical terminology paired with a plain patient-facing name where helpful.
+
+CLINICAL ACCURACY — follow current medical knowledge and accepted practice. Do NOT invent diseases, procedures, synonyms, indications or treatment relationships. Never optimise for keywords at the expense of clinical accuracy.
+
+Return JSON: {"diseases": [{"name": string, "tier": "common"|"authority", "reason": string (one line), "treatments": string[] (1-4 distinct, real procedures)}]} with EXACTLY 10 diseases in priority order. NMC-compliant — factual, no superlatives, no outcome/success claims.`,
       source: `Specialty: ${specialty}\nSubspecialty: ${fields.subspecialty || '(none)'}\nProcedures the doctor listed: ${fields.procedures || '(none)'}\nAreas of expertise: ${fields.expertise || '(none)'}\nConditions the doctor listed: ${fields.diseases || '(none)'}\nCity: ${fields.city || ''}`,
       profileFields: fields,
     });
@@ -43,7 +57,9 @@ export async function POST(request) {
       doctorId: doctor._id,
       name: String(d.name || '').trim() || `Condition ${i + 1}`,
       slug: slugify(d.name),
-      treatments: (Array.isArray(d.treatments) ? d.treatments : []).slice(0, 2)
+      tier: d.tier === 'authority' ? 'authority' : 'common',
+      reason: String(d.reason || '').trim().slice(0, 200),
+      treatments: (Array.isArray(d.treatments) ? d.treatments : []).slice(0, 4)
         .map((t) => ({ name: String(t).trim(), source: 'ai' }))
         .filter((t) => t.name),
       approved: false,

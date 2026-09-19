@@ -19,6 +19,12 @@ const PracticeOsDiseaseClusterSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   // Stable slug used for the diseaseCluster key on pages (e.g. "gallstones").
   slug: { type: String, trim: true, lowercase: true, default: '' },
+  // Practice-value tier: 'common' = high-demand / high-practice-value driver;
+  // 'authority' = complex, lower-volume condition that establishes specialist
+  // authority. Drives ordering + how the doctor reviews the map.
+  tier: { type: String, enum: ['common', 'authority'], default: 'common' },
+  // One-line reason this condition was included (shown in the review UI).
+  reason: { type: String, trim: true, default: '' },
   // Treatments for this disease. source: 'profile' (from the doctor's procedures),
   // 'ai' (suggested), or 'manual' (added by the doctor).
   treatments: {
