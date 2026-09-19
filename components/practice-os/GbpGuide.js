@@ -170,24 +170,29 @@ export default function GbpGuide({ renderFooter, onDone }) {
           You go in order; a mandatory block must be done to move past it. */}
       {blocks[active] && (() => {
         const b = blocks[active];
-        const blockDone = b.tasks.every((_, j) => progress[`${b.key}:${j}`]);
+        // Every task must be ticked to FINISH a block via Next. Skipping is the
+        // only way to advance without completing (non-mandatory blocks only).
+        const blockDone = (b.tasks || []).length === 0 || b.tasks.every((_, j) => progress[`${b.key}:${j}`]);
         const isLast = active === blocks.length - 1;
+        const mustDone = mandatoryComplete();
         const goNext = () => { const n = active + 1; setActive(n); setUnlocked((u) => Math.max(u, n)); };
         const goBack = () => setActive((a) => Math.max(0, a - 1));
-        const mustDone = mandatoryComplete();
+        const skip = () => { if (isLast) { if (mustDone) onDone?.(); } else goNext(); };
         return (
           <div className="flex items-center flex-wrap gap-3 mt-4">
             {active > 0 && <button onClick={goBack} className="pos-link text-sm" style={{ color: 'var(--muted)' }}>← Back</button>}
             {isLast ? (
-              <button onClick={() => { if (mustDone) onDone?.(); }} disabled={!mustDone} className="pos-action" style={{ opacity: mustDone ? 1 : 0.5 }}>Finish &amp; continue →</button>
+              <button onClick={() => { if (blockDone && mustDone) onDone?.(); }} disabled={!blockDone || !mustDone} className="pos-action" style={{ opacity: blockDone && mustDone ? 1 : 0.5 }}>Finish &amp; continue →</button>
             ) : (
-              <button onClick={goNext} disabled={b.mandatory && !blockDone} className="pos-action" style={{ opacity: b.mandatory && !blockDone ? 0.5 : 1 }}>
-                {blockDone ? 'Continue →' : 'Next →'}
-              </button>
+              <button onClick={goNext} disabled={!blockDone} className="pos-action" style={{ opacity: blockDone ? 1 : 0.5 }}>Next →</button>
             )}
-            {!isLast && !b.mandatory && !blockDone && <button onClick={goNext} className="pos-link text-sm" style={{ color: 'var(--muted)' }}>Skip this block →</button>}
-            {b.mandatory && !blockDone && <span className="text-[13px]" style={{ color: 'var(--orange)' }}>Complete this mandatory block to continue.</span>}
-            {isLast && !mustDone && <span className="text-[13px]" style={{ color: 'var(--orange)' }}>Finish the mandatory block to continue.</span>}
+            {/* Skip is only for non-mandatory blocks — advance without completing. */}
+            {!b.mandatory && !blockDone && <button onClick={skip} className="pos-link text-sm" style={{ color: 'var(--muted)' }}>Skip this block →</button>}
+            {!blockDone && (
+              <span className="text-[13px]" style={{ color: 'var(--orange)' }}>
+                {b.mandatory ? 'Complete every task to continue.' : 'Complete every task to finish, or skip this block.'}
+              </span>
+            )}
           </div>
         );
       })()}
