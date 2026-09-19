@@ -56,7 +56,7 @@ export async function POST(request) {
 
     const { remaining } = await chargeAiCredits(doctor._id, { label: 'publish-blog' });
     const url = doc?.subdomain ? `https://${doc.subdomain}.curago.in/blog/${slug}` : `/blog/${slug}`;
-    return NextResponse.json({ success: true, url, slug, title: article.title, creditsRemaining: remaining });
+    return NextResponse.json({ success: true, id: String(article._id), url, slug, title: article.title, creditsRemaining: remaining });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     if (error.message === 'PaymentRequired') return NextResponse.json({ success: false, error: 'PaymentRequired' }, { status: 402 });

@@ -127,7 +127,7 @@ function DayInner() {
       const d = await fetch('/api/practice-os/actions/publish-blog', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ text: content }),
       }).then((r) => r.json());
-      if (d.success) setPublish({ url: d.url });
+      if (d.success) setPublish({ url: d.url, id: d.id, title: d.title }); // opens the confirmation modal
       else { setPublish(null); setErr(d.error || 'Could not publish.'); }
     } catch { setPublish(null); setErr('Could not publish.'); }
   };
@@ -151,21 +151,27 @@ function DayInner() {
         <p className="text-[14px] text-[var(--muted)] mt-2">Your content is ready. Suggest changes below, edit it directly, then copy it or push it live.</p>
 
         {/* The AI response — the hero. Editable. */}
-        <div className="pos-card mt-5 p-0 overflow-hidden" style={{ borderColor: 'var(--green)' }}>
+        <div className="pos-card mt-5 p-0 overflow-hidden relative" style={{ borderColor: 'var(--green)' }}>
           <div className="flex items-center justify-between px-4 py-2.5" style={{ background: 'var(--green-soft, rgba(9,107,23,.08))', borderBottom: '1px solid var(--rule-soft)' }}>
             <span className="pos-label" style={{ color: 'var(--green)' }}>Generated content · editable</span>
-            {generating
-              ? <span className="text-[12px] text-[var(--muted)] flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin inline-block" />Writing…</span>
-              : <button onClick={regenerate} className="text-[12px] font-medium" style={{ color: 'var(--orange)' }}>↻ Regenerate</button>}
+            <button onClick={regenerate} disabled={generating} className="text-[12px] font-medium" style={{ color: 'var(--orange)', opacity: generating ? 0.5 : 1 }}>↻ Regenerate</button>
           </div>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder={generating ? 'Generating your content…' : 'Your content will appear here.'}
+            placeholder={generating ? '' : 'Your content will appear here.'}
             rows={14}
             className="w-full p-4 text-[15px] outline-none bg-transparent"
             style={{ resize: 'vertical', lineHeight: 1.6, color: 'var(--ink)' }}
           />
+          {/* Central "rewriting" overlay so it's obvious the AI is working. */}
+          {generating && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" style={{ background: 'rgba(247,249,245,.86)', backdropFilter: 'blur(1.5px)' }}>
+              <span className="w-9 h-9 rounded-full border-[3px] border-[var(--green)] border-t-transparent animate-spin" />
+              <p className="text-[15px] font-semibold text-[var(--ink)]">Rewriting your content…</p>
+              <p className="text-[12.5px] text-[var(--muted)]">This takes a few seconds.</p>
+            </div>
+          )}
         </div>
 
         {err && <p className="text-[13px] text-red-600 mt-2">{err}</p>}
@@ -179,10 +185,6 @@ function DayInner() {
             {finishing ? 'Finishing…' : 'Finish task →'}
           </button>
         </div>
-        {publish?.url && (
-          <p className="text-[13px] mt-2" style={{ color: 'var(--green)' }}>Published live. <a href={publish.url} target="_blank" rel="noreferrer" className="pos-link underline">Preview →</a></p>
-        )}
-
         {/* Suggest changes — the chat */}
         <div className="mt-8">
           <p className="pos-label mb-2">Suggest a change</p>
@@ -207,6 +209,29 @@ function DayInner() {
           </div>
         </div>
       </div>
+
+      {/* Push-as-blog confirmation — stays open until the doctor closes it. */}
+      {publish && typeof publish === 'object' && publish.url && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-5" style={{ background: 'rgba(16,26,19,.45)' }}>
+          <div className="pos-card w-full max-w-md p-6" style={{ background: 'var(--card)' }} onClick={(e) => e.stopPropagation()}>
+            <div className="w-12 h-12 rounded-full grid place-items-center mx-auto mb-3" style={{ background: 'var(--green-soft, rgba(9,107,23,.08))', color: 'var(--green)', fontSize: 22 }}>✓</div>
+            <h2 className="text-[20px] font-semibold text-[var(--ink)] text-center" style={{ letterSpacing: '-0.02em' }}>Blog page published</h2>
+            <p className="text-[13.5px] text-[var(--muted)] text-center mt-1">Your page is live. View it, or edit and republish.</p>
+            {publish.title && <p className="text-[14px] font-medium text-[var(--ink)] text-center mt-3">{publish.title}</p>}
+            <div className="flex items-center gap-2 mt-3 rounded-xl p-2.5" style={{ background: 'var(--paper)', border: '1px solid var(--rule)' }}>
+              <span className="text-[12.5px] text-[var(--muted)] truncate flex-1">{publish.url}</span>
+              <button onClick={() => { try { navigator.clipboard?.writeText(publish.url); } catch { /* ignore */ } }} className="text-[12px] font-semibold shrink-0" style={{ color: 'var(--green)' }}>Copy link</button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-5">
+              <a href={publish.url} target="_blank" rel="noreferrer" className="pos-action text-center" style={{ background: 'var(--green)' }}>View live page →</a>
+              {publish.id && (
+                <button onClick={() => router.push(`/admin/dashboard/blog-articles/${publish.id}`)} className="rounded-[10px] px-4 py-3 text-[14px] font-semibold text-center" style={{ border: '1px solid var(--rule)', color: 'var(--ink)', background: 'var(--card)' }}>Edit</button>
+              )}
+            </div>
+            <button onClick={() => setPublish(null)} className="pos-link text-[13px] mt-4 block mx-auto" style={{ color: 'var(--muted)' }}>Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
