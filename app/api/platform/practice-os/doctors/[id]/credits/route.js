@@ -43,6 +43,9 @@ export async function PUT(request, { params }) {
     if (body.dailyBalance != null && Number.isFinite(Number(body.dailyBalance))) {
       set.dailyBalance = Math.max(0, Math.round(Number(body.dailyBalance)));
     }
+    if (body.dailyLimit != null && Number.isFinite(Number(body.dailyLimit))) {
+      set.dailyLimit = Math.max(0, Math.round(Number(body.dailyLimit)));
+    }
     if (!Object.keys(set).length) return NextResponse.json({ success: false, error: 'Nothing to update.' }, { status: 400 });
 
     const ledger = await AiCreditLedger.findOneAndUpdate(

@@ -1100,12 +1100,13 @@ function CreditsModal({ doctorId, name, onClose }) {
   const [msg, setMsg] = useState('');
   const [unlimited, setUnlimited] = useState(false);
   const [balance, setBalance] = useState(0);
+  const [limit, setLimit] = useState(0);
 
   useEffect(() => {
     (async () => {
       try {
         const d = await fetch(`/api/platform/practice-os/doctors/${doctorId}/credits`).then((r) => r.json());
-        if (d.success) { setUnlimited(!!d.credits.unlimited); setBalance(d.credits.dailyBalance ?? 0); }
+        if (d.success) { setUnlimited(!!d.credits.unlimited); setBalance(d.credits.dailyBalance ?? 0); setLimit(d.credits.dailyLimit ?? 0); }
       } catch { /* ignore */ } finally { setLoading(false); }
     })();
   }, [doctorId]);
@@ -1115,7 +1116,7 @@ function CreditsModal({ doctorId, name, onClose }) {
     try {
       const d = await fetch(`/api/platform/practice-os/doctors/${doctorId}/credits`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ unlimited, dailyBalance: Number(balance) || 0 }),
+        body: JSON.stringify({ unlimited, dailyBalance: Number(balance) || 0, dailyLimit: Number(limit) || 0 }),
       }).then((r) => r.json());
       if (d.success) { setMsg('Saved.'); setTimeout(onClose, 700); }
       else setMsg(d.error || 'Could not save.');
@@ -1126,7 +1127,7 @@ function CreditsModal({ doctorId, name, onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-5 bg-black/40" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
         <h3 className="text-lg font-semibold text-gray-900">AI credits — {name}</h3>
-        <p className="text-sm text-gray-500 mt-0.5">Doctors get 10 credits/day by default. Give unlimited access, or set today&apos;s remaining balance.</p>
+        <p className="text-sm text-gray-500 mt-0.5">Give unlimited access, set the daily allowance, or set today&apos;s remaining balance.</p>
         {loading ? (
           <p className="text-sm text-gray-500 mt-4">Loading…</p>
         ) : (
@@ -1136,9 +1137,14 @@ function CreditsModal({ doctorId, name, onClose }) {
               <span className="text-sm font-medium text-gray-900">Unlimited AI credits (no daily cap)</span>
             </label>
             <div className={unlimited ? 'opacity-40 pointer-events-none' : ''}>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Credits per day (allowance)</label>
+              <input type="number" min={0} value={limit} onChange={(e) => setLimit(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+              <p className="text-xs text-gray-400 mt-1">How many credits are added each day.</p>
+            </div>
+            <div className={unlimited ? 'opacity-40 pointer-events-none' : ''}>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Remaining credits today</label>
               <input type="number" min={0} value={balance} onChange={(e) => setBalance(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
-              <p className="text-xs text-gray-400 mt-1">Refills by 10/day automatically. Set this to top up now.</p>
+              <p className="text-xs text-gray-400 mt-1">The current usable balance. Unused credits carry over and accumulate over several days — that&apos;s why this can be higher than the daily allowance. Set it to top up (or trim) now.</p>
             </div>
             {msg && <p className={`text-sm ${msg === 'Saved.' ? 'text-green-600' : 'text-red-600'}`}>{msg}</p>}
             <div className="flex items-center gap-3 pt-1">
