@@ -12,6 +12,7 @@ export default function BlogArticlesPage() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
+  const [siteBase, setSiteBase] = useState('');   // for "View article" live links
 
   // AI draft chatbox — context → AI draft → review in editor → publish.
   const [showAiDraft, setShowAiDraft] = useState(false);
@@ -40,6 +41,18 @@ export default function BlogArticlesPage() {
   useEffect(() => {
     fetchArticles();
   }, [filterStatus, filterCategory, pagination.page]);
+
+  // The doctor's public site base, for live "View article" links.
+  useEffect(() => {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => {
+        const doc = d.doctor || {};
+        if (doc.customDomain && doc.customDomainVerified) setSiteBase(`https://${doc.customDomain}`);
+        else if (doc.subdomain) setSiteBase(`https://${doc.subdomain}.curago.in`);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchArticles = async () => {
     try {
@@ -351,6 +364,16 @@ export default function BlogArticlesPage() {
                       <div className="text-sm text-gray-500">{formatDate(article.publishedAt)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
+                      {article.status === 'published' && siteBase && (
+                        <a
+                          href={`${siteBase}/blog/${article.slug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[#096b17] hover:text-[#075512] font-semibold"
+                        >
+                          View
+                        </a>
+                      )}
                       {article.status !== 'published' && (
                         <button
                           onClick={() => handlePublish(article._id, article.title)}

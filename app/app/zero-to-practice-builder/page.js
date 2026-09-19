@@ -190,9 +190,10 @@ export default function ControlCenter() {
         </div>
       )}
 
-      {/* Work awaiting review + engagement nudges */}
+      {/* Work awaiting review — only once access is granted (never while under
+          review), so leftover drafts don't leak into a pending doctor's view. */}
       <div className="mt-4 space-y-4">
-        <PendingWorkPrompt />
+        {accessStatus === 'granted' && diseasesReviewed && <PendingWorkPrompt />}
         <EngagementNudges />
       </div>
 
