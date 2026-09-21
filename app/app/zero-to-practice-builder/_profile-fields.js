@@ -3,7 +3,44 @@
 // Shared doctor-profile field renderer, used by both Day-0 setup and the editable
 // "My Profile" page. The field DEFINITIONS live in a server-safe module so the
 // admin merge API can share them; the effective list may be customised by admin.
+import { useState } from 'react';
 import { DEFAULT_SECTIONS } from '@/lib/practice-os/profile-fields-defaults';
+
+// Editable chip list — the practice-map pattern. The value stays a comma-joined
+// string (the source-of-truth format), rendered as removable tags with a "+ Add"
+// entry. Used for expertise / diseases / procedures.
+function ChipsField({ value, onChange, placeholder }) {
+  const [draft, setDraft] = useState('');
+  const items = (value || '').split(',').map((x) => x.trim()).filter(Boolean);
+  const commit = (str) => onChange(str.join(', '));
+  const add = () => {
+    // Allow pasting several comma-separated items at once.
+    const parts = draft.split(',').map((x) => x.trim()).filter(Boolean);
+    if (!parts.length) { setDraft(''); return; }
+    const merged = [...items];
+    for (const p of parts) if (!merged.some((x) => x.toLowerCase() === p.toLowerCase())) merged.push(p);
+    commit(merged);
+    setDraft('');
+  };
+  const removeAt = (i) => commit(items.filter((_, j) => j !== i));
+  return (
+    <div className="flex flex-wrap items-center gap-2 mt-1.5 p-2 rounded-[11px]" style={{ border: '1px solid var(--rule)', background: 'var(--paper)' }}>
+      {items.map((label, i) => (
+        <span key={`${label}-${i}`} className="inline-flex items-center gap-2 rounded-[9px] px-2.5 py-1.5 text-[13.5px]"
+          style={{ background: 'var(--green-soft)', border: '1px solid var(--green)', color: 'var(--green)' }}>
+          {label}
+          <button type="button" onClick={() => removeAt(i)} aria-label={`Remove ${label}`}
+            className="leading-none cursor-pointer opacity-50 hover:opacity-100 transition-opacity"
+            style={{ background: 'transparent', border: 0, color: 'inherit', fontSize: 15 }}>×</button>
+        </span>
+      ))}
+      <input value={draft} onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(); } else if (e.key === 'Backspace' && !draft && items.length) { removeAt(items.length - 1); } }}
+        onBlur={add} placeholder={placeholder || 'Type and press Enter'}
+        className="flex-1 min-w-[140px] text-[14px] outline-none bg-transparent px-1.5 py-1" />
+    </div>
+  );
+}
 
 // Default (built-in) sections. Pages fetch the admin-merged list at runtime and
 // fall back to these if the fetch fails, so onboarding never breaks.
@@ -26,7 +63,9 @@ export function Field({ f, value, confidence, error, onChange, onToggleTag }) {
       </label>
       {f.hint && <p className="text-[11.5px] text-[var(--muted)] mt-0.5 leading-snug">{f.hint}</p>}
 
-      {f.type === 'select' ? (
+      {f.chips ? (
+        <ChipsField value={value} onChange={onChange} placeholder={f.chipPlaceholder} />
+      ) : f.type === 'select' ? (
         <select value={value || ''} onChange={(e) => onChange(e.target.value)} className="w-full pos-card p-2.5 text-sm mt-1" style={error ? { borderColor: '#dc2626' } : undefined}>
           {f.options.map((o) => <option key={o} value={o}>{o || 'Select…'}</option>)}
         </select>
