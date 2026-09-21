@@ -268,12 +268,14 @@ function Wizard() {
     setBusy('photo'); setErr('');
     try { setProfilePhoto(await uploadPhoto(file, 'profile')); } catch (x) { setErr(x.message); } finally { setBusy(''); }
   };
-  const onClinicPhoto = async (e, i) => {
+  // Website (hero) photos — landscape; the doctor can add as many as they like.
+  const onClinicPhotoAdd = async (e) => {
     const file = e.target.files?.[0]; if (!file) return;
-    setBusy(`clinic${i}`); setErr('');
-    try { const url = await uploadPhoto(file, 'clinic'); setClinicPhotos((p) => { const n = [...p]; n[i] = url; return n; }); }
-    catch (x) { setErr(x.message); } finally { setBusy(''); }
+    setBusy('clinicadd'); setErr('');
+    try { const url = await uploadPhoto(file, 'clinic'); setClinicPhotos((p) => [...p, url]); }
+    catch (x) { setErr(x.message); } finally { setBusy(''); if (e.target) e.target.value = ''; }
   };
+  const removeClinicPhoto = (i) => setClinicPhotos((p) => p.filter((_, j) => j !== i));
   const savePhotos = async () => {
     setBusy('savephotos');
     try {
@@ -529,28 +531,55 @@ function Wizard() {
           <div>
             <p className="pos-label" style={{ color: 'var(--green)' }}>Photos</p>
             <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Add your photos.</h1>
-            <p className="text-sm text-[var(--muted)] mb-4">Three photos for your website, plus your profile photo. You can come back to this anytime.</p>
+            <p className="text-sm text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '58ch' }}>Real photos are required to build your website — they can&apos;t be added later. Please add them now.</p>
 
-            <p className="pos-label mb-2">Website photos</p>
-            <div className="grid grid-cols-3 gap-2.5 mb-5">
-              {[0, 1, 2].map((i) => (
-                <label key={i} className="pos-card aspect-[4/3] grid place-items-center cursor-pointer overflow-hidden text-center" style={{ borderStyle: clinicPhotos[i] ? 'solid' : 'dashed' }}>
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => onClinicPhoto(e, i)} />
-                  {clinicPhotos[i] ? <img src={clinicPhotos[i]} alt="" className="w-full h-full object-cover" /> : <span className="text-[11px] text-[var(--muted)]">{busy === `clinic${i}` ? 'Uploading…' : `Photo ${i + 1}`}</span>}
-                </label>
+            {/* Website / hero photos */}
+            <div className="flex items-baseline gap-2 mb-1">
+              <p className="pos-label" style={{ margin: 0 }}>Website photos</p>
+              <span className="pos-label" style={{ color: 'var(--orange)' }}>Required · at least 1</span>
+            </div>
+            <p className="text-[12.5px] text-[var(--muted)] mb-2.5" style={{ lineHeight: 1.55, maxWidth: '60ch' }}>
+              These fill the <strong style={{ color: 'var(--ink)' }}>hero section</strong> at the top of your site, so they must be <strong style={{ color: 'var(--ink)' }}>landscape</strong> (wide, not tall).
+              Aim for <strong style={{ color: 'var(--ink)' }}>1600×900 px (16:9)</strong>, minimum <strong style={{ color: 'var(--ink)' }}>1200×675 px</strong>, sharp and well-lit, JPG or PNG up to ~8&nbsp;MB.
+              Good examples: your <em>clinic exterior</em>, your <em>clinic interior</em>, or <em>you at the clinic / receiving an award</em>. Add as many as you like — the more, the better.
+            </p>
+            <div className="grid gap-2.5 mb-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
+              {clinicPhotos.map((url, i) => (
+                <div key={i} className="relative pos-card aspect-video overflow-hidden" style={{ borderStyle: 'solid' }}>
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <button type="button" onClick={() => removeClinicPhoto(i)} aria-label="Remove photo"
+                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full grid place-items-center text-white"
+                    style={{ background: 'rgba(16,26,19,.72)', fontSize: 14, lineHeight: 1 }}>×</button>
+                </div>
               ))}
+              <label className="pos-card aspect-video grid place-items-center cursor-pointer text-center" style={{ borderStyle: 'dashed' }}>
+                <input type="file" accept="image/*" className="hidden" onChange={onClinicPhotoAdd} />
+                <span className="text-[12px] text-[var(--muted)]">{busy === 'clinicadd' ? 'Uploading…' : (clinicPhotos.length ? '+ Add another' : '+ Add landscape photo')}</span>
+              </label>
             </div>
 
-            <p className="pos-label mb-2">Profile photo</p>
-            <label className="pos-card cursor-pointer overflow-hidden grid place-items-center" style={{ width: 120, height: 120, borderStyle: profilePhoto ? 'solid' : 'dashed' }}>
+            {/* Profile photo */}
+            <div className="flex items-baseline gap-2 mb-1">
+              <p className="pos-label" style={{ margin: 0 }}>Profile photo</p>
+              <span className="pos-label" style={{ color: 'var(--orange)' }}>Required</span>
+            </div>
+            <p className="text-[12.5px] text-[var(--muted)] mb-2.5" style={{ lineHeight: 1.55, maxWidth: '60ch' }}>
+              A professional <strong style={{ color: 'var(--ink)' }}>portrait headshot</strong> of you — <strong style={{ color: 'var(--ink)' }}>tall, not wide</strong>, face clearly visible, plain background.
+              Aim for <strong style={{ color: 'var(--ink)' }}>800×1000 px (4:5)</strong>, minimum <strong style={{ color: 'var(--ink)' }}>600×750 px</strong>. This is used only for your profile — not the hero.
+            </p>
+            <label className="pos-card cursor-pointer overflow-hidden grid place-items-center" style={{ width: 132, height: 165, borderStyle: profilePhoto ? 'solid' : 'dashed' }}>
               <input type="file" accept="image/*" className="hidden" onChange={onProfilePhoto} />
-              {profilePhoto ? <img src={profilePhoto} alt="" className="w-full h-full object-cover" /> : <span className="text-[11px] text-[var(--muted)]">{busy === 'photo' ? 'Uploading…' : 'Add photo'}</span>}
+              {profilePhoto ? <img src={profilePhoto} alt="" className="w-full h-full object-cover" /> : <span className="text-[11px] text-[var(--muted)] px-2 text-center">{busy === 'photo' ? 'Uploading…' : 'Add portrait photo'}</span>}
             </label>
 
             {err && <p className="text-[13px] text-red-600 mt-3">{err}</p>}
-            <div className="flex items-center gap-3 mt-6">
-              <button onClick={async () => { await savePhotos(); next(); }} disabled={!!busy} className="pos-action">Save & continue</button>
-              <button onClick={next} className="pos-link" style={{ fontSize: 14 }}>Do this later →</button>
+            {!(clinicPhotos.length >= 1 && profilePhoto) && (
+              <p className="text-[12.5px] mt-4" style={{ color: 'var(--muted)' }}>
+                To continue, add {clinicPhotos.length < 1 ? 'at least one website (landscape) photo' : ''}{clinicPhotos.length < 1 && !profilePhoto ? ' and ' : ''}{!profilePhoto ? 'your profile (portrait) photo' : ''}.
+              </p>
+            )}
+            <div className="flex items-center gap-3 mt-5">
+              <button onClick={async () => { await savePhotos(); next(); }} disabled={!!busy || !(clinicPhotos.length >= 1 && profilePhoto)} className="pos-action disabled:opacity-40 disabled:cursor-not-allowed">{busy === 'savephotos' ? 'Saving…' : 'Save & continue'}</button>
             </div>
           </div>
         )}
