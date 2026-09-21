@@ -41,14 +41,32 @@ const STEPS = [
   { id: 'quiz', phase: 3 },
 ];
 
+// Common Indian medical specialties — offered as suggestions on the specialty
+// field (a combobox: pick one or type your own, e.g. a sub-specialty we don't list).
+const SPECIALTY_OPTIONS = [
+  'General Medicine', 'General Surgery', 'Orthopaedics', 'Cardiology', 'Cardiothoracic Surgery',
+  'Neurology', 'Neurosurgery', 'Gastroenterology', 'Surgical Gastroenterology', 'Hepatology',
+  'Nephrology', 'Urology', 'Endocrinology', 'Pulmonology', 'Rheumatology', 'Dermatology',
+  'Psychiatry', 'Paediatrics', 'Paediatric Surgery', 'Obstetrics & Gynaecology', 'Gynaecology',
+  'Ophthalmology', 'ENT (Otorhinolaryngology)', 'Dentistry', 'Oral & Maxillofacial Surgery',
+  'General Physician', 'Family Medicine', 'Oncology', 'Surgical Oncology', 'Medical Oncology',
+  'Radiation Oncology', 'Radiology', 'Anaesthesiology', 'Plastic & Reconstructive Surgery',
+  'Vascular Surgery', 'Colorectal Surgery', 'Bariatric Surgery', 'Laparoscopic Surgery',
+  'Physiotherapy', 'Physical Medicine & Rehabilitation', 'Diabetology', 'Haematology',
+  'Infectious Diseases', 'Sports Medicine', 'Pain Management', 'Sexology', 'Ayurveda', 'Homeopathy',
+];
+
+// Years-of-practice dropdown options.
+const YEARS_OPTIONS = ['Less than 1', ...Array.from({ length: 40 }, (_, i) => String(i + 1)), '40+'];
+
 // §2 Block 1 — the identity questions, worded exactly as the September prototype
 // ("Who are you, as patients should see you?"), mapped to our profile fields.
 const IDENTITY_Q = [
   { key: 'doctor_name', label: 'How should your name appear to patients?', ph: 'Dr. Your Name' },
-  { key: 'specialty', label: 'What is your specialty?', ph: 'e.g. Orthopaedics' },
+  { key: 'specialty', label: 'What is your specialty?', ph: 'Pick one or type your own', type: 'combo', options: SPECIALTY_OPTIONS },
   { key: 'qualifications', label: 'What are your qualifications?', ph: 'MBBS, MS' },
   { key: 'additional_qualifications', label: 'Any additional qualifications?', ph: 'Fellowship, diploma', optional: true },
-  { key: 'years_experience', label: 'How many years have you been practising?', ph: '12' },
+  { key: 'years_experience', label: 'How many years have you been practising?', type: 'select', options: YEARS_OPTIONS },
 ];
 
 // §11 — the commitment check before Get Access.
@@ -429,19 +447,36 @@ function Wizard() {
             <p className="text-[15.5px] text-[var(--muted)] mb-6" style={{ lineHeight: 1.6, maxWidth: '58ch' }}>These are source-of-truth fields. They are stored exactly as you provide them — never rewritten into something more impressive.</p>
 
             <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))' }}>
-              {IDENTITY_Q.map((q) => (
+              {IDENTITY_Q.map((q) => {
+                const inputCls = 'w-full rounded-[11px] px-3.5 py-3 text-[14.5px] outline-none';
+                const inputStyle = { border: '1px solid var(--rule)', background: 'var(--paper)' };
+                const onFocus = (e) => { e.target.style.outline = '2px solid var(--orange)'; e.target.style.outlineOffset = '1px'; };
+                const onBlur = (e) => { e.target.style.outline = 'none'; };
+                return (
                 <label key={q.key} className="block">
                   <span className="flex items-baseline gap-2 mb-1.5">
                     <span className="text-[13px] font-semibold text-[var(--ink)]">{q.label}</span>
                     {q.optional && <span className="pos-label" style={{ color: 'var(--muted)' }}>Optional</span>}
                   </span>
-                  <input value={fields[q.key] || ''} onChange={(e) => setField(q.key, e.target.value)} placeholder={q.ph}
-                    className="w-full rounded-[11px] px-3.5 py-3 text-[14.5px] outline-none"
-                    style={{ border: '1px solid var(--rule)', background: 'var(--paper)' }}
-                    onFocus={(e) => { e.target.style.outline = '2px solid var(--orange)'; e.target.style.outlineOffset = '1px'; }}
-                    onBlur={(e) => { e.target.style.outline = 'none'; }} />
+                  {q.type === 'select' ? (
+                    <select value={fields[q.key] || ''} onChange={(e) => setField(q.key, e.target.value)}
+                      className={inputCls} style={inputStyle} onFocus={onFocus} onBlur={onBlur}>
+                      <option value="" disabled>Select…</option>
+                      {q.options.map((o) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  ) : q.type === 'combo' ? (
+                    <>
+                      <input list={`opts-${q.key}`} value={fields[q.key] || ''} onChange={(e) => setField(q.key, e.target.value)} placeholder={q.ph}
+                        autoComplete="off" className={inputCls} style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
+                      <datalist id={`opts-${q.key}`}>{q.options.map((o) => <option key={o} value={o} />)}</datalist>
+                    </>
+                  ) : (
+                    <input value={fields[q.key] || ''} onChange={(e) => setField(q.key, e.target.value)} placeholder={q.ph}
+                      className={inputCls} style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
+                  )}
                 </label>
-              ))}
+                );
+              })}
             </div>
 
             {err && <p className="text-[13px] text-red-600 mt-4">{err}</p>}
