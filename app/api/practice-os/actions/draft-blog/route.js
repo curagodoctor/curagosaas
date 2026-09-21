@@ -8,6 +8,7 @@ import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 import { relatedReadingBlock } from '@/lib/practice-os/blogLinks';
 import BlogArticle from '@/models/BlogArticle';
 import Doctor from '@/models/Doctor';
+import { primaryBaseUrl } from '@/lib/primaryDomain';
 
 const PAGE_TYPES = ['', 'disease', 'treatment', 'procedure', 'location', 'symptom'];
 
@@ -90,7 +91,7 @@ export async function POST(request) {
       .map((f) => ({ question: String(f.question || '').slice(0, 300), answer: String(f.answer || '').slice(0, 1200) }));
     const imageAlt = String(d.imageAlt || '').slice(0, 160);
 
-    const doc = await Doctor.findById(doctor._id).select('displayName name specialization').lean();
+    const doc = await Doctor.findById(doctor._id).select('displayName name specialization subdomain customDomain customDomainVerified').lean();
 
     // §10 — the first (onboarding) article ships published so the doctor sees a
     // real live page. Later articles stay drafts for the doctor to review/publish.
@@ -138,7 +139,10 @@ export async function POST(request) {
     const remaining = firstArticle
       ? await getRemainingCredits(doctor._id)
       : (await chargeAiCredits(doctor._id, { label: 'draft-blog' })).remaining;
-    return NextResponse.json({ success: true, id: String(article._id), title: article.title, published: firstArticle, creditsRemaining: remaining });
+    // Public URL — only meaningful once published (the first article is).
+    const base = primaryBaseUrl(doc);
+    const url = firstArticle ? (base ? `${base}/blog/${slug}` : `/blog/${slug}`) : '';
+    return NextResponse.json({ success: true, id: String(article._id), title: article.title, slug, url, published: firstArticle, creditsRemaining: remaining });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     if (error.message === 'PaymentRequired') return NextResponse.json({ success: false, error: 'PaymentRequired' }, { status: 402 });

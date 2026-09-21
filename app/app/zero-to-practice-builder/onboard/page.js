@@ -106,6 +106,8 @@ function Wizard() {
   const [siteUrl, setSiteUrl] = useState('');
   const [creditsLeft, setCreditsLeft] = useState(null);
   const [firstArticleId, setFirstArticleId] = useState('');
+  const [firstArticleUrl, setFirstArticleUrl] = useState('');
+  const [practiceErr, setPracticeErr] = useState(false);
   // commitment quiz
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizFailed, setQuizFailed] = useState(false);
@@ -337,7 +339,7 @@ function Wizard() {
       const topic = (fields.diseases || '').split(',')[0]?.trim() || (fields.expertise || '').split(',')[0]?.trim() || `${fields.specialty || 'my practice'}`;
       fetch('/api/practice-os/actions/draft-blog', { method: 'POST', ...J, body: JSON.stringify({ context: `An introductory patient-education article about ${topic}.`, pageType: 'disease' }) })
         .then((r) => r.json())
-        .then((b) => { if (typeof b.creditsRemaining === 'number') setCreditsLeft(b.creditsRemaining); if (b.id) setFirstArticleId(b.id); })
+        .then((b) => { if (typeof b.creditsRemaining === 'number') setCreditsLeft(b.creditsRemaining); if (b.id) setFirstArticleId(b.id); if (b.url) setFirstArticleUrl(b.url); })
         .catch(() => {});
     } catch (x) { setGenState('error'); setErr(x.message || 'Something went wrong.'); }
   }, [fields]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -605,6 +607,7 @@ function Wizard() {
           <div>
             <p className="pos-label" style={{ color: 'var(--green)' }}>Website address</p>
             <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Choose your website address.</h1>
+            <p className="text-sm text-[var(--muted)] mb-1.5">Create your subdomain. You can change it later.</p>
             <p className="text-sm text-[var(--muted)] mb-4">
               {hasWebsite === 'yes'
                 ? <>We&apos;ll build your new site here first, then help you point{existing ? <> <b>{existing}</b></> : ' your existing domain'} at it — you keep your domain and its SEO.</>
@@ -614,6 +617,7 @@ function Wizard() {
               <input autoFocus value={subdomain} onChange={(e) => setSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} placeholder="yourclinic" maxLength={30} className="flex-1 px-3.5 py-3 text-sm outline-none bg-transparent" />
               <span className="flex items-center px-3.5 text-sm text-[var(--muted)]" style={{ background: 'var(--rule-soft)', borderLeft: '1px solid var(--rule)' }}>.curago.in</span>
             </div>
+            <p className="text-[12.5px] text-[var(--muted)] mt-1.5">Example: drkumar.curago.in</p>
             {subMsg && <p className="text-[13px] mt-2" style={{ color: subStatus === 'ok' ? 'var(--green)' : subStatus === 'taken' || subStatus === 'bad' ? '#B42318' : 'var(--muted)' }}>{subMsg}</p>}
             {err && <p className="text-[13px] text-red-600 mt-2">{err}</p>}
             <button onClick={claimSub} disabled={busy === 'sub' || subStatus !== 'ok'} className="pos-action mt-6" style={{ opacity: subStatus === 'ok' ? 1 : 0.5 }}>{busy === 'sub' ? 'Setting up…' : 'Create my website'}</button>
@@ -625,8 +629,8 @@ function Wizard() {
           <div>
             <p className="pos-label" style={{ color: 'var(--green)' }}>Practice details</p>
             <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Where do patients find you?</h1>
-            <p className="text-sm text-[var(--muted)] mb-4">Taken as you type it. Anything you skip simply doesn&apos;t appear on your site. Please use clinic (not personal) contact details.</p>
-            <div className="space-y-4">{PRACTICE.fields.map((f) => <Field key={f.key} f={f} value={fields[f.key] || ''} onChange={(v) => setField(f.key, v)} onToggleTag={(o) => toggleTag(f.key, o)} />)}</div>
+            <p className="text-sm text-[var(--muted)] mb-4">These are needed to build your site and can&apos;t be skipped. Please use clinic (not personal) contact details.</p>
+            <div className="space-y-4">{PRACTICE.fields.map((f) => <Field key={f.key} f={f} value={fields[f.key] || ''} error={practiceErr && f.required && !String(fields[f.key] || '').trim()} onChange={(v) => setField(f.key, v)} onToggleTag={(o) => toggleTag(f.key, o)} />)}</div>
 
             {/* §5b — local areas for local SEO */}
             <div className="pos-card p-4 mt-5">
@@ -649,10 +653,18 @@ function Wizard() {
               )}
             </div>
 
+            {practiceErr && <p className="text-[13px] text-red-600 mt-3">Please fill every required field before continuing.</p>}
             {err && <p className="text-[13px] text-red-600 mt-3">{err}</p>}
             <div className="flex items-center gap-3 mt-6">
-              <button onClick={async () => { if (await saveProfile(true)) { saveMedia({ localAreas: areas }); next(); } }} disabled={!!busy} className="pos-action">{busy === 'save' ? 'Saving…' : 'Save & continue'}</button>
-              <button onClick={async () => { await saveProfile(true); saveMedia({ localAreas: areas }); next(); }} className="pos-link" style={{ fontSize: 14 }}>Skip for now →</button>
+              <button
+                onClick={async () => {
+                  const missing = PRACTICE.fields.some((f) => f.required && !String(fields[f.key] || '').trim());
+                  if (missing) { setPracticeErr(true); return; }
+                  setPracticeErr(false);
+                  if (await saveProfile(true)) { saveMedia({ localAreas: areas }); next(); }
+                }}
+                disabled={!!busy}
+                className="pos-action">{busy === 'save' ? 'Saving…' : 'Save & continue'}</button>
             </div>
           </div>
         )}
@@ -741,12 +753,23 @@ function Wizard() {
                 <a href="/admin/dashboard/ai-generate" className="pos-card inline-block px-4 py-3 text-[14px] font-semibold" style={{ borderColor: 'var(--green)', color: 'var(--green)' }}>Edit in the AI builder →</a>
               </div>
             </div>
-            {/* First article — sits beneath the website card, full width */}
-            <div className="pos-card p-4 mb-4">
-              <p className="text-[14px] font-semibold text-[var(--ink)]">Your first article</p>
-              {firstArticleId
-                ? <p className="text-[13px] text-[var(--muted)] mt-0.5">Published from your practice. <a href={`/admin/dashboard/blog-articles/${firstArticleId}`} className="font-medium" style={{ color: 'var(--green)' }}>Review &amp; edit →</a></p>
-                : <p className="text-[13px] text-[var(--muted)] mt-0.5">Preparing your first article… it&apos;ll appear here shortly.</p>}
+            {/* First article — its own distinct (orange) surface, beneath the website card */}
+            <div className="pos-card p-5 mb-4" style={{ background: 'var(--orange-soft, rgba(242,106,27,.08))', borderColor: 'var(--orange)' }}>
+              <p className="pos-label" style={{ color: 'var(--orange)' }}>Your first article</p>
+              {firstArticleId ? (
+                <>
+                  <p className="text-[15px] font-semibold text-[var(--ink)] mt-1" style={{ lineHeight: 1.5 }}>Published from your practice — it&apos;s live on your site.</p>
+                  <div className="flex flex-wrap gap-3 mt-3">
+                    {firstArticleUrl && <a href={firstArticleUrl} target="_blank" rel="noopener noreferrer" className="inline-block px-4 py-3 text-[14px] font-semibold rounded-[9px] text-white" style={{ background: 'var(--orange)' }}>View my article →</a>}
+                    <a href={`/admin/dashboard/blog-articles/${firstArticleId}`} className="pos-card inline-block px-4 py-3 text-[14px] font-semibold" style={{ borderColor: 'var(--orange)', color: 'var(--orange)' }}>Edit in the builder →</a>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="inline-block w-6 h-6 rounded-full shrink-0 animate-spin" style={{ border: '2.5px solid var(--orange)', borderTopColor: 'transparent' }} />
+                  <p className="text-[14px] font-medium text-[var(--ink)]">Your first article is being published…</p>
+                </div>
+              )}
             </div>
             <div className="pos-card p-4 mb-4">
               <p className="pos-num text-2xl text-[var(--green)]">{creditsLeft ?? 10}</p>
