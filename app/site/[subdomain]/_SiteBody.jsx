@@ -16,6 +16,7 @@ import DiseaseIconsScrollSection from '@/components/booking-page/sections/Diseas
 import CustomTextSection from '@/components/booking-page/sections/CustomTextSection';
 import CTAButtonSection from '@/components/booking-page/sections/CTAButtonSection';
 import BookingFormSection from '@/components/booking-page/sections/BookingFormSection';
+import LeadFormSection from '@/components/booking-page/sections/LeadFormSection';
 import ClinicInfoSection from '@/components/booking-page/sections/ClinicInfoSection';
 import ProfessionalFeesSection from '@/components/booking-page/sections/ProfessionalFeesSection';
 import FooterSection from '@/components/booking-page/sections/FooterSection';
@@ -60,6 +61,8 @@ function renderSection(section, doctor, index, allSections = [], extraNavLinks =
       return <CTAButtonSection {...props} />;
     case 'booking_form':
       return <BookingFormSection {...props} doctorId={doctor._id.toString()} subdomain={doctor.subdomain} />;
+    case 'lead_form':
+      return <LeadFormSection {...props} doctorId={doctor._id.toString()} subdomain={doctor.subdomain} />;
     case 'clinic_info':
       return <ClinicInfoSection {...props} />;
     case 'professional_fees':

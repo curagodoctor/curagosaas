@@ -270,7 +270,7 @@ const SECTION_TYPES = [
   },
   {
     type: "lead_form",
-    name: "Lead Form",
+    name: "Request a Call Back",
     navName: "Enquire",
     navGroup: null, // Top-level
     icon: (
