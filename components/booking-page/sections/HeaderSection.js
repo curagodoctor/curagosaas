@@ -45,7 +45,7 @@ export default function HeaderSection({
   autoNavConfig = { useSmartGroups: true, excludeSections: [], customLabels: {} },
   pageSections = [],
   extraNavLinks = [],
-  ctaButton = { text: "Book Appointment", url: "#booking_form", show: true },
+  ctaButton = { text: "Get in touch", url: "#lead_form", show: true },
   backgroundColor = "white",
   sticky = true,
   doctor = null,
@@ -410,6 +410,7 @@ export default function HeaderSection({
               {ctaButton.show && (
                 <a
                   href={ctaButton.url}
+                  {...(/^https?:\/\//i.test(ctaButton.url || "") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                   onClick={(e) => {
                     handleNavClick(e, ctaButton.url);
                     trackButtonClick(ctaButton.text, `${trackingContext.pageSlug}_header_cta`);
@@ -487,6 +488,7 @@ export default function HeaderSection({
                 {ctaButton.show && (
                   <a
                     href={ctaButton.url}
+                    {...(/^https?:\/\//i.test(ctaButton.url || "") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                     onClick={(e) => {
                       handleNavClick(e, ctaButton.url);
                       trackButtonClick(ctaButton.text, `${trackingContext.pageSlug}_header_cta_mobile`);
