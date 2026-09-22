@@ -109,6 +109,19 @@ export default function AccessRequestsTab() {
                   {r.goal && <p className="text-gray-600"><span className="text-gray-400">Goal:</span> {r.goal}</p>}
                 </div>
               )}
+              {r.answers && Object.keys(r.answers).length > 0 && (
+                <details className="mt-3 pt-3 border-t border-gray-100 text-sm">
+                  <summary className="cursor-pointer text-gray-700 font-medium select-none">View all answers ({Object.keys(r.answers).length})</summary>
+                  <div className="mt-2 space-y-2">
+                    {Object.entries(r.answers).map(([k, v]) => (
+                      <div key={k}>
+                        <p className="text-gray-400 text-xs uppercase tracking-wide">{k.replace(/_/g, ' ')}</p>
+                        <p className="text-gray-700 whitespace-pre-wrap">{Array.isArray(v) ? v.join(', ') : String(v ?? '—') || '—'}</p>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
             </div>
           ))}
         </div>

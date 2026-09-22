@@ -26,6 +26,13 @@ export default function GbpGuideTab() {
   const rmBlock = (i) => setBlocks((bs) => bs.filter((_, j) => j !== i));
   const addTask = (bi) => setBlocks((bs) => bs.map((b, j) => (j === bi ? { ...b, tasks: [...b.tasks, { label: '', hint: '', kind: 'EDITABLE' }] } : b)));
   const rmTask = (bi, ti) => setBlocks((bs) => bs.map((b, j) => (j === bi ? { ...b, tasks: b.tasks.filter((_, k) => k !== ti) } : b)));
+  // Reorder blocks / tasks (the order here is exactly what doctors see).
+  const moveBlock = (i, dir) => setBlocks((bs) => { const j = i + dir; if (j < 0 || j >= bs.length) return bs; const n = [...bs]; [n[i], n[j]] = [n[j], n[i]]; return n; });
+  const moveTask = (bi, ti, dir) => setBlocks((bs) => bs.map((b, j) => {
+    if (j !== bi) return b;
+    const k = ti + dir; if (k < 0 || k >= b.tasks.length) return b;
+    const n = [...b.tasks]; [n[ti], n[k]] = [n[k], n[ti]]; return { ...b, tasks: n };
+  }));
 
   const save = async () => {
     setSaving(true); setMsg(null);
@@ -58,6 +65,10 @@ export default function GbpGuideTab() {
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Block {bi + 1}</span>
               <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <button onClick={() => moveBlock(bi, -1)} disabled={bi === 0} className="text-gray-500 hover:text-gray-900 disabled:opacity-30 px-1" title="Move block up">↑</button>
+                  <button onClick={() => moveBlock(bi, 1)} disabled={bi === blocks.length - 1} className="text-gray-500 hover:text-gray-900 disabled:opacity-30 px-1" title="Move block down">↓</button>
+                </div>
                 <label className="flex items-center gap-1.5 text-sm text-gray-600"><input type="checkbox" checked={!!b.mandatory} onChange={(e) => upBlock(bi, 'mandatory', e.target.checked)} /> Mandatory</label>
                 <button onClick={() => rmBlock(bi)} className="text-red-500 hover:text-red-700 text-sm">Remove block</button>
               </div>
@@ -93,7 +104,11 @@ export default function GbpGuideTab() {
                   <select value={t.kind} onChange={(e) => upTask(bi, ti, 'kind', e.target.value)} className="border border-gray-200 rounded-lg px-2 py-2 text-sm">
                     {KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
                   </select>
-                  <button onClick={() => rmTask(bi, ti)} className="text-red-500 hover:text-red-700 text-sm px-1 mt-2">✕</button>
+                  <div className="flex items-center gap-0.5 mt-2">
+                    <button onClick={() => moveTask(bi, ti, -1)} disabled={ti === 0} className="text-gray-500 hover:text-gray-900 disabled:opacity-30 px-1" title="Move task up">↑</button>
+                    <button onClick={() => moveTask(bi, ti, 1)} disabled={ti === b.tasks.length - 1} className="text-gray-500 hover:text-gray-900 disabled:opacity-30 px-1" title="Move task down">↓</button>
+                    <button onClick={() => rmTask(bi, ti)} className="text-red-500 hover:text-red-700 text-sm px-1" title="Remove task">✕</button>
+                  </div>
                 </div>
               ))}
             </div>
