@@ -1,13 +1,14 @@
 import mongoose from 'mongoose';
 
-// Daily credit allowance — configurable via env, default 30.
+// Daily credit allowance — configurable via env, default 10 (cadence: ~10 AI
+// actions/day = the prompt + image credits one task needs).
 const DAILY_LIMIT = parseInt(process.env.PRACTICE_OS_AI_DAILY_CREDITS, 10) > 0
-  ? parseInt(process.env.PRACTICE_OS_AI_DAILY_CREDITS, 10) : 30;
-// Unused credits ACCUMULATE (a doctor who works every 3–4 days keeps the days
-// they skipped), but only up to a cap so it can't grow forever — a week's worth
-// by default. Configurable via PRACTICE_OS_AI_MAX_CREDITS.
+  ? parseInt(process.env.PRACTICE_OS_AI_DAILY_CREDITS, 10) : 10;
+// Unused credits ACCUMULATE fully across the subscription — a doctor who signs up
+// on day 1 and returns on day 28 has ~280 credits waiting. Capped only so it can't
+// grow without bound; ~90 days by default. Configurable via PRACTICE_OS_AI_MAX_CREDITS.
 const MAX_BALANCE = parseInt(process.env.PRACTICE_OS_AI_MAX_CREDITS, 10) > 0
-  ? parseInt(process.env.PRACTICE_OS_AI_MAX_CREDITS, 10) : DAILY_LIMIT * 7;
+  ? parseInt(process.env.PRACTICE_OS_AI_MAX_CREDITS, 10) : DAILY_LIMIT * 90;
 const DAY_MS = 24 * 60 * 60 * 1000;
 // §4 — the FREE tier gets a small one-time lifetime pool (never refills), so a
 // doctor can try AI before paying. Paid tiers use the accumulating daily pool.

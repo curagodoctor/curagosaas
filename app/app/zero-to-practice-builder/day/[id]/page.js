@@ -192,7 +192,12 @@ function DayInner() {
     setConfirmFinish(false);
     setFinishing(true);
     const record = { links: evidence.link.trim() ? [evidence.link.trim()] : [], notes: evidence.notes.trim(), screenshots: [] };
-    try { await fetch(`/api/practice-os/day/${missionId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ action: 'complete', record }) }); } catch { /* non-blocking */ }
+    try {
+      const res = await fetch(`/api/practice-os/day/${missionId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ action: 'complete', record }) });
+      const d = await res.json().catch(() => ({}));
+      // Hit the daily cap (7 tasks/day) — keep them on the task, show why.
+      if (res.status === 429 || d.error === 'DailyCapReached') { setErr(d.message || 'You can finish up to 7 tasks a day. Come back tomorrow.'); setFinishing(false); return; }
+    } catch { /* non-blocking */ }
     router.push('/app/zero-to-practice-builder');
   };
 
