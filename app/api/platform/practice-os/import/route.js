@@ -7,7 +7,7 @@ import Mission from '@/models/practice-os/Mission';
 import {
   slugify, toInt, parseScoreComponent, parseSubSteps,
   buildColumnMap, findHeaderRow, parseEstimatedTime, buildInputs,
-  buildButtonTriples, normalizeResourceType, buildDocEducation, parseStatus,
+  buildButtonTriples, classifyPrimaryAction, normalizeResourceType, buildDocEducation, parseStatus,
 } from '@/lib/practice-os/import-helpers';
 
 export const runtime = 'nodejs';
@@ -274,6 +274,10 @@ export async function POST(request) {
           { text: c('secondarybuttontext'), action: c('secondarybuttonaction'), link: c('secondarybuttonlink') },
           { text: c('tertiarybuttontext'), action: c('tertiarybuttonaction'), link: c('tertiarybuttonlink') },
         ]);
+        // The rotating primary action (blog push / open GBP / open Gemini chat).
+        const primaryAction = classifyPrimaryAction({
+          text: c('primarybuttontext'), action: c('primarybuttonaction'), link: c('primarybuttonlink'),
+        });
 
         const resourceEducation = (resourcesByMission.get(rep.code) || [])
           .slice()
@@ -309,6 +313,7 @@ export async function POST(request) {
           lectureVideoUrl: c('videolink'),
           education,
           buttons,
+          primaryAction,
           inputs,
           aiContext: { systemPrompt: c('promptoutputwithplaceholder'), model: '' },
           evidence: { required: anyCompulsory, allowedTypes: ['image', 'url', 'text'] },

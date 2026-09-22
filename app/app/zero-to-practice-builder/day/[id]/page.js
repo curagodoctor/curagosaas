@@ -53,6 +53,7 @@ function DayInner() {
   const [image, setImage] = useState(null);        // null | 'gen' | { url }
   const [imagePrompt, setImagePrompt] = useState(''); // optional custom image brief
   const [confirmFinish, setConfirmFinish] = useState(false);
+  const [primaryAction, setPrimaryAction] = useState(null); // { type, label, url }
   const started = useRef(false);
 
   const fire = useCallback(async (p, modId, auto) => {
@@ -102,6 +103,7 @@ function DayInner() {
       if (!day.success) { router.replace('/app/zero-to-practice-builder'); return; }
       const m = day.day || {};
       setMission({ title: m.missionText || m.objective || 'Today’s task', category: m.category || '' });
+      setPrimaryAction(m.primaryAction && m.primaryAction.type ? m.primaryAction : { type: 'blog' });
       const mods = (day.modules && day.modules.length) ? day.modules : [{ id: null, aiPrompt: m.aiContext?.systemPrompt || '' }];
       setModules(mods);
       const missionBtns = (m.buttons || []).filter((b) => b && (b.url || b.label));
@@ -332,7 +334,18 @@ function DayInner() {
         {/* Actions */}
         <div className="flex flex-wrap gap-2.5 mt-4 items-center">
           <button onClick={copy} disabled={!content.trim() || finishing} className="pos-card px-4 py-2.5 text-[14px] font-medium" style={{ opacity: content.trim() ? 1 : 0.5 }}>{copied ? 'Copied ✓' : 'Copy'}</button>
-          <button onClick={pushBlog} disabled={publish === 'saving' || !content.trim() || finishing} className="pos-action" style={{ background: 'var(--green)' }}>{publish === 'saving' ? 'Publishing…' : 'Push as blog page'}</button>
+          {(!primaryAction || primaryAction.type === 'blog') ? (
+            <button onClick={pushBlog} disabled={publish === 'saving' || !content.trim() || finishing} className="pos-action" style={{ background: 'var(--green)' }}>{publish === 'saving' ? 'Publishing…' : 'Push as blog page'}</button>
+          ) : (
+            <a
+              href={primaryAction.url || undefined}
+              target={primaryAction.url ? '_blank' : undefined}
+              rel="noopener noreferrer"
+              onClick={(e) => { if (!primaryAction.url) { e.preventDefault(); setErr(`Add your ${primaryAction.type === 'gemini' ? 'Gemini GBP chat' : 'Google Business Profile'} link in Profile, then reopen this task.`); } }}
+              className="pos-action" style={{ background: 'var(--green)', opacity: primaryAction.url ? 1 : 0.6 }}>
+              {primaryAction.label || (primaryAction.type === 'gbp' ? 'Open Google Business Profile' : primaryAction.type === 'gemini' ? 'Open Gemini GBP chat' : 'Open')} →
+            </a>
+          )}
           {isLastModule ? (
             <button onClick={requestFinish} disabled={finishing} className="pos-action inline-flex items-center gap-2" style={{ opacity: finishing ? 0.75 : 1 }}>
               {finishing && <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin inline-block" />}

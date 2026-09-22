@@ -141,6 +141,22 @@ const MissionSchema = new mongoose.Schema({
   education: { type: [ResourceSchema], default: [] },
   buttons: { type: [ButtonSchema], default: [] },
 
+  // The task's PRIMARY action button, chosen per-task from the Excel
+  // (Primary_Button_Action). `type` drives what the day screen shows:
+  //   'blog'   → "Push as blog page" (publishes the generated content as a blog)
+  //   'gbp'    → "Open Google Business Profile" (opens the doctor's GBP link)
+  //   'gemini' → "Open Gemini GBP chat" (opens the doctor's Gemini GBP chat link)
+  //   'custom' → opens the provided link with the provided label
+  // url may contain {{placeholders}} (e.g. {{gbp_link}}) filled per-doctor at read.
+  primaryAction: {
+    type: new mongoose.Schema({
+      type: { type: String, enum: ['blog', 'gbp', 'gemini', 'custom'], default: 'blog' },
+      label: { type: String, trim: true, default: '' },
+      url: { type: String, trim: true, default: '' },
+    }, { _id: false }),
+    default: () => ({ type: 'blog', label: '', url: '' }),
+  },
+
   // Per-mission AI assistant context
   aiContext: {
     systemPrompt: { type: String, trim: true, default: '' },
