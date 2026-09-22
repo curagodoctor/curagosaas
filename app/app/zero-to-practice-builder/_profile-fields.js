@@ -3,8 +3,43 @@
 // Shared doctor-profile field renderer, used by both Day-0 setup and the editable
 // "My Profile" page. The field DEFINITIONS live in a server-safe module so the
 // admin merge API can share them; the effective list may be customised by admin.
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { DEFAULT_SECTIONS } from '@/lib/practice-os/profile-fields-defaults';
+
+// A dropdown-combobox: shows the option list beneath the field (filtered as you
+// type), and still allows a custom entry. Used for the specialty field so the
+// same behaviour appears in onboarding AND the My Profile page.
+function ComboBox({ value, onChange, placeholder, options, error }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, []);
+  const q = String(value || '').toLowerCase().trim();
+  const filtered = q ? options.filter((o) => o.toLowerCase().includes(q)) : options;
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <input value={value || ''} placeholder={placeholder || 'Pick one or type your own'} autoComplete="off"
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        className="w-full pos-card p-2.5 text-sm mt-1" style={error ? { borderColor: '#dc2626' } : undefined} />
+      {open && filtered.length > 0 && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 50, maxHeight: 240, overflowY: 'auto', background: 'var(--card, #fff)', border: '1px solid var(--rule)', borderRadius: 10, boxShadow: '0 8px 24px rgba(16,26,19,.12)' }}>
+          {filtered.map((o) => (
+            <button key={o} type="button"
+              onMouseDown={(e) => { e.preventDefault(); onChange(o); setOpen(false); }}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--paper)]"
+              style={{ color: 'var(--ink)', background: o === value ? 'var(--green-soft, rgba(9,107,23,.08))' : 'transparent', borderBottom: '1px solid var(--rule-soft)' }}>
+              {o}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Editable chip list — the practice-map pattern. The value stays a comma-joined
 // string (the source-of-truth format), rendered as removable tags with a "+ Add"
@@ -70,7 +105,9 @@ export function Field({ f, value, confidence, error, onChange, onToggleTag }) {
       </label>
       {f.hint && <p className="text-[11.5px] text-[var(--muted)] mt-0.5 leading-snug">{f.hint}</p>}
 
-      {f.chips ? (
+      {f.combo ? (
+        <ComboBox value={value} onChange={onChange} placeholder={f.placeholder} options={f.options || []} error={error} />
+      ) : f.chips ? (
         <ChipsField value={value} onChange={onChange} placeholder={f.chipPlaceholder} options={f.options} listId={`chips-${f.key}`} />
       ) : f.type === 'select' ? (
         <select value={value || ''} onChange={(e) => onChange(e.target.value)} className="w-full pos-card p-2.5 text-sm mt-1" style={error ? { borderColor: '#dc2626' } : undefined}>
