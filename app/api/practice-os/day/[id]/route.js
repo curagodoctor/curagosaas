@@ -135,6 +135,7 @@ export async function POST(request, { params }) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     if (error.message === 'PaymentRequired') return NextResponse.json({ success: false, error: 'PaymentRequired' }, { status: 402 });
     if (error.code === 'DailyCapReached') return NextResponse.json({ success: false, error: 'DailyCapReached', message: `You can finish up to ${error.cap || 7} tasks a day. Come back tomorrow to continue — your remaining tasks are saved.` }, { status: 429 });
+    if (error.code === 'AccessEnded') return NextResponse.json({ success: false, error: 'AccessEnded', message: 'Your access has ended. Your tasks and content are still here to view — resubscribe to continue finishing them.' }, { status: 402 });
     console.error('[Practice OS day POST]', error);
     return NextResponse.json({ success: false, error: 'Failed to update day' }, { status: 500 });
   }

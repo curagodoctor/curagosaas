@@ -32,6 +32,9 @@ function DayInner() {
   const packId = search.get('pack');
 
   const [mission, setMission] = useState(null);   // { title, category }
+  const [modules, setModules] = useState([]);     // all modules for this day
+  const [modIndex, setModIndex] = useState(0);    // which module we're on
+  const [missionButtons, setMissionButtons] = useState([]);
   const [moduleId, setModuleId] = useState(null);
   const [prompt, setPrompt] = useState('');
   const [content, setContent] = useState('');     // the AI response (editable)
@@ -75,34 +78,45 @@ function DayInner() {
     finally { setGenerating(false); }
   }, [missionId]);
 
+  // Load one module: its prompt, buttons, saved thread — auto-drafting if empty.
+  const openModule = useCallback(async (mods, idx, missionBtns) => {
+    const mod = mods[idx] || null;
+    const modId = mod?.id || null;
+    const p = mod?.aiPrompt || (Array.isArray(mod?.aiPrompts) ? mod.aiPrompts[0] : '') || '';
+    setModIndex(idx); setModuleId(modId); setPrompt(p);
+    setContent(''); setThread([]); setImage(null); setImagePrompt(''); setErr('');
+    setLinks([...(missionBtns || []), ...((mod?.buttons || []))].filter((b) => b && (b.url || b.label)));
+    try {
+      const t = await fetch(`/api/practice-os/day/${missionId}/ai?moduleId=${modId || ''}`, { credentials: 'include' }).then((r) => r.json());
+      const visible = (t.messages || []).filter((x) => !x.hidden);
+      setThread(visible);
+      const lastAssistant = [...visible].reverse().find((x) => x.role === 'assistant');
+      if (lastAssistant) setContent(lastAssistant.content);
+      else if (p) await fire(p, modId, true);
+    } catch { /* leave empty */ }
+  }, [missionId, fire]);
+
   const load = useCallback(async () => {
     try {
       const day = await fetch(`/api/practice-os/day/${missionId}`, { credentials: 'include' }).then((r) => r.json());
       if (!day.success) { router.replace('/app/zero-to-practice-builder'); return; }
       const m = day.day || {};
       setMission({ title: m.missionText || m.objective || 'Today’s task', category: m.category || '' });
-      const mod = (day.modules || [])[0] || null;
-      const modId = mod?.id || null;
-      const p = mod?.aiPrompt || (Array.isArray(mod?.aiPrompts) ? mod.aiPrompts[0] : '') || m.aiContext?.systemPrompt || '';
-      setModuleId(modId); setPrompt(p);
-      // Relevant links (mission/module buttons, already placeholder-filled) shown
-      // at the bottom, and evidence config (only if enabled in the backend).
-      const btns = [...(m.buttons || []), ...(mod?.buttons || [])].filter((b) => b && (b.url || b.label));
-      setLinks(btns);
+      const mods = (day.modules && day.modules.length) ? day.modules : [{ id: null, aiPrompt: m.aiContext?.systemPrompt || '' }];
+      setModules(mods);
+      const missionBtns = (m.buttons || []).filter((b) => b && (b.url || b.label));
+      setMissionButtons(missionBtns);
       setEvidenceRequired(!!m.evidence?.required);
       if (day.progress?.record) setEvidence({ link: (day.progress.record.links || [])[0] || '', notes: day.progress.record.notes || '' });
-
-      // Existing thread — if the AI already answered, show it; else generate now.
-      const t = await fetch(`/api/practice-os/day/${missionId}/ai?moduleId=${modId || ''}`, { credentials: 'include' }).then((r) => r.json());
-      const visible = (t.messages || []).filter((x) => !x.hidden);
-      setThread(visible);
-      const lastAssistant = [...visible].reverse().find((x) => x.role === 'assistant');
-      if (lastAssistant) setContent(lastAssistant.content);
-      else if (p && !started.current) { started.current = true; await fire(p, modId, true); }
+      await openModule(mods, 0, missionBtns);
     } catch { router.replace('/app/zero-to-practice-builder'); }
     finally { setLoading(false); }
-  }, [missionId, router, fire]);
+  }, [missionId, router, openModule]);
   useEffect(() => { load(); }, [load]);
+
+  const isLastModule = modIndex >= modules.length - 1;
+  const nextModule = () => { if (!isLastModule) { openModule(modules, modIndex + 1, missionButtons); window.scrollTo(0, 0); } };
+  const prevModule = () => { if (modIndex > 0) { openModule(modules, modIndex - 1, missionButtons); window.scrollTo(0, 0); } };
 
   const regenerate = async () => {
     if (!prompt || generating) return;
@@ -197,6 +211,8 @@ function DayInner() {
       const d = await res.json().catch(() => ({}));
       // Hit the daily cap (7 tasks/day) — keep them on the task, show why.
       if (res.status === 429 || d.error === 'DailyCapReached') { setErr(d.message || 'You can finish up to 7 tasks a day. Come back tomorrow.'); setFinishing(false); return; }
+      // Access ended (grace over) — view-only until they resubscribe.
+      if (d.error === 'AccessEnded') { setErr(d.message || 'Your access has ended — resubscribe to continue.'); setFinishing(false); return; }
     } catch { /* non-blocking */ }
     router.push('/app/zero-to-practice-builder');
   };
@@ -210,7 +226,15 @@ function DayInner() {
 
         {mission?.category && <p className="pos-label mb-1.5" style={{ color: 'var(--orange)' }}>{mission.category}</p>}
         <h1 className="text-[24px] md:text-[30px] font-semibold text-[var(--ink)] leading-tight" style={{ letterSpacing: '-0.027em' }}>{mission?.title}</h1>
-        <p className="text-[14px] text-[var(--muted)] mt-2">Your content is ready. Suggest changes below, edit it directly, then copy it or push it live.</p>
+        {modules.length > 1 && (
+          <div className="flex items-center gap-2 mt-3">
+            {modules.map((_, i) => (
+              <span key={i} className="h-1.5 rounded-full transition-all" style={{ width: i === modIndex ? 28 : 16, background: i < modIndex ? 'var(--green)' : i === modIndex ? 'var(--orange)' : 'var(--rule)' }} />
+            ))}
+            <span className="text-[12px] text-[var(--muted)] ml-1">{modules[modIndex]?.title ? `${modules[modIndex].title} · ` : ''}Module {modIndex + 1} of {modules.length}</span>
+          </div>
+        )}
+        <p className="text-[14px] text-[var(--muted)] mt-2">Your content is ready. Suggest changes below, edit it directly, then copy it or push it live.{modules.length > 1 ? ' Finish all modules to complete the day.' : ''}</p>
 
         {/* The AI response — the hero. Editable. */}
         <div className="pos-card mt-5 p-0 overflow-hidden relative" style={{ borderColor: 'var(--green)' }}>
@@ -267,13 +291,18 @@ function DayInner() {
         {err && <p className="text-[13px] text-red-600 mt-2">{err}</p>}
 
         {/* Actions */}
-        <div className="flex flex-wrap gap-2.5 mt-4">
+        <div className="flex flex-wrap gap-2.5 mt-4 items-center">
           <button onClick={copy} disabled={!content.trim() || finishing} className="pos-card px-4 py-2.5 text-[14px] font-medium" style={{ opacity: content.trim() ? 1 : 0.5 }}>{copied ? 'Copied ✓' : 'Copy'}</button>
           <button onClick={pushBlog} disabled={publish === 'saving' || !content.trim() || finishing} className="pos-action" style={{ background: 'var(--green)' }}>{publish === 'saving' ? 'Publishing…' : 'Push as blog page'}</button>
-          <button onClick={requestFinish} disabled={finishing} className="pos-action inline-flex items-center gap-2" style={{ opacity: finishing ? 0.75 : 1 }}>
-            {finishing && <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin inline-block" />}
-            {finishing ? 'Finishing…' : 'Finish task →'}
-          </button>
+          {isLastModule ? (
+            <button onClick={requestFinish} disabled={finishing} className="pos-action inline-flex items-center gap-2" style={{ opacity: finishing ? 0.75 : 1 }}>
+              {finishing && <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin inline-block" />}
+              {finishing ? 'Finishing…' : (modules.length > 1 ? 'Finish task →' : 'Finish task →')}
+            </button>
+          ) : (
+            <button onClick={nextModule} className="pos-action">Next module →</button>
+          )}
+          {modIndex > 0 && <button onClick={prevModule} className="pos-link text-[13px]" style={{ color: 'var(--muted)' }}>← Previous module</button>}
         </div>
         {/* Suggest changes — the chat */}
         <div className="mt-8">
