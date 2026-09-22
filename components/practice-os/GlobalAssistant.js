@@ -187,13 +187,16 @@ export default function GlobalAssistant() {
             )}
 
             {isBuilder ? (
-              <div className="flex items-end gap-2">
-                <button onClick={() => setEditOpen((v) => !v)} aria-label="Quick edit" className="shrink-0 rounded-lg p-2.5" style={{ border: '1px solid var(--ga-rule)', color: 'var(--ga-muted)' }} title="Quick edit">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                </button>
-                <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} rows={1} placeholder="Message the assistant…" className="flex-1 resize-none rounded-lg px-3 py-2 text-sm outline-none" style={{ border: '1px solid var(--ga-rule)', maxHeight: 96 }} />
-                <button onClick={() => send()} disabled={sending || !input.trim()} className="shrink-0 rounded-lg px-4 py-2 text-sm font-semibold" style={{ background: 'var(--ga-green)', color: '#fff', opacity: sending || !input.trim() ? 0.5 : 1 }}>Send</button>
-              </div>
+              <>
+                <div className="flex items-end gap-2">
+                  <button onClick={() => setEditOpen((v) => !v)} aria-label="Quick edit" className="shrink-0 rounded-lg p-2.5" style={{ border: '1px solid var(--ga-rule)', color: 'var(--ga-muted)' }} title="Quick edit">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                  </button>
+                  <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} rows={1} placeholder="Message the assistant…" className="flex-1 resize-none rounded-lg px-3 py-2 text-sm outline-none" style={{ border: '1px solid var(--ga-rule)', maxHeight: 96 }} />
+                  <button onClick={() => send()} disabled={sending || !input.trim()} className="shrink-0 rounded-lg px-4 py-2 text-sm font-semibold" style={{ background: 'var(--ga-green)', color: '#fff', opacity: sending || !input.trim() ? 0.5 : 1 }}>Send</button>
+                </div>
+                <p className="text-[11px] mt-1.5" style={{ color: 'var(--ga-muted)', lineHeight: 1.4 }}>AI can make mistakes. Check for accuracy and compliance before publishing.</p>
+              </>
             ) : (
               <p className="text-[13px] text-center" style={{ color: 'var(--ga-muted)' }}>
                 Open the <b style={{ color: 'var(--ga-ink)' }}>AI builder</b> or a builder page to chat and make changes here.

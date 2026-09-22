@@ -314,6 +314,7 @@ export default function ChatAssistant({ missionId, moduleId, moduleTitle, autoPr
           <button onClick={send} disabled={busy || noCredits || !input.trim()} className="pos-action pos-focusable disabled:opacity-50 shrink-0">Send</button>
         </div>
         <p className="text-[10.5px] text-[var(--muted)] mt-2 px-1">1 credit per message · Enter to send</p>
+        <p className="text-[10.5px] text-[var(--muted)] mt-1 px-1" style={{ lineHeight: 1.4 }}>AI can make mistakes. Check for accuracy and compliance before publishing.</p>
       </div>
     </div>
     </>
