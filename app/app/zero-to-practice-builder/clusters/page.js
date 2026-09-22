@@ -9,7 +9,8 @@ import PosNav from '@/components/practice-os/PosNav';
 //                time; edit, add/remove treatments, approve. Treatment numbering
 //                is CONTINUOUS across diseases (01, 02, 03…).
 //  2. gbp      — post the approved treatments as GBP services.
-const TREAT_CAP = 20;
+const PER_DISEASE_MIN = 1;
+const PER_DISEASE_MAX = 3;
 const LEAF_SOFT = 'var(--green-soft, rgba(9,107,23,.09))';
 
 function ClustersInner() {
@@ -45,7 +46,6 @@ function ClustersInner() {
 
   const cur = clusters?.[idx];
   const total = clusters?.length || 0;
-  const treatTotal = (clusters || []).reduce((n, c) => n + (c.treatments?.length || 0), 0);
   const serialOffset = (clusters || []).slice(0, idx).reduce((n, c) => n + (c.treatments?.length || 0), 0);
   const approvedClusters = (clusters || []).filter((c) => c.approved);
   const approvedCount = approvedClusters.length;
@@ -62,11 +62,16 @@ function ClustersInner() {
   const setName = (v) => patchLocal(cur._id, { name: v });
   const setTreatment = (i, v) => { const treatments = cur.treatments.map((t, j) => j === i ? { ...t, name: v } : t); patchLocal(cur._id, { treatments }); };
   const addTreatment = () => {
+    if ((cur.treatments?.length || 0) >= PER_DISEASE_MAX) return; // max 3 per disease
     const name = newTreat.trim() || 'New treatment';
     const treatments = [...(cur.treatments || []), { name, source: 'manual' }];
     save(cur._id, { treatments }); setNewTreat('');
   };
-  const removeTreatment = (i) => { const treatments = cur.treatments.filter((_, j) => j !== i); save(cur._id, { treatments }); };
+  // Keep at least one treatment per disease (min 1).
+  const removeTreatment = (i) => {
+    if ((cur.treatments?.length || 0) <= PER_DISEASE_MIN) return;
+    const treatments = cur.treatments.filter((_, j) => j !== i); save(cur._id, { treatments });
+  };
 
   const regenerate = async () => {
     if (!cur) return;
@@ -84,6 +89,8 @@ function ClustersInner() {
 
   const approveAndContinue = async () => {
     if (!cur) return;
+    if ((cur.treatments?.length || 0) < PER_DISEASE_MIN) { setGenErr('Add at least one treatment for this disease before approving.'); return; }
+    setGenErr('');
     await save(cur._id, { name: cur.name, treatments: cur.treatments, approved: true });
     // Last disease approved → straight into the content/control center.
     if (idx >= total - 1) { router.push('/app/zero-to-practice-builder'); return; }
@@ -142,9 +149,9 @@ function ClustersInner() {
                 </label>
 
                 <div>
-                  <div className="flex flex-wrap items-center justify-between gap-2.5 mb-2.5">
-                    <span style={{ ...mono, fontSize: 10.5, letterSpacing: '.14em', color: 'var(--muted)' }}>TREATMENTS FOR THIS DISEASE</span>
-                    <span style={{ ...mono, fontSize: 10.5, color: treatTotal >= TREAT_CAP ? 'var(--orange)' : 'var(--muted)' }}>{treatTotal} / {TREAT_CAP} TREATMENTS</span>
+                  <div className="flex flex-wrap items-center justify-between gap-2.5 mb-1">
+                    <span style={{ ...mono, fontSize: 10.5, letterSpacing: '.14em', color: 'var(--muted)' }}>TREATMENTS FOR THIS DISEASE <span style={{ letterSpacing: 0, textTransform: 'none' }}>(Do not use abbreviations. Use standard terminologies.)</span></span>
+                    <span style={{ ...mono, fontSize: 10.5, color: (cur.treatments?.length || 0) >= PER_DISEASE_MAX ? 'var(--orange)' : 'var(--muted)' }}>{cur.treatments?.length || 0} / {PER_DISEASE_MAX} TREATMENTS</span>
                   </div>
                   <div className="flex flex-col gap-2.5">
                     {(cur.treatments || []).map((t, i) => (
@@ -152,16 +159,18 @@ function ClustersInner() {
                         <span style={{ flex: '0 0 40px', height: 40, borderRadius: 11, background: LEAF_SOFT, border: '1px solid var(--green)', color: 'var(--green)', display: 'grid', placeItems: 'center', ...mono, fontSize: 12.5, fontWeight: 700 }}>{String(serialOffset + i + 1).padStart(2, '0')}</span>
                         <input type="text" value={t.name} onChange={(e) => setTreatment(i, e.target.value)} onBlur={() => save(cur._id, { treatments: cur.treatments })}
                           style={{ flex: '1 1 auto', minWidth: 0, boxSizing: 'border-box', border: '1px solid var(--rule)', borderRadius: 12, padding: '13px 15px', fontSize: 15.5, color: 'var(--ink)', background: 'var(--paper)', outline: 'none' }} />
-                        <button onClick={() => removeTreatment(i)} aria-label="Remove treatment" style={{ flex: '0 0 auto', background: '#fff', border: '1px solid var(--rule)', color: 'var(--muted)', ...mono, fontSize: 15, lineHeight: 1, width: 40, height: 40, borderRadius: 11, cursor: 'pointer' }}>×</button>
+                        <button onClick={() => removeTreatment(i)} disabled={(cur.treatments?.length || 0) <= PER_DISEASE_MIN} aria-label="Remove treatment" style={{ flex: '0 0 auto', background: '#fff', border: '1px solid var(--rule)', color: 'var(--muted)', ...mono, fontSize: 15, lineHeight: 1, width: 40, height: 40, borderRadius: 11, cursor: (cur.treatments?.length || 0) <= PER_DISEASE_MIN ? 'not-allowed' : 'pointer', opacity: (cur.treatments?.length || 0) <= PER_DISEASE_MIN ? 0.4 : 1 }}>×</button>
                       </div>
                     ))}
-                    <div className="flex items-stretch gap-2">
-                      <input value={newTreat} onChange={(e) => setNewTreat(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addTreatment(); }} placeholder="Add a treatment…"
-                        style={{ flex: '1 1 auto', minWidth: 0, border: '1px solid var(--rule)', borderRadius: 12, padding: '11px 15px', fontSize: 14, background: '#fff', outline: 'none' }} />
-                      <button onClick={addTreatment} style={{ alignSelf: 'center', background: '#fff', border: '1px dashed var(--rule)', color: 'var(--ink)', fontSize: 13.5, fontWeight: 600, padding: '11px 16px', borderRadius: 999, cursor: 'pointer', whiteSpace: 'nowrap' }}>+ Add treatment</button>
-                    </div>
+                    {(cur.treatments?.length || 0) < PER_DISEASE_MAX && (
+                      <div className="flex items-stretch gap-2">
+                        <input value={newTreat} onChange={(e) => setNewTreat(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addTreatment(); }} placeholder="Add a treatment…"
+                          style={{ flex: '1 1 auto', minWidth: 0, border: '1px solid var(--rule)', borderRadius: 12, padding: '11px 15px', fontSize: 14, background: '#fff', outline: 'none' }} />
+                        <button onClick={addTreatment} style={{ alignSelf: 'center', background: '#fff', border: '1px dashed var(--rule)', color: 'var(--ink)', fontSize: 13.5, fontWeight: 600, padding: '11px 16px', borderRadius: 999, cursor: 'pointer', whiteSpace: 'nowrap' }}>+ Add treatment</button>
+                      </div>
+                    )}
                   </div>
-                  {treatTotal >= TREAT_CAP && <div style={{ fontSize: 12.5, color: 'var(--orange)', marginTop: 9 }}>You have reached {TREAT_CAP} treatments — remove one before adding another.</div>}
+                  {(cur.treatments?.length || 0) >= PER_DISEASE_MAX && <div style={{ fontSize: 12.5, color: 'var(--orange)', marginTop: 9 }}>Up to {PER_DISEASE_MAX} treatments per disease — remove one before adding another.</div>}
                   {genErr && <div style={{ fontSize: 12.5, color: '#b42318', marginTop: 9 }}>{genErr}</div>}
                 </div>
 
@@ -181,11 +190,19 @@ function ClustersInner() {
             <div className="pos-card mt-4" style={{ borderRadius: 22, padding: '18px 20px' }}>
               <div style={{ ...mono, fontSize: 10.5, letterSpacing: '.14em', color: 'var(--muted)', marginBottom: 11 }}>APPROVED SO FAR</div>
               <div className="flex flex-wrap gap-1.5">
-                {approvedClusters.map((c, i) => (
-                  <span key={c._id} className="inline-flex items-center gap-1.5" style={{ background: LEAF_SOFT, border: '1px solid var(--green)', color: 'var(--green)', padding: '7px 11px', borderRadius: 9, fontSize: 13, whiteSpace: 'nowrap' }}>
-                    {String(i + 1).padStart(2, '0')} · {c.name} ✓
-                  </span>
-                ))}
+                {approvedClusters.map((c, i) => {
+                  const target = (clusters || []).findIndex((x) => x._id === c._id);
+                  return (
+                    <button
+                      key={c._id}
+                      onClick={() => { if (target >= 0) { setIdx(target); window.scrollTo(0, 0); } }}
+                      title="Review this disease again"
+                      className="inline-flex items-center gap-1.5 hover:shadow-sm transition-shadow"
+                      style={{ background: LEAF_SOFT, border: '1px solid var(--green)', color: 'var(--green)', padding: '7px 11px', borderRadius: 9, fontSize: 13, whiteSpace: 'nowrap', cursor: 'pointer' }}>
+                      {String(i + 1).padStart(2, '0')} · {c.name} ✓
+                    </button>
+                  );
+                })}
                 {approvedCount === 0 && <span style={{ fontSize: 13.5, color: 'var(--muted)' }}>Nothing approved yet — start with disease 1.</span>}
               </div>
             </div>

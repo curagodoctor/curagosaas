@@ -26,7 +26,7 @@ export async function POST(request, { params }) {
 
     const fields = await getDoctorProfileFields(doctor._id);
     const gen = await structureContent({
-      instruction: `List the SPECIFIC treatments THIS doctor would offer for "${cluster.name}" — minimum 1, ideally 2 where clinically appropriate, maximum 2 — genuinely used for THIS disease (never generic). PREFER the doctor's own listed procedures where they apply; otherwise use standard, medically-accurate procedures for this specialty. Each treatment: a real procedure with correct medical terminology + a plain patient-facing name. Return JSON: {"treatments": string[] } (1-2 items). Never invent procedures outside their specialty.`,
+      instruction: `List the SPECIFIC treatments THIS doctor would offer for "${cluster.name}" — minimum 1, maximum 3 — genuinely used for THIS disease (never generic). PREFER the doctor's own listed procedures where they apply; otherwise use standard, medically-accurate procedures for this specialty. Each treatment: a real procedure with full, correct medical terminology (never abbreviations). Return JSON: {"treatments": string[] } (1-3 items). Never invent procedures outside their specialty.`,
       source: `Disease: ${cluster.name}\nSpecialty: ${fields.specialty || ''}\nSubspecialty: ${fields.subspecialty || '(none)'}\nProcedures the doctor listed: ${fields.procedures || '(none)'}\nAreas of expertise: ${fields.expertise || ''}`,
       profileFields: fields,
     });
@@ -36,11 +36,13 @@ export async function POST(request, { params }) {
     const body = await request.json().catch(() => ({}));
     if (body.replace) {
       // "Regenerate with AI" — replace this disease's treatments with fresh ones.
-      cluster.treatments = suggested.slice(0, 2).map((name) => ({ name, source: 'ai' }));
+      cluster.treatments = suggested.slice(0, 3).map((name) => ({ name, source: 'ai' }));
     } else {
-      // Merge (dedupe case-insensitively), keeping existing entries + their source.
+      // Merge (dedupe case-insensitively), keeping existing entries + their
+      // source, but never exceed the per-disease maximum of 3.
       const have = new Set(cluster.treatments.map((t) => t.name.toLowerCase()));
       for (const name of suggested) {
+        if (cluster.treatments.length >= 3) break;
         if (!have.has(name.toLowerCase())) { cluster.treatments.push({ name, source: 'ai' }); have.add(name.toLowerCase()); }
       }
     }

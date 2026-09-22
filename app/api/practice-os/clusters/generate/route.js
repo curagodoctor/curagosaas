@@ -38,13 +38,13 @@ Weight the list toward COMMON + HIGH-DEMAND + HIGH-PRACTICE-VALUE, with only a s
 Each disease must be a DISTINCT patient problem with distinct symptoms, evaluation, treatment and search intent. Do NOT split one disease into artificial SEO variants (use "Gallstones" not gallbladder-stones/polyps as separate diseases; "Appendicitis" not acute/chronic; "Colorectal cancer" not colon vs rectal; "Arthritis" not separate knee/hip/shoulder pages when they are the same disease universe). But keep grouping CLINICALLY VALID — never merge genuinely distinct diseases just to reduce page count.
 Order the 10 by priority (highest-demand/most-common first; the small complex/high-authority set last). Mark each disease's tier: "common" for the high-demand/high-practice-value drivers, "authority" for the complex/high-authority ones. Give each a one-line reason for inclusion.
 
-TREATMENT DERIVATION — for each finalised disease, derive its clinically appropriate treatments/procedures. Each treatment MUST be: medically distinct; clinically legitimate; relevant to the specialty; genuinely appropriate for THAT disease; within the practical scope of an independent specialist; and consistent with current medical standards. A disease may have 1 to 4 treatments — as many DISTINCT procedures as the specialist would actually perform for it, and no more (e.g. Colorectal cancer → laparoscopic right/left hemicolectomy, anterior resection; Gallstones → laparoscopic cholecystectomy; GERD → laparoscopic Nissen fundoplication).
+TREATMENT DERIVATION — for each finalised disease, derive its clinically appropriate treatments/procedures. Each treatment MUST be: medically distinct; clinically legitimate; relevant to the specialty; genuinely appropriate for THAT disease; within the practical scope of an independent specialist; and consistent with current medical standards. A disease may have 1 to 3 treatments — as many DISTINCT procedures as the specialist would actually perform for it, and no more (e.g. Colorectal cancer → laparoscopic right/left hemicolectomy, anterior resection; Gallstones → laparoscopic cholecystectomy; GERD → laparoscopic Nissen fundoplication). Use full, standard medical terminology — never abbreviations.
 Do NOT create separate treatments for wording/keyword variations. Do NOT list a recognised treatment the specialist would not personally perform (e.g. do NOT auto-attach RFA to liver cancer just because RFA exists for it) — include only treatments appropriate to this specialty and this specialist's actual surgical scope.
 PREFER the doctor's OWN listed procedures/expertise wherever they legitimately apply to a disease; use standard, medically-accurate specialty procedures otherwise. Use correct medical terminology paired with a plain patient-facing name where helpful.
 
 CLINICAL ACCURACY — follow current medical knowledge and accepted practice. Do NOT invent diseases, procedures, synonyms, indications or treatment relationships. Never optimise for keywords at the expense of clinical accuracy.
 
-Return JSON: {"diseases": [{"name": string, "tier": "common"|"authority", "reason": string (one line), "treatments": string[] (1-4 distinct, real procedures)}]} with EXACTLY 10 diseases in priority order. NMC-compliant — factual, no superlatives, no outcome/success claims.`,
+Return JSON: {"diseases": [{"name": string, "tier": "common"|"authority", "reason": string (one line), "treatments": string[] (1-3 distinct, real procedures, no abbreviations)}]} with EXACTLY 10 diseases in priority order. NMC-compliant — factual, no superlatives, no outcome/success claims.`,
       source: `Specialty: ${specialty}\nSubspecialty: ${fields.subspecialty || '(none)'}\nProcedures the doctor listed: ${fields.procedures || '(none)'}\nAreas of expertise: ${fields.expertise || '(none)'}\nConditions the doctor listed: ${fields.diseases || '(none)'}\nCity: ${fields.city || ''}`,
       profileFields: fields,
     });
@@ -59,7 +59,7 @@ Return JSON: {"diseases": [{"name": string, "tier": "common"|"authority", "reaso
       slug: slugify(d.name),
       tier: d.tier === 'authority' ? 'authority' : 'common',
       reason: String(d.reason || '').trim().slice(0, 200),
-      treatments: (Array.isArray(d.treatments) ? d.treatments : []).slice(0, 4)
+      treatments: (Array.isArray(d.treatments) ? d.treatments : []).slice(0, 3)
         .map((t) => ({ name: String(t).trim(), source: 'ai' }))
         .filter((t) => t.name),
       approved: false,
