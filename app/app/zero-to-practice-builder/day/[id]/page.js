@@ -124,7 +124,9 @@ function DayInner() {
     try {
       const res = await fetch(`/api/practice-os/day/${missionId}/ai`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ prompt, moduleId, newSession: true }),
+        // auto:true → the authored/system prompt is stored HIDDEN (never shown as a
+        // chat turn). Without it the full internal prompt leaked into "Suggest a change".
+        body: JSON.stringify({ prompt, moduleId, newSession: true, auto: true }),
       });
       const d = await res.json();
       const answer = d.text || d.reply;
@@ -264,15 +266,26 @@ function DayInner() {
         {/* Suggest changes — the chat (above the image box: refine copy first). */}
         <div className="mt-6">
           <p className="pos-label mb-2">Suggest a change</p>
-          {thread.filter((m) => m.role === 'user').length > 0 && (
-            <div className="space-y-2 mb-3">
-              {thread.map((m, i) => (
-                <div key={i} className={`text-[13.5px] ${m.role === 'user' ? 'text-right' : 'hidden'}`}>
-                  <span className="inline-block px-3 py-2 rounded-xl" style={{ background: 'var(--green-soft, rgba(9,107,23,.08))', color: 'var(--ink)' }}>{m.content}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          {(() => {
+            // Only the doctor's own short suggestions — never the internal authored
+            // prompt (defensive against older leaked turns: system prompts are long
+            // and carry these markers).
+            const isSystemPrompt = (c) => {
+              const s = String(c || '');
+              return s.length > 400 || /GUARDRAILS:|MECHANISM:|STRUCTURE:|AFTER PUBLISHING|internal reference only/i.test(s);
+            };
+            const userTurns = thread.filter((m) => m.role === 'user' && !isSystemPrompt(m.content));
+            if (!userTurns.length) return null;
+            return (
+              <div className="space-y-2 mb-3">
+                {userTurns.map((m, i) => (
+                  <div key={i} className="text-[13.5px] text-right">
+                    <span className="inline-block px-3 py-2 rounded-xl" style={{ background: 'var(--green-soft, rgba(9,107,23,.08))', color: 'var(--ink)' }}>{m.content}</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
           <div className="flex items-end gap-2 pos-card p-0 overflow-hidden">
             <textarea
               value={chatInput}
