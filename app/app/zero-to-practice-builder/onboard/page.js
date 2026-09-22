@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { SECTIONS, Field } from '../_profile-fields';
 import GbpGuide from '@/components/practice-os/GbpGuide';
+import { validateImage } from '@/lib/imageValidation';
 
 // The linear onboarding wizard (entry flow §2). One guided flow, one step at a
 // time, with a phase rail: PROFILE → WEBSITE → GOOGLE → ACCESS. POS design.
@@ -295,13 +296,19 @@ function Wizard() {
   };
   const onProfilePhoto = async (e) => {
     const file = e.target.files?.[0]; if (!file) return;
-    setBusy('photo'); setErr('');
+    setErr('');
+    const v = await validateImage(file, 'portrait');
+    if (!v.ok) { setErr(v.error); if (e.target) e.target.value = ''; return; }
+    setBusy('photo');
     try { setProfilePhoto(await uploadPhoto(file, 'profile')); } catch (x) { setErr(x.message); } finally { setBusy(''); }
   };
   // Website (hero) photos — landscape; the doctor can add as many as they like.
   const onClinicPhotoAdd = async (e) => {
     const file = e.target.files?.[0]; if (!file) return;
-    setBusy('clinicadd'); setErr('');
+    setErr('');
+    const v = await validateImage(file, 'landscape');
+    if (!v.ok) { setErr(v.error); if (e.target) e.target.value = ''; return; }
+    setBusy('clinicadd');
     try { const url = await uploadPhoto(file, 'clinic'); setClinicPhotos((p) => [...p, url]); }
     catch (x) { setErr(x.message); } finally { setBusy(''); if (e.target) e.target.value = ''; }
   };
@@ -514,7 +521,6 @@ function Wizard() {
             {err && <p className="text-[13px] text-red-600 mt-4">{err}</p>}
             <div className="flex items-center justify-between gap-3 mt-7">
               <button onClick={async () => { if (await saveProfile()) next(); }} disabled={!!busy} className="pos-action">{busy === 'save' ? 'Saving…' : 'Save and continue'}</button>
-              {step > 0 && <button onClick={() => go(step - 1)} disabled={!!busy} className="pos-link text-sm disabled:opacity-40" style={{ color: 'var(--muted)' }}>← Back</button>}
             </div>
           </div>
         )}
@@ -536,7 +542,6 @@ function Wizard() {
             {err && <p className="text-[13px] text-red-600 mt-3">{err}</p>}
             <div className="flex items-center gap-3 mt-6">
               <button onClick={async () => { if (await saveProfile()) next(); }} disabled={!!busy} className="pos-action">{busy === 'save' ? 'Saving…' : 'Save and continue'}</button>
-              <button onClick={() => go(step - 1)} disabled={!!busy} className="pos-link text-sm" style={{ color: 'var(--muted)' }}>← Back</button>
             </div>
           </div>
         )}
@@ -551,7 +556,6 @@ function Wizard() {
             {err && <p className="text-[13px] text-red-600 mt-3">{err}</p>}
             <div className="flex items-center gap-3 mt-6">
               <button onClick={async () => { if (await saveProfile()) next(); }} disabled={!!busy} className="pos-action">{busy === 'save' ? 'Saving…' : 'Save and continue'}</button>
-              <button onClick={() => go(step - 1)} disabled={!!busy} className="pos-link text-sm" style={{ color: 'var(--muted)' }}>← Back</button>
             </div>
           </div>
         )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { validateImage } from "@/lib/imageValidation";
 
 export default function ImageUploader({
   value = "",
@@ -11,6 +12,7 @@ export default function ImageUploader({
   acceptedFormats = ["image/jpeg", "image/png", "image/webp"],
   showPreview = true,
   compact = false, // Compact mode for inline/smaller upload areas
+  orientation = null, // 'landscape' | 'portrait' — reject mismatched/too-small images
 }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
@@ -43,8 +45,13 @@ export default function ImageUploader({
         slug: slug
       });
 
-      // Validate file
+      // Validate file (type + size)
       validateFile(file);
+      // Validate orientation + minimum dimensions for website slots.
+      if (orientation) {
+        const v = await validateImage(file, orientation);
+        if (!v.ok) { setError(v.error); setUploading(false); return; }
+      }
       console.log('✅ File validation passed');
 
       // Create FormData

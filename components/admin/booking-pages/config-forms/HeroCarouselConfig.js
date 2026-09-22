@@ -245,7 +245,8 @@ export default function HeroCarouselConfig({ config, onChange, slug }) {
               value={formData.url}
               onChange={(url) => setFormData({ ...formData, url })}
               slug={slug}
-              label="Hero Image *"
+              label="Hero Image * (landscape)"
+              orientation="landscape"
             />
 
             {formData.url && (

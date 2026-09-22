@@ -63,7 +63,8 @@ export default function DoctorProfileConfig({ config, onChange, slug }) {
         value={config.imageUrl || ""}
         onChange={(url) => handleChange("imageUrl", url)}
         slug={slug}
-        label="Doctor Photo"
+        label="Doctor Photo (portrait)"
+        orientation="portrait"
       />
 
       <div>

@@ -13,7 +13,8 @@ export default function BannerImageConfig({ config, onChange, slug }) {
         value={config.imageUrl || ""}
         onChange={(url) => handleChange("imageUrl", url)}
         slug={slug}
-        label="Banner Image *"
+        label="Banner Image * (landscape)"
+        orientation="landscape"
       />
 
       <div>
