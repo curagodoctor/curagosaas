@@ -44,7 +44,9 @@ PREFER the doctor's OWN listed procedures/expertise wherever they legitimately a
 
 CLINICAL ACCURACY — follow current medical knowledge and accepted practice. Do NOT invent diseases, procedures, synonyms, indications or treatment relationships. Never optimise for keywords at the expense of clinical accuracy.
 
-Return JSON: {"diseases": [{"name": string, "tier": "common"|"authority", "reason": string (one line), "treatments": string[] (1-3 distinct, real procedures, no abbreviations)}]} with EXACTLY 10 diseases in priority order. NMC-compliant — factual, no superlatives, no outcome/success claims.`,
+OVERALL LIMIT — no more than 20 treatments in TOTAL across all 10 diseases (each disease still 1-3). Prioritise the highest-value treatments; give the most common/high-demand diseases their full set and keep authority conditions lean.
+
+Return JSON: {"diseases": [{"name": string, "tier": "common"|"authority", "reason": string (one line), "treatments": string[] (1-3 distinct, real procedures, no abbreviations)}]} with EXACTLY 10 diseases in priority order (and 20 treatments or fewer overall). NMC-compliant — factual, no superlatives, no outcome/success claims.`,
       source: `Specialty: ${specialty}\nSubspecialty: ${fields.subspecialty || '(none)'}\nProcedures the doctor listed: ${fields.procedures || '(none)'}\nAreas of expertise: ${fields.expertise || '(none)'}\nConditions the doctor listed: ${fields.diseases || '(none)'}\nCity: ${fields.city || ''}`,
       profileFields: fields,
     });
@@ -65,6 +67,18 @@ Return JSON: {"diseases": [{"name": string, "tier": "common"|"authority", "reaso
       approved: false,
       order: i,
     }));
+    // Enforce the 20-treatment overall cap: keep 1 per disease first (min), then
+    // fill remaining budget in priority order — so no disease is left empty.
+    const TOTAL_CAP = 20;
+    for (const doc of docs) if (!doc.treatments.length) doc.treatments = []; // (defensive)
+    let budget = TOTAL_CAP - docs.reduce((n, doc) => n + Math.min(1, doc.treatments.length), 0);
+    for (const doc of docs) {
+      const keep = 1; // guaranteed first treatment
+      const extra = Math.max(0, doc.treatments.length - keep);
+      const take = Math.max(0, Math.min(extra, budget));
+      doc.treatments = doc.treatments.slice(0, keep + take);
+      budget -= take;
+    }
     await PracticeOsDiseaseCluster.insertMany(docs, { ordered: false }).catch(() => {});
     const clusters = await PracticeOsDiseaseCluster.find({ doctorId: doctor._id }).sort({ order: 1 }).lean();
 

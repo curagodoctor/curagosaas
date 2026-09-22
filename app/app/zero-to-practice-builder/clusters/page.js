@@ -11,6 +11,7 @@ import PosNav from '@/components/practice-os/PosNav';
 //  2. gbp      — post the approved treatments as GBP services.
 const PER_DISEASE_MIN = 1;
 const PER_DISEASE_MAX = 3;
+const TOTAL_TREATMENT_CAP = 20; // across all 10 diseases
 const LEAF_SOFT = 'var(--green-soft, rgba(9,107,23,.09))';
 
 function ClustersInner() {
@@ -46,6 +47,7 @@ function ClustersInner() {
 
   const cur = clusters?.[idx];
   const total = clusters?.length || 0;
+  const treatTotal = (clusters || []).reduce((n, c) => n + (c.treatments?.length || 0), 0);
   const serialOffset = (clusters || []).slice(0, idx).reduce((n, c) => n + (c.treatments?.length || 0), 0);
   const approvedClusters = (clusters || []).filter((c) => c.approved);
   const approvedCount = approvedClusters.length;
@@ -63,6 +65,7 @@ function ClustersInner() {
   const setTreatment = (i, v) => { const treatments = cur.treatments.map((t, j) => j === i ? { ...t, name: v } : t); patchLocal(cur._id, { treatments }); };
   const addTreatment = () => {
     if ((cur.treatments?.length || 0) >= PER_DISEASE_MAX) return; // max 3 per disease
+    if (treatTotal >= TOTAL_TREATMENT_CAP) return;                // max 20 overall
     const name = newTreat.trim() || 'New treatment';
     const treatments = [...(cur.treatments || []), { name, source: 'manual' }];
     save(cur._id, { treatments }); setNewTreat('');
@@ -89,9 +92,20 @@ function ClustersInner() {
 
   const approveAndContinue = async () => {
     if (!cur) return;
-    if ((cur.treatments?.length || 0) < PER_DISEASE_MIN) { setGenErr('Add at least one treatment for this disease before approving.'); return; }
+    // Flush a treatment the doctor typed but didn't click "+ Add" — so approving
+    // never silently drops it (respecting per-disease max 3 and the 20 overall cap).
+    let treatments = cur.treatments || [];
+    const pending = newTreat.trim();
+    if (pending
+      && treatments.length < PER_DISEASE_MAX
+      && treatTotal < TOTAL_TREATMENT_CAP
+      && !treatments.some((t) => t.name.toLowerCase() === pending.toLowerCase())) {
+      treatments = [...treatments, { name: pending, source: 'manual' }];
+      setNewTreat('');
+    }
+    if (treatments.length < PER_DISEASE_MIN) { setGenErr('Add at least one treatment for this disease before approving.'); return; }
     setGenErr('');
-    await save(cur._id, { name: cur.name, treatments: cur.treatments, approved: true });
+    await save(cur._id, { name: cur.name, treatments, approved: true });
     // Last disease approved → straight into the content/control center.
     if (idx >= total - 1) { router.push('/app/zero-to-practice-builder'); return; }
     setIdx(idx + 1); window.scrollTo(0, 0);
@@ -151,7 +165,7 @@ function ClustersInner() {
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-2.5 mb-1">
                     <span style={{ ...mono, fontSize: 10.5, letterSpacing: '.14em', color: 'var(--muted)' }}>TREATMENTS FOR THIS DISEASE <span style={{ letterSpacing: 0, textTransform: 'none' }}>(Do not use abbreviations. Use standard terminologies.)</span></span>
-                    <span style={{ ...mono, fontSize: 10.5, color: (cur.treatments?.length || 0) >= PER_DISEASE_MAX ? 'var(--orange)' : 'var(--muted)' }}>{cur.treatments?.length || 0} / {PER_DISEASE_MAX} TREATMENTS</span>
+                    <span style={{ ...mono, fontSize: 10.5, color: ((cur.treatments?.length || 0) >= PER_DISEASE_MAX || treatTotal >= TOTAL_TREATMENT_CAP) ? 'var(--orange)' : 'var(--muted)' }}>{cur.treatments?.length || 0} / {PER_DISEASE_MAX} · {treatTotal} / {TOTAL_TREATMENT_CAP} TOTAL</span>
                   </div>
                   <div className="flex flex-col gap-2.5">
                     {(cur.treatments || []).map((t, i) => (
@@ -162,7 +176,7 @@ function ClustersInner() {
                         <button onClick={() => removeTreatment(i)} disabled={(cur.treatments?.length || 0) <= PER_DISEASE_MIN} aria-label="Remove treatment" style={{ flex: '0 0 auto', background: '#fff', border: '1px solid var(--rule)', color: 'var(--muted)', ...mono, fontSize: 15, lineHeight: 1, width: 40, height: 40, borderRadius: 11, cursor: (cur.treatments?.length || 0) <= PER_DISEASE_MIN ? 'not-allowed' : 'pointer', opacity: (cur.treatments?.length || 0) <= PER_DISEASE_MIN ? 0.4 : 1 }}>×</button>
                       </div>
                     ))}
-                    {(cur.treatments?.length || 0) < PER_DISEASE_MAX && (
+                    {(cur.treatments?.length || 0) < PER_DISEASE_MAX && treatTotal < TOTAL_TREATMENT_CAP && (
                       <div className="flex items-stretch gap-2">
                         <input value={newTreat} onChange={(e) => setNewTreat(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addTreatment(); }} placeholder="Add a treatment…"
                           style={{ flex: '1 1 auto', minWidth: 0, border: '1px solid var(--rule)', borderRadius: 12, padding: '11px 15px', fontSize: 14, background: '#fff', outline: 'none' }} />
@@ -170,7 +184,9 @@ function ClustersInner() {
                       </div>
                     )}
                   </div>
-                  {(cur.treatments?.length || 0) >= PER_DISEASE_MAX && <div style={{ fontSize: 12.5, color: 'var(--orange)', marginTop: 9 }}>Up to {PER_DISEASE_MAX} treatments per disease — remove one before adding another.</div>}
+                  {treatTotal >= TOTAL_TREATMENT_CAP
+                    ? <div style={{ fontSize: 12.5, color: 'var(--orange)', marginTop: 9 }}>You&apos;ve reached {TOTAL_TREATMENT_CAP} treatments across all diseases — remove one to add another.</div>
+                    : (cur.treatments?.length || 0) >= PER_DISEASE_MAX && <div style={{ fontSize: 12.5, color: 'var(--orange)', marginTop: 9 }}>Up to {PER_DISEASE_MAX} treatments per disease — remove one before adding another.</div>}
                   {genErr && <div style={{ fontSize: 12.5, color: '#b42318', marginTop: 9 }}>{genErr}</div>}
                 </div>
 
