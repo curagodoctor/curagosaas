@@ -155,6 +155,26 @@ function Wizard() {
     })();
   }, [router]);
 
+  // Trap the browser Back button inside the wizard: build a back-stack for the
+  // resumed step, then intercept popstate to move BETWEEN steps rather than
+  // navigating away from onboarding.
+  const historyInit = useRef(false);
+  useEffect(() => {
+    if (!loaded || historyInit.current) return;
+    historyInit.current = true;
+    try {
+      window.history.replaceState({ posStep: 0 }, '');
+      for (let i = 1; i <= step; i++) window.history.pushState({ posStep: i }, '');
+    } catch { /* no-op */ }
+    const onPop = (e) => {
+      const t = e?.state?.posStep;
+      if (typeof t === 'number') { setStep(t); setErr(''); window.scrollTo(0, 0); persistStep(t); }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded]);
+
   const setField = (k, v) => setFields((f) => ({ ...f, [k]: v }));
   const toggleTag = (k, opt) => setFields((f) => {
     const cur = (f[k] || '').split(',').map((x) => x.trim()).filter(Boolean);
@@ -170,7 +190,13 @@ function Wizard() {
       body: JSON.stringify({ onboardStep: i }),
     }).catch(() => {});
   }, []);
-  const go = (i) => { setStep(i); setErr(''); window.scrollTo(0, 0); persistStep(i); };
+  const go = (i) => {
+    setStep(i); setErr(''); window.scrollTo(0, 0); persistStep(i);
+    // Add a browser-history entry per step so the browser Back button walks the
+    // wizard instead of leaving onboarding (which dropped users on the signup
+    // page and looked like a logout).
+    try { window.history.pushState({ posStep: i }, ''); } catch { /* no-op */ }
+  };
   const next = () => go(Math.min(step + 1, STEPS.length - 1));
   const goToId = (id) => go(STEPS.findIndex((s) => s.id === id));
   // §3 branch — remember the choice so a refresh keeps the right framing.
