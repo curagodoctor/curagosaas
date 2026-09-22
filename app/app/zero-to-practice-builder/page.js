@@ -22,6 +22,7 @@ export default function ControlCenter() {
   const [activeDays, setActiveDays] = useState(0);
   const [name, setName] = useState('');
   const [leaderboard, setLeaderboard] = useState(null);
+  const [credits, setCredits] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pendingOpen, setPendingOpen] = useState(true);
   // Whether the doctor has approved their disease/treatment map yet. Until they
@@ -36,7 +37,7 @@ export default function ControlCenter() {
   useEffect(() => {
     (async () => {
       try {
-        const [pRes, meRes, lbRes, uRes, aRes, profRes, actRes] = await Promise.all([
+        const [pRes, meRes, lbRes, uRes, aRes, profRes, actRes, crRes] = await Promise.all([
           fetch('/api/practice-os/packs'),
           fetch('/api/auth/me'),
           fetch('/api/practice-os/leaderboard'),
@@ -44,6 +45,7 @@ export default function ControlCenter() {
           fetch('/api/practice-os/access-request'),
           fetch('/api/practice-os/profile'),
           fetch('/api/practice-os/activity'),
+          fetch('/api/practice-os/credits'),
         ]);
         if (pRes.status === 401) { router.push('/login?entry=practice-os'); return; }
         // If the doctor started signup but never finished onboarding, send them
@@ -58,6 +60,7 @@ export default function ControlCenter() {
         if (meRes.ok) { const me = await meRes.json(); setName(me.doctor?.displayName || me.doctor?.name || ''); }
         if (lbRes.ok) { const lb = await lbRes.json(); if (lb.success) setLeaderboard(lb); }
         if (actRes.ok) { const act = await actRes.json(); if (act.success) setActiveDays(act.total || 0); }
+        if (crRes.ok) { const cr = await crRes.json(); if (cr.success) setCredits(cr); }
         let granted = false;
         if (aRes.ok) { const a = await aRes.json(); granted = !!a.granted; setAccessStatus(a.status || 'none'); setAccessExpiry(a.access?.expiresAt || null); }
         if (uRes.ok) { const u = await uRes.json(); if (u.success && !u.username && granted) setNeedsUsername(true); }
@@ -278,6 +281,25 @@ export default function ControlCenter() {
                 <span className="text-[15px] font-medium">{bestStreak > 0 ? `🔥 ${bestStreak}` : '—'}</span>
               </div>
             </div>
+
+            {/* AI credits */}
+            {credits && (
+              <div className="pos-card p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="pos-label" style={{ color: 'var(--green)' }}>AI credits</p>
+                    <p className="text-[12px] text-[var(--muted)] mt-0.5">{credits.unlimited ? 'Unlimited access' : 'Resets daily'}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="pos-num text-[22px] text-[var(--ink)]">{credits.unlimited ? '∞' : credits.remaining}</span>
+                    {!credits.unlimited && credits.dailyLimit ? <span className="text-[12px] text-[var(--muted)]"> / {credits.dailyLimit}</span> : null}
+                  </div>
+                </div>
+                {!credits.unlimited && credits.dailyLimit ? (
+                  <div className="pos-meter mt-3"><span style={{ width: `${Math.min(100, Math.round((credits.remaining / credits.dailyLimit) * 100))}%` }} /></div>
+                ) : null}
+              </div>
+            )}
 
             {/* Scheduled events */}
             <ScheduledCard scheduled={scheduled} />

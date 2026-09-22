@@ -9,9 +9,13 @@ import { DEFAULT_SECTIONS } from '@/lib/practice-os/profile-fields-defaults';
 // Editable chip list — the practice-map pattern. The value stays a comma-joined
 // string (the source-of-truth format), rendered as removable tags with a "+ Add"
 // entry. Used for expertise / diseases / procedures.
-function ChipsField({ value, onChange, placeholder }) {
+function ChipsField({ value, onChange, placeholder, options, listId }) {
   const [draft, setDraft] = useState('');
   const items = (value || '').split(',').map((x) => x.trim()).filter(Boolean);
+  // Only suggest options not already chosen.
+  const suggestions = Array.isArray(options)
+    ? options.filter((o) => !items.some((x) => x.toLowerCase() === String(o).toLowerCase()))
+    : null;
   const commit = (str) => onChange(str.join(', '));
   const add = () => {
     // Allow pasting several comma-separated items at once.
@@ -35,9 +39,12 @@ function ChipsField({ value, onChange, placeholder }) {
         </span>
       ))}
       <input value={draft} onChange={(e) => setDraft(e.target.value)}
+        list={suggestions ? listId : undefined}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(); } else if (e.key === 'Backspace' && !draft && items.length) { removeAt(items.length - 1); } }}
         onBlur={add} placeholder={placeholder || 'Type and press Enter'}
+        autoComplete="off"
         className="flex-1 min-w-[140px] text-[14px] outline-none bg-transparent px-1.5 py-1" />
+      {suggestions && <datalist id={listId}>{suggestions.map((o) => <option key={o} value={o} />)}</datalist>}
     </div>
   );
 }
@@ -64,7 +71,7 @@ export function Field({ f, value, confidence, error, onChange, onToggleTag }) {
       {f.hint && <p className="text-[11.5px] text-[var(--muted)] mt-0.5 leading-snug">{f.hint}</p>}
 
       {f.chips ? (
-        <ChipsField value={value} onChange={onChange} placeholder={f.chipPlaceholder} />
+        <ChipsField value={value} onChange={onChange} placeholder={f.chipPlaceholder} options={f.options} listId={`chips-${f.key}`} />
       ) : f.type === 'select' ? (
         <select value={value || ''} onChange={(e) => onChange(e.target.value)} className="w-full pos-card p-2.5 text-sm mt-1" style={error ? { borderColor: '#dc2626' } : undefined}>
           {f.options.map((o) => <option key={o} value={o}>{o || 'Select…'}</option>)}
