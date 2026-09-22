@@ -61,12 +61,14 @@ export default function FloatingFab() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'Close menu' : 'Open menu'}
         aria-expanded={open}
-        className="w-14 h-14 rounded-full shadow-xl grid place-items-center text-white overflow-hidden"
-        style={{ background: open ? 'var(--orange, #F26A1B)' : 'var(--green, #096B17)' }}
+        className="w-14 h-14 rounded-full shadow-xl grid place-items-center overflow-hidden"
+        style={open
+          ? { background: 'var(--orange, #F26A1B)', color: '#fff' }
+          : { background: '#fff', border: '1px solid var(--rule, #DDE4D9)' }}
       >
         {open
           ? <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" /></svg>
-          : <img src="/fab-icon.png" alt="" className="w-7 h-7 object-contain" />}
+          : <img src="/fab-icon.png" alt="" className="w-8 h-8 object-contain" />}
       </button>
       <style>{`@keyframes posFanIn{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}`}</style>
     </div>

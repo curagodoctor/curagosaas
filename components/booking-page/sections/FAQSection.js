@@ -8,6 +8,7 @@ export default function FAQSection({
   subtitle,
   faqs = [],
   allowMultipleOpen = false,
+  hideContactCta = false,
 }) {
   const [openIndexes, setOpenIndexes] = useState([]);
 
@@ -114,18 +115,20 @@ export default function FAQSection({
           ))}
         </div>
 
-        {/* Optional Contact CTA */}
-        <div className="mt-12 text-center">
-          <p className="text-primary-700 text-base md:text-lg mb-4">
-            Still have questions?
-          </p>
-          <a
-            href="#booking"
-            className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
-          >
-            Book a Consultation
-          </a>
-        </div>
+        {/* Optional Contact CTA — hidden when a request-a-callback form sits above. */}
+        {!hideContactCta && (
+          <div className="mt-12 text-center">
+            <p className="text-primary-700 text-base md:text-lg mb-4">
+              Still have questions?
+            </p>
+            <a
+              href="#lead_form"
+              className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+            >
+              Request a call back
+            </a>
+          </div>
+        )}
       </div>
     </section>
   );
