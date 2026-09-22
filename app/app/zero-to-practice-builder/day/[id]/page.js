@@ -261,6 +261,32 @@ function DayInner() {
         </div>
         <p className="text-[12px] text-[var(--muted)] mt-2" style={{ lineHeight: 1.5 }}>AI can make mistakes. Check for accuracy and compliance before publishing.</p>
 
+        {/* Suggest changes — the chat (above the image box: refine copy first). */}
+        <div className="mt-6">
+          <p className="pos-label mb-2">Suggest a change</p>
+          {thread.filter((m) => m.role === 'user').length > 0 && (
+            <div className="space-y-2 mb-3">
+              {thread.map((m, i) => (
+                <div key={i} className={`text-[13.5px] ${m.role === 'user' ? 'text-right' : 'hidden'}`}>
+                  <span className="inline-block px-3 py-2 rounded-xl" style={{ background: 'var(--green-soft, rgba(9,107,23,.08))', color: 'var(--ink)' }}>{m.content}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex items-end gap-2 pos-card p-0 overflow-hidden">
+            <textarea
+              value={chatInput}
+              onChange={(e) => { setChatInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(e.target.scrollHeight, 180)}px`; }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+              placeholder="e.g. make it warmer, shorten it, add a line about recovery…"
+              rows={1}
+              className="flex-1 px-3.5 py-3 text-sm outline-none bg-transparent resize-none"
+              style={{ maxHeight: 180, lineHeight: 1.5 }}
+            />
+            <button onClick={send} disabled={sending || !chatInput.trim()} className="pos-action m-1 px-4 shrink-0" style={{ opacity: chatInput.trim() ? 1 : 0.5 }}>{sending ? '…' : 'Send'}</button>
+          </div>
+        </div>
+
         {/* Image for the post — generate + download (mainly for GBP posts). */}
         <div className="pos-card mt-4 p-4">
           <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -303,31 +329,6 @@ function DayInner() {
             <button onClick={nextModule} className="pos-action">Next module →</button>
           )}
           {modIndex > 0 && <button onClick={prevModule} className="pos-link text-[13px]" style={{ color: 'var(--muted)' }}>← Previous module</button>}
-        </div>
-        {/* Suggest changes — the chat */}
-        <div className="mt-8">
-          <p className="pos-label mb-2">Suggest a change</p>
-          {thread.filter((m) => m.role === 'user').length > 0 && (
-            <div className="space-y-2 mb-3">
-              {thread.map((m, i) => (
-                <div key={i} className={`text-[13.5px] ${m.role === 'user' ? 'text-right' : 'hidden'}`}>
-                  <span className="inline-block px-3 py-2 rounded-xl" style={{ background: 'var(--green-soft, rgba(9,107,23,.08))', color: 'var(--ink)' }}>{m.content}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="flex items-end gap-2 pos-card p-0 overflow-hidden">
-            <textarea
-              value={chatInput}
-              onChange={(e) => { setChatInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(e.target.scrollHeight, 180)}px`; }}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder="e.g. make it warmer, shorten it, add a line about recovery…"
-              rows={1}
-              className="flex-1 px-3.5 py-3 text-sm outline-none bg-transparent resize-none"
-              style={{ maxHeight: 180, lineHeight: 1.5 }}
-            />
-            <button onClick={send} disabled={sending || !chatInput.trim()} className="pos-action m-1 px-4 shrink-0" style={{ opacity: chatInput.trim() ? 1 : 0.5 }}>{sending ? '…' : 'Send'}</button>
-          </div>
         </div>
 
         {/* Relevant links — where to post + the doctor's own pages/links. */}
