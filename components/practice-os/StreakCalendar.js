@@ -129,29 +129,48 @@ function YearHeatmap({ days, todayKey }) {
     const prevFirst = ci > 0 ? weeks[ci - 1][0] : null;
     return (!prevFirst || first.getMonth() !== prevFirst.getMonth()) && first.getDate() <= 7 ? MONTHS[first.getMonth()] : '';
   });
+  // GitHub shows a weekday label on alternating rows (Mon / Wed / Fri).
+  const WEEKDAYS = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
+  const LABEL_W = 26;
   return (
     <div className="overflow-x-auto">
       <div style={{ minWidth: 'max-content' }}>
-        <div className="flex gap-[3px] mb-1">
+        {/* Month labels, offset by the weekday-label gutter. */}
+        <div className="flex gap-[3px] mb-1" style={{ paddingLeft: LABEL_W }}>
           {monthLabels.map((lbl, ci) => (
             <div key={ci} style={{ width: 11 }} className="text-[8px] text-[var(--muted)] overflow-visible whitespace-nowrap">{lbl}</div>
           ))}
         </div>
         <div className="flex gap-[3px]">
+          {/* Weekday labels down the left, like GitHub. */}
+          <div className="flex flex-col gap-[3px]" style={{ width: LABEL_W }}>
+            {WEEKDAYS.map((d, ri) => (
+              <div key={ri} style={{ height: 11 }} className="text-[8px] leading-[11px] text-[var(--muted)]">{d}</div>
+            ))}
+          </div>
           {weeks.map((col, ci) => (
             <div key={ci} className="flex flex-col gap-[3px]">
               {col.map((date, ri) => {
                 const k = keyOf(date);
                 const count = days[k] || 0;
                 const future = k > todayKey;
+                const isToday = k === todayKey;
                 return (
                   <div key={ri} className="rounded-[2px]"
-                    style={{ width: 11, height: 11, background: future ? 'transparent' : shade(count), outline: k === todayKey ? '1.5px solid var(--orange)' : 'none', outlineOffset: '-1.5px' }}
-                    title={`${k}: ${count} completed`} />
+                    style={{ width: 11, height: 11, background: future ? 'transparent' : shade(count), outline: isToday ? '1.5px solid var(--orange)' : (future ? 'none' : '1px solid rgba(16,26,19,0.04)'), outlineOffset: isToday ? '1px' : '-1px' }}
+                    title={`${k}: ${count} completed${isToday ? ' · today' : ''}`} />
                 );
               })}
             </div>
           ))}
+        </div>
+        {/* Less → More legend, like GitHub. */}
+        <div className="flex items-center gap-1 justify-end mt-2" style={{ fontSize: 8, color: 'var(--muted)' }}>
+          <span>Less</span>
+          {['var(--rule-soft)', 'rgba(9,107,23,0.30)', 'rgba(9,107,23,0.55)', 'var(--green)'].map((bg, i) => (
+            <span key={i} className="rounded-[2px]" style={{ width: 11, height: 11, background: bg, display: 'inline-block' }} />
+          ))}
+          <span>More</span>
         </div>
       </div>
     </div>

@@ -48,6 +48,7 @@ function DayInner() {
   const [evidenceRequired, setEvidenceRequired] = useState(false);
   const [evidence, setEvidence] = useState({ link: '', notes: '' });
   const [image, setImage] = useState(null);        // null | 'gen' | { url }
+  const [imagePrompt, setImagePrompt] = useState(''); // optional custom image brief
   const started = useRef(false);
 
   const fire = useCallback(async (p, modId, auto) => {
@@ -135,7 +136,7 @@ function DayInner() {
     setImage('gen'); setErr('');
     try {
       const d = await fetch(`/api/practice-os/day/${missionId}/image`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ topic: mission?.title }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ topic: mission?.title, prompt: imagePrompt.trim() }),
       }).then((r) => r.json());
       if (d.success && d.url) setImage({ url: d.url });
       else { setImage(null); setErr(d.message || d.error || 'Could not generate the image.'); }
@@ -222,12 +223,19 @@ function DayInner() {
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
               <p className="pos-label" style={{ color: 'var(--green)' }}>Image for this post</p>
-              <p className="text-[12.5px] text-[var(--muted)] mt-0.5">Generate an image from this content, then download it to post alongside your update.</p>
+              <p className="text-[12.5px] text-[var(--muted)] mt-0.5">Leave the box empty and we&apos;ll auto-generate from your content, or describe the image you want. Then download it to post alongside your update.</p>
             </div>
             <button onClick={genImage} disabled={image === 'gen'} className="pos-card px-4 py-2.5 text-[14px] font-medium shrink-0" style={{ opacity: image === 'gen' ? 0.6 : 1 }}>
               {image === 'gen' ? 'Generating…' : (image?.url ? '↻ Regenerate image' : '✨ Generate image')}
             </button>
           </div>
+          <input
+            value={imagePrompt}
+            onChange={(e) => setImagePrompt(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); genImage(); } }}
+            placeholder="Optional: describe the image (e.g. a calm clinic reception, doctor with a patient)…"
+            className="w-full mt-3 px-3.5 py-2.5 text-[14px] outline-none rounded-[11px]"
+            style={{ border: '1px solid var(--rule)', background: 'var(--paper)' }} />
           {image?.url && (
             <div className="mt-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}

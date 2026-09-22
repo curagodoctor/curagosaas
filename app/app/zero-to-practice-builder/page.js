@@ -157,7 +157,7 @@ export default function ControlCenter() {
                 : 'First, review the diseases you treat and their treatments — everything we draft is built from these.'}
             </p>
           </div>
-          <button onClick={() => router.push(reviewContentHref)} className="pos-action shrink-0 self-start sm:self-auto">{diseasesReviewed ? 'Review my content →' : 'Review my diseases & treatments →'}</button>
+          <button onClick={() => router.push(reviewContentHref)} className="pos-action shrink-0 self-start sm:self-auto">{diseasesReviewed ? "Review today's content →" : 'Review my diseases & treatments →'}</button>
         </div>
       )}
 
