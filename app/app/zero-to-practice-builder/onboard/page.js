@@ -5,6 +5,42 @@ import { useRouter } from 'next/navigation';
 import { SECTIONS, Field } from '../_profile-fields';
 import GbpGuide from '@/components/practice-os/GbpGuide';
 import { validateImage } from '@/lib/imageValidation';
+import { INTEREST_OPTIONS } from '@/lib/practice-os/profile-fields-defaults';
+
+// A dropdown-combobox: shows the option list beneath the field (filtered as you
+// type), and still allows a custom entry. Used for the specialty field.
+function ComboBox({ value, onChange, placeholder, options, className, style, onFocus, onBlur }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, []);
+  const q = String(value || '').toLowerCase().trim();
+  const filtered = q ? options.filter((o) => o.toLowerCase().includes(q)) : options;
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <input value={value || ''} placeholder={placeholder} autoComplete="off"
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={(e) => { setOpen(true); onFocus?.(e); }}
+        onBlur={onBlur}
+        className={className} style={style} />
+      {open && filtered.length > 0 && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 50, maxHeight: 240, overflowY: 'auto', background: 'var(--card, #fff)', border: '1px solid var(--rule)', borderRadius: 11, boxShadow: '0 8px 24px rgba(16,26,19,.12)' }}>
+          {filtered.map((o) => (
+            <button key={o} type="button"
+              onMouseDown={(e) => { e.preventDefault(); onChange(o); setOpen(false); }}
+              className="w-full text-left px-3.5 py-2.5 text-[14px] hover:bg-[var(--paper)]"
+              style={{ color: 'var(--ink)', background: o === value ? 'var(--green-soft, rgba(9,107,23,.08))' : 'transparent', borderBottom: '1px solid var(--rule-soft)' }}>
+              {o}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // The linear onboarding wizard (entry flow §2). One guided flow, one step at a
 // time, with a phase rail: PROFILE → WEBSITE → GOOGLE → ACCESS. POS design.
@@ -64,7 +100,7 @@ const YEARS_OPTIONS = ['Less than 1', ...Array.from({ length: 40 }, (_, i) => St
 // ("Who are you, as patients should see you?"), mapped to our profile fields.
 const IDENTITY_Q = [
   { key: 'doctor_name', label: 'How should your name appear to patients?', ph: 'Dr. Your Name' },
-  { key: 'specialty', label: 'What is your specialty?', ph: 'Pick one or type your own', type: 'combo', options: SPECIALTY_OPTIONS },
+  { key: 'specialty', label: 'What is your specialty?', ph: 'Pick one or type your own', type: 'combo', options: INTEREST_OPTIONS },
   { key: 'qualifications', label: 'What are your qualifications?', ph: 'MBBS, MS' },
   { key: 'additional_qualifications', label: 'Any additional qualifications?', ph: 'Fellowship, diploma', optional: true },
   { key: 'years_experience', label: 'How many years have you been practising?', type: 'select', options: YEARS_OPTIONS },
@@ -504,11 +540,8 @@ function Wizard() {
                       {q.options.map((o) => <option key={o} value={o}>{o}</option>)}
                     </select>
                   ) : q.type === 'combo' ? (
-                    <>
-                      <input list={`opts-${q.key}`} value={fields[q.key] || ''} onChange={(e) => setField(q.key, e.target.value)} placeholder={q.ph}
-                        autoComplete="off" className={inputCls} style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
-                      <datalist id={`opts-${q.key}`}>{q.options.map((o) => <option key={o} value={o} />)}</datalist>
-                    </>
+                    <ComboBox value={fields[q.key] || ''} onChange={(v) => setField(q.key, v)} placeholder={q.ph}
+                      options={q.options} className={inputCls} style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
                   ) : (
                     <input value={fields[q.key] || ''} onChange={(e) => setField(q.key, e.target.value)} placeholder={q.ph}
                       className={inputCls} style={inputStyle} onFocus={onFocus} onBlur={onBlur} />
