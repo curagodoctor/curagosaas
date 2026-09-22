@@ -49,6 +49,7 @@ function DayInner() {
   const [evidence, setEvidence] = useState({ link: '', notes: '' });
   const [image, setImage] = useState(null);        // null | 'gen' | { url }
   const [imagePrompt, setImagePrompt] = useState(''); // optional custom image brief
+  const [confirmFinish, setConfirmFinish] = useState(false);
   const started = useRef(false);
 
   const fire = useCallback(async (p, modId, auto) => {
@@ -170,13 +171,25 @@ function DayInner() {
     } catch { setPublish(null); setErr('Could not publish.'); }
   };
 
-  const finishDay = async () => {
+  // Ask for confirmation first — finishing a task is irreversible (it closes).
+  const requestFinish = () => {
     if (finishing) return;
-    // Evidence gate — only when the backend marks it required.
     if (evidenceRequired && !evidence.link.trim() && !evidence.notes.trim()) {
       setErr('Please add your evidence (a link or a note) before finishing.');
       return;
     }
+    setConfirmFinish(true);
+  };
+
+  const finishDay = async () => {
+    if (finishing) return;
+    // Evidence gate — only when the backend marks it required.
+    if (evidenceRequired && !evidence.link.trim() && !evidence.notes.trim()) {
+      setConfirmFinish(false);
+      setErr('Please add your evidence (a link or a note) before finishing.');
+      return;
+    }
+    setConfirmFinish(false);
     setFinishing(true);
     const record = { links: evidence.link.trim() ? [evidence.link.trim()] : [], notes: evidence.notes.trim(), screenshots: [] };
     try { await fetch(`/api/practice-os/day/${missionId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ action: 'complete', record }) }); } catch { /* non-blocking */ }
@@ -210,13 +223,14 @@ function DayInner() {
           />
           {/* Central "rewriting" overlay so it's obvious the AI is working. */}
           {generating && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3" style={{ background: 'rgba(247,249,245,.86)', backdropFilter: 'blur(1.5px)' }}>
-              <span className="w-9 h-9 rounded-full border-[3px] border-[var(--green)] border-t-transparent animate-spin" />
-              <p className="text-[15px] font-semibold text-[var(--ink)]">Rewriting your content…</p>
-              <p className="text-[12.5px] text-[var(--muted)]">This takes a few seconds.</p>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4" style={{ background: 'rgba(247,249,245,.9)', backdropFilter: 'blur(2px)' }}>
+              <span className="w-16 h-16 rounded-full border-[5px] border-[var(--green)] border-t-transparent animate-spin" />
+              <p className="text-[17px] font-semibold text-[var(--ink)]">Rewriting your content…</p>
+              <p className="text-[13px] text-[var(--muted)]">This takes a few seconds.</p>
             </div>
           )}
         </div>
+        <p className="text-[12px] text-[var(--muted)] mt-2" style={{ lineHeight: 1.5 }}>AI can make mistakes. Check for accuracy and compliance before publishing.</p>
 
         {/* Image for the post — generate + download (mainly for GBP posts). */}
         <div className="pos-card mt-4 p-4">
@@ -251,7 +265,7 @@ function DayInner() {
         <div className="flex flex-wrap gap-2.5 mt-4">
           <button onClick={copy} disabled={!content.trim() || finishing} className="pos-card px-4 py-2.5 text-[14px] font-medium" style={{ opacity: content.trim() ? 1 : 0.5 }}>{copied ? 'Copied ✓' : 'Copy'}</button>
           <button onClick={pushBlog} disabled={publish === 'saving' || !content.trim() || finishing} className="pos-action" style={{ background: 'var(--green)' }}>{publish === 'saving' ? 'Publishing…' : 'Push as blog page'}</button>
-          <button onClick={finishDay} disabled={finishing} className="pos-action inline-flex items-center gap-2" style={{ opacity: finishing ? 0.75 : 1 }}>
+          <button onClick={requestFinish} disabled={finishing} className="pos-action inline-flex items-center gap-2" style={{ opacity: finishing ? 0.75 : 1 }}>
             {finishing && <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin inline-block" />}
             {finishing ? 'Finishing…' : 'Finish task →'}
           </button>
@@ -268,15 +282,17 @@ function DayInner() {
               ))}
             </div>
           )}
-          <div className="flex items-stretch gap-2 pos-card p-0 overflow-hidden">
-            <input
+          <div className="flex items-end gap-2 pos-card p-0 overflow-hidden">
+            <textarea
               value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
+              onChange={(e) => { setChatInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(e.target.scrollHeight, 180)}px`; }}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
               placeholder="e.g. make it warmer, shorten it, add a line about recovery…"
-              className="flex-1 px-3.5 py-3 text-sm outline-none bg-transparent"
+              rows={1}
+              className="flex-1 px-3.5 py-3 text-sm outline-none bg-transparent resize-none"
+              style={{ maxHeight: 180, lineHeight: 1.5 }}
             />
-            <button onClick={send} disabled={sending || !chatInput.trim()} className="pos-action m-1 px-4" style={{ opacity: chatInput.trim() ? 1 : 0.5 }}>{sending ? '…' : 'Send'}</button>
+            <button onClick={send} disabled={sending || !chatInput.trim()} className="pos-action m-1 px-4 shrink-0" style={{ opacity: chatInput.trim() ? 1 : 0.5 }}>{sending ? '…' : 'Send'}</button>
           </div>
         </div>
 
@@ -346,6 +362,20 @@ function DayInner() {
               )}
             </div>
             <button onClick={() => setPublish(null)} className="pos-link text-[13px] mt-4 block mx-auto" style={{ color: 'var(--muted)' }}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* Finish-task confirmation — finishing closes the task for good. */}
+      {confirmFinish && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-5" style={{ background: 'rgba(16,26,19,.45)' }} onClick={() => setConfirmFinish(false)}>
+          <div className="pos-card w-full max-w-md p-6" style={{ background: 'var(--card)' }} onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-[20px] font-semibold text-[var(--ink)] text-center" style={{ letterSpacing: '-0.02em' }}>Are you sure you&apos;ve done this task?</h2>
+            <p className="text-[13.5px] text-[var(--muted)] text-center mt-2" style={{ lineHeight: 1.55 }}>Once you finish, this task is marked done and closed — you won&apos;t be able to come back to it.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-5">
+              <button onClick={finishDay} className="pos-action text-center">Confirm — finish task</button>
+              <button onClick={() => setConfirmFinish(false)} className="rounded-[10px] px-4 py-3 text-[14px] font-semibold text-center" style={{ border: '1px solid var(--rule)', color: 'var(--ink)', background: 'var(--card)' }}>Not yet</button>
+            </div>
           </div>
         </div>
       )}

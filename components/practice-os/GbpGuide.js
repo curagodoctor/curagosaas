@@ -139,7 +139,10 @@ export default function GbpGuide({ renderFooter, onDone }) {
                   : aiResponses[blocks[active].key] && <button onClick={() => runBlockAi(blocks[active].key)} className="text-[12px] font-medium" style={{ color: 'var(--orange)' }}>↻ Regenerate</button>}
               </div>
               {aiBusy === blocks[active].key && !aiResponses[blocks[active].key] ? (
-                <p className="text-[13px] text-[var(--muted)]">Generating a briefing from your practice profile…</p>
+                <div className="flex flex-col items-center justify-center gap-3 py-8">
+                  <span className="w-12 h-12 rounded-full border-[4px] border-[var(--green)] border-t-transparent animate-spin" />
+                  <p className="text-[13.5px] font-medium text-[var(--ink)]">Generating a briefing from your practice profile…</p>
+                </div>
               ) : (
                 <textarea
                   value={aiResponses[blocks[active].key] || ''}
@@ -150,16 +153,18 @@ export default function GbpGuide({ renderFooter, onDone }) {
                   placeholder="The AI briefing will appear here."
                 />
               )}
+              <p className="text-[11.5px] text-[var(--muted)] mt-1.5" style={{ lineHeight: 1.5 }}>AI can make mistakes. Check for accuracy and compliance before publishing.</p>
               {/* Small refine chat */}
-              <div className="flex items-stretch gap-2 mt-2">
-                <input
+              <div className="flex items-end gap-2 mt-2">
+                <textarea
                   value={aiInput}
-                  onChange={(e) => setAiInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && aiInput.trim()) { const k = blocks[active].key; runBlockAi(k, aiInput.trim()); setAiInput(''); } }}
+                  onChange={(e) => { setAiInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`; }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && aiInput.trim()) { e.preventDefault(); const k = blocks[active].key; runBlockAi(k, aiInput.trim()); setAiInput(''); } }}
                   placeholder="Ask to change it — e.g. add more categories, make it shorter…"
-                  className="flex-1 rounded-lg px-3 py-2 text-[13px]" style={{ border: '1px solid var(--rule)', background: 'var(--card)', outline: 'none' }}
+                  rows={1}
+                  className="flex-1 rounded-lg px-3 py-2 text-[13px] resize-none" style={{ border: '1px solid var(--rule)', background: 'var(--card)', outline: 'none', maxHeight: 160, lineHeight: 1.5 }}
                 />
-                <button onClick={() => { const k = blocks[active].key; if (aiInput.trim()) { runBlockAi(k, aiInput.trim()); setAiInput(''); } }} disabled={aiBusy === blocks[active].key || !aiInput.trim()} className="pos-action px-4" style={{ opacity: aiInput.trim() ? 1 : 0.5 }}>Send</button>
+                <button onClick={() => { const k = blocks[active].key; if (aiInput.trim()) { runBlockAi(k, aiInput.trim()); setAiInput(''); } }} disabled={aiBusy === blocks[active].key || !aiInput.trim()} className="pos-action px-4 shrink-0" style={{ opacity: aiInput.trim() ? 1 : 0.5 }}>Send</button>
               </div>
             </div>
           )}
