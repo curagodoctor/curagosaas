@@ -8,7 +8,6 @@ import PosNav from '@/components/practice-os/PosNav';
 // bar; the founder reviews the answers and grants access. States: questionnaire
 // / submitted / pending / granted.
 const QUESTIONS = [
-  { id: 'location', type: 'text', q: 'Where is your clinic located?', ph: 'City, area' },
   { id: 'whatsapp', type: 'phone', q: 'Your WhatsApp number', body: 'We’ll send your daily reminders and updates here.', ph: '10-digit number' },
   { id: 'specialty', type: 'text', q: 'What is your specialty?', ph: 'e.g. Surgical gastroenterology' },
   { id: 'practice_status', type: 'choice', q: 'Your current clinical practice status', options: ['Own clinic', 'Rented or shared clinic', 'Setting up', 'None of the above'] },
@@ -18,7 +17,6 @@ const QUESTIONS = [
   { id: 'results_timeline', type: 'text', q: 'How soon are you expecting results to show up when it comes to organic search?', ph: 'Your honest expectation' },
   { id: 'time_fit', type: 'choice', q: 'Beyond setup, this is an ongoing commitment — about 10 minutes a day, or roughly 60 minutes a week, for several months. How will you realistically fit that in?', options: ['Daily', 'Every other day', 'Weekly'] },
   { id: 'long_horizon', type: 'choice', q: 'Do you see yourself working on this for months to years before any visible results?', options: ['Yes', 'No', 'Not sure'] },
-  { id: 'stop_reason', type: 'textarea', q: 'What would realistically make you stop before that?' },
   { id: 'perception', type: 'textarea', q: "What is your honest perception of digital presence for doctors right now — necessary, overrated, or something you haven\'t fully figured out yet?" },
   { id: 'fix_first', type: 'textarea', q: 'If you had to fix one thing first — your GBP, your website, or your reviews — which would it be, and why?' },
   { id: 'tier_matters', type: 'textarea', q: 'Do you think organic search actually matters for a practice in a tier 2 or tier 3 city, or is it mainly a metro thing in your view?' },
@@ -29,10 +27,11 @@ const QUESTIONS = [
   { id: 'agreement', type: 'agreement', q: 'Case Study Participation Agreement',
     // Each point is its own tick — all must be checked. **bold** is emphasised.
     points: [
-      'I understand **Dominate Organic Search** is provided to me **at no cost for a month** as part of a founding case study — **not a giveaway**.',
+      'I understand **Dominate Organic Search** is provided to me **at no cost for 4 weeks** as part of a founding case study — **not a giveaway**.',
       'I agree to **genuinely implement** the system on my own practice.',
-      'If my account goes **dormant**, CuraGo will personally reach out to help me get back on track.',
+      'If my account goes **dormant**, CuraGo will personally reach out to help me get back on track. **If I do not respond or implement, CuraGo holds the right to withdraw access to Dominate Organic Search.**',
       'I agree to provide **honest feedback**, and I **consent** to CuraGo using my feedback, testimonials, screenshots and results for website, educational, marketing and case-study purposes.',
+      'I agree to **sit for a short live video session** with CuraGo to discuss my experience with the product and how CuraGo can improve it.',
     ] },
 ];
 

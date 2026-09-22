@@ -69,11 +69,13 @@ const IDENTITY_Q = [
   { key: 'years_experience', label: 'How many years have you been practising?', type: 'select', options: YEARS_OPTIONS },
 ];
 
-// §11 — the commitment check before Get Access.
+// §11 — the commitment check before Get Access. The first two questions are
+// mandatory (a "no" stops here); the third (buying a custom domain) is optional —
+// either answer qualifies.
 const QUIZ = [
-  { title: 'Are you serious about being found by your patients on Google?', body: 'Not curious — serious. This only works for doctors who genuinely want to be discoverable.', yes: 'Yes, I am serious', no: 'Not right now' },
-  { title: 'Can you commit ten minutes a day?', body: 'We do the work — the strategy, the content, the next actions. You spend about 10 minutes a day, or 60 minutes a week, flexible.', yes: 'Yes, I can commit', no: "I can't commit that" },
-  { title: 'Do you accept the subdomain → custom-domain path?', body: 'SEO is a long-term mission, best on your own domain. You can start on a subdomain and switch later — you may see a short ranking dip while Google processes the move.', yes: 'Understood, I accept', no: 'I need to think' },
+  { title: 'Are you serious about being found by your patients on Google?', body: 'Not curious — serious. This only works for doctors who genuinely want to be discoverable.', yes: 'Yes, I am serious', no: 'Not right now', mandatory: true },
+  { title: 'Can you commit 60 minutes a week?', body: '60 mins a week (flexible) managing your GBP and website. All you need to do is review the content and publish it — a minimum of 2 clicks to a maximum of 6 clicks per task.', yes: 'Yes, I can commit', no: "I can't commit that", mandatory: true },
+  { title: 'Are you ready to buy a custom domain of your own, which would cost around ₹500 to ₹800 per year?', body: 'We recommend buying your custom domain at the earliest so that you can pick one of your choice and not settle for what is available. SEO is a long-term mission, best on your own domain. You can start on a subdomain and switch later, but you may see a short ranking dip while Google processes the shift. This question is not mandatory to qualify for the next level.', yes: 'Yes, I will buy one', no: 'Not right now', mandatory: false },
 ];
 
 
@@ -830,13 +832,12 @@ function Wizard() {
             // MILESTONE — "You're ready to appear" ladder, before the commitment check.
             <div>
               <p className="pos-label" style={{ color: 'var(--orange)' }}>Milestone</p>
-              <h1 className="text-[26px] font-semibold text-[var(--ink)] mt-1 mb-2" style={{ letterSpacing: '-0.02em' }}>You&apos;re ready to appear.</h1>
-              <p className="text-[15px] text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '58ch' }}>Your basic organic presence is now in place. But appearing is only the beginning. The next question is: can you compete?</p>
+              <h1 className="text-[26px] font-semibold text-[var(--ink)] mt-1 mb-2" style={{ letterSpacing: '-0.02em' }}>You are ready to appear.</h1>
+              <p className="text-[15px] text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '60ch' }}>Your website and Google Business Profile are live. Patients searching for you can now find your practice. That part is done. Next: compete and dominate — we help you publish new content, consistently, on your website and your Google Business Profile, so you show up for more searches across Google.</p>
               <div className="grid gap-2.5 mb-6">
                 {[
-                  { tag: 'Done', title: 'Appear', sub: 'Foundation in place. Patients can find you.', done: true },
-                  { tag: 'Next', title: 'Compete', sub: 'Depth around your expertise, published on a schedule.' },
-                  { tag: 'Later', title: 'Dominate', sub: 'Your practice becomes the source patients keep returning to.' },
+                  { tag: 'Done', title: 'Appear', sub: 'Your website is live. Your Google Business Profile is set up. Patients can find you.', done: true },
+                  { tag: 'Next', title: 'Compete and dominate', sub: 'We help you publish new content, consistently, on your website and your Google Business Profile — so you show up for more searches over time.' },
                 ].map((r) => (
                   <div key={r.title} className="pos-card p-4 flex items-start gap-3" style={{ borderColor: r.done ? 'var(--green)' : 'var(--rule)', background: r.done ? 'var(--green-soft)' : 'var(--card)' }}>
                     <span className="pos-label shrink-0" style={{ padding: '3px 8px', borderRadius: 6, background: r.done ? 'var(--green)' : 'var(--rule-soft)', color: r.done ? '#fff' : 'var(--muted)' }}>{r.tag}</span>
@@ -847,39 +848,39 @@ function Wizard() {
                   </div>
                 ))}
               </div>
-              <button onClick={() => { setQuizIdx(0); setQuizFailed(false); setQuizPhase('quiz'); }} className="pos-action">Answer three questions</button>
+              <p className="text-[14px] text-[var(--ink)] font-medium mb-3">If you&apos;re ready, answer three questions.</p>
+              <button onClick={() => { setQuizIdx(0); setQuizFailed(false); setQuizPhase('quiz'); }} className="pos-action">I am ready</button>
               <button onClick={() => go(step - 1)} className="pos-link text-sm mt-5 block" style={{ color: 'var(--muted)' }}>← Back</button>
             </div>
           ) : quizPhase === 'ready' ? (
             // ALL THREE · YES — the early-access offer, before the application form.
             <div>
-              <p className="pos-label" style={{ color: 'var(--green)' }}>All three · Yes</p>
               <h1 className="text-[26px] font-semibold text-[var(--ink)] mt-1 mb-2" style={{ letterSpacing: '-0.02em' }}>You&apos;re a fit. Get early access.</h1>
-              <p className="text-[15px] text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '58ch' }}>Three yeses means the weekly loop will actually run. Here&apos;s what early access gives you.</p>
+              <p className="text-[15px] text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '58ch' }}>Here&apos;s what early access gives you.</p>
               <div className="pos-card p-5 mb-5" style={{ background: 'var(--green-soft)', borderColor: 'var(--green)' }}>
                 <p className="pos-label" style={{ color: 'var(--green)' }}>Early access · Founder price</p>
-                <p className="text-[22px] font-semibold text-[var(--ink)] mt-1" style={{ letterSpacing: '-0.02em' }}>No cost <span className="text-[15px] font-normal text-[var(--muted)]">for the first month</span></p>
-                <p className="text-[13px] text-[var(--muted)] mt-0.5">Then ₹5,000 / month — founder price, locked in.</p>
+                <p className="text-[22px] font-semibold text-[var(--ink)] mt-1" style={{ letterSpacing: '-0.02em' }}>No cost <span className="text-[15px] font-normal text-[var(--muted)]">for the first 4 weeks</span></p>
+                <p className="text-[13px] text-[var(--muted)] mt-0.5">Then ₹5,000 for 4 weeks — founder price, locked in.</p>
                 <div className="mt-4 space-y-2">
                   {[
-                    'Full Dominate Organic Search access for the first month, at no cost.',
-                    'After that, ₹5,000/month — the founder price, locked in for as long as you stay.',
-                    'No bulk payment. Cancel anytime, finish the running month.',
+                    'Full Dominate Organic Search access for the first 4 weeks, at no cost.',
+                    'After that, ₹5,000 per 4 weeks — the founder price, locked in for as long as you stay.',
+                    'No bulk payment. Cancel anytime, finish the running 4 weeks.',
                     'Your website, content and Control Center stay yours either way.',
                   ].map((t) => (
                     <p key={t} className="text-[13.5px] text-[var(--ink)] flex gap-2" style={{ lineHeight: 1.5 }}><span style={{ color: 'var(--green)' }}>✓</span>{t}</p>
                   ))}
                 </div>
               </div>
-              <p className="pos-label mb-3" style={{ color: 'var(--muted)' }}>Short application · one question at a time · reviewed by the founder</p>
+              <p className="pos-label mb-3" style={{ color: 'var(--muted)' }}>Short application · one question at a time · reviewed by Dr Yuvaraj</p>
               <button onClick={proceedToApplication} className="pos-action">Get Early Access →</button>
               <button onClick={() => setQuizPhase('milestone')} className="pos-link text-sm mt-5 block" style={{ color: 'var(--muted)' }}>← Back</button>
             </div>
           ) : quizFailed ? (
             <div>
               <p className="pos-label" style={{ color: 'var(--orange)' }}>Not yet</p>
-              <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-2" style={{ letterSpacing: '-0.02em' }}>Access needs a yes to all three.</h1>
-              <p className="text-sm text-[var(--muted)] mb-5" style={{ maxWidth: '52ch' }}>Organic search is a long mission, not a sprint. Your website, first article and Google foundation stay yours either way — come back when the ten minutes a day are genuinely available.</p>
+              <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-2" style={{ letterSpacing: '-0.02em' }}>Access needs a yes to the first two.</h1>
+              <p className="text-sm text-[var(--muted)] mb-5" style={{ maxWidth: '52ch' }}>Organic search is a long mission, not a sprint. Your website, first article and Google foundation stay yours either way — come back when the 60 minutes a week are genuinely available.</p>
               <div className="flex flex-wrap gap-3">
                 <button onClick={() => { setQuizIdx(0); setQuizFailed(false); }} className="pos-action">Answer again</button>
                 <button onClick={signOut} className="pos-link" style={{ fontSize: 14, color: 'var(--muted)' }}>Sign out</button>
@@ -893,11 +894,18 @@ function Wizard() {
               <p className="text-sm text-[var(--muted)] mb-5" style={{ lineHeight: 1.6 }}>{QUIZ[quizIdx].body}</p>
               <div className="flex flex-wrap gap-3">
                 <button
-                  onClick={() => { if (quizIdx >= 2) setQuizPhase('ready'); else setQuizIdx(quizIdx + 1); }}
+                  onClick={() => { if (quizIdx >= QUIZ.length - 1) setQuizPhase('ready'); else setQuizIdx(quizIdx + 1); }}
                   className="pos-action" style={{ flex: '1 1 200px' }}>
                   {QUIZ[quizIdx].yes}
                 </button>
-                <button onClick={() => setQuizFailed(true)} className="pos-card px-4 py-3 text-[15px] font-medium text-[var(--muted)]" style={{ flex: '1 1 200px' }}>
+                <button
+                  onClick={() => {
+                    // Optional questions (e.g. buying a custom domain) don't block
+                    // access — a "no" simply moves on.
+                    if (QUIZ[quizIdx].mandatory) { setQuizFailed(true); return; }
+                    if (quizIdx >= QUIZ.length - 1) setQuizPhase('ready'); else setQuizIdx(quizIdx + 1);
+                  }}
+                  className="pos-card px-4 py-3 text-[15px] font-medium text-[var(--muted)]" style={{ flex: '1 1 200px' }}>
                   {QUIZ[quizIdx].no}
                 </button>
               </div>
