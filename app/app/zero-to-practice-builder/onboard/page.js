@@ -923,7 +923,7 @@ function Wizard() {
               <p className="text-sm text-[var(--muted)] mb-5" style={{ maxWidth: '52ch' }}>Organic search is a long mission, not a sprint. Your website, first article and Google foundation stay yours either way — come back when the 60 minutes a week are genuinely available.</p>
               <div className="flex flex-wrap gap-3">
                 <button onClick={() => { setQuizIdx(0); setQuizFailed(false); }} className="pos-action">Answer again</button>
-                <button onClick={signOut} className="pos-link" style={{ fontSize: 14, color: 'var(--muted)' }}>Sign out</button>
+                <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-card px-4 py-3 text-[15px] font-medium" style={{ color: 'var(--ink)' }}>Go to Control Center →</button>
               </div>
             </div>
           ) : (
