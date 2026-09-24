@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
+import { after } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 import Contact from '@/models/Contact';
+import { sendLeadNotificationToDoctor } from '@/lib/email';
 
 export const runtime = 'nodejs';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Public lead-form intake. A visitor on a doctor's site submits name + phone
 // (+ optional email/message); we create a Contact the doctor sees in their
@@ -20,11 +24,19 @@ export async function POST(request) {
     if (!name || (!phone && !email)) {
       return NextResponse.json({ success: false, error: 'Please add your name and a phone or email.' }, { status: 400 });
     }
+    // Validate a provided email + phone (phone preferred: a 10-digit Indian mobile).
+    if (email && !EMAIL_RE.test(email)) {
+      return NextResponse.json({ success: false, error: 'Please enter a valid email (e.g. name@example.com).' }, { status: 400 });
+    }
+    const phoneDigits = phone.replace(/\D/g, '').replace(/^91/, '');
+    if (phone && phoneDigits.length !== 10) {
+      return NextResponse.json({ success: false, error: 'Please enter a valid 10-digit phone number.' }, { status: 400 });
+    }
 
     // Resolve the doctor by id or subdomain.
     let doctor = null;
-    if (body.doctorId) doctor = await Doctor.findById(body.doctorId).select('_id').lean();
-    if (!doctor && body.subdomain) doctor = await Doctor.findOne({ subdomain: String(body.subdomain).toLowerCase().trim() }).select('_id').lean();
+    if (body.doctorId) doctor = await Doctor.findById(body.doctorId).select('_id name displayName email').lean();
+    if (!doctor && body.subdomain) doctor = await Doctor.findOne({ subdomain: String(body.subdomain).toLowerCase().trim() }).select('_id name displayName email').lean();
     if (!doctor) return NextResponse.json({ success: false, error: 'Clinic not found.' }, { status: 404 });
 
     await Contact.create({
@@ -37,6 +49,19 @@ export async function POST(request) {
       notes: message,
       tags: ['lead'],
     });
+
+    // Notify the doctor by email (after the response, so submit stays instant).
+    if (doctor.email) {
+      after(async () => {
+        try {
+          await sendLeadNotificationToDoctor({
+            email: doctor.email,
+            doctorName: doctor.displayName || doctor.name || '',
+            leadName: name, leadPhone: phone, leadEmail: email, message,
+          });
+        } catch { /* best-effort */ }
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -23,6 +23,14 @@ export default function LeadFormSection({
       setError('Please add your name and a phone or email.');
       return;
     }
+    if (form.phone.trim() && form.phone.replace(/\D/g, '').length !== 10) {
+      setError('Please enter a valid 10-digit phone number.');
+      return;
+    }
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      setError('Please enter a valid email (e.g. name@example.com).');
+      return;
+    }
     setState('sending'); setError('');
     try {
       // Fall back to the subdomain from the hostname (e.g. drrao.curago.in) so the
@@ -58,8 +66,13 @@ export default function LeadFormSection({
             <p style={{ color: '#5e6b5f', fontSize: 15, marginTop: 6, marginBottom: 18 }}>{subtitle}</p>
             <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <input style={input} placeholder="Your name" value={form.name} onChange={(e) => set('name', e.target.value)} />
-              <input style={input} placeholder="Phone number" value={form.phone} onChange={(e) => set('phone', e.target.value)} />
-              <input style={input} placeholder="Email (optional)" value={form.email} onChange={(e) => set('email', e.target.value)} />
+              <div style={{ display: 'flex', alignItems: 'stretch', border: '1px solid #dfe4dc', borderRadius: 11, overflow: 'hidden', background: '#fff' }}>
+                <span style={{ display: 'grid', placeItems: 'center', padding: '0 12px', background: '#f7f9f5', borderRight: '1px solid #dfe4dc', fontSize: 15, color: '#5e6b5f' }}>+91</span>
+                <input style={{ ...input, border: 0, borderRadius: 0 }} inputMode="numeric" maxLength={10}
+                  placeholder="WhatsApp number (10 digits)" value={form.phone}
+                  onChange={(e) => set('phone', e.target.value.replace(/\D/g, '').slice(0, 10))} />
+              </div>
+              <input style={input} type="email" placeholder="Email (optional) — name@example.com" value={form.email} onChange={(e) => set('email', e.target.value)} />
               <textarea style={{ ...input, minHeight: 90, resize: 'vertical' }} placeholder="How can we help? (optional)" value={form.message} onChange={(e) => set('message', e.target.value)} />
               {error && <p style={{ color: '#b42318', fontSize: 13, margin: 0 }}>{error}</p>}
               <button type="submit" disabled={state === 'sending'} style={{ background: accentColor, color: '#fff', border: 0, borderRadius: 12, padding: '14px', fontSize: 15, fontWeight: 700, cursor: 'pointer', opacity: state === 'sending' ? 0.6 : 1 }}>

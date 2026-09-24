@@ -34,7 +34,7 @@ const ContactSchema = new mongoose.Schema({
   },
   source: {
     type: String,
-    enum: ['manual', 'import', 'booking', 'website'],
+    enum: ['manual', 'import', 'booking', 'website', 'website-lead-form'],
     default: 'manual',
   },
   notes: {
