@@ -229,6 +229,18 @@ function Wizard() {
       body: JSON.stringify({ onboardStep: i }),
     }).catch(() => {});
   }, []);
+
+  // Leave onboarding for the control center. Mark onboarding complete first —
+  // otherwise the dashboard sees onboardComplete=false and bounces back here.
+  const goToControlCenter = useCallback(async () => {
+    try {
+      await fetch('/api/practice-os/profile', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ onboardComplete: true }),
+      });
+    } catch { /* navigate anyway */ }
+    router.push('/app/zero-to-practice-builder');
+  }, [router]);
   const go = (i) => {
     setStep(i); setErr(''); window.scrollTo(0, 0); persistStep(i);
     // Add a browser-history entry per step so the browser Back button walks the
@@ -914,7 +926,7 @@ function Wizard() {
               </div>
               <p className="pos-label mb-3" style={{ color: 'var(--muted)' }}>Short application · one question at a time · reviewed by Dr Yuvaraj</p>
               <button onClick={proceedToApplication} className="pos-action">Get Early Access →</button>
-              <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-link text-sm mt-4 block" style={{ color: 'var(--ink)' }}>I don&apos;t want access — take me to Control Center →</button>
+              <button onClick={goToControlCenter} className="pos-link text-sm mt-4 block" style={{ color: 'var(--ink)' }}>I don&apos;t want access — take me to Control Center →</button>
               <button onClick={() => setQuizPhase('milestone')} className="pos-link text-sm mt-3 block" style={{ color: 'var(--muted)' }}>← Back</button>
             </div>
           ) : quizFailed ? (
@@ -924,7 +936,7 @@ function Wizard() {
               <p className="text-sm text-[var(--muted)] mb-5" style={{ maxWidth: '52ch' }}>Organic search is a long mission, not a sprint. Your website, first article and Google foundation stay yours either way — come back when the 60 minutes a week are genuinely available.</p>
               <div className="flex flex-wrap gap-3">
                 <button onClick={() => { setQuizIdx(0); setQuizFailed(false); }} className="pos-action">Answer again</button>
-                <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-card px-4 py-3 text-[15px] font-medium" style={{ color: 'var(--ink)' }}>Go to Control Center →</button>
+                <button onClick={goToControlCenter} className="pos-card px-4 py-3 text-[15px] font-medium" style={{ color: 'var(--ink)' }}>Go to Control Center →</button>
               </div>
             </div>
           ) : (

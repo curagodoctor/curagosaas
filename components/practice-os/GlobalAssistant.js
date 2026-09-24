@@ -81,6 +81,16 @@ export default function GlobalAssistant() {
     return () => { on = false; };
   }, []);
 
+  // Refresh the live credit balance every time the assistant opens, so it never
+  // shows a stale count (e.g. after onboarding generations deducted elsewhere).
+  useEffect(() => {
+    if (!open) return;
+    fetch('/api/practice-os/credits', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => { if (d?.success) setCredits(d.unlimited ? Infinity : d.remaining); })
+      .catch(() => {});
+  }, [open]);
+
   // Do NOT auto-open — the assistant stays a collapsed button until the doctor
   // opens it (auto-popping after sign-in was unwanted). autoedRef retained to
   // avoid an unused-import churn.
@@ -146,7 +156,7 @@ export default function GlobalAssistant() {
           <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--ga-rule)' }}>
             <div>
               <p className="text-[15px] font-semibold" style={{ color: 'var(--ga-ink)' }}>Assistant</p>
-              {credits !== null && <p className="text-[11px]" style={{ color: 'var(--ga-muted)' }}>{credits} AI credits left</p>}
+              {credits !== null && <p className="text-[11px]" style={{ color: 'var(--ga-muted)' }}>{credits === Infinity || credits >= 999999 ? '∞' : credits} AI credits left</p>}
             </div>
             <button onClick={() => setOpen(false)} aria-label="Close" className="p-1" style={{ color: 'var(--ga-muted)' }}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
