@@ -22,6 +22,17 @@ const blogArticleSchema = new mongoose.Schema({
     index: true,
   },
 
+  // The Control-Center day/mission this article was produced from. Used to keep
+  // ONE article per day: re-pushing or regenerating a day UPDATES the same
+  // article instead of creating near-duplicates (e.g. two "Knee Replacement"
+  // blogs). Sparse — manually authored articles have none.
+  sourceMissionId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Mission',
+    index: true,
+    sparse: true,
+  },
+
   // SEO & Meta
   metaDescription: {
     type: String,

@@ -21,9 +21,15 @@ export async function POST(request) {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
     await assertAiAccess(doctor._id);
-    const { text, imageUrl } = await request.json();
+    const { text, imageUrl, missionId } = await request.json();
     if (!text || !text.trim()) return NextResponse.json({ success: false, error: 'Nothing to publish.' }, { status: 400 });
     const providedImage = /^https?:\/\//i.test(String(imageUrl || '').trim()) ? String(imageUrl).trim() : '';
+    // A day produces exactly ONE article: if this day already published one,
+    // we UPDATE it in place (below) instead of creating a near-duplicate.
+    const sourceMissionId = /^[a-f0-9]{24}$/i.test(String(missionId || '')) ? String(missionId) : null;
+    const existing = sourceMissionId
+      ? await BlogArticle.findOne({ doctorId: doctor._id, sourceMissionId }).select('_id slug featuredImage').lean()
+      : null;
     await assertHasCredits(doctor._id);
 
     const fields = await getDoctorProfileFields(doctor._id);
@@ -37,9 +43,15 @@ export async function POST(request) {
 
     const d = gen.data || {};
     const title = String(d.title || 'Untitled article').slice(0, 120);
-    let slug = slugify(d.slug || title) || `article-${Date.now()}`;
-    // Ensure global slug uniqueness.
-    if (await BlogArticle.findOne({ slug }).select('_id').lean()) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
+    let slug;
+    if (existing) {
+      // Updating the day's existing article — keep its live URL stable.
+      slug = existing.slug;
+    } else {
+      slug = slugify(d.slug || title) || `article-${Date.now()}`;
+      // Ensure global slug uniqueness.
+      if (await BlogArticle.findOne({ slug }).select('_id').lean()) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
+    }
 
     // Body blocks — drop any the model still labelled as FAQ (those belong in the
     // FAQ section, not the body).
@@ -53,7 +65,7 @@ export async function POST(request) {
     const imageAlt = String(d.imageAlt || title).slice(0, 160);
 
     const doc = await Doctor.findById(doctor._id).select('subdomain displayName name specialization').lean();
-    const article = await BlogArticle.create({
+    const fieldsToSet = {
       doctorId: doctor._id,
       title,
       slug,
@@ -62,12 +74,21 @@ export async function POST(request) {
       category: String(d.category || fields.specialty || '').slice(0, 60),
       author: { name: doc?.displayName || doc?.name || '', designation: doc?.specialization || '' },
       blocks,
-      ...(faqs.length ? { faqSection: { heading: 'FAQs: Clear Answers for Patients', faqs } } : {}),
+      faqSection: faqs.length ? { heading: 'FAQs: Clear Answers for Patients', faqs } : undefined,
       status: 'published',
       publishedAt: new Date(),
-      // Use the image the doctor already generated (with a real alt), if any.
+      ...(sourceMissionId ? { sourceMissionId } : {}),
+      // Use the image the doctor generated here, if any (keep the old one otherwise).
       ...(providedImage ? { featuredImage: { url: providedImage, alt: imageAlt } } : {}),
-    });
+    };
+    let article;
+    if (existing) {
+      // Regenerating/re-pushing the same day → overwrite its article in place.
+      await BlogArticle.updateOne({ _id: existing._id }, { $set: fieldsToSet });
+      article = { _id: existing._id, title, featuredImage: providedImage ? { url: providedImage } : existing.featuredImage };
+    } else {
+      article = await BlogArticle.create(fieldsToSet);
+    }
 
     const { remaining } = await chargeAiCredits(doctor._id, { label: 'publish-blog' });
 

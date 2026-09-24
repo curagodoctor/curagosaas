@@ -201,8 +201,9 @@ function DayInner() {
     try {
       const d = await fetch('/api/practice-os/actions/publish-blog', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        // Attach the image the doctor generated here, so the blog uses it.
-        body: JSON.stringify({ text: content, imageUrl: image?.url || '' }),
+        // Attach the image the doctor generated here + the day this came from, so
+        // re-pushing/regenerating this day updates the same article (no duplicates).
+        body: JSON.stringify({ text: content, imageUrl: image?.url || '', missionId }),
       }).then((r) => r.json());
       if (d.success) setPublish({ url: d.url, id: d.id, title: d.title }); // opens the confirmation modal
       else { setPublish(null); setErr(d.error || 'Could not publish.'); }
