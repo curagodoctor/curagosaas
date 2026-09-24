@@ -15,7 +15,12 @@ const PracticeOsDiseaseClusterSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
-  // The disease / condition (e.g. "Gallstones").
+  // 'disease' = surgical path (a condition with 1–3 treatments beneath it).
+  // 'treatment' = non-surgical path (a standalone treatment/procedure; name IS the
+  // treatment, with itself as its single treatment). Drives which review UI shows.
+  kind: { type: String, enum: ['disease', 'treatment'], default: 'disease' },
+  // The disease / condition (e.g. "Gallstones") — or the treatment name in
+  // treatment-mode.
   name: { type: String, required: true, trim: true },
   // Stable slug used for the diseaseCluster key on pages (e.g. "gallstones").
   slug: { type: String, trim: true, lowercase: true, default: '' },

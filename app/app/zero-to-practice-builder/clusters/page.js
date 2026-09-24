@@ -22,16 +22,21 @@ function ClustersInner() {
   const [genErr, setGenErr] = useState('');
   const [busy, setBusy] = useState('');
   const [newTreat, setNewTreat] = useState('');
-  const triedGen = useRef(false);
+  const [mode, setMode] = useState(null); // 'diseases' (surgical) | 'treatments' (non-surgical)
 
-  const doGenerate = useCallback(async () => {
+  // Generate the chosen pathway: diseases+treatments (surgical) or treatments-only.
+  const doGenerate = useCallback(async (chosen) => {
+    setMode(chosen);
     setGenerating(true); setGenErr('');
+    const endpoint = chosen === 'treatments'
+      ? '/api/practice-os/clusters/generate-treatments'
+      : '/api/practice-os/clusters/generate';
     try {
-      const d = await fetch('/api/practice-os/clusters/generate', { method: 'POST', credentials: 'include' }).then((r) => r.json());
+      const d = await fetch(endpoint, { method: 'POST', credentials: 'include' }).then((r) => r.json());
       if (d.success) { setClusters(d.clusters || []); setIdx(0); }
       else if (d.error === 'PaymentRequired') setGenErr('This is part of the optimization program — request access first.');
       else if (d.error === 'NoCredits') setGenErr(d.message || "You've used today's AI credits.");
-      else setGenErr(d.error || 'Could not generate your diseases.');
+      else setGenErr(d.error || 'Could not generate your map.');
     } catch { setGenErr('Something went wrong.'); } finally { setGenerating(false); }
   }, []);
 
@@ -40,11 +45,13 @@ function ClustersInner() {
       const d = await fetch('/api/practice-os/clusters', { credentials: 'include' }).then((r) => r.json());
       const cl = d.success ? (d.clusters || []) : [];
       setClusters(cl);
-      if (cl.length === 0 && !triedGen.current) { triedGen.current = true; doGenerate(); }
+      // Existing map → infer its mode. Empty → show the pathway choice (no auto-gen).
+      if (cl.length) setMode(cl[0]?.kind === 'treatment' ? 'treatments' : 'diseases');
     } catch { setClusters([]); }
-  }, [doGenerate]);
+  }, []);
   useEffect(() => { load(); }, [load]);
 
+  const isTreatmentMode = mode === 'treatments' || (clusters && clusters[0]?.kind === 'treatment');
   const cur = clusters?.[idx];
   const total = clusters?.length || 0;
   const treatTotal = (clusters || []).reduce((n, c) => n + (c.treatments?.length || 0), 0);
@@ -120,22 +127,37 @@ function ClustersInner() {
       <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-12 max-w-[860px] mx-auto">
         <PosNav breadcrumb="Practice map review" />
 
-        {/* ---- empty / generating ---- */}
+        {/* ---- empty: pathway choice / generating ---- */}
         {clusters.length === 0 ? (
-          <div className="pos-card p-10 text-center mt-6" style={{ borderRadius: 22 }}>
-            {generating ? (
-              <>
-                <div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin mx-auto mb-3" />
-                <p className="text-[var(--ink)] text-sm font-semibold">Mapping your practice…</p>
-                <p className="text-[var(--muted)] text-[13px] mt-1">Generating the 10 diseases you treat and their treatments, from your specialty.</p>
-              </>
-            ) : (
-              <>
-                <p className="text-[var(--muted)] text-sm">{genErr || 'Let’s map the diseases you treat, generated from your specialty.'}</p>
-                <button onClick={doGenerate} className="pos-action mt-4">Generate my diseases</button>
-              </>
-            )}
-          </div>
+          generating ? (
+            <div className="pos-card p-10 text-center mt-6" style={{ borderRadius: 22 }}>
+              <div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin mx-auto mb-3" />
+              <p className="text-[var(--ink)] text-sm font-semibold">Mapping your practice…</p>
+              <p className="text-[var(--muted)] text-[13px] mt-1">{mode === 'treatments' ? 'Deriving your treatments and procedures from your specialty.' : 'Generating the diseases you treat and their treatments, from your specialty.'}</p>
+            </div>
+          ) : (
+            <div className="mt-6">
+              <h1 className="text-[var(--ink)]" style={{ fontSize: 'clamp(23px,3vw,32px)', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1.1, margin: '0 0 8px' }}>How do you want to map your practice?</h1>
+              <p className="text-[var(--muted)] mb-5" style={{ fontSize: 15.5, lineHeight: 1.6, maxWidth: 640 }}>
+                Our recommendation: if you&apos;re a <strong style={{ color: 'var(--ink)' }}>surgical</strong> specialist, choose <em>Diseases &amp; treatments</em>. If you&apos;re a <strong style={{ color: 'var(--ink)' }}>non-surgical</strong> specialist, go straight to <em>Treatments</em>.
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button onClick={() => doGenerate('diseases')} className="pos-card p-5 text-left hover:shadow-md transition-shadow" style={{ borderColor: 'var(--rule)' }}>
+                  <span className="pos-label" style={{ color: 'var(--green)' }}>Recommended for surgical</span>
+                  <p className="text-[17px] font-bold text-[var(--ink)] mt-1.5" style={{ letterSpacing: '-.02em' }}>Diseases &amp; treatments</p>
+                  <p className="text-[13.5px] text-[var(--muted)] mt-1" style={{ lineHeight: 1.5 }}>10 conditions you treat, each with its own 1–3 treatments (up to 20 total). Best when your work is organised by disease.</p>
+                </button>
+                <button onClick={() => doGenerate('treatments')} className="pos-card p-5 text-left hover:shadow-md transition-shadow" style={{ borderColor: 'var(--rule)' }}>
+                  <span className="pos-label" style={{ color: 'var(--green)' }}>Recommended for non-surgical</span>
+                  <p className="text-[17px] font-bold text-[var(--ink)] mt-1.5" style={{ letterSpacing: '-.02em' }}>Treatments only</p>
+                  <p className="text-[13.5px] text-[var(--muted)] mt-1" style={{ lineHeight: 1.5 }}>Up to 20 treatments &amp; procedures derived from your specialty — no disease grouping. Best for consult/therapy-led practices.</p>
+                </button>
+              </div>
+              {genErr && <p className="text-[13px] mt-4" style={{ color: '#b42318' }}>{genErr}</p>}
+            </div>
+          )
+        ) : isTreatmentMode ? (
+          <TreatmentsReview clusters={clusters} setClusters={setClusters} router={router} save={save} genErr={genErr} setGenErr={setGenErr} mono={mono} />
         ) : cur ? (
           <>
             {/* ---- DISEASE REVIEW ---- */}
@@ -224,6 +246,84 @@ function ClustersInner() {
             </div>
           </>
         ) : null}
+      </div>
+    </div>
+  );
+}
+
+// Non-surgical path — review a flat list of treatments/procedures (each entry is a
+// treatment-kind cluster), then approve them all at once.
+function TreatmentsReview({ clusters, setClusters, router, save, genErr, setGenErr, mono }) {
+  const [newTreat, setNewTreat] = useState('');
+  const [busy, setBusy] = useState('');
+  const patchLocal = (id, body) => setClusters((arr) => arr.map((c) => c._id === id ? { ...c, ...body } : c));
+
+  const setName = (id, v) => patchLocal(id, { name: v });
+  const saveName = (c) => { const nm = (c.name || '').trim(); if (nm) save(c._id, { name: nm, treatments: [{ name: nm, source: 'manual' }] }); };
+  const addTreatment = async () => {
+    const name = newTreat.trim();
+    if (!name || (clusters || []).length >= TOTAL_TREATMENT_CAP) return;
+    if ((clusters || []).some((c) => c.name.toLowerCase() === name.toLowerCase())) { setNewTreat(''); return; }
+    setBusy('add');
+    try {
+      const d = await fetch('/api/practice-os/clusters', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ name, kind: 'treatment' }) }).then((r) => r.json());
+      if (d.success && d.cluster) setClusters((arr) => [...arr, d.cluster]);
+      setNewTreat('');
+    } catch { /* ignore */ } finally { setBusy(''); }
+  };
+  const removeTreatment = async (id) => {
+    if ((clusters || []).length <= 1) return; // keep at least one
+    setClusters((arr) => arr.filter((c) => c._id !== id));
+    try { await fetch(`/api/practice-os/clusters/${id}`, { method: 'DELETE', credentials: 'include' }); } catch { /* ignore */ }
+  };
+  const approveAll = async () => {
+    const items = (clusters || []).filter((c) => (c.name || '').trim());
+    if (!items.length) { setGenErr('Add at least one treatment before approving.'); return; }
+    setGenErr(''); setBusy('approve');
+    try {
+      for (const c of items) {
+        const nm = c.name.trim();
+        await save(c._id, { name: nm, treatments: [{ name: nm, source: 'manual' }], approved: true });
+      }
+      router.push('/app/zero-to-practice-builder');
+    } catch { setGenErr('Could not save. Try again.'); setBusy(''); }
+  };
+
+  return (
+    <div className="pos-card mt-6" style={{ borderRadius: 24, overflow: 'hidden', boxShadow: '0 22px 56px rgba(9,107,23,.06)' }}>
+      <div style={{ padding: 'clamp(20px,2.6vw,32px) clamp(18px,2.6vw,34px) clamp(20px,2.6vw,28px)' }}>
+        <div className="flex flex-wrap items-center gap-2.5 mb-3">
+          <span style={{ ...mono, fontSize: 11.5, letterSpacing: '.18em', color: 'var(--orange)', fontWeight: 600 }}>YOUR TREATMENTS · {(clusters || []).length} / {TOTAL_TREATMENT_CAP}</span>
+          <span style={{ ...mono, fontSize: 10, letterSpacing: '.1em', background: LEAF_SOFT, border: '1px solid var(--green)', color: 'var(--green)', padding: '4px 8px', borderRadius: 6 }}>AI GENERATED · EDITABLE</span>
+        </div>
+        <h1 className="text-[var(--ink)]" style={{ fontSize: 'clamp(23px,3vw,34px)', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1.05, margin: '0 0 10px' }}>Review your treatments &amp; procedures.</h1>
+        <p className="text-[var(--muted)]" style={{ fontSize: 15.5, lineHeight: 1.6, margin: '0 0 18px', maxWidth: 620 }}>Derived from your specialty. Edit or remove anything that isn&apos;t yours, add any we missed (up to {TOTAL_TREATMENT_CAP}), then approve — approved items become pages, posts and GBP services. (Do not use abbreviations. Use standard terminologies.)</p>
+
+        <div className="flex flex-col gap-2.5">
+          {(clusters || []).map((c, i) => (
+            <div key={c._id} className="flex items-center gap-2.5">
+              <span style={{ flex: '0 0 40px', height: 40, borderRadius: 11, background: LEAF_SOFT, border: '1px solid var(--green)', color: 'var(--green)', display: 'grid', placeItems: 'center', ...mono, fontSize: 12.5, fontWeight: 700 }}>{String(i + 1).padStart(2, '0')}</span>
+              <input type="text" value={c.name} onChange={(e) => setName(c._id, e.target.value)} onBlur={() => saveName(c)}
+                style={{ flex: '1 1 auto', minWidth: 0, boxSizing: 'border-box', border: '1px solid var(--rule)', borderRadius: 12, padding: '13px 15px', fontSize: 15.5, color: 'var(--ink)', background: 'var(--paper)', outline: 'none' }} />
+              <button onClick={() => removeTreatment(c._id)} disabled={(clusters || []).length <= 1} aria-label="Remove treatment" style={{ flex: '0 0 auto', background: '#fff', border: '1px solid var(--rule)', color: 'var(--muted)', ...mono, fontSize: 15, lineHeight: 1, width: 40, height: 40, borderRadius: 11, cursor: (clusters || []).length <= 1 ? 'not-allowed' : 'pointer', opacity: (clusters || []).length <= 1 ? 0.4 : 1 }}>×</button>
+            </div>
+          ))}
+          {(clusters || []).length < TOTAL_TREATMENT_CAP && (
+            <div className="flex items-stretch gap-2">
+              <input value={newTreat} onChange={(e) => setNewTreat(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') addTreatment(); }} placeholder="Add a treatment or procedure…"
+                style={{ flex: '1 1 auto', minWidth: 0, border: '1px solid var(--rule)', borderRadius: 12, padding: '11px 15px', fontSize: 14, background: '#fff', outline: 'none' }} />
+              <button onClick={addTreatment} disabled={busy === 'add'} style={{ alignSelf: 'center', background: '#fff', border: '1px dashed var(--rule)', color: 'var(--ink)', fontSize: 13.5, fontWeight: 600, padding: '11px 16px', borderRadius: 999, cursor: 'pointer', whiteSpace: 'nowrap' }}>{busy === 'add' ? 'Adding…' : '+ Add'}</button>
+            </div>
+          )}
+          {(clusters || []).length >= TOTAL_TREATMENT_CAP && <div style={{ fontSize: 12.5, color: 'var(--orange)', marginTop: 4 }}>Up to {TOTAL_TREATMENT_CAP} treatments — remove one to add another.</div>}
+        </div>
+
+        {genErr && <div style={{ fontSize: 12.5, color: '#b42318', marginTop: 12 }}>{genErr}</div>}
+        <div className="flex flex-wrap gap-2.5 items-center mt-5">
+          <button onClick={approveAll} disabled={busy === 'approve'} style={{ background: 'var(--orange)', color: '#fff', border: 0, fontWeight: 700, fontSize: 16, padding: '16px 30px', borderRadius: 999, cursor: 'pointer', whiteSpace: 'nowrap', opacity: busy === 'approve' ? 0.7 : 1 }}>
+            {busy === 'approve' ? 'Saving…' : 'Approve all & let’s begin →'}
+          </button>
+        </div>
       </div>
     </div>
   );

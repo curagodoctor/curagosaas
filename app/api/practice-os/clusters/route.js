@@ -34,12 +34,15 @@ export async function POST(request) {
   try {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
-    const { name } = await request.json().catch(() => ({}));
+    const { name, kind } = await request.json().catch(() => ({}));
     const clean = String(name || '').trim();
-    if (!clean) return NextResponse.json({ success: false, error: 'Enter a disease name.' }, { status: 400 });
+    if (!clean) return NextResponse.json({ success: false, error: 'Enter a name.' }, { status: 400 });
     const count = await PracticeOsDiseaseCluster.countDocuments({ doctorId: doctor._id });
+    // In treatment-mode, the entry IS a treatment (name = treatment, itself beneath).
+    const isTreatment = kind === 'treatment';
     const cluster = await PracticeOsDiseaseCluster.create({
-      doctorId: doctor._id, name: clean, slug: slugify(clean), treatments: [], order: count,
+      doctorId: doctor._id, name: clean, slug: slugify(clean), kind: isTreatment ? 'treatment' : 'disease',
+      treatments: isTreatment ? [{ name: clean, source: 'manual' }] : [], order: count,
     });
     return NextResponse.json({ success: true, cluster });
   } catch (error) {
