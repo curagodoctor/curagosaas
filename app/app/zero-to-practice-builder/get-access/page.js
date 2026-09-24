@@ -25,7 +25,8 @@ const QUESTIONS = [
   { id: 'change_one_thing', type: 'textarea', q: 'If you could change one thing about how doctors currently handle their online presence, what would it be?' },
   { id: 'why_founding', type: 'textarea', q: 'Why should you be one of the 5 founding doctors?', note: 'A few honest lines is enough (min 50 characters).', minChars: 50 },
   { id: 'agreement', type: 'agreement', q: 'Case Study Participation Agreement',
-    // Each point is its own tick — all must be checked. **bold** is emphasised.
+    // **bold** is emphasised. Points in `optionalIndexes` are NOT required to submit.
+    optionalIndexes: [4],
     points: [
       'I understand **Dominate Organic Search** is provided to me **at no cost for 4 weeks** as part of a founding case study — **not a giveaway**.',
       'I agree to **genuinely implement** the system on my own practice.',
@@ -63,7 +64,10 @@ export default function GetAccessPage() {
   const val = answers[q?.id];
   const answered = (() => {
     if (!q) return false;
-    if (q.type === 'agreement') return Array.isArray(val) && val.length === q.points.length && val.every(Boolean);
+    if (q.type === 'agreement') {
+      const optional = new Set(q.optionalIndexes || []);
+      return Array.isArray(val) && q.points.every((_, i) => optional.has(i) || val[i]);
+    }
     if (q.type === 'phone') return /^\d{10}$/.test(String(val || ''));
     return String(val ?? '').trim().length >= (q.minChars || 1);
   })();
@@ -192,16 +196,19 @@ export default function GetAccessPage() {
                 <div className="space-y-2.5">
                   {q.points.map((pt, i) => {
                     const on = Array.isArray(val) && val[i];
+                    const isOptional = (q.optionalIndexes || []).includes(i);
                     return (
                       <label key={i} className="flex items-start gap-3 p-3 rounded-[11px] cursor-pointer"
                         style={{ border: `1px solid ${on ? 'var(--green)' : 'var(--rule)'}`, background: on ? 'var(--green-soft)' : 'var(--card)' }}>
                         <input type="checkbox" checked={!!on} onChange={() => toggleAgree(i)} className="mt-0.5 w-5 h-5 rounded shrink-0" style={{ accentColor: 'var(--green)' }} />
-                        <span className="text-[14px] text-[var(--ink)]" style={{ lineHeight: 1.55 }}
-                          dangerouslySetInnerHTML={{ __html: pt.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>') }} />
+                        <span className="text-[14px] text-[var(--ink)]" style={{ lineHeight: 1.55 }}>
+                          {isOptional && <span className="pos-label" style={{ color: 'var(--muted)', marginRight: 6 }}>Optional</span>}
+                          <span dangerouslySetInnerHTML={{ __html: pt.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>') }} />
+                        </span>
                       </label>
                     );
                   })}
-                  <p className="text-[12px] text-[var(--muted)] mt-1">Tick each point to submit.</p>
+                  <p className="text-[12px] text-[var(--muted)] mt-1">Tick each required point to submit.</p>
                 </div>
               )}
             </div>

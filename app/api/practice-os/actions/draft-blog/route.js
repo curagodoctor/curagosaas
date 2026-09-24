@@ -49,10 +49,9 @@ export async function POST(request) {
     // must NOT be blocked by the paid-tier or credit checks (onboarding may have
     // already spent the free credits on profile drafting). Only meter later ones.
     const firstArticle = (await BlogArticle.countDocuments({ doctorId: doctor._id })) === 0;
-    if (!firstArticle) {
-      await assertAiAccess(doctor._id);
-      await assertHasCredits(doctor._id);
-    }
+    // Every article (incl. the first onboarding one) deducts from the AI credit pool.
+    await assertAiAccess(doctor._id);
+    await assertHasCredits(doctor._id);
 
     const cluster = String(diseaseCluster || '').trim().toLowerCase();
     const type = PAGE_TYPES.includes(pageType) ? pageType : '';
@@ -136,9 +135,7 @@ export async function POST(request) {
       } catch { /* best-effort */ }
     }
 
-    const remaining = firstArticle
-      ? await getRemainingCredits(doctor._id)
-      : (await chargeAiCredits(doctor._id, { label: 'draft-blog' })).remaining;
+    const remaining = (await chargeAiCredits(doctor._id, { label: 'draft-blog' })).remaining;
     // Public URL — only meaningful once published (the first article is).
     const base = primaryBaseUrl(doc);
     const url = firstArticle ? (base ? `${base}/blog/${slug}` : `/blog/${slug}`) : '';
