@@ -128,10 +128,25 @@ export function Field({ f, value, confidence, error, onChange, onToggleTag }) {
         </div>
       ) : f.multiline ? (
         <textarea value={value || ''} onChange={(e) => onChange(e.target.value)} rows={f.big ? 4 : 2} className="w-full pos-card p-2.5 text-sm mt-1" style={error ? { borderColor: '#dc2626' } : undefined} />
+      ) : f.money ? (
+        // Consultation fee — ₹ prefixed, digits only.
+        <div className="flex items-stretch mt-1 rounded-lg overflow-hidden" style={{ border: `1px solid ${error ? '#dc2626' : 'var(--rule)'}`, background: 'var(--card, #fff)' }}>
+          <span className="grid place-items-center px-3 text-sm" style={{ background: 'var(--paper)', borderRight: '1px solid var(--rule)', color: 'var(--muted)' }}>₹</span>
+          <input inputMode="numeric" value={value || ''} onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, 7))} placeholder="500" className="flex-1 p-2.5 text-sm outline-none bg-transparent" />
+        </div>
+      ) : f.digits ? (
+        // Digit-only field with a fixed length (phone, PIN).
+        <input inputMode="numeric" value={value || ''} maxLength={f.digits}
+          onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, f.digits))}
+          className="w-full pos-card p-2.5 text-sm mt-1" style={error ? { borderColor: '#dc2626' } : undefined} />
       ) : (
         <input type={f.type === 'number' ? 'number' : 'text'} value={value || ''} onChange={(e) => onChange(e.target.value)} className="w-full pos-card p-2.5 text-sm mt-1" style={error ? { borderColor: '#dc2626' } : undefined} />
       )}
 
+      {/* Length hint for digit fields when partially filled. */}
+      {f.digits && value && String(value).length !== f.digits && !error && (
+        <p className="text-[11px] text-[var(--orange)] mt-1">Enter {f.digits} digits ({String(value).length}/{f.digits}).</p>
+      )}
       {error && <p className="text-[11px] text-red-600 mt-1">Required</p>}
       {!error && confidence != null && value && (
         <p className="text-[10px] mt-1" style={{ color: confidence >= 0.6 ? 'var(--green)' : 'var(--orange)' }}>

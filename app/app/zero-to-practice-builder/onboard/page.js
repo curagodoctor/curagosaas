@@ -724,8 +724,11 @@ function Wizard() {
               <button
                 onClick={async () => {
                   const missing = PRACTICE.fields.some((f) => f.required && !String(fields[f.key] || '').trim());
-                  if (missing) { setPracticeErr(true); return; }
-                  setPracticeErr(false);
+                  if (missing) { setPracticeErr(true); setErr(''); return; }
+                  // Digit fields (phone/PIN) must be the exact length when filled.
+                  const badDigits = PRACTICE.fields.find((f) => f.digits && String(fields[f.key] || '').trim() && String(fields[f.key]).length !== f.digits);
+                  if (badDigits) { setPracticeErr(false); setErr(`${badDigits.label} must be exactly ${badDigits.digits} digits.`); return; }
+                  setPracticeErr(false); setErr('');
                   if (await saveProfile(true)) { saveMedia({ localAreas: areas }); next(); }
                 }}
                 disabled={!!busy}
