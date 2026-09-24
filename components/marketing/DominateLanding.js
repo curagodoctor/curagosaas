@@ -916,6 +916,7 @@ const BODY = `<nav class="nav">
       <a href="/#offer">Services</a>
       <a href="/privacy">Privacy Policy</a>
       <a href="/terms">Terms</a>
+      <a href="/refund">Refund &amp; Cancellation</a>
       <a href="mailto:support@curago.in">Contact</a>
     </div>
     <span>© 2026 CuraGo. All rights reserved.</span>
