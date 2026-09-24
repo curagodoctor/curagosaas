@@ -31,13 +31,35 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: 'Doctor not found' }, { status: 404 });
     }
 
-    const [enrollment, progressRaw, performance, kpis, journey] = await Promise.all([
+    const PracticeOsProfile = (await import('@/models/practice-os/PracticeOsProfile')).default;
+    const PracticeOsSettings = (await import('@/models/practice-os/PracticeOsSettings')).default;
+    const [enrollment, progressRaw, performance, kpis, journey, gbpProfile, settings] = await Promise.all([
       PracticeOsEnrollment.findOne({ doctorId: id }).lean(),
       UserMissionProgress.find({ doctorId: id }).lean(),
       PerformanceScore.findOne({ doctorId: id }).lean(),
       KpiEntry.find({ doctorId: id }).sort({ recordedAt: 1 }).lean(),
       JourneyTimeline.find({ doctorId: id }).sort({ occurredAt: -1 }).lean(),
+      PracticeOsProfile.findOne({ doctorId: id }).select('gbpProgress gbpRiskAcknowledgedAt').lean(),
+      PracticeOsSettings.findOne({}).select('gbpGuide').lean(),
     ]);
+
+    // GBP setup progress: per-block done/total from the doctor's checked tasks
+    // (gbpProgress keyed "blockKey:taskIndex") against the admin-authored blocks.
+    const gbpDone = gbpProfile?.gbpProgress || {};
+    const gbpBlocks = (settings?.gbpGuide || []).map((b) => {
+      const total = (b.tasks || []).length;
+      const done = (b.tasks || []).filter((_, i) => gbpDone[`${b.key}:${i}`]).length;
+      return { key: b.key, label: b.label || b.title || b.key, mandatory: !!b.mandatory, done, total };
+    });
+    const gbpTotal = gbpBlocks.reduce((n, b) => n + b.total, 0);
+    const gbpDoneCount = gbpBlocks.reduce((n, b) => n + b.done, 0);
+    const gbp = {
+      blocks: gbpBlocks,
+      doneCount: gbpDoneCount,
+      total: gbpTotal,
+      percent: gbpTotal ? Math.round((gbpDoneCount / gbpTotal) * 100) : 0,
+      riskAcknowledgedAt: gbpProfile?.gbpRiskAcknowledgedAt || null,
+    };
 
     // Join progress with mission title/number.
     const missionIds = progressRaw.map((p) => p.missionId).filter(Boolean);
@@ -95,6 +117,7 @@ export async function GET(request, { params }) {
       enrollment: enrollment || null,
       progress,
       performance: performance || null,
+      gbp,
       kpis,
       journey,
       packs: allPacks.map((p) => ({ id: String(p._id), title: p.title, priceInInr: p.priceInInr || 0, isPublished: !!p.isPublished })),

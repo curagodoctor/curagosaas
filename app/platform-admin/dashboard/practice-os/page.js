@@ -1309,6 +1309,31 @@ function DoctorDetailModal({ doctorId, onClose }) {
                 </div>
               )}
 
+              {/* GBP setup progress */}
+              {data.gbp && data.gbp.total > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900">Google Business Profile setup</h3>
+                    <span className="text-sm text-gray-500">{data.gbp.doneCount}/{data.gbp.total} tasks · {data.gbp.percent}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-gray-100 overflow-hidden mb-3">
+                    <div className="h-full bg-green-600" style={{ width: `${data.gbp.percent}%` }} />
+                  </div>
+                  <div className="grid gap-1.5">
+                    {data.gbp.blocks.map((b) => {
+                      const complete = b.total > 0 && b.done === b.total;
+                      return (
+                        <div key={b.key} className="flex items-center justify-between text-sm border border-gray-100 rounded-lg px-3 py-2">
+                          <span className="text-gray-700">{b.label}{b.mandatory && <span className="text-xs text-amber-600 ml-1.5">(mandatory)</span>}</span>
+                          <span className={complete ? 'text-green-700 font-medium' : 'text-gray-500'}>{complete ? '✓ Done' : `${b.done}/${b.total}`}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {data.gbp.riskAcknowledgedAt && <p className="text-xs text-gray-400 mt-2">Suspension-risk acknowledged {fmtDate(data.gbp.riskAcknowledgedAt)}</p>}
+                </div>
+              )}
+
               {/* Progress */}
               <div>
                 <h3 className="font-semibold text-gray-900 mb-3">Mission Progress</h3>
