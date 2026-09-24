@@ -395,39 +395,45 @@ export default function SettingsPage() {
                 </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Google Review Link
-                </label>
-                <input
-                  type="url"
-                  name="googleReviewLink"
-                  value={formData.googleReviewLink}
-                  onChange={handleChange}
-                  placeholder="https://g.page/r/..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
-                />
-                <p className="mt-1 text-sm text-gray-500">
-                  Set this once. It&apos;s used automatically as <span className="font-mono">{'{{reviewLink}}'}</span> in every review-request message, workflow and WhatsApp flow — no need to set it per contact.
-                </p>
-              </div>
+              {/* GMB review-request settings hidden until the review-request flow
+                  is fully wired. Keep the markup for when it's re-enabled. */}
+              {false && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Google Review Link
+                    </label>
+                    <input
+                      type="url"
+                      name="googleReviewLink"
+                      value={formData.googleReviewLink}
+                      onChange={handleChange}
+                      placeholder="https://g.page/r/..."
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                    />
+                    <p className="mt-1 text-sm text-gray-500">
+                      Set this once. It&apos;s used automatically as <span className="font-mono">{'{{reviewLink}}'}</span> in every review-request message, workflow and WhatsApp flow — no need to set it per contact.
+                    </p>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Review Request Message (WhatsApp)
-                </label>
-                <textarea
-                  name="reviewRequestMessage"
-                  value={formData.reviewRequestMessage}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="Hi {{name}}, thank you for visiting. We'd be grateful if you could share your experience: {{reviewLink}}"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
-                />
-                <p className="mt-1 text-sm text-gray-500">
-                  Optional. Your own wording for the WhatsApp review-request automation. Leave blank to use the default message.
-                </p>
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Review Request Message (WhatsApp)
+                    </label>
+                    <textarea
+                      name="reviewRequestMessage"
+                      value={formData.reviewRequestMessage}
+                      onChange={handleChange}
+                      rows={3}
+                      placeholder="Hi {{name}}, thank you for visiting. We'd be grateful if you could share your experience: {{reviewLink}}"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                    />
+                    <p className="mt-1 text-sm text-gray-500">
+                      Optional. Your own wording for the WhatsApp review-request automation. Leave blank to use the default message.
+                    </p>
+                  </div>
+                </>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
