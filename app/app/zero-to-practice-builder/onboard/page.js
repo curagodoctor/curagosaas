@@ -914,7 +914,8 @@ function Wizard() {
               </div>
               <p className="pos-label mb-3" style={{ color: 'var(--muted)' }}>Short application · one question at a time · reviewed by Dr Yuvaraj</p>
               <button onClick={proceedToApplication} className="pos-action">Get Early Access →</button>
-              <button onClick={() => setQuizPhase('milestone')} className="pos-link text-sm mt-5 block" style={{ color: 'var(--muted)' }}>← Back</button>
+              <button onClick={() => router.push('/app/zero-to-practice-builder')} className="pos-link text-sm mt-4 block" style={{ color: 'var(--ink)' }}>I don&apos;t want access — take me to Control Center →</button>
+              <button onClick={() => setQuizPhase('milestone')} className="pos-link text-sm mt-3 block" style={{ color: 'var(--muted)' }}>← Back</button>
             </div>
           ) : quizFailed ? (
             <div>

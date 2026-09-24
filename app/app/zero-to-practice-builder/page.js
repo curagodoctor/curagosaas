@@ -140,6 +140,16 @@ export default function ControlCenter() {
       </p>
 
       {/* Primary status band — the Dominate Organic Search pack */}
+      {(accessStatus === 'none' || accessStatus === 'denied') && (
+        <div className="pos-card p-5 mt-6" style={{ borderColor: 'var(--orange)', background: 'var(--orange-soft)' }}>
+          <span className="pos-label" style={{ color: 'var(--orange)' }}>Dominate Organic Search · Early access</span>
+          <p className="text-[16px] font-semibold text-[var(--ink)] mt-1">Unlock your daily organic-growth engine</p>
+          <p className="text-[13.5px] text-[var(--muted)] mt-1" style={{ maxWidth: '62ch', lineHeight: 1.55 }}>
+            Free for the first 4 weeks, then ₹5,000 / 4 weeks — founder price, locked in. We prepare your practice&apos;s content daily; you just review and publish. Cancel anytime; your website and content stay yours.
+          </p>
+          <button onClick={() => router.push('/app/zero-to-practice-builder/get-access')} className="pos-action mt-3.5">{accessStatus === 'denied' ? 'Apply again →' : 'Get early access →'}</button>
+        </div>
+      )}
       {accessStatus === 'pending' && (
         <div className="pos-card p-5 mt-6 flex items-start gap-3" style={{ borderColor: 'var(--orange)', background: 'var(--orange-soft)' }}>
           <span className="pos-label shrink-0" style={{ background: 'var(--orange)', color: '#fff', padding: '3px 8px', borderRadius: 6 }}>Under review</span>
