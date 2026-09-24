@@ -80,6 +80,15 @@ Return JSON: {"diseases": [{"name": string, "tier": "common"|"authority", "reaso
       budget -= take;
     }
     await PracticeOsDiseaseCluster.insertMany(docs, { ordered: false }).catch(() => {});
+    // The map changed → any day content already drafted from the OLD ordering is
+    // now stale (treatment_one etc. point elsewhere). Clear cached day-interface
+    // drafts for not-yet-completed missions so each day regenerates from this map.
+    try {
+      const PracticeOsChatMessage = (await import('@/models/practice-os/PracticeOsChatMessage')).default;
+      const UserMissionProgress = (await import('@/models/practice-os/UserMissionProgress')).default;
+      const doneIds = (await UserMissionProgress.find({ doctorId: doctor._id, status: 'completed' }).select('missionId').lean()).map((p) => p.missionId);
+      await PracticeOsChatMessage.deleteMany({ doctorId: doctor._id, missionId: { $nin: doneIds } });
+    } catch { /* best-effort */ }
     const clusters = await PracticeOsDiseaseCluster.find({ doctorId: doctor._id }).sort({ order: 1 }).lean();
 
     const { remaining } = await chargeAiCredits(doctor._id, { label: 'clusters-generate', tokens: gen.usage?.total_tokens || 0 });

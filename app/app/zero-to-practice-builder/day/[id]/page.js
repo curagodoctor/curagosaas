@@ -192,17 +192,14 @@ function DayInner() {
   // Ask for confirmation first — finishing a task is irreversible (it closes).
   const requestFinish = () => {
     if (finishing) return;
-    if (evidenceRequired && !evidence.link.trim() && !evidence.notes.trim()) {
-      setErr('Please add your evidence (a link or a note) before finishing.');
-      return;
-    }
+    // Evidence gate disabled while the evidence section is hidden.
     setConfirmFinish(true);
   };
 
   const finishDay = async () => {
     if (finishing) return;
-    // Evidence gate — only when the backend marks it required.
-    if (evidenceRequired && !evidence.link.trim() && !evidence.notes.trim()) {
+    // Evidence gate disabled while the evidence section is hidden.
+    if (false) {
       setConfirmFinish(false);
       setErr('Please add your evidence (a link or a note) before finishing.');
       return;
@@ -357,8 +354,8 @@ function DayInner() {
           {modIndex > 0 && <button onClick={prevModule} className="pos-link text-[13px]" style={{ color: 'var(--muted)' }}>← Previous module</button>}
         </div>
 
-        {/* Relevant links — where to post + the doctor's own pages/links. */}
-        {(() => {
+        {/* Relevant links — hidden for now (re-enable later). */}
+        {false && (() => {
           const cat = mission?.category || '';
           const defaults = /gbp|google|service|product|photo/i.test(cat)
             ? [{ label: 'Open Google Business Profile', url: 'https://business.google.com/' }]
@@ -381,8 +378,8 @@ function DayInner() {
           );
         })()}
 
-        {/* Evidence — only shown when the backend marks this task as needing it. */}
-        {evidenceRequired && (
+        {/* Evidence — hidden for now (re-enable later). */}
+        {false && evidenceRequired && (
           <div className="mt-8 pos-card p-5" style={{ borderColor: 'var(--orange)' }}>
             <p className="pos-label" style={{ color: 'var(--orange)' }}>Evidence required</p>
             <p className="text-[13px] text-[var(--muted)] mt-0.5 mb-3">Add proof that you completed this task — a link to the live post, and/or a short note.</p>
