@@ -31,6 +31,11 @@ export async function PUT(request, { params }) {
     if (!cluster) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
     // Keep the profile's diseases/procedures in sync with the approved clusters.
     try { const { syncClustersToProfile } = await import('@/lib/practice-os/profile'); await syncClustersToProfile(doctor._id); } catch { /* best-effort */ }
+    // A name/treatment/order change shifts what {{treatment_one}} resolves to —
+    // clear cached day content so days regenerate from the current map.
+    if (update.name || update.treatments) {
+      try { const { clearDayContent } = await import('@/lib/practice-os/dayContent'); await clearDayContent(doctor._id); } catch { /* best-effort */ }
+    }
     return NextResponse.json({ success: true, cluster });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
@@ -47,6 +52,8 @@ export async function DELETE(request, { params }) {
     const { id } = await params;
     const res = await PracticeOsDiseaseCluster.deleteOne({ _id: id, doctorId: doctor._id });
     if (res.deletedCount === 0) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
+    // Removing a treatment renumbers the rest — clear cached day content.
+    try { const { clearDayContent } = await import('@/lib/practice-os/dayContent'); await clearDayContent(doctor._id); } catch { /* best-effort */ }
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });

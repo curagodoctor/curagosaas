@@ -55,6 +55,7 @@ function DayInner() {
   const [confirmFinish, setConfirmFinish] = useState(false);
   const [primaryAction, setPrimaryAction] = useState(null); // { type, label, url }
   const started = useRef(false);
+  const primaryTreatmentRef = useRef(''); // treatment this day is about (for staleness check)
 
   const fire = useCallback(async (p, modId, auto) => {
     setGenerating(true); setErr('');
@@ -92,8 +93,26 @@ function DayInner() {
       const visible = (t.messages || []).filter((x) => !x.hidden);
       setThread(visible);
       const lastAssistant = [...visible].reverse().find((x) => x.role === 'assistant');
-      if (lastAssistant) setContent(lastAssistant.content);
-      else if (p) await fire(p, modId, true);
+      const pt = primaryTreatmentRef.current;
+      // Stale guard: cached content was drafted for a DIFFERENT treatment (the map
+      // changed since). If the current treatment name isn't in it, regenerate.
+      const isStale = !!(lastAssistant && pt && !String(lastAssistant.content || '').toLowerCase().includes(pt.toLowerCase()));
+      if (lastAssistant && !isStale) setContent(lastAssistant.content);
+      else if (p) {
+        setContent(''); setThread([]);
+        if (isStale) {
+          // Force a fresh draft in a new session so the stale one is superseded.
+          setGenerating(true);
+          try {
+            const res = await fetch(`/api/practice-os/day/${missionId}/ai`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ prompt: p, moduleId: modId, newSession: true, auto: true }) });
+            const d = await res.json();
+            const ans = d.text || d.reply;
+            if (d.success && ans) setContent(ans);
+          } catch { /* leave empty */ } finally { setGenerating(false); }
+        } else {
+          await fire(p, modId, true);
+        }
+      }
     } catch { /* leave empty */ }
   }, [missionId, fire]);
 
@@ -102,6 +121,7 @@ function DayInner() {
       const day = await fetch(`/api/practice-os/day/${missionId}`, { credentials: 'include' }).then((r) => r.json());
       if (!day.success) { router.replace('/app/control-center'); return; }
       const m = day.day || {};
+      primaryTreatmentRef.current = day.primaryTreatment || '';
       setMission({ title: m.missionText || m.objective || 'Today’s task', category: m.category || '' });
       setPrimaryAction(m.primaryAction && m.primaryAction.type ? m.primaryAction : { type: 'blog' });
       const mods = (day.modules && day.modules.length) ? day.modules : [{ id: null, aiPrompt: m.aiContext?.systemPrompt || '' }];
