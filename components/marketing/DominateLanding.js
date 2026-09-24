@@ -913,7 +913,7 @@ const BODY = `<nav class="nav">
   <div class="footer">
     <img src="/curago-logo.png" alt="CuraGo">
     <div class="foot-links">
-      <a href="/services">Services</a>
+      <a href="/#offer">Services</a>
       <a href="/privacy">Privacy Policy</a>
       <a href="/terms">Terms</a>
       <a href="mailto:support@curago.in">Contact</a>
