@@ -70,7 +70,7 @@ function LoginPageInner() {
       }
       // Land on the unified workspace (matches Google sign-in), not straight into
       // the website-builder admin. Practice-OS entrants go into that product.
-      router.push((entry === 'practice-os' || claimToken) ? '/app/zero-to-practice-builder' : '/app');
+      router.push((entry === 'practice-os' || claimToken) ? '/app/control-center' : '/app');
     } catch (error) {
       setErrors({ submit: error.message });
     } finally {

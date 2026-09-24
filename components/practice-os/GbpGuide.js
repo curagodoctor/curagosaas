@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 //
 // Backed by /api/practice-os/gbp-guide (blocks + per-task progress + the risk
 // acknowledgement). Used both inside the onboarding wizard and on the standalone
-// /app/zero-to-practice-builder/gbp page — one source of truth.
+// /app/control-center/gbp page — one source of truth.
 
 // Field-type tag colours.
 const KIND_STYLE = {

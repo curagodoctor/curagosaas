@@ -9,16 +9,16 @@ import Link from 'next/link';
 // is a section (not a nav button) and there's no "scheduled tasks" item — the
 // ready-now teaser covers it.
 const PRIMARY = (withPack) => [
-  ['Your content', '/app/zero-to-practice-builder/content'],
+  ['Your content', '/app/control-center/content'],
   ['AI Website Builder', '/admin/dashboard/ai-generate'],
   ['Appointments', '/admin/dashboard/bookings'],
-  ['Profile', withPack('/app/zero-to-practice-builder/profile')],
+  ['Profile', withPack('/app/control-center/profile')],
 ];
 const MORE = (withPack) => [
-  ['All packs', '/app/zero-to-practice-builder'],
+  ['All packs', '/app/control-center'],
   ['Contacts', '/admin/dashboard/contacts'],
-  ['Workspace', withPack('/app/zero-to-practice-builder/workspace')],
-  ['Content Planner', withPack('/app/zero-to-practice-builder/planner')],
+  ['Workspace', withPack('/app/control-center/workspace')],
+  ['Content Planner', withPack('/app/control-center/planner')],
   ['Settings', '/admin/dashboard/settings'],
 ];
 
@@ -60,7 +60,7 @@ function PosNavInner({ breadcrumb }) {
     <div className="fixed top-0 left-0 right-0 z-40 px-4 sm:px-8 lg:px-12 py-1.5" style={{ background: 'var(--paper)', borderBottom: '1px solid var(--rule)' }}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <Link href="/app/zero-to-practice-builder" onClick={close} className="flex items-center shrink-0">
+          <Link href="/app/control-center" onClick={close} className="flex items-center shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/curago-logo.png" alt="CuraGo" className="h-9 sm:h-10 w-auto" />
           </Link>
@@ -124,13 +124,13 @@ function ProgressMenu({ packId, withPack, onNavigate }) {
 
   if (!packId) {
     // No pack in context — send them to pick one; progress is per-pack.
-    return <Link href="/app/zero-to-practice-builder" onClick={onNavigate} className="pos-link">Progress</Link>;
+    return <Link href="/app/control-center" onClick={onNavigate} className="pos-link">Progress</Link>;
   }
 
   const items = [
-    ['Your progress', withPack('/app/zero-to-practice-builder/score')],
-    ['Journey & record', withPack('/app/zero-to-practice-builder/journey')],
-    ['Report', withPack('/app/zero-to-practice-builder/report')],
+    ['Your progress', withPack('/app/control-center/score')],
+    ['Journey & record', withPack('/app/control-center/journey')],
+    ['Report', withPack('/app/control-center/report')],
   ];
   const toggle = () => {
     if (!open && btnRef.current) {

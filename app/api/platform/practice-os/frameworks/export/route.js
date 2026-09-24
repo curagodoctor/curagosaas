@@ -59,7 +59,7 @@ export async function GET() {
     return new Response(buffer, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename="zero-to-practice-builder-packs-${stamp}.xlsx"`,
+        'Content-Disposition': `attachment; filename="dominate-organic-search-packs-${stamp}.xlsx"`,
       },
     });
   } catch (error) {

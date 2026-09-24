@@ -104,7 +104,7 @@ export default function AIGeneratePage() {
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
           <p className="text-amber-900 font-medium">The AI Website Builder is a paid feature.</p>
           <p className="text-amber-800 text-sm mt-1">Get a Builder Pack to unlock AI website + blog generation (30 AI credits/day).</p>
-          <a href="/app/zero-to-practice-builder" className="inline-block mt-3 px-5 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium">See Builder Packs →</a>
+          <a href="/app/control-center" className="inline-block mt-3 px-5 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium">See Builder Packs →</a>
         </div>
       )}
 

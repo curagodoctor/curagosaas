@@ -935,7 +935,7 @@ export default function DominateLanding() {
     // is idempotent. When signed in, CTAs go to the app and Login is hidden — so
     // a logged-in doctor never sees "Login/Sign up" and think they're logged out.
     const wire = () => {
-      const dash = () => router.push('/app/zero-to-practice-builder');
+      const dash = () => router.push('/app/control-center');
       root.querySelectorAll('[data-start]').forEach((el) => {
         if (signedIn && el.classList.contains('navbtn')) el.textContent = 'My dashboard';
         el.onclick = signedIn ? dash : () => router.push('/signup?entry=practice-os');

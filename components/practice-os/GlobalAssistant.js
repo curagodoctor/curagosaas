@@ -19,11 +19,11 @@ const VARS = {
 };
 const BUILDER_PREFIXES = [
   '/admin/dashboard/ai-generate',
-  '/app/zero-to-practice-builder/onboard',
-  '/app/zero-to-practice-builder/focus',
-  '/app/zero-to-practice-builder/content',
-  '/app/zero-to-practice-builder/day',
-  '/app/zero-to-practice-builder/clusters',
+  '/app/control-center/onboard',
+  '/app/control-center/focus',
+  '/app/control-center/content',
+  '/app/control-center/day',
+  '/app/control-center/clusters',
 ];
 
 // Render assistant text with markdown links [label](url) and **bold** as real

@@ -272,7 +272,7 @@ export async function GET(request) {
               heading: 'Time to work on your content',
               body: `You set a reminder for "${d.title}". Open your Content Planner to refine, schedule, or record it.`,
               ctaLabel: 'Open Content Planner',
-              ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://curago.in'}/app/zero-to-practice-builder/planner`,
+              ctaUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://curago.in'}/app/control-center/planner`,
             });
           }
           await PracticeOsDocument.updateOne({ _id: d._id }, { $set: { reminderSent: true } });

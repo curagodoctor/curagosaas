@@ -16,12 +16,20 @@ const nextConfig = {
       },
     ],
   },
-  // Serve the Practice-OS app under the product name so the URL reads
-  // /dominate-organic-search instead of /app/zero-to-practice-builder.
+  // Serve the app under the product name so the URL reads
+  // /dominate-organic-search instead of /app/control-center.
   async rewrites() {
     return [
-      { source: '/dominate-organic-search', destination: '/app/zero-to-practice-builder' },
-      { source: '/dominate-organic-search/:path*', destination: '/app/zero-to-practice-builder/:path*' },
+      { source: '/dominate-organic-search', destination: '/app/control-center' },
+      { source: '/dominate-organic-search/:path*', destination: '/app/control-center/:path*' },
+    ];
+  },
+  // The app route was renamed /app/zero-to-practice-builder → /app/control-center.
+  // 301-redirect the old URLs so existing links / bookmarks keep working.
+  async redirects() {
+    return [
+      { source: '/app/zero-to-practice-builder', destination: '/app/control-center', permanent: true },
+      { source: '/app/zero-to-practice-builder/:path*', destination: '/app/control-center/:path*', permanent: true },
     ];
   },
 };

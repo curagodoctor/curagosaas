@@ -174,7 +174,7 @@ export default function DashboardLayout({ children }) {
 
           {/* Cross-product bridge → Practice OS */}
           <Link
-            href="/app/zero-to-practice-builder"
+            href="/app/control-center"
             className="flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors bg-[#096b17] text-white hover:bg-[#075110]"
           >
             <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

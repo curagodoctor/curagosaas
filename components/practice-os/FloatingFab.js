@@ -8,13 +8,13 @@ import { useRouter, usePathname } from 'next/navigation';
 // separate floating buttons. The Assistant action is hidden on pages that already
 // have their own AI chat (the daily task, the AI builder, etc.).
 const CHAT_PAGES = [
-  '/app/zero-to-practice-builder/day',
-  '/app/zero-to-practice-builder/content',
-  '/app/zero-to-practice-builder/focus',
-  '/app/zero-to-practice-builder/clusters',
+  '/app/control-center/day',
+  '/app/control-center/content',
+  '/app/control-center/focus',
+  '/app/control-center/clusters',
   '/admin/dashboard/ai-generate',
 ];
-const HIDE_PAGES = ['/app/zero-to-practice-builder/onboard'];
+const HIDE_PAGES = ['/app/control-center/onboard'];
 
 const ICONS = {
   assistant: 'M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.9 9.9 0 01-4-.83L3 20l1.17-3.5A7.7 7.7 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
@@ -41,7 +41,7 @@ export default function FloatingFab() {
   const actions = [
     !onChatPage && { key: 'assistant', label: 'Assistant', icon: ICONS.assistant, run: () => window.dispatchEvent(new Event('pos:open-assistant')) },
     { key: 'notes', label: 'Notes', icon: ICONS.notes, run: () => window.dispatchEvent(new Event('pos:open-notes')) },
-    { key: 'profile', label: 'Profile', icon: ICONS.profile, run: () => router.push('/app/zero-to-practice-builder/profile') },
+    { key: 'profile', label: 'Profile', icon: ICONS.profile, run: () => router.push('/app/control-center/profile') },
   ].filter(Boolean);
 
   return (

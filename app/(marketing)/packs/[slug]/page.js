@@ -60,7 +60,7 @@ export default function PackDetailPage() {
     if (loggedIn) {
       // Already logged in → link to this account and open the app.
       try { await fetch('/api/auth/claim-pending', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ claimToken }) }); } catch { /* ignore */ }
-      router.push('/app/zero-to-practice-builder');
+      router.push('/app/control-center');
       return;
     }
     const q = `claim=${encodeURIComponent(claimToken)}&email=${encodeURIComponent(email)}`;

@@ -67,7 +67,7 @@ function SubdomainOnboarding() {
       }
       // Into the guided setup funnel (profile → website → article → GBP), not
       // straight to the dashboard, so the doctor has a clear next step.
-      router.replace('/app/zero-to-practice-builder/start');
+      router.replace('/app/control-center/start');
     } catch {
       setError('Something went wrong. Please try again.');
       setSubmitting(false);

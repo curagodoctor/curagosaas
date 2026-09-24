@@ -6,7 +6,7 @@ import WebsiteStats from './WebsiteStats';
 // §11 — on-screen engagement nudges. Gives the doctor one small thing to do on
 // the platform. Rotates daily so it doesn't feel static; dismissible for the visit.
 const NUDGES = [
-  { label: 'Check your NAP', body: 'Make sure your clinic name, address and phone match exactly on Google, your website and directories.', cta: 'Check now', href: '/app/zero-to-practice-builder/gbp' },
+  { label: 'Check your NAP', body: 'Make sure your clinic name, address and phone match exactly on Google, your website and directories.', cta: 'Check now', href: '/app/control-center/gbp' },
   { label: 'Send review requests', body: 'A few fresh Google reviews go a long way. Send requests to recent patients today.', cta: 'Send requests', href: '/admin/dashboard/gmb/requests' },
   { label: 'Try the AI builder', body: 'Generate a new education page or sharpen your website copy in a few minutes.', cta: 'Open builder', href: '/admin/dashboard/ai-generate' },
   { label: 'Your week in numbers', body: 'See how your website did this week — visits, requests and article views.', cta: 'See stats', href: '/admin/dashboard' },
