@@ -4,6 +4,7 @@ import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/access';
 import { assertHasCredits, chargeAiCredits } from '@/lib/practice-os/aiCredits';
 import { structureContent } from '@/lib/practice-os/ai';
+import { parseArticleFromMarkdown } from '@/lib/practice-os/parseArticle';
 import { BLOG_RULES } from '@/lib/practice-os/contentRules';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 import { syncBlogLinksToProfile } from '@/lib/practice-os/blogLinks';
@@ -30,48 +31,62 @@ export async function POST(request) {
     const existing = sourceMissionId
       ? await BlogArticle.findOne({ doctorId: doctor._id, sourceMissionId }).select('_id slug featuredImage').lean()
       : null;
-    await assertHasCredits(doctor._id);
-
     const fields = await getDoctorProfileFields(doctor._id);
-    const gen = await structureContent({
-      instruction: 'Turn the source content into a patient-facing blog article. Return JSON: {"title": string (<=90 chars, no clickbait), "excerpt": string (<=180 chars), "metaDescription": string (<=155 chars, SEO), "imageAlt": string (<=120 chars, describes a fitting featured image), "category": string, "blocks": [{"heading": string, "content": string (2-4 short paragraphs, plain text)}] (3-6 blocks — the BODY only, do NOT put an FAQ block here), "faqs": [{"question": string, "answer": string (2-3 sentences)}] (3-5 short Q&As)}. Informative and NMC-compliant — no superlatives, no guarantees.',
-      source: text,
-      profileFields: fields,
-      extraRules: BLOG_RULES,
-    });
-    if (!gen.success) return NextResponse.json({ success: false, error: gen.error }, { status: 502 });
 
-    const d = gen.data || {};
-    const title = String(d.title || 'Untitled article').slice(0, 120);
+    // PREFERRED PATH — publish the doctor's content VERBATIM. The content the day
+    // produced is already a structured, patient-facing article; parse it into
+    // blocks + FAQs directly so nothing is summarised, merged, dropped or renamed.
+    // Only fall back to the LLM when the text has no usable structure.
+    const parsed = parseArticleFromMarkdown(text);
+    let title, blocks, faqs, metaDescription, imageAlt, chargeForAi = false;
+
+    if (parsed && parsed.blocks.length) {
+      title = String(parsed.title || 'Untitled article').slice(0, 120);
+      blocks = parsed.blocks.map((b) => ({ heading: String(b.heading || '').slice(0, 160), content: String(b.content || '') }));
+      faqs = parsed.faqs || [];
+      metaDescription = String(parsed.metaDescription || parsed.excerpt || '').slice(0, 160);
+      imageAlt = title;
+    } else {
+      // Unstructured text → let the LLM structure it (spends a credit).
+      await assertHasCredits(doctor._id);
+      chargeForAi = true;
+      const gen = await structureContent({
+        instruction: 'Turn the source content into a patient-facing blog article. Return JSON: {"title": string (<=90 chars, no clickbait), "excerpt": string (<=180 chars), "metaDescription": string (<=155 chars, SEO), "imageAlt": string (<=120 chars, describes a fitting featured image), "category": string, "blocks": [{"heading": string, "content": string (plain text — keep ALL detail, do not summarise)}], "faqs": [{"question": string, "answer": string}]}. Preserve every section of the source. Informative and NMC-compliant — no superlatives, no guarantees.',
+        source: text,
+        profileFields: fields,
+        extraRules: BLOG_RULES,
+      });
+      if (!gen.success) return NextResponse.json({ success: false, error: gen.error }, { status: 502 });
+      const d = gen.data || {};
+      title = String(d.title || 'Untitled article').slice(0, 120);
+      blocks = (Array.isArray(d.blocks) ? d.blocks : [])
+        .filter((b) => b && (b.heading || b.content) && !/^\s*faq/i.test(String(b.heading || '')))
+        .map((b) => ({ heading: String(b.heading || '').slice(0, 160), content: String(b.content || '') }));
+      faqs = (Array.isArray(d.faqs) ? d.faqs : [])
+        .filter((f) => f && (f.question || f.answer))
+        .map((f) => ({ question: String(f.question || '').slice(0, 300), answer: String(f.answer || '').slice(0, 1200) }));
+      metaDescription = String(d.metaDescription || d.excerpt || '').slice(0, 160);
+      imageAlt = String(d.imageAlt || title).slice(0, 160);
+    }
+
     let slug;
     if (existing) {
       // Updating the day's existing article — keep its live URL stable.
       slug = existing.slug;
     } else {
-      slug = slugify(d.slug || title) || `article-${Date.now()}`;
+      slug = slugify(title) || `article-${Date.now()}`;
       // Ensure global slug uniqueness.
       if (await BlogArticle.findOne({ slug }).select('_id').lean()) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
     }
-
-    // Body blocks — drop any the model still labelled as FAQ (those belong in the
-    // FAQ section, not the body).
-    const blocks = (Array.isArray(d.blocks) ? d.blocks : [])
-      .filter((b) => b && (b.heading || b.content) && !/^\s*faq/i.test(String(b.heading || '')))
-      .map((b) => ({ heading: String(b.heading || '').slice(0, 160), content: String(b.content || '') }));
-    const faqs = (Array.isArray(d.faqs) ? d.faqs : [])
-      .filter((f) => f && (f.question || f.answer))
-      .map((f) => ({ question: String(f.question || '').slice(0, 300), answer: String(f.answer || '').slice(0, 1200) }));
-    const metaDescription = String(d.metaDescription || d.excerpt || '').slice(0, 160);
-    const imageAlt = String(d.imageAlt || title).slice(0, 160);
 
     const doc = await Doctor.findById(doctor._id).select('subdomain displayName name specialization').lean();
     const fieldsToSet = {
       doctorId: doctor._id,
       title,
       slug,
-      excerpt: String(d.excerpt || '').slice(0, 300),
+      excerpt: metaDescription.slice(0, 300),
       metaDescription,
-      category: String(d.category || fields.specialty || '').slice(0, 60),
+      category: String(fields.specialty || '').slice(0, 60),
       author: { name: doc?.displayName || doc?.name || '', designation: doc?.specialization || '' },
       blocks,
       faqSection: faqs.length ? { heading: 'FAQs: Clear Answers for Patients', faqs } : undefined,
@@ -90,7 +105,10 @@ export async function POST(request) {
       article = await BlogArticle.create(fieldsToSet);
     }
 
-    const { remaining } = await chargeAiCredits(doctor._id, { label: 'publish-blog' });
+    // Only the LLM fallback spent a credit; verbatim publishing is free.
+    const { remaining } = chargeForAi
+      ? await chargeAiCredits(doctor._id, { label: 'publish-blog' })
+      : { remaining: undefined };
 
     // Store this page's link in the profile section + refresh the placeholder set.
     await syncBlogLinksToProfile(doctor._id);
