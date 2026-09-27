@@ -4,6 +4,7 @@ import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 import BlogArticle from '@/models/BlogArticle';
 import { primaryBaseUrl } from '@/lib/primaryDomain';
+import { buildArticleGraph, jsonLdScript } from '@/lib/seo/schema';
 import { getSiteChrome } from '../../_siteChrome';
 import SiteChrome from '@/components/booking-page/SiteChrome';
 
@@ -113,8 +114,13 @@ export default async function DoctorBlogArticlePage({ params }) {
 
   const chrome = await getSiteChrome(doctor);
 
+  // Structured data: Article + FAQPage + breadcrumbs (real content only).
+  const base = primaryBaseUrl(doctor);
+  const ldScript = base ? jsonLdScript(buildArticleGraph({ article, doctor, baseUrl: base, pageUrl: `${base}/blog/${article.slug}` })) : null;
+
   return (
     <SiteChrome header={chrome.header} footer={chrome.footer} navSections={chrome.navSections} extraNavLinks={chrome.extraNavLinks} doctor={doctor} themeId={chrome.themeId}>
+      {ldScript && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldScript }} />}
       <div className="bg-white">
       {/* Article title block */}
       <header className="border-b border-gray-200">

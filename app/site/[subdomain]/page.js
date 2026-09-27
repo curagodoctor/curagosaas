@@ -2,7 +2,10 @@ import { notFound } from 'next/navigation';
 import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 import BookingPage from '@/models/BookingPage';
+import Clinic from '@/models/Clinic';
 import { primaryBaseUrl } from '@/lib/primaryDomain';
+import { getDoctorProfileFields } from '@/lib/practice-os/profile';
+import { buildDoctorGraph, jsonLdScript } from '@/lib/seo/schema';
 import SiteBody from './_SiteBody';
 
 // Generate metadata
@@ -85,10 +88,27 @@ export default async function SubdomainSitePage({ params }) {
     });
   }
 
+  // Structured data (JSON-LD) — Physician + clinic locations + services, built
+  // from the doctor's REAL profile + Clinic Manager data. Best-effort: a failure
+  // here must never break the page.
+  let ldScript = null;
+  try {
+    const baseUrl = primaryBaseUrl(doctor);
+    const [clinics, fields] = await Promise.all([
+      Clinic.find({ doctorId: doctor._id, isActive: true }).sort({ isPrimary: -1, sortOrder: 1, createdAt: 1 }).lean(),
+      getDoctorProfileFields(doctor._id).catch(() => ({})),
+    ]);
+    ldScript = jsonLdScript(buildDoctorGraph({ doctor, clinics, fields, bookingPage, baseUrl }));
+  } catch { /* no structured data if it can't be built */ }
+  const JsonLd = ldScript ? (
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ldScript }} />
+  ) : null;
+
   // If no page exists yet, show a plain default page
   if (!bookingPage || !bookingPage.sections || bookingPage.sections.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-white to-emerald-50 flex items-center justify-center">
+        {JsonLd}
         <div className="max-w-md mx-auto px-4 py-16 text-center">
           <div className="w-20 h-20 bg-[#096b17]/10 rounded-full mx-auto mb-6 flex items-center justify-center">
             {doctor.profileImage ? (
@@ -129,5 +149,10 @@ export default async function SubdomainSitePage({ params }) {
   // Convert doctor to plain object for client components
   const doctorData = JSON.parse(JSON.stringify(doctor));
 
-  return <SiteBody doctor={doctorData} bookingPage={bookingPage} />;
+  return (
+    <>
+      {JsonLd}
+      <SiteBody doctor={doctorData} bookingPage={bookingPage} />
+    </>
+  );
 }
