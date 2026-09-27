@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import { requirePracticeOsDoctor, assertAiAccess } from '@/lib/practice-os/access';
+import { requirePracticeOsDoctor, hasOptimizationAccess, hasAiAccess } from '@/lib/practice-os/access';
 import { assertHasCredits, chargeAiCredits } from '@/lib/practice-os/aiCredits';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 import { structureContent } from '@/lib/practice-os/ai';
@@ -16,7 +16,11 @@ export async function POST(request, { params }) {
   try {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
-    await assertAiAccess(doctor._id);
+    // Same gate as the map generate endpoints: the optimization-cohort GRANT or
+    // the paid AI tier. (Previously assertAiAccess here blocked granted-cohort
+    // doctors, so "Regenerate with AI" 402'd even though generating the map worked.)
+    const allowed = (await hasOptimizationAccess(doctor._id)) || (await hasAiAccess(doctor._id));
+    if (!allowed) return NextResponse.json({ success: false, error: 'PaymentRequired' }, { status: 402 });
     if (!process.env.OPENAI_API_KEY) return NextResponse.json({ success: false, error: 'AI is not configured.' }, { status: 500 });
     await assertHasCredits(doctor._id);
 
