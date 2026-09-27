@@ -7,33 +7,12 @@ import PosNav from '@/components/practice-os/PosNav';
 // §11/§C — the early-access application. One question per page with a progress
 // bar; the founder reviews the answers and grants access. States: questionnaire
 // / submitted / pending / granted.
+// Warm-audience flow: applicants have already seen a demo, so we keep the request
+// to the three essentials and grant access manually after the founder is emailed.
 const QUESTIONS = [
   { id: 'whatsapp', type: 'phone', q: 'Your WhatsApp number', body: 'We’ll send your daily reminders and updates here.', ph: '10-digit number' },
   { id: 'specialty', type: 'text', q: 'What is your specialty?', ph: 'e.g. Surgical gastroenterology' },
-  { id: 'practice_status', type: 'choice', q: 'Your current clinical practice status', options: ['Own clinic', 'Rented or shared clinic', 'Setting up', 'None of the above'] },
-  { id: 'gbp_status', type: 'choice', q: 'Do you currently have a Google Business Profile?', options: ['No', 'Yes, but inactive', 'Yes, active'] },
-  { id: 'website_status', type: 'choice', q: 'Do you currently have a website?', options: ['No', 'Yes, outdated', 'Yes, active'] },
-  { id: 'buy_domain', type: 'choice', q: 'Are you willing to purchase your own domain as part of this process?', options: ['Yes', 'No'] },
-  { id: 'results_timeline', type: 'text', q: 'How soon are you expecting results to show up when it comes to organic search?', ph: 'Your honest expectation' },
-  { id: 'time_fit', type: 'choice', q: 'Beyond setup, this is an ongoing commitment — about 10 minutes a day, or roughly 60 minutes a week, for several months. How will you realistically fit that in?', options: ['Daily', 'Every other day', 'Weekly'] },
-  { id: 'long_horizon', type: 'choice', q: 'Do you see yourself working on this for months to years before any visible results?', options: ['Yes', 'No', 'Not sure'] },
-  { id: 'perception', type: 'textarea', q: "What is your honest perception of digital presence for doctors right now — necessary, overrated, or something you haven\'t fully figured out yet?" },
-  { id: 'fix_first', type: 'textarea', q: 'If you had to fix one thing first — your GBP, your website, or your reviews — which would it be, and why?' },
-  { id: 'tier_matters', type: 'textarea', q: 'Do you think organic search actually matters for a practice in a tier 2 or tier 3 city, or is it mainly a metro thing in your view?' },
-  { id: 'onetime_or_ongoing', type: 'textarea', q: 'Do you see this as a one-time fix, or something that needs ongoing maintenance? Be honest — what you actually believe, not what sounds right.' },
-  { id: 'biggest_challenge', type: 'textarea', q: 'What is the single biggest challenge you personally face with Google or online visibility for your practice?' },
-  { id: 'change_one_thing', type: 'textarea', q: 'If you could change one thing about how doctors currently handle their online presence, what would it be?' },
-  { id: 'why_founding', type: 'textarea', q: 'Why should you be one of the 5 founding doctors?', note: 'A few honest lines is enough (min 50 characters).', minChars: 50 },
-  { id: 'agreement', type: 'agreement', q: 'Case Study Participation Agreement',
-    // **bold** is emphasised. Points in `optionalIndexes` are NOT required to submit.
-    optionalIndexes: [4],
-    points: [
-      'I understand **Dominate Organic Search** is provided to me **at no cost for 4 weeks** as part of a founding case study — **not a giveaway**.',
-      'I agree to **genuinely implement** the system on my own practice.',
-      'If my account goes **dormant**, CuraGo will personally reach out to help me get back on track. **If I do not respond or implement, CuraGo holds the right to withdraw access to Dominate Organic Search.**',
-      'I agree to provide **honest feedback**, and I **consent** to CuraGo using my feedback, testimonials, screenshots and results for website, educational, marketing and case-study purposes.',
-      'I agree to **sit for a short live video session** with CuraGo to discuss my experience with the product and how CuraGo can improve it.',
-    ] },
+  { id: 'why_founding', type: 'textarea', q: 'Why do you want access?', note: 'A few honest lines is enough.' },
 ];
 
 export default function GetAccessPage() {
