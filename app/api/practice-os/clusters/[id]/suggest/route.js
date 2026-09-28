@@ -51,6 +51,9 @@ export async function POST(request, { params }) {
       }
     }
     await cluster.save();
+    // This disease's treatments changed → clear stale day content so future days
+    // regenerate from the updated map.
+    try { const { clearDayContent } = await import('@/lib/practice-os/dayContent'); await clearDayContent(doctor._id); } catch { /* best-effort */ }
     const { remaining } = await chargeAiCredits(doctor._id, { label: 'cluster-suggest', tokens: gen.usage?.total_tokens || 0 });
     return NextResponse.json({ success: true, cluster: cluster.toObject(), creditsRemaining: remaining });
   } catch (error) {

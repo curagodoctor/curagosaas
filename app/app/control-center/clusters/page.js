@@ -114,6 +114,14 @@ function ClustersInner() {
       setNewTreat('');
     }
     if (treatments.length < PER_DISEASE_MIN) { setGenErr('Add at least one treatment for this disease before approving.'); return; }
+    // A full map of 20 treatments is required before finishing.
+    if (idx >= total - 1) {
+      const totalAfter = treatTotal - (cur.treatments?.length || 0) + treatments.length;
+      if (totalAfter < TOTAL_TREATMENT_CAP) {
+        setGenErr(`You need ${TOTAL_TREATMENT_CAP} treatments in total before finishing — you have ${totalAfter}. Add more across your diseases first.`);
+        return;
+      }
+    }
     setGenErr('');
     await save(cur._id, { name: cur.name, treatments, approved: true });
     // Last disease approved → straight into the content/control center.
@@ -289,7 +297,7 @@ function TreatmentsReview({ clusters, setClusters, router, save, genErr, setGenE
   };
   const approveAll = async () => {
     const items = (clusters || []).filter((c) => (c.name || '').trim());
-    if (!items.length) { setGenErr('Add at least one treatment before approving.'); return; }
+    if (items.length < TOTAL_TREATMENT_CAP) { setGenErr(`Add all ${TOTAL_TREATMENT_CAP} treatments before continuing — you have ${items.length}.`); return; }
     setGenErr(''); setBusy('approve');
     try {
       for (const c of items) {
@@ -332,11 +340,21 @@ function TreatmentsReview({ clusters, setClusters, router, save, genErr, setGenE
         </div>
 
         {genErr && <div style={{ fontSize: 12.5, color: '#b42318', marginTop: 12 }}>{genErr}</div>}
-        <div className="flex flex-wrap gap-2.5 items-center mt-5">
-          <button onClick={approveAll} disabled={busy === 'approve'} style={{ background: 'var(--orange)', color: '#fff', border: 0, fontWeight: 700, fontSize: 16, padding: '16px 30px', borderRadius: 999, cursor: 'pointer', whiteSpace: 'nowrap', opacity: busy === 'approve' ? 0.7 : 1 }}>
-            {busy === 'approve' ? 'Saving…' : 'Approve all & let’s begin →'}
-          </button>
-        </div>
+        {(() => {
+          const validCount = (clusters || []).filter((c) => (c.name || '').trim()).length;
+          const enough = validCount >= TOTAL_TREATMENT_CAP;
+          return (
+            <div className="flex flex-wrap gap-2.5 items-center mt-5">
+              <button onClick={approveAll} disabled={busy === 'approve' || !enough}
+                style={{ background: 'var(--orange)', color: '#fff', border: 0, fontWeight: 700, fontSize: 16, padding: '16px 30px', borderRadius: 999, cursor: (busy === 'approve' || !enough) ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: (busy === 'approve' || !enough) ? 0.5 : 1 }}>
+                {busy === 'approve' ? 'Saving…' : 'Approve all & let’s begin →'}
+              </button>
+              <span style={{ ...mono, fontSize: 12.5, color: enough ? 'var(--green)' : 'var(--orange)' }}>
+                {validCount} / {TOTAL_TREATMENT_CAP}{enough ? ' ✓' : ` · add ${TOTAL_TREATMENT_CAP - validCount} more to continue`}
+              </span>
+            </div>
+          );
+        })()}
       </div>
     </div>
     </>

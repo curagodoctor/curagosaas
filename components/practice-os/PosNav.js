@@ -15,7 +15,6 @@ const PRIMARY = (withPack) => [
   ['Profile', withPack('/app/control-center/profile')],
 ];
 const MORE = (withPack) => [
-  ['All packs', '/app/control-center'],
   ['Contacts', '/admin/dashboard/contacts'],
   ['Workspace', withPack('/app/control-center/workspace')],
   ['Content Planner', withPack('/app/control-center/planner')],

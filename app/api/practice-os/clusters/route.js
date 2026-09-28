@@ -44,6 +44,8 @@ export async function POST(request) {
       doctorId: doctor._id, name: clean, slug: slugify(clean), kind: isTreatment ? 'treatment' : 'disease',
       treatments: isTreatment ? [{ name: clean, source: 'manual' }] : [], order: count,
     });
+    // The map changed → clear stale day content so future days regenerate from it.
+    try { const { clearDayContent } = await import('@/lib/practice-os/dayContent'); await clearDayContent(doctor._id); } catch { /* best-effort */ }
     return NextResponse.json({ success: true, cluster });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
