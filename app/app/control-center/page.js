@@ -139,32 +139,39 @@ export default function ControlCenter() {
           : <>Your control center. Finish your setup and start building your organic presence — a little each day.</>}
       </p>
 
-      {/* Primary status band — the Dominate Organic Search pack */}
+      {/* 1 · Heat map — the first thing under the welcome. Today sits left-of-
+          middle with future days visible to its right (see StreakCalendar). */}
+      <div className="mt-6">
+        <StreakCalendar />
+      </div>
+
+      {/* 2 · Dominate Organic Search — the prominent status band, given real
+          weight in the dashboard. */}
       {(accessStatus === 'none' || accessStatus === 'denied') && (
-        <div className="pos-card p-5 mt-6" style={{ borderColor: 'var(--orange)', background: 'var(--orange-soft)' }}>
+        <div className="pos-card p-6 sm:p-7 mt-5" style={{ borderColor: 'var(--orange)', background: 'var(--orange-soft)' }}>
           <span className="pos-label" style={{ color: 'var(--orange)' }}>Dominate Organic Search · Early access</span>
-          <p className="text-[16px] font-semibold text-[var(--ink)] mt-1">Unlock your daily organic-growth engine</p>
-          <p className="text-[13.5px] text-[var(--muted)] mt-1" style={{ maxWidth: '62ch', lineHeight: 1.55 }}>
+          <p className="text-[19px] sm:text-[21px] font-semibold text-[var(--ink)] mt-1.5" style={{ letterSpacing: '-0.02em' }}>Unlock your daily organic-growth engine</p>
+          <p className="text-[14px] text-[var(--muted)] mt-1.5" style={{ maxWidth: '62ch', lineHeight: 1.55 }}>
             Free for the first 4 weeks, then ₹5,000 / 4 weeks — founder price, locked in. We prepare your practice&apos;s content daily; you just review and publish. Cancel anytime; your website and content stay yours.
           </p>
-          <button onClick={() => router.push('/app/control-center/get-access')} className="pos-action mt-3.5">{accessStatus === 'denied' ? 'Apply again →' : 'Get early access →'}</button>
+          <button onClick={() => router.push('/app/control-center/get-access')} className="pos-action mt-4">{accessStatus === 'denied' ? 'Apply again →' : 'Get early access →'}</button>
         </div>
       )}
       {accessStatus === 'pending' && (
-        <div className="pos-card p-5 mt-6 flex items-start gap-3" style={{ borderColor: 'var(--orange)', background: 'var(--orange-soft)' }}>
+        <div className="pos-card p-6 sm:p-7 mt-5 flex items-start gap-3" style={{ borderColor: 'var(--orange)', background: 'var(--orange-soft)' }}>
           <span className="pos-label shrink-0" style={{ background: 'var(--orange)', color: '#fff', padding: '3px 8px', borderRadius: 6 }}>Under review</span>
           <div>
-            <p className="text-[15px] font-semibold text-[var(--ink)]">Dominate Organic Search</p>
-            <p className="text-[13.5px] text-[var(--muted)] mt-0.5" style={{ maxWidth: '58ch' }}>Your application is in — we&apos;re reviewing your answers and will reach out within 24 hours if you&apos;re a fit for the founding cohort. Meanwhile, keep your website and Google profile polished.</p>
+            <p className="text-[17px] font-semibold text-[var(--ink)]">Dominate Organic Search</p>
+            <p className="text-[14px] text-[var(--muted)] mt-1" style={{ maxWidth: '58ch', lineHeight: 1.55 }}>Your application is in — we&apos;re reviewing your answers and will reach out within 24 hours if you&apos;re a fit for the founding cohort. Meanwhile, keep your website and Google profile polished.</p>
           </div>
         </div>
       )}
       {accessStatus === 'granted' && (
-        <div className="pos-card p-5 mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)' }}>
+        <div className="pos-card p-6 sm:p-7 mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)' }}>
           <div>
             <span className="pos-label" style={{ color: 'var(--green)' }}>Your pack · active</span>
-            <p className="text-[15px] font-semibold text-[var(--ink)] mt-1">Dominate Organic Search{cycleDaysLeft != null ? ` — ${cycleDaysLeft} days left this cycle` : ''}</p>
-            <p className="text-[13px] text-[var(--muted)] mt-0.5">
+            <p className="text-[19px] sm:text-[22px] font-semibold text-[var(--ink)] mt-1.5" style={{ letterSpacing: '-0.02em' }}>Dominate Organic Search{cycleDaysLeft != null ? ` — ${cycleDaysLeft} days left this cycle` : ''}</p>
+            <p className="text-[13.5px] text-[var(--muted)] mt-1" style={{ maxWidth: '58ch', lineHeight: 1.55 }}>
               {diseasesReviewed
                 ? 'We prepare your practice’s work; you review and approve it. 28-day cycle.'
                 : 'First, review the diseases you treat and their treatments — everything we draft is built from these.'}
@@ -174,9 +181,8 @@ export default function ControlCenter() {
         </div>
       )}
 
-      {/* Pending tasks — the pickable backlog across started packs. For a
-          calendar-paced pack this accumulates a task per day; sits up top as the
-          first actionable thing. */}
+      {/* Pending tasks — the pickable backlog across started packs. The first
+          actionable thing right under the pack band. */}
       {pendingTasks.length > 0 && diseasesReviewed && (
         <div className="mt-6">
           <button onClick={() => setPendingOpen((v) => !v)} className="w-full flex items-center justify-between mb-3 group" aria-expanded={pendingOpen}>
@@ -203,122 +209,85 @@ export default function ControlCenter() {
         </div>
       )}
 
-      {/* Work awaiting review — only once access is granted (never while under
-          review), so leftover drafts don't leak into a pending doctor's view. */}
-      <div className="mt-4 space-y-4">
-        {accessStatus === 'granted' && diseasesReviewed && <PendingWorkPrompt />}
-        <EngagementNudges />
-      </div>
-
-      {/* Your tools — the primary navigation, as a responsive card grid.
-          Website Builder leads (green, full-width on desktop), the rest follow. */}
-      <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)] mt-8 mb-3">Your tools</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-        {/* Website Builder — the headline tool, spans full width. */}
-        <Link
-          href="/admin/dashboard"
-          className="col-span-2 sm:col-span-3 rounded-2xl p-5 sm:p-6 block hover:shadow-lg transition-shadow group"
-          style={{ background: 'linear-gradient(135deg, var(--green), #053d0b)', color: '#fff' }}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="pos-label" style={{ color: 'rgba(255,255,255,.72)' }}>Your website</p>
-              <p className="font-semibold text-[18px] sm:text-[20px] mt-1 leading-snug">Open Website Builder</p>
-              <p className="text-[12.5px] sm:text-[13.5px] mt-1.5 leading-relaxed" style={{ color: 'rgba(255,255,255,.85)', maxWidth: '46ch' }}>
-                Build and edit your patient-facing site — pages, blog, bookings and the AI editor.
-              </p>
-            </div>
-            <span className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:translate-x-0.5" style={{ background: 'rgba(255,255,255,.15)' }}>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-            </span>
-          </div>
-        </Link>
-
-        {[
-          { label: 'Website enquiries', href: '/app/control-center/leads', desc: 'Request-a-call-back form leads', accent: 'var(--orange)', soft: 'var(--orange-soft)', d: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
-          { label: 'Content Planner', href: '/app/control-center/planner', desc: 'Plan ideas → scripts → posts', accent: 'var(--orange)', soft: 'var(--orange-soft)', d: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-          { label: 'Google Business Profile', href: '/app/control-center/gbp', desc: 'Get found on Google Maps', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z' },
-          { label: 'Diseases & treatments', href: '/app/control-center/clusters', desc: 'Review what you treat', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-          { label: 'Workspace', href: '/app/control-center/workspace', desc: 'Private notes as you build', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' },
-          { label: 'Schedule', href: '/app/control-center/schedule', desc: 'When your next task lands', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-          { label: 'My Profile', href: '/app/control-center/profile', desc: 'Your source-of-truth details', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
-          { label: 'Leaderboard', href: '/app/control-center/leaderboard', desc: 'Where your cohort stands', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-        ].map((t) => (
-          <Link key={t.href} href={t.href} className="pos-card p-4 sm:p-5 flex flex-col hover:shadow-md transition-shadow group">
-            <span className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: t.soft }}>
-              <svg className="w-[18px] h-[18px]" style={{ color: t.accent }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d={t.d} /></svg>
-            </span>
-            <span className="text-[14.5px] font-semibold text-[var(--ink)] leading-snug">{t.label}</span>
-            <span className="text-[12px] text-[var(--muted)] mt-0.5 leading-snug">{t.desc}</span>
-          </Link>
-        ))}
-      </div>
-
-      {/* Progress + status — two columns on desktop, stacked on mobile.
-          Actionable items (today's mission) come first on mobile. */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-6 lg:gap-8 mt-8">
-        <div className="min-w-0 order-2 lg:order-1 space-y-4">
-          <PublishedContent />
-          <WebsiteStats />
-          <StreakCalendar />
-          {/* Builder Packs — only real curriculum packs. The Dominate Organic
-              Search daily engine is optimization-tier and is NOT a pack: it's the
-              chatbot content engine (surfaced as Pending tasks above), so it's
-              excluded here. */}
-          {owned.filter((p) => p.tier !== 'optimization').length > 0 && (
-            <div>
-              <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)] mb-3 mt-2">Your packs</h2>
-              <div className="flex flex-col gap-5">
-                {owned.filter((p) => p.tier !== 'optimization').map((p) => <PackCard key={p.id} pack={p} />)}
+      {/* 3 · Today's nudge (smaller) + AI credits, side by side. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 items-start">
+        <div className="min-w-0"><EngagementNudges /></div>
+        {credits && (
+          <div className="pos-card p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="pos-label" style={{ color: 'var(--green)' }}>AI credits</p>
+                <p className="text-[12px] text-[var(--muted)] mt-0.5">{credits.unlimited ? 'Unlimited access' : 'Resets daily'}</p>
+              </div>
+              <div className="text-right">
+                <span className="pos-num text-[22px] text-[var(--ink)]">{credits.unlimited ? '∞' : credits.remaining}</span>
+                {!credits.unlimited && credits.dailyLimit ? <span className="text-[12px] text-[var(--muted)]"> / {credits.dailyLimit}</span> : null}
               </div>
             </div>
-          )}
+            {!credits.unlimited && credits.dailyLimit ? (
+              <div className="pos-meter mt-3"><span style={{ width: `${Math.min(100, Math.round((credits.remaining / credits.dailyLimit) * 100))}%` }} /></div>
+            ) : null}
+          </div>
+        )}
+      </div>
+
+      {/* Work awaiting review + scheduled events (granted doctors only). */}
+      {accessStatus === 'granted' && diseasesReviewed && <div className="mt-4"><PendingWorkPrompt /></div>}
+      <ScheduledCard scheduled={scheduled} />
+
+      {/* 4 · Published content */}
+      <div className="mt-6"><PublishedContent /></div>
+
+      {/* 5 · Your website status */}
+      <div className="mt-4"><WebsiteStats /></div>
+
+      {/* 6 · Leaderboard */}
+      <div className="mt-4"><LeaderboardCard lb={leaderboard} /></div>
+
+      {/* Builder Packs — only real curriculum packs (the Dominate Organic Search
+          daily engine is optimization-tier, surfaced above, not a pack). */}
+      {owned.filter((p) => p.tier !== 'optimization').length > 0 && (
+        <div className="mt-6">
+          <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)] mb-3">Your packs</h2>
+          <div className="flex flex-col gap-5">
+            {owned.filter((p) => p.tier !== 'optimization').map((p) => <PackCard key={p.id} pack={p} />)}
+          </div>
         </div>
+      )}
 
-        <aside className="min-w-0 order-1 lg:order-2">
-          <div className="lg:sticky lg:top-6 space-y-4">
-            {/* (Today's task lives in the "Pending tasks" section up top — it opens
-                the new /day interface, so no duplicate mission card here.) */}
-            <p className="pos-label">Your progress</p>
-
-            {/* XP + streak */}
-            <div className="pos-card p-5" style={{ background: 'var(--green)', color: '#fff', border: 'none' }}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="pos-label" style={{ color: 'rgba(255,255,255,.7)' }}>Total XP</span>
-                <span className="pos-num text-lg">{totalXp.toLocaleString('en-IN')}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="pos-label" style={{ color: 'rgba(255,255,255,.7)' }}>Best streak</span>
-                <span className="text-[15px] font-medium">{bestStreak > 0 ? `🔥 ${bestStreak}` : '—'}</span>
-              </div>
+      {/* 7 · Your tools — 9 uniform tiles, a clean 3×3 on mobile and a single
+          launcher row on desktop. Website Builder leads (green); Total XP & best
+          streak closes the set as a stat tile. */}
+      <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)] mt-8 mb-3">Your tools</h2>
+      <div className="grid grid-cols-3 lg:grid-cols-9 gap-2.5 sm:gap-3">
+        {[
+          { label: 'Website Builder', href: '/admin/dashboard', primary: true, d: 'M3 5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM3 9h18' },
+          { label: 'Website enquiries', href: '/app/control-center/leads', accent: 'var(--orange)', soft: 'var(--orange-soft)', d: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
+          { label: 'Content Planner', href: '/app/control-center/planner', accent: 'var(--orange)', soft: 'var(--orange-soft)', d: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+          { label: 'Google Business Profile', href: '/app/control-center/gbp', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z' },
+          { label: 'Diseases & treatments', href: '/app/control-center/clusters', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+          { label: 'Workspace', href: '/app/control-center/workspace', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' },
+          { label: 'Schedule', href: '/app/control-center/schedule', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+          { label: 'My Profile', href: '/app/control-center/profile', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
+          { stat: true },
+        ].map((t, i) => (
+          t.stat ? (
+            <div key="xp" className="rounded-2xl p-3 flex flex-col items-center justify-center text-center gap-1 min-h-[112px]" style={{ background: 'linear-gradient(135deg, var(--green), #053d0b)', color: '#fff' }}>
+              <span className="pos-label" style={{ color: 'rgba(255,255,255,.72)', fontSize: 9 }}>Total XP</span>
+              <span className="pos-num text-[24px] leading-none">{totalXp.toLocaleString('en-IN')}</span>
+              <span className="text-[10.5px] leading-tight" style={{ color: 'rgba(255,255,255,.85)' }}>{bestStreak > 0 ? `🔥 ${bestStreak} best streak` : 'Best streak —'}</span>
             </div>
-
-            {/* AI credits */}
-            {credits && (
-              <div className="pos-card p-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="pos-label" style={{ color: 'var(--green)' }}>AI credits</p>
-                    <p className="text-[12px] text-[var(--muted)] mt-0.5">{credits.unlimited ? 'Unlimited access' : 'Resets daily'}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="pos-num text-[22px] text-[var(--ink)]">{credits.unlimited ? '∞' : credits.remaining}</span>
-                    {!credits.unlimited && credits.dailyLimit ? <span className="text-[12px] text-[var(--muted)]"> / {credits.dailyLimit}</span> : null}
-                  </div>
-                </div>
-                {!credits.unlimited && credits.dailyLimit ? (
-                  <div className="pos-meter mt-3"><span style={{ width: `${Math.min(100, Math.round((credits.remaining / credits.dailyLimit) * 100))}%` }} /></div>
-                ) : null}
-              </div>
-            )}
-
-            {/* Scheduled events */}
-            <ScheduledCard scheduled={scheduled} />
-
-            {/* Leaderboard */}
-            <LeaderboardCard lb={leaderboard} />
-          </div>
-        </aside>
+          ) : (
+            <Link key={t.href} href={t.href}
+              className="rounded-2xl p-3 flex flex-col items-center justify-start text-center gap-2 min-h-[112px] hover:shadow-md transition-shadow group"
+              style={t.primary ? { background: 'linear-gradient(135deg, var(--green), #053d0b)', color: '#fff' } : { background: 'var(--card)', border: '1px solid var(--rule-soft)' }}>
+              <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: t.primary ? 'rgba(255,255,255,.15)' : t.soft }}>
+                <svg className="w-5 h-5" style={{ color: t.primary ? '#fff' : t.accent }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d={t.d} /></svg>
+              </span>
+              <span className="text-[11.5px] font-semibold leading-tight" style={{ color: t.primary ? '#fff' : 'var(--ink)' }}>{t.label}</span>
+            </Link>
+          )
+        ))}
       </div>
 
       {/* Notes/workspace + assistant now mount globally in the app layout via the

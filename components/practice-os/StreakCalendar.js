@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // §12 — Anki-style streak calendar. A month grid and a year heatmap of the days
 // the doctor completed work, plus current/longest streak. Activity comes from
@@ -110,17 +110,34 @@ function MonthGrid({ days, todayKey, monthOffset, setMonthOffset }) {
 }
 
 function YearHeatmap({ days, todayKey }) {
-  // 53 week-columns ending with the current week; rows = Sun..Sat. Dates are
-  // stepped with setDate (calendar-accurate — no millisecond drift) and keyed in
-  // IST to match the activity API.
+  // Week-columns of Sun..Sat cells. Unlike a plain GitHub graph (which ends at
+  // today), we also render FUTURE weeks so the doctor can see the days ahead — and
+  // we auto-scroll so TODAY lands left-of-middle (where the arrow points), not
+  // pinned to the far-right corner. Dates stepped with setDate (calendar-accurate)
+  // and keyed in IST to match the activity API.
+  const scrollRef = useRef(null);
+  const PAST_WEEKS = 40;    // history to the left
+  const FUTURE_WEEKS = 13;  // upcoming days visible to the right
+  const TOTAL_WEEKS = PAST_WEEKS + FUTURE_WEEKS;
+  const CELL = 11;
+  const GAP = 3;
+  const COL = CELL + GAP;   // one week-column's horizontal stride
+  const LABEL_W = 26;
+
   const today = new Date(); today.setHours(12, 0, 0, 0);
   const start = new Date(today);
-  start.setDate(start.getDate() - start.getDay() - 52 * 7); // Sunday, 52 weeks back
+  start.setDate(start.getDate() - start.getDay() - (PAST_WEEKS - 1) * 7); // Sunday, PAST_WEEKS back
   const weeks = [];
   const cursor = new Date(start);
-  for (let w = 0; w < 53; w++) {
+  let todayCol = 0;
+  for (let w = 0; w < TOTAL_WEEKS; w++) {
     const col = [];
-    for (let d = 0; d < 7; d++) { col.push(new Date(cursor)); cursor.setDate(cursor.getDate() + 1); }
+    for (let d = 0; d < 7; d++) {
+      const dt = new Date(cursor);
+      col.push(dt);
+      if (keyOf(dt) === todayKey) todayCol = w;
+      cursor.setDate(cursor.getDate() + 1);
+    }
     weeks.push(col);
   }
   // Month label above the column where a new month first appears.
@@ -131,21 +148,36 @@ function YearHeatmap({ days, todayKey }) {
   });
   // GitHub shows a weekday label on alternating rows (Mon / Wed / Fri).
   const WEEKDAYS = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
-  const LABEL_W = 26;
+
+  // Position today at ~1/3 from the left of the visible area, so past scrolls
+  // left and the future is visible to the right.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const target = LABEL_W + todayCol * COL - el.clientWidth * 0.33;
+    el.scrollLeft = Math.max(0, target);
+  }, [todayCol]);
+
+  const todayX = LABEL_W + todayCol * COL + CELL / 2; // centre of today's column
+
   return (
-    <div className="overflow-x-auto">
-      <div style={{ minWidth: 'max-content' }}>
+    <div className="overflow-x-auto" ref={scrollRef}>
+      <div style={{ minWidth: 'max-content', position: 'relative', paddingTop: 15 }}>
+        {/* The "Today" arrow, sitting above today's column. */}
+        <div className="text-[9px] font-semibold" style={{ position: 'absolute', top: 0, left: todayX, transform: 'translateX(-50%)', color: 'var(--orange)', whiteSpace: 'nowrap' }}>
+          Today ▾
+        </div>
         {/* Month labels, offset by the weekday-label gutter. */}
         <div className="flex gap-[3px] mb-1" style={{ paddingLeft: LABEL_W }}>
           {monthLabels.map((lbl, ci) => (
-            <div key={ci} style={{ width: 11 }} className="text-[8px] text-[var(--muted)] overflow-visible whitespace-nowrap">{lbl}</div>
+            <div key={ci} style={{ width: CELL }} className="text-[8px] text-[var(--muted)] overflow-visible whitespace-nowrap">{lbl}</div>
           ))}
         </div>
         <div className="flex gap-[3px]">
           {/* Weekday labels down the left, like GitHub. */}
           <div className="flex flex-col gap-[3px]" style={{ width: LABEL_W }}>
             {WEEKDAYS.map((d, ri) => (
-              <div key={ri} style={{ height: 11 }} className="text-[8px] leading-[11px] text-[var(--muted)]">{d}</div>
+              <div key={ri} style={{ height: CELL }} className="text-[8px] leading-[11px] text-[var(--muted)]">{d}</div>
             ))}
           </div>
           {weeks.map((col, ci) => (
@@ -157,8 +189,15 @@ function YearHeatmap({ days, todayKey }) {
                 const isToday = k === todayKey;
                 return (
                   <div key={ri} className="rounded-[2px]"
-                    style={{ width: 11, height: 11, background: future ? 'transparent' : shade(count), outline: isToday ? '1.5px solid var(--orange)' : (future ? 'none' : '1px solid rgba(16,26,19,0.04)'), outlineOffset: isToday ? '1px' : '-1px' }}
-                    title={`${k}: ${count} completed${isToday ? ' · today' : ''}`} />
+                    style={{
+                      width: CELL, height: CELL,
+                      background: future ? 'transparent' : shade(count),
+                      // Future days are shown as faint empty slots so the doctor can
+                      // see what's ahead; today gets the orange ring.
+                      outline: isToday ? '1.5px solid var(--orange)' : (future ? '1px solid rgba(16,26,19,0.06)' : '1px solid rgba(16,26,19,0.04)'),
+                      outlineOffset: isToday ? '1px' : '-1px',
+                    }}
+                    title={`${k}: ${future ? 'upcoming' : `${count} completed`}${isToday ? ' · today' : ''}`} />
                 );
               })}
             </div>
@@ -168,7 +207,7 @@ function YearHeatmap({ days, todayKey }) {
         <div className="flex items-center gap-1 justify-end mt-2" style={{ fontSize: 8, color: 'var(--muted)' }}>
           <span>Less</span>
           {['var(--rule-soft)', 'rgba(9,107,23,0.30)', 'rgba(9,107,23,0.55)', 'var(--green)'].map((bg, i) => (
-            <span key={i} className="rounded-[2px]" style={{ width: 11, height: 11, background: bg, display: 'inline-block' }} />
+            <span key={i} className="rounded-[2px]" style={{ width: CELL, height: CELL, background: bg, display: 'inline-block' }} />
           ))}
           <span>More</span>
         </div>
