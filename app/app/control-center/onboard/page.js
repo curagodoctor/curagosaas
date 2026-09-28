@@ -887,7 +887,7 @@ function Wizard() {
           <div>
             <p className="pos-label" style={{ color: 'var(--green)' }}>Google Business Profile</p>
             <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Set up your Google Business Profile</h1>
-            <p className="text-sm text-[var(--muted)] mb-4">You will set up your own GBP account and make changes in that. We will guide you, provide content suggestions and mark which fields are dangerous <b>before</b> you touch them. Start with the mandatory block.</p>
+            <p className="text-sm text-[var(--muted)] mb-4">You will set up your own GBP account and make changes in that. We will guide you, provide content suggestions and mark which fields are dangerous <b>before</b> you touch them.</p>
 
             {/* The guide handles its own Back / Next / Skip / Finish — finishing
                 the last block advances to the commitment check. */}

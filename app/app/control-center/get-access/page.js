@@ -12,7 +12,7 @@ import PosNav from '@/components/practice-os/PosNav';
 const QUESTIONS = [
   { id: 'whatsapp', type: 'phone', q: 'Your WhatsApp number', body: 'We’ll send your daily reminders and updates here.', ph: '10-digit number' },
   { id: 'specialty', type: 'text', q: 'What is your specialty?', ph: 'e.g. Surgical gastroenterology' },
-  { id: 'why_founding', type: 'textarea', q: 'Why do you want access?', note: 'A few honest lines is enough.' },
+  { id: 'why_founding', type: 'textarea', q: 'Why do you want access?' },
 ];
 
 export default function GetAccessPage() {
