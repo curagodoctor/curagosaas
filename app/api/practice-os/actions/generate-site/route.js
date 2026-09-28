@@ -7,7 +7,13 @@ import { WEBSITE_RULES } from '@/lib/practice-os/contentRules';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 import BookingPage from '@/models/BookingPage';
 import Doctor from '@/models/Doctor';
+import PracticeOsProfile from '@/models/practice-os/PracticeOsProfile';
 import { buildDefaultSections } from '@/lib/defaultTemplate';
+
+// Curated placeholder hero images (brand-coloured, neutral) used when a doctor
+// skips the optional landscape photos — so the site still generates with a clean
+// hero they can replace later.
+const DEFAULT_HERO_IMAGES = ['/placeholders/hero-1.svg', '/placeholders/hero-2.svg', '/placeholders/hero-3.svg'];
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -47,6 +53,20 @@ export async function POST(request) {
     }
 
     const doc = await Doctor.findById(doctor._id).lean();
+
+    // Photo resolution (independent slots — a portrait profile photo must NEVER
+    // land in the wide hero, where it crops badly):
+    //  - profile photo  → this request, else the saved doctor profile photo.
+    //  - hero photos     → this request's landscape uploads, else the ones saved
+    //    during onboarding, else neutral placeholder hero images.
+    if (!profileImageUrl && doc?.profileImage) profileImageUrl = doc.profileImage;
+    if (!clinicPhotos.length) {
+      try {
+        const prof = await PracticeOsProfile.findOne({ doctorId: doctor._id }).select('variables.clinicPhotos').lean();
+        (prof?.variables?.clinicPhotos || []).forEach((u) => { if (typeof u === 'string' && /^https?:\/\//i.test(u)) clinicPhotos.push(u); });
+      } catch { /* best-effort */ }
+    }
+    if (!clinicPhotos.length) clinicPhotos.push(...DEFAULT_HERO_IMAGES);
 
     // Guard: never overwrite a website the doctor has already customized. If the
     // home page exists and is user-edited, refuse unless they explicitly force it.
@@ -152,9 +172,10 @@ export async function POST(request) {
         if (s.type === 'hero_carousel' && clinicPhotos.length) {
           s.config.images = clinicPhotos.map((u) => ({ url: u, alt: '', caption: '' }));
         }
-        if (s.type === 'doctor_profile') {
-          if (profileImageUrl) s.config.imageUrl = profileImageUrl;
-          else if (clinicPhotos[0] && !s.config.imageUrl) s.config.imageUrl = clinicPhotos[0];
+        if (s.type === 'doctor_profile' && profileImageUrl) {
+          // Only the real profile photo — never a hero/clinic image (which may be
+          // a landscape placeholder), so the two slots never cross over.
+          s.config.imageUrl = profileImageUrl;
         }
       }
     }

@@ -628,17 +628,17 @@ function Wizard() {
           <div>
             <p className="pos-label" style={{ color: 'var(--green)' }}>Photos</p>
             <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Add your photos.</h1>
-            <p className="text-sm text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '58ch' }}>Real photos are required to build your website — they can&apos;t be added later. Please add them now.</p>
+            <p className="text-sm text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '58ch' }}>Your profile photo is required. Website (landscape) photos are optional — if you skip them, we&apos;ll use a clean placeholder for now and you can add your own later.</p>
 
             {/* Website / hero photos */}
             <div className="flex items-baseline gap-2 mb-1">
               <p className="pos-label" style={{ margin: 0 }}>Website photos</p>
-              <span className="pos-label" style={{ color: 'var(--orange)' }}>Required · at least 1</span>
+              <span className="pos-label" style={{ color: 'var(--muted)' }}>Optional</span>
             </div>
             <p className="text-[12.5px] text-[var(--muted)] mb-2.5" style={{ lineHeight: 1.55, maxWidth: '60ch' }}>
               These fill the <strong style={{ color: 'var(--ink)' }}>hero section</strong> at the top of your site, so they must be <strong style={{ color: 'var(--ink)' }}>landscape</strong> (wide, not tall).
               Aim for <strong style={{ color: 'var(--ink)' }}>1600×900 px (16:9)</strong>, minimum <strong style={{ color: 'var(--ink)' }}>1200×675 px</strong>, sharp and well-lit, JPG or PNG up to ~8&nbsp;MB.
-              Good examples: your <em>clinic exterior</em>, your <em>clinic interior</em>, or <em>you at the clinic / receiving an award</em>. Add as many as you like — the more, the better.
+              Good examples: your <em>clinic exterior</em>, your <em>clinic interior</em>, or <em>you at the clinic / receiving an award</em>. Skip this and we&apos;ll use a placeholder you can replace anytime.
             </p>
             <div className="grid gap-2.5 mb-5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
               {clinicPhotos.map((url, i) => (
@@ -661,8 +661,8 @@ function Wizard() {
               <span className="pos-label" style={{ color: 'var(--orange)' }}>Required</span>
             </div>
             <p className="text-[12.5px] text-[var(--muted)] mb-2.5" style={{ lineHeight: 1.55, maxWidth: '60ch' }}>
-              A professional <strong style={{ color: 'var(--ink)' }}>portrait headshot</strong> of you — <strong style={{ color: 'var(--ink)' }}>tall, not wide</strong>, face clearly visible, plain background.
-              Aim for <strong style={{ color: 'var(--ink)' }}>800×1000 px (4:5)</strong>, minimum <strong style={{ color: 'var(--ink)' }}>600×750 px</strong>. This is used only for your profile — not the hero.
+              A clear <strong style={{ color: 'var(--ink)' }}>headshot</strong> of you, face clearly visible. A portrait (tall) photo looks best, but any orientation works.
+              Aim for <strong style={{ color: 'var(--ink)' }}>800×1000 px</strong>; anything from <strong style={{ color: 'var(--ink)' }}>300×300 px</strong> up is accepted. This is used only for your profile — not the hero.
             </p>
             <label className="pos-card cursor-pointer overflow-hidden grid place-items-center" style={{ width: 132, height: 165, borderStyle: profilePhoto ? 'solid' : 'dashed' }}>
               <input type="file" accept="image/*" className="hidden" onChange={onProfilePhoto} />
@@ -670,13 +670,13 @@ function Wizard() {
             </label>
 
             {err && <p className="text-[13px] text-red-600 mt-3">{err}</p>}
-            {!(clinicPhotos.length >= 1 && profilePhoto) && (
+            {!profilePhoto && (
               <p className="text-[12.5px] mt-4" style={{ color: 'var(--muted)' }}>
-                To continue, add {clinicPhotos.length < 1 ? 'at least one website (landscape) photo' : ''}{clinicPhotos.length < 1 && !profilePhoto ? ' and ' : ''}{!profilePhoto ? 'your profile (portrait) photo' : ''}.
+                To continue, add your profile photo. Website photos are optional.
               </p>
             )}
             <div className="flex items-center gap-3 mt-5">
-              <button onClick={async () => { await savePhotos(); next(); }} disabled={!!busy || !(clinicPhotos.length >= 1 && profilePhoto)} className="pos-action disabled:opacity-40 disabled:cursor-not-allowed">{busy === 'savephotos' ? 'Saving…' : 'Save & continue'}</button>
+              <button onClick={async () => { await savePhotos(); next(); }} disabled={!!busy || !profilePhoto} className="pos-action disabled:opacity-40 disabled:cursor-not-allowed">{busy === 'savephotos' ? 'Saving…' : 'Save & continue'}</button>
             </div>
           </div>
         )}
