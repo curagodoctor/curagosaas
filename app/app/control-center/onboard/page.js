@@ -131,6 +131,9 @@ function Wizard() {
   const [hint, setHint] = useState('');
   const [busy, setBusy] = useState('');
   const [err, setErr] = useState('');
+  // Specialty the current practice map was generated for — so we can detect when
+  // the doctor goes back and changes it, and regenerate the map to match.
+  const mapSpecialtyRef = useRef('');
   // photos
   const [profilePhoto, setProfilePhoto] = useState('');
   const [clinicPhotos, setClinicPhotos] = useState([]);
@@ -175,6 +178,9 @@ function Wizard() {
         const d = await r.json();
         if (d.success) {
           setFields(d.fields || {}); setSummary(d.summary || '');
+          // Seed the map's specialty baseline so a fresh load never spuriously
+          // regenerates — only a real change after this does.
+          mapSpecialtyRef.current = (d.fields || {}).specialty || '';
           if (d.hasWebsite) setHasWebsite(d.hasWebsite);
           if (d.subdomain) { setSubdomain(d.subdomain); setExistingSubdomain(d.subdomain); }
           // If they cleared the commitment filter but never submitted the
@@ -300,18 +306,30 @@ function Wizard() {
       const hintText = [fields.specialty, fields.qualifications, fields.additional_qualifications, fields.years_experience && `${fields.years_experience} years experience`].filter(Boolean).join(', ');
       const res = await fetch('/api/practice-os/profile/draft-section', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ sectionId: 'pro', hint: hintText }),
+        // Regenerate the lists FRESH for the derived map fields only, so changing
+        // the specialty replaces the diseases/treatments (never merges the old ones
+        // back in). Pass the specialty explicitly so it's authoritative server-side.
+        body: JSON.stringify({ sectionId: 'pro', hint: hintText, specialty: fields.specialty || '' }),
       });
       const d = await res.json();
-      if (d.success) setFields((f) => ({ ...f, ...d.values }));
+      if (d.success) {
+        const only = {};
+        for (const k of MAP_KEYS) if (d.values[k] != null) only[k] = d.values[k];
+        setFields((f) => ({ ...f, ...only }));
+        mapSpecialtyRef.current = fields.specialty || '';
+      }
       else setErr(d.error === 'PaymentRequired' ? 'This needs AI access.' : (d.error || 'Could not generate.'));
     } catch { setErr('Something went wrong.'); }
     finally { setBusy(''); }
   }, [fields.specialty, fields.qualifications, fields.additional_qualifications, fields.years_experience]);
 
-  // Auto-generate the practice map the first time the doctor reaches it.
+  // Auto-generate the practice map when the doctor first reaches it, OR when they
+  // went back and changed their specialty (the map must follow the new specialty).
   useEffect(() => {
-    if (st.id === 'map' && !busy && fields.specialty && !fields.diseases && !fields.expertise) generateMap();
+    if (st.id !== 'map' || busy || !fields.specialty) return;
+    const isEmpty = !fields.diseases && !fields.expertise;
+    const specialtyChanged = mapSpecialtyRef.current && fields.specialty !== mapSpecialtyRef.current;
+    if (isEmpty || specialtyChanged) generateMap();
   }, [st.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const saveProfile = async (thenSummary = false) => {
@@ -581,7 +599,7 @@ function Wizard() {
             ) : (
               <>
                 <div className="space-y-4">{fieldsBy(PRO, MAP_KEYS).map((f) => <Field key={f.key} f={f} value={fields[f.key] || ''} onChange={(v) => setField(f.key, v)} onToggleTag={(o) => toggleTag(f.key, o)} />)}</div>
-                <button onClick={generateMap} disabled={!!busy} className="pos-link text-sm mt-3">↻ Regenerate from my specialty</button>
+                <button onClick={generateMap} disabled={!!busy} className="pos-link text-sm mt-3">{busy === 'map' ? 'Regenerating…' : '↻ Regenerate diseases & treatments for my specialty'}</button>
               </>
             )}
             {err && <p className="text-[13px] text-red-600 mt-3">{err}</p>}

@@ -18,7 +18,7 @@ export async function POST(request) {
   try {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
-    const { sectionId, hint = '' } = await request.json();
+    const { sectionId, hint = '', specialty: specialtyIn = '' } = await request.json();
     if (!sectionId) return NextResponse.json({ success: false, error: 'Missing section.' }, { status: 400 });
 
     const configs = await ProfileFieldConfig.find().lean();
@@ -27,6 +27,9 @@ export async function POST(request) {
 
     const existing = await getDoctorProfileFields(doctor._id);
     const doc = await Doctor.findById(doctor._id).select('displayName name specialization qualification').lean();
+    // Authoritative specialty: the just-changed value the client sends wins, then
+    // the saved profile, then the Doctor record. This is what the lists key off.
+    const specialty = String(specialtyIn || existing.specialty || doc?.specialization || '').trim();
 
     // Describe each field so the model fills the right keys / respects options.
     const fieldSpec = section.fields.map((f) => {
@@ -34,15 +37,19 @@ export async function POST(request) {
       return `- ${f.key}: ${f.label}${f.hint ? ` — ${f.hint}` : ''}${opts}`;
     }).join('\n');
 
+    // EXCLUDE the fields this section will (re)generate from "what we already
+    // know" — otherwise the model just echoes the existing values, so regenerating
+    // after a specialty change returns the OLD diseases/treatments unchanged.
+    const sectionKeys = new Set(section.fields.map((f) => f.key));
     const known = Object.entries(existing)
-      .filter(([, v]) => v != null && String(v).trim())
+      .filter(([k, v]) => v != null && String(v).trim() && !sectionKeys.has(k))
       .slice(0, 40)
       .map(([k, v]) => `${k}: ${String(v).slice(0, 160)}`)
       .join('\n');
 
     const gen = await structureContent({
-      instruction: `You are drafting ONE section ("${section.title}") of an Indian doctor's professional profile. Write a clear, professional, patient-friendly draft for each field below, based on the doctor's input and what we already know. Return ONLY a JSON object keyed by the EXACT field keys. For fields offering a choice list, return one or more of the given options (comma-separated).\n\nBE COMPREHENSIVE AND THOROUGH — this is the doctor's practice map. For the list fields, generate a RICH, COMPLETE, comma-separated list that genuinely reflects the full scope of this specialty, ordered from most common to least. Minimum counts (generate AT LEAST this many, more where the specialty supports it): areas of expertise — at least 6 items; diseases/conditions treated — 12–20 items; procedures/treatments — 12–20 items. Do not stop below the minimum. Every item must be genuinely relevant to this specialty (never padding). Omit a field only if you genuinely cannot infer it. Do NOT invent credentials, registration numbers, prices, or specific statistics that were not provided. NMC-compliant — no superlatives or guarantees.\n\nFields to fill:\n${fieldSpec}`,
-      source: `Doctor: ${doc?.displayName || doc?.name || ''} (${doc?.specialization || ''}).\nWhat we already know:\n${known || '(little so far)'}\n\nThe doctor's input for this section:\n${hint || '(none — infer from what we already know)'}`,
+      instruction: `You are drafting ONE section ("${section.title}") of an Indian doctor's professional profile. Write a clear, professional, patient-friendly draft for each field below, based STRICTLY on the doctor's specialty and input. Return ONLY a JSON object keyed by the EXACT field keys. For fields offering a choice list, return one or more of the given options (comma-separated).\n\nGenerate every list field FRESH for the specialty given below — do not carry over unrelated items. BE COMPREHENSIVE AND THOROUGH — this is the doctor's practice map. For the list fields, generate a RICH, COMPLETE, comma-separated list that genuinely reflects the full scope of THIS specialty, ordered from most common to least. Minimum counts (generate AT LEAST this many, more where the specialty supports it): areas of expertise — at least 6 items; diseases/conditions treated — 12–20 items; procedures/treatments — 12–20 items. Do not stop below the minimum. Every item must be genuinely relevant to this specialty (never padding). Omit a field only if you genuinely cannot infer it. Do NOT invent credentials, registration numbers, prices, or specific statistics that were not provided. NMC-compliant — no superlatives or guarantees.\n\nFields to fill:\n${fieldSpec}`,
+      source: `Doctor: ${doc?.displayName || doc?.name || ''}.\nSpecialty (authoritative — generate strictly for THIS specialty): ${specialty || '(unknown)'}\nWhat we already know:\n${known || '(little so far)'}\n\nThe doctor's input for this section:\n${hint || '(none — infer from the specialty above)'}`,
       profileFields: existing,
       extraRules: PROFILE_RULES,
     });
