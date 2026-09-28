@@ -23,10 +23,13 @@ function ClustersInner() {
   const [busy, setBusy] = useState('');
   const [newTreat, setNewTreat] = useState('');
   const [mode, setMode] = useState(null); // 'diseases' (surgical) | 'treatments' (non-surgical)
+  // Force the pathway-choice screen back up even after a map exists, so the doctor
+  // can return and switch approach if they picked the wrong one.
+  const [forceChoice, setForceChoice] = useState(false);
 
   // Generate the chosen pathway: diseases+treatments (surgical) or treatments-only.
   const doGenerate = useCallback(async (chosen) => {
-    setMode(chosen);
+    setMode(chosen); setForceChoice(false);
     setGenerating(true); setGenErr('');
     const endpoint = chosen === 'treatments'
       ? '/api/practice-os/clusters/generate-treatments'
@@ -127,8 +130,8 @@ function ClustersInner() {
       <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-12 max-w-[860px] mx-auto">
         <PosNav breadcrumb="Practice map review" />
 
-        {/* ---- empty: pathway choice / generating ---- */}
-        {clusters.length === 0 ? (
+        {/* ---- empty OR "change approach": pathway choice / generating ---- */}
+        {clusters.length === 0 || forceChoice ? (
           generating ? (
             <div className="pos-card p-10 text-center mt-6" style={{ borderRadius: 22 }}>
               <div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin mx-auto mb-3" />
@@ -137,10 +140,17 @@ function ClustersInner() {
             </div>
           ) : (
             <div className="mt-6">
+              {/* When a map already exists, let the doctor return to it without regenerating. */}
+              {forceChoice && clusters.length > 0 && (
+                <button onClick={() => setForceChoice(false)} className="pos-link text-[13px] mb-4 inline-flex items-center gap-1">← Back to my current map</button>
+              )}
               <h1 className="text-[var(--ink)]" style={{ fontSize: 'clamp(23px,3vw,32px)', fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1.1, margin: '0 0 8px' }}>How do you want to map your practice?</h1>
               <p className="text-[var(--muted)] mb-5" style={{ fontSize: 15.5, lineHeight: 1.6, maxWidth: 640 }}>
                 Our recommendation: if you&apos;re a <strong style={{ color: 'var(--ink)' }}>surgical</strong> specialist, choose <em>Diseases &amp; treatments</em>. If you&apos;re a <strong style={{ color: 'var(--ink)' }}>non-surgical</strong> specialist, go straight to <em>Treatments</em>.
               </p>
+              {forceChoice && clusters.length > 0 && (
+                <p className="text-[13px] mb-4" style={{ color: 'var(--orange)', lineHeight: 1.5 }}>Choosing again will replace your current map with a fresh one for the selected approach.</p>
+              )}
               <div className="grid gap-3 sm:grid-cols-2">
                 <button onClick={() => doGenerate('diseases')} className="pos-card p-5 text-left hover:shadow-md transition-shadow" style={{ borderColor: 'var(--rule)' }}>
                   <span className="pos-label" style={{ color: 'var(--green)' }}>Recommended for surgical</span>
@@ -157,10 +167,11 @@ function ClustersInner() {
             </div>
           )
         ) : isTreatmentMode ? (
-          <TreatmentsReview clusters={clusters} setClusters={setClusters} router={router} save={save} genErr={genErr} setGenErr={setGenErr} mono={mono} />
+          <TreatmentsReview clusters={clusters} setClusters={setClusters} router={router} save={save} genErr={genErr} setGenErr={setGenErr} mono={mono} onBack={() => setForceChoice(true)} />
         ) : cur ? (
           <>
             {/* ---- DISEASE REVIEW ---- */}
+            <button onClick={() => setForceChoice(true)} className="pos-link text-[13px] mb-3 inline-flex items-center gap-1">← Change mapping approach</button>
             <div className="pos-card" style={{ borderRadius: 24, boxShadow: '0 22px 56px rgba(9,107,23,.06)', overflow: 'hidden' }}>
               <div style={{ padding: 'clamp(20px,2.6vw,32px) clamp(18px,2.6vw,34px) 0' }}>
                 <div className="flex flex-wrap items-center gap-2.5 mb-3">
@@ -253,7 +264,7 @@ function ClustersInner() {
 
 // Non-surgical path — review a flat list of treatments/procedures (each entry is a
 // treatment-kind cluster), then approve them all at once.
-function TreatmentsReview({ clusters, setClusters, router, save, genErr, setGenErr, mono }) {
+function TreatmentsReview({ clusters, setClusters, router, save, genErr, setGenErr, mono, onBack }) {
   const [newTreat, setNewTreat] = useState('');
   const [busy, setBusy] = useState('');
   const patchLocal = (id, body) => setClusters((arr) => arr.map((c) => c._id === id ? { ...c, ...body } : c));
@@ -290,7 +301,9 @@ function TreatmentsReview({ clusters, setClusters, router, save, genErr, setGenE
   };
 
   return (
-    <div className="pos-card mt-6" style={{ borderRadius: 24, overflow: 'hidden', boxShadow: '0 22px 56px rgba(9,107,23,.06)' }}>
+    <>
+    {onBack && <button onClick={onBack} className="pos-link text-[13px] mb-3 inline-flex items-center gap-1">← Change mapping approach</button>}
+    <div className="pos-card" style={{ borderRadius: 24, overflow: 'hidden', boxShadow: '0 22px 56px rgba(9,107,23,.06)' }}>
       <div style={{ padding: 'clamp(20px,2.6vw,32px) clamp(18px,2.6vw,34px) clamp(20px,2.6vw,28px)' }}>
         <div className="flex flex-wrap items-center gap-2.5 mb-3">
           <span style={{ ...mono, fontSize: 11.5, letterSpacing: '.18em', color: 'var(--orange)', fontWeight: 600 }}>YOUR TREATMENTS · {(clusters || []).length} / {TOTAL_TREATMENT_CAP}</span>
@@ -326,6 +339,7 @@ function TreatmentsReview({ clusters, setClusters, router, save, genErr, setGenE
         </div>
       </div>
     </div>
+    </>
   );
 }
 
