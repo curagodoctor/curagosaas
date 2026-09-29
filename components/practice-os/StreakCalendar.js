@@ -117,7 +117,7 @@ function YearHeatmap({ days, todayKey }) {
   // and keyed in IST to match the activity API.
   const scrollRef = useRef(null);
   const PAST_WEEKS = 40;    // history to the left
-  const FUTURE_WEEKS = 13;  // upcoming days visible to the right
+  const FUTURE_WEEKS = 52;  // a full upcoming year visible to the right
   const TOTAL_WEEKS = PAST_WEEKS + FUTURE_WEEKS;
   const CELL = 11;
   const GAP = 3;
@@ -192,9 +192,10 @@ function YearHeatmap({ days, todayKey }) {
                     style={{
                       width: CELL, height: CELL,
                       background: future ? 'transparent' : shade(count),
-                      // Future days are shown as faint empty slots so the doctor can
-                      // see what's ahead; today gets the orange ring.
-                      outline: isToday ? '1.5px solid var(--orange)' : (future ? '1px solid rgba(16,26,19,0.06)' : '1px solid rgba(16,26,19,0.04)'),
+                      // Future days are drawn as clearly-outlined empty slots (a full
+                      // year ahead) so the doctor can see what's coming; today gets
+                      // the orange ring.
+                      outline: isToday ? '1.5px solid var(--orange)' : (future ? '1px solid rgba(16,26,19,0.38)' : '1px solid rgba(16,26,19,0.04)'),
                       outlineOffset: isToday ? '1px' : '-1px',
                     }}
                     title={`${k}: ${future ? 'upcoming' : `${count} completed`}${isToday ? ' · today' : ''}`} />
