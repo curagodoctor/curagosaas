@@ -190,7 +190,7 @@ export default function ControlCenter() {
             <svg className="w-4 h-4 text-[var(--muted)] transition-transform" style={{ transform: pendingOpen ? 'rotate(180deg)' : 'none' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
           </button>
           {pendingOpen && (<>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className={`grid grid-cols-1 gap-3${pendingTasks.length > 1 ? ' sm:grid-cols-2' : ''}`}>
             {pendingTasks.slice(0, 12).map(({ pack, m }) => (
               <Link key={m.id} href={`/app/control-center/day/${m.id}?pack=${pack.id}`} className="pos-card p-4 flex items-start gap-3 hover:shadow-md transition-shadow group" style={{ borderColor: 'var(--orange)' }}>
                 <span className="w-9 h-9 rounded-xl grid place-items-center shrink-0" style={{ background: 'var(--orange-soft)' }}>
@@ -209,19 +209,19 @@ export default function ControlCenter() {
         </div>
       )}
 
-      {/* 3 · Today's nudge (smaller) + AI credits, side by side. */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 items-start">
-        <div className="min-w-0"><EngagementNudges /></div>
+      {/* 3 · Today's nudge (smaller) + AI credits, side by side and equal height. */}
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_300px] gap-4 mt-6 items-stretch">
+        <div className="min-w-0 [&>*]:h-full"><EngagementNudges /></div>
         {credits && (
-          <div className="pos-card p-5">
+          <div className="pos-card p-5 flex flex-col justify-center">
             <div className="flex items-center justify-between">
               <div>
                 <p className="pos-label" style={{ color: 'var(--green)' }}>AI credits</p>
                 <p className="text-[12px] text-[var(--muted)] mt-0.5">{credits.unlimited ? 'Unlimited access' : 'Resets daily'}</p>
               </div>
               <div className="text-right">
-                <span className="pos-num text-[22px] text-[var(--ink)]">{credits.unlimited ? '∞' : credits.remaining}</span>
-                {!credits.unlimited && credits.dailyLimit ? <span className="text-[12px] text-[var(--muted)]"> / {credits.dailyLimit}</span> : null}
+                <span className="pos-num text-[28px] leading-none text-[var(--ink)]">{credits.unlimited ? '∞' : credits.remaining}</span>
+                {!credits.unlimited && credits.dailyLimit ? <span className="text-[13px] text-[var(--muted)]"> / {credits.dailyLimit}</span> : null}
               </div>
             </div>
             {!credits.unlimited && credits.dailyLimit ? (
