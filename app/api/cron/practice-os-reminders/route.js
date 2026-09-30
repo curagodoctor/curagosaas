@@ -10,6 +10,7 @@ import { sendPracticeOsReminderEmail } from '@/lib/email';
 import { sendSMS } from '@/lib/twilio';
 import { fireWyltoWebhook, sendWyltoTemplate } from '@/lib/wylto';
 import PracticeOsProfile from '@/models/practice-os/PracticeOsProfile';
+import { getTreatmentFlat, treatmentVars, fillTreatmentTokens } from '@/lib/practice-os/engine';
 
 export const runtime = 'nodejs';
 
@@ -101,6 +102,38 @@ export async function GET(request) {
         const todaysMissionReady =
           !enrollment.nextUnlockAt || new Date(enrollment.nextUnlockAt) <= now;
 
+        // Resolve the doctor's next task + pack ONCE, for every channel, with the
+        // {{treatment_*}} placeholders filled to the doctor's real treatments — so
+        // no reminder ever shows a raw token or the old programme name.
+        let packTitle = 'Dominate Organic Search';
+        let itemLabel = 'mission';
+        let missionTitle = '';
+        try {
+          const fw = await Framework.findById(enrollment.frameworkId).select('title mode').lean();
+          if (fw?.title) packTitle = fw.title;
+          itemLabel = fw?.mode === 'task' ? 'task' : 'mission';
+          const doneIds = new Set(
+            (await UserMissionProgress.find({
+              doctorId: doctor._id,
+              frameworkId: enrollment.frameworkId,
+              status: { $in: ['completed', 'skipped'] },
+            }).select('missionId').lean()).map((p) => String(p.missionId))
+          );
+          const missions = await Mission.find({ frameworkId: enrollment.frameworkId, status: 'published' })
+            .sort({ weekNumber: 1, dayNumber: 1, missionNumber: 1, order: 1 })
+            .select('missionText title').lean();
+          const current = missions.find((m) => !doneIds.has(String(m._id)));
+          missionTitle = current?.title || current?.missionText || '';
+          if (missionTitle.includes('{{')) {
+            const flat = await getTreatmentFlat(doctor._id);
+            missionTitle = fillTreatmentTokens(missionTitle, treatmentVars(flat)).replace(/\s{2,}/g, ' ').trim();
+          }
+        } catch (lookupError) {
+          console.error(`[PracticeOS Reminders] Mission lookup failed for ${enrollment._id}:`, lookupError);
+        }
+        const taskLine = missionTitle ? `\n\nYour next task: ${missionTitle}` : '';
+        const taskSms = missionTitle ? ` Next: ${missionTitle}.` : '';
+
         // Choose the single most-urgent applicable rule.
         let reminder = null;
 
@@ -108,26 +141,26 @@ export async function GET(request) {
           reminder = {
             subject: 'Picking up where you left off',
             heading: 'Your programme is still here whenever you are',
-            body: `You've finished ${enrollment.daysCompleted} of 28 days, and everything you built is still working for your patients. When you have thirty minutes, your next day is ready — start with just step one. If anything is getting in the way, reply to this message and we'll sort it out together.`,
-            ctaLabel: 'Open your next day',
-            sms: `Zero To Practice Builder: You've done ${enrollment.daysCompleted} of 28 days and it's all still working. Your next day is ready whenever you have 30 minutes — start with step one. ${ctaUrl}`,
+            body: `You've finished ${enrollment.daysCompleted} of 28 days of Dominate Organic Search, and everything you built is still working for your patients. When you have thirty minutes, your next task is ready — start with just step one.${taskLine}\n\nIf anything is getting in the way, reply to this message and we'll sort it out together.`,
+            ctaLabel: 'Open your next task',
+            sms: `Dominate Organic Search: You've done ${enrollment.daysCompleted} of 28 days and it's all still working.${taskSms} Ready whenever you have 30 minutes. ${ctaUrl}`,
             markRescued: true,
           };
         } else if (daysInactive >= 3) {
           reminder = {
-            subject: 'Your next day is ready',
-            heading: 'Your next day is ready',
-            body: `You're on day ${enrollment.currentDayNumber} of 28. Your next task is waiting whenever you have thirty minutes — one small step moves it forward.`,
-            ctaLabel: 'Start your next day',
-            sms: `Zero To Practice Builder: Your next day (day ${enrollment.currentDayNumber} of 28) is ready whenever you have 30 minutes. ${ctaUrl}`,
+            subject: 'Your next task is ready',
+            heading: 'Your next task is ready',
+            body: `You're on day ${enrollment.currentDayNumber} of 28 of Dominate Organic Search. Your next task is waiting whenever you have thirty minutes — one small step moves it forward.${taskLine}`,
+            ctaLabel: 'Start your next task',
+            sms: `Dominate Organic Search: Day ${enrollment.currentDayNumber} of 28 is ready whenever you have 30 minutes.${taskSms} ${ctaUrl}`,
           };
         } else if (todaysMissionReady && daysInactive >= 1) {
           reminder = {
             subject: "Today's task is ready",
             heading: "Today's task is ready",
-            body: `Day ${enrollment.currentDayNumber} of 28 is unlocked and waiting. It should take about thirty minutes — a good time to pick it up.`,
+            body: `Day ${enrollment.currentDayNumber} of 28 of Dominate Organic Search is unlocked and waiting. It should take about thirty minutes — a good time to pick it up.${taskLine}`,
             ctaLabel: 'Start today',
-            sms: `Zero To Practice Builder: Day ${enrollment.currentDayNumber} of 28 is ready — about 30 minutes. ${ctaUrl}`,
+            sms: `Dominate Organic Search: Day ${enrollment.currentDayNumber} of 28 is ready — about 30 minutes.${taskSms} ${ctaUrl}`,
           };
         }
 
@@ -196,34 +229,8 @@ export async function GET(request) {
             console.error(`[PracticeOS Reminders] WhatsApp (content) failed for ${enrollment._id}:`, waError);
           }
         } else if (waPhone) {
-          // Look up the pack + the doctor's current (first uncompleted) mission/task
-          // so the reminder message can name exactly what's next.
-          let packTitle = '';
-          let missionTitle = '';
-          let itemLabel = 'mission';
-          try {
-            const fw = await Framework.findById(enrollment.frameworkId).select('title mode').lean();
-            packTitle = fw?.title || '';
-            itemLabel = fw?.mode === 'task' ? 'task' : 'mission';
-            const doneIds = new Set(
-              (await UserMissionProgress.find({
-                doctorId: doctor._id,
-                frameworkId: enrollment.frameworkId,
-                status: { $in: ['completed', 'skipped'] },
-              })
-                .select('missionId')
-                .lean()).map((p) => String(p.missionId))
-            );
-            const missions = await Mission.find({ frameworkId: enrollment.frameworkId, status: 'published' })
-              .sort({ weekNumber: 1, dayNumber: 1, missionNumber: 1, order: 1 })
-              .select('missionText title')
-              .lean();
-            const current = missions.find((m) => !doneIds.has(String(m._id)));
-            missionTitle = current?.title || current?.missionText || '';
-          } catch (lookupError) {
-            console.error(`[PracticeOS Reminders] Mission lookup failed for ${enrollment._id}:`, lookupError);
-          }
-
+          // packTitle / itemLabel / missionTitle were resolved above (tokens filled),
+          // so the WhatsApp message names exactly what's next.
           try {
             await fireWyltoWebhook('moduleReminder', {
               name: doctor.displayName || doctor.name,

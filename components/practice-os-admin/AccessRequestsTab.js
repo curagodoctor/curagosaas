@@ -21,12 +21,12 @@ export default function AccessRequestsTab() {
   }, [filter]);
   useEffect(() => { load(); }, [load]);
 
-  const decide = async (id, action) => {
+  const decide = async (id, action, days) => {
     setBusyId(id);
     try {
       const res = await fetch('/api/platform/practice-os/access-requests', {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, action }),
+        body: JSON.stringify({ id, action, ...(days ? { days } : {}) }),
       });
       if ((await res.json()).success) await load();
     } catch { /* ignore */ } finally { setBusyId(''); }
@@ -83,16 +83,20 @@ export default function AccessRequestsTab() {
                 <div className="flex gap-2 shrink-0 flex-wrap justify-end">
                   {r.status === 'pending' && (
                     <>
-                      <button onClick={() => decide(r._id, 'grant')} disabled={busyId === r._id}
-                        className="px-3 py-1.5 bg-[#096b17] text-white rounded-lg text-sm font-medium disabled:opacity-50">Grant 30 days</button>
+                      <button onClick={() => decide(r._id, 'grant', 7)} disabled={busyId === r._id}
+                        className="px-3 py-1.5 border border-[#096b17] text-[#096b17] rounded-lg text-sm font-medium disabled:opacity-50">Grant 7 days</button>
+                      <button onClick={() => decide(r._id, 'grant', 28)} disabled={busyId === r._id}
+                        className="px-3 py-1.5 bg-[#096b17] text-white rounded-lg text-sm font-medium disabled:opacity-50">Grant 28 days</button>
                       <button onClick={() => decide(r._id, 'deny')} disabled={busyId === r._id}
                         className="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm disabled:opacity-50">Deny</button>
                     </>
                   )}
                   {r.status === 'granted' && (
                     <>
-                      <button onClick={() => decide(r._id, 'extend')} disabled={busyId === r._id}
-                        className="px-3 py-1.5 border border-[#096b17] text-[#096b17] rounded-lg text-xs disabled:opacity-50">+30 days</button>
+                      <button onClick={() => decide(r._id, 'extend', 7)} disabled={busyId === r._id}
+                        className="px-3 py-1.5 border border-[#096b17] text-[#096b17] rounded-lg text-xs disabled:opacity-50">+7 days</button>
+                      <button onClick={() => decide(r._id, 'extend', 28)} disabled={busyId === r._id}
+                        className="px-3 py-1.5 border border-[#096b17] text-[#096b17] rounded-lg text-xs disabled:opacity-50">+28 days</button>
                       {!r.access?.permanent && (
                         <button onClick={() => decide(r._id, 'permanent')} disabled={busyId === r._id}
                           className="px-3 py-1.5 border border-blue-300 text-blue-700 rounded-lg text-xs disabled:opacity-50">Make permanent</button>

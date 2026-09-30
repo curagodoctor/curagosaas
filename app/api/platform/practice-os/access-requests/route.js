@@ -35,9 +35,10 @@ export async function PUT(request) {
     if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     await connectDB();
 
-    const { id, action } = await request.json();
-    // grant = 30-day access · extend = +30 more days · permanent = never expires
-    // (founder override) · deny/revoke = gate again.
+    const { id, action, days } = await request.json();
+    // grant / extend accept a duration (7 or 28 days; defaults to 28) · permanent =
+    // never expires (founder override) · deny/revoke = gate again.
+    const durationDays = [7, 28].includes(Number(days)) ? Number(days) : 28;
     if (!id || !['grant', 'extend', 'permanent', 'deny'].includes(action)) {
       return NextResponse.json({ success: false, error: 'Bad request' }, { status: 400 });
     }
@@ -56,11 +57,11 @@ export async function PUT(request) {
 
     let set;
     if (action === 'grant') {
-      set = { 'optimizationAccess.granted': true, 'optimizationAccess.grantedAt': now, 'optimizationAccess.expiresAt': new Date(now.getTime() + 28 * DAY), 'optimizationAccess.permanent': false };
+      set = { 'optimizationAccess.granted': true, 'optimizationAccess.grantedAt': now, 'optimizationAccess.expiresAt': new Date(now.getTime() + durationDays * DAY), 'optimizationAccess.permanent': false };
     } else if (action === 'extend') {
-      // Add 30 days from whichever is later — now or the current expiry.
+      // Add the chosen duration from whichever is later — now or the current expiry.
       const base = curExpiry && curExpiry > now ? curExpiry : now;
-      set = { 'optimizationAccess.granted': true, 'optimizationAccess.expiresAt': new Date(base.getTime() + 28 * DAY), 'optimizationAccess.permanent': false };
+      set = { 'optimizationAccess.granted': true, 'optimizationAccess.expiresAt': new Date(base.getTime() + durationDays * DAY), 'optimizationAccess.permanent': false };
     } else if (action === 'permanent') {
       set = { 'optimizationAccess.granted': true, 'optimizationAccess.permanent': true };
     } else { // deny / revoke
