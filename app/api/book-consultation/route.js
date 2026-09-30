@@ -46,7 +46,7 @@ export async function POST(request) {
 
     // Fetch doctor info for webhook (from subdomain)
     await connectDB();
-    let doctorInfo = { phone: '', name: '', subdomain: '' };
+    let doctorInfo = { phone: '', name: '', subdomain: '', email: '' };
     const subdomain = getSubdomainFromRequest(request);
     if (subdomain) {
       const doctor = await Doctor.findOne({ subdomain, isActive: true });
@@ -55,6 +55,7 @@ export async function POST(request) {
           phone: doctor.whatsappNumber || doctor.phone || '',
           name: doctor.displayName || doctor.name || '',
           subdomain: doctor.subdomain || '',
+          email: doctor.email || '',
         };
       }
     }
@@ -67,6 +68,7 @@ export async function POST(request) {
       email,
       whatsapp,
       mode: modeOfContact,
+      doctorEmail: doctorInfo.email, // invite THIS doctor, not the global inbox
     });
 
     if (!calendarEvent.success) {

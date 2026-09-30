@@ -112,7 +112,7 @@ export async function POST(request) {
     }
 
     // Fetch doctor info for webhook
-    let doctorInfo = { phone: '', name: '', subdomain: '' };
+    let doctorInfo = { phone: '', name: '', subdomain: '', email: '' };
     if (reservation.doctorId) {
       const doctor = await Doctor.findById(reservation.doctorId);
       if (doctor) {
@@ -120,6 +120,7 @@ export async function POST(request) {
           phone: doctor.whatsappNumber || doctor.phone || '',
           name: doctor.displayName || doctor.name || '',
           subdomain: doctor.subdomain || '',
+          email: doctor.email || '',
         };
       }
     }
@@ -142,6 +143,7 @@ export async function POST(request) {
       email: reservation.email,
       whatsapp: reservation.whatsapp,
       mode: reservation.mode,
+      doctorEmail: doctorInfo.email, // invite THIS doctor, not the global inbox
     });
 
     if (!calendarEvent.success) {

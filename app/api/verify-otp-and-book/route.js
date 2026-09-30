@@ -107,6 +107,7 @@ export async function POST(request) {
         email: bookingData.email,
         whatsapp: bookingData.whatsapp,
         mode: bookingData.modeOfContact,
+        doctorEmail: doctorDoc?.email, // invite THIS doctor, not the global inbox
       });
 
       if (!calendarEvent || !calendarEvent.success) {
