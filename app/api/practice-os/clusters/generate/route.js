@@ -44,9 +44,11 @@ PREFER the doctor's OWN listed procedures/expertise wherever they legitimately a
 
 CLINICAL ACCURACY — follow current medical knowledge and accepted practice. Do NOT invent diseases, procedures, synonyms, indications or treatment relationships. Never optimise for keywords at the expense of clinical accuracy.
 
-OVERALL LIMIT — no more than 20 treatments in TOTAL across all 10 diseases (each disease still 1-3). Prioritise the highest-value treatments; give the most common/high-demand diseases their full set and keep authority conditions lean.
+OVERALL LIMIT — EXACTLY 20 treatments in TOTAL across all 10 diseases (each disease still 1-3). Distribute so the total is 20: give the most common/high-demand diseases their full set (3) and keep authority conditions lean (1). Always reach 20 — never return fewer.
 
-Return JSON: {"diseases": [{"name": string, "tier": "common"|"authority", "reason": string (one line), "treatments": string[] (1-3 distinct, real procedures, no abbreviations)}]} with EXACTLY 10 diseases in priority order (and 20 treatments or fewer overall). NMC-compliant — factual, no superlatives, no outcome/success claims.`,
+CRITICAL — treatments must be SPECIFIC to EACH disease and DISTINCT across diseases. Do NOT paste the same treatment list under every disease. Each disease's treatments must be the real procedures used for THAT disease only (e.g. Osteoarthritis of the knee → Total Knee Replacement; Gallstones → Laparoscopic Cholecystectomy — never the same generic list repeated). Never use vague fillers ("Surgery", "Medical Management", "General Procedure"). If two diseases would share a treatment, name the disease-specific variant.
+
+Return JSON: {"diseases": [{"name": string, "tier": "common"|"authority", "reason": string (one line), "treatments": string[] (1-3 distinct, real procedures, no abbreviations)}]} with EXACTLY 10 diseases in priority order and EXACTLY 20 treatments overall. NMC-compliant — factual, no superlatives, no outcome/success claims.`,
       source: `Specialty: ${specialty}\nSubspecialty: ${fields.subspecialty || '(none)'}\nProcedures the doctor listed: ${fields.procedures || '(none)'}\nAreas of expertise: ${fields.expertise || '(none)'}\nConditions the doctor listed: ${fields.diseases || '(none)'}\nCity: ${fields.city || ''}`,
       profileFields: fields,
     });

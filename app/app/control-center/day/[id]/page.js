@@ -239,7 +239,15 @@ function DayInner() {
     router.push('/app/control-center');
   };
 
-  if (loading) return <div className="min-h-screen grid place-items-center" style={{ background: 'var(--paper)' }}><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>;
+  if (loading) return (
+    <div className="min-h-screen grid place-items-center px-6" style={{ background: 'var(--paper)' }}>
+      <div className="flex flex-col items-center gap-4 text-center">
+        <span className="w-14 h-14 rounded-full border-[5px] border-[var(--green)] border-t-transparent animate-spin" />
+        <p className="text-[17px] font-semibold text-[var(--ink)]">Preparing today&apos;s content…</p>
+        <p className="text-[13px] text-[var(--muted)]">This takes a few seconds.</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--paper)' }}>
@@ -276,7 +284,7 @@ function DayInner() {
           {generating && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4" style={{ background: 'rgba(247,249,245,.9)', backdropFilter: 'blur(2px)' }}>
               <span className="w-16 h-16 rounded-full border-[5px] border-[var(--green)] border-t-transparent animate-spin" />
-              <p className="text-[17px] font-semibold text-[var(--ink)]">Rewriting your content…</p>
+              <p className="text-[17px] font-semibold text-[var(--ink)]">{content.trim() ? 'Rewriting your content…' : 'Preparing today’s content…'}</p>
               <p className="text-[13px] text-[var(--muted)]">This takes a few seconds.</p>
             </div>
           )}
