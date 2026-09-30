@@ -113,12 +113,12 @@ function LoginPageInner() {
           <div className="max-w-md text-white">
             <h2 className="serif text-[44px] leading-[1.05] mb-6">Welcome back, Doctor.</h2>
             <p className="text-xl mb-8" style={{ color: 'var(--green-lite)' }}>
-              Your Zero to Practice Builder, your website and your practice — all in one place.
+              Dominate Organic Search, your website and your practice — all in one place.
             </p>
 
             <div className="space-y-6">
               {[
-                { t: 'Continue your Zero to Practice Builder', d: 'Pick up the next step in your programme, right where you left off.', p: 'M5 4h14v16l-7-4-7 4z' },
+                { t: 'Review today’s content', d: 'We prepare your practice’s work daily — you review and publish, right where you left off.', p: 'M5 4h14v16l-7-4-7 4z' },
                 { t: 'Manage your practice', d: 'Update your website, services and clinic details.', p: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
                 { t: 'Appointments & availability', d: 'Track bookings and set your consultation slots.', p: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
               ].map((f) => (
