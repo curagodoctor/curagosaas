@@ -24,6 +24,9 @@ const PracticeOsChatMessageSchema = new mongoose.Schema({
   sessionId: { type: String, default: 'default', index: true },
   role: { type: String, enum: ['user', 'assistant'], required: true },
   content: { type: String, default: '' },
+  // The featured image generated alongside an assistant draft (public URL) — used
+  // by the daily-task email and the standalone editor so the image persists.
+  imageUrl: { type: String, default: '' },
   // Hidden from the doctor's chat view — used for the auto-fired module prompt
   // (the doctor sees the assistant's response, not the underlying prompt).
   hidden: { type: Boolean, default: false },

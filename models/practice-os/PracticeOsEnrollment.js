@@ -54,6 +54,10 @@ const PracticeOsEnrollmentSchema = new mongoose.Schema({
   aheadUsed: { type: Boolean, default: false },
   currentDayNumber: { type: Number, default: 1 },  // the day currently actionable/next
   daysCompleted: { type: Number, default: 0 },     // monotonic — never decreases
+  // The last mission we auto-generated + emailed the doctor, so the daily-task
+  // cron sends exactly one email per task (not the same one every run).
+  lastTaskEmailedMissionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Mission', default: null },
+  lastTaskEmailedAt: { type: Date, default: null },
 
   // NOTE: `intent` and `credentials` below are LEGACY per-enrollment copies.
   // The source of truth is now the doctor-global `PracticeOsProfile` (setup is
