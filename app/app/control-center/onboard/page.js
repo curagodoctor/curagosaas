@@ -336,6 +336,32 @@ function Wizard() {
     if (isEmpty || specialtyChanged) generateMap();
   }, [st.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Block 3 — draft the USP + areas of interest. The map draft focuses on the big
+  // lists and often omits these short prose fields, so generate them directly here.
+  const generateUsp = useCallback(async () => {
+    setBusy('usp'); setErr('');
+    try {
+      const hintText = [fields.specialty, fields.qualifications, fields.expertise, fields.usp].filter(Boolean).join(', ');
+      const res = await fetch('/api/practice-os/profile/draft-section', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ sectionId: 'pro', hint: hintText, specialty: fields.specialty || '', only: USP_KEYS }),
+      });
+      const d = await res.json();
+      if (d.success) {
+        const only = {};
+        for (const k of USP_KEYS) if (d.values[k] != null) only[k] = d.values[k];
+        setFields((f) => ({ ...f, ...only }));
+      } else setErr(d.error === 'PaymentRequired' ? 'This needs AI access.' : (d.error || 'Could not generate.'));
+    } catch { setErr('Something went wrong.'); }
+    finally { setBusy(''); }
+  }, [fields.specialty, fields.qualifications, fields.expertise, fields.usp]);
+
+  // Auto-fill USP + interests the first time the doctor reaches Block 3, if empty.
+  useEffect(() => {
+    if (st.id !== 'usp' || busy || !fields.specialty) return;
+    if (!String(fields.usp || '').trim() && !String(fields.interests || '').trim()) generateUsp();
+  }, [st.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const saveProfile = async (thenSummary = false) => {
     setBusy('save'); setErr('');
     try {
@@ -619,7 +645,14 @@ function Wizard() {
             <p className="pos-label" style={{ color: 'var(--orange)' }}>Block 3 · What sets you apart</p>
             <h1 className="font-extrabold text-[var(--ink)] mt-2.5 mb-3" style={{ fontSize: 'clamp(24px,5vw,34px)', letterSpacing: '-0.03em', lineHeight: 1.08 }}>Describe your strength and interests.</h1>
             <p className="text-[15.5px] text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '58ch' }}>In a line or two — what makes your practice different, and the areas you want to be known for. We&apos;ll shape it into your website.</p>
-            <div className="space-y-4">{fieldsBy(PRO, USP_KEYS).map((f) => <Field key={f.key} f={f} value={fields[f.key] || ''} onChange={(v) => setField(f.key, v)} onToggleTag={(o) => toggleTag(f.key, o)} />)}</div>
+            {busy === 'usp' && !fields.usp && !fields.interests ? (
+              <div className="pos-card p-6 text-center"><div className="w-8 h-8 mx-auto rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /><p className="text-sm text-[var(--muted)] mt-3">Drafting your strengths…</p></div>
+            ) : (
+              <>
+                <div className="space-y-4">{fieldsBy(PRO, USP_KEYS).map((f) => <Field key={f.key} f={f} value={fields[f.key] || ''} onChange={(v) => setField(f.key, v)} onToggleTag={(o) => toggleTag(f.key, o)} />)}</div>
+                <button onClick={generateUsp} disabled={!!busy} className="pos-link text-sm mt-3">{busy === 'usp' ? 'Regenerating…' : '↻ Regenerate from my specialty'}</button>
+              </>
+            )}
             {err && <p className="text-[13px] text-red-600 mt-3">{err}</p>}
             <div className="flex items-center gap-3 mt-6">
               <button onClick={async () => { if (await saveProfile()) next(); }} disabled={!!busy} className="pos-action">{busy === 'save' ? 'Saving…' : 'Save and continue'}</button>

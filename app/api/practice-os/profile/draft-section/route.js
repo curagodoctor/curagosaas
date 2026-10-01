@@ -18,7 +18,7 @@ export async function POST(request) {
   try {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
-    const { sectionId, hint = '', specialty: specialtyIn = '' } = await request.json();
+    const { sectionId, hint = '', specialty: specialtyIn = '', only = null } = await request.json();
     if (!sectionId) return NextResponse.json({ success: false, error: 'Missing section.' }, { status: 400 });
 
     const configs = await ProfileFieldConfig.find().lean();
@@ -31,8 +31,14 @@ export async function POST(request) {
     // the saved profile, then the Doctor record. This is what the lists key off.
     const specialty = String(specialtyIn || existing.specialty || doc?.specialization || '').trim();
 
+    // `only` restricts generation to a subset of the section's fields — a focused,
+    // reliable draft (e.g. just USP + interests), instead of relying on the big
+    // list-heavy draft to also fill short prose fields (which it often skips).
+    const onlyKeys = Array.isArray(only) && only.length ? new Set(only) : null;
+    const targetFields = onlyKeys ? section.fields.filter((f) => onlyKeys.has(f.key)) : section.fields;
+
     // Describe each field so the model fills the right keys / respects options.
-    const fieldSpec = section.fields.map((f) => {
+    const fieldSpec = targetFields.map((f) => {
       const opts = (f.type === 'select' || f.type === 'tags') && f.options?.length ? ` (choose from: ${f.options.join(', ')})` : '';
       return `- ${f.key}: ${f.label}${f.hint ? ` — ${f.hint}` : ''}${opts}`;
     }).join('\n');
@@ -48,15 +54,15 @@ export async function POST(request) {
       .join('\n');
 
     const gen = await structureContent({
-      instruction: `You are drafting ONE section ("${section.title}") of an Indian doctor's professional profile. Write a clear, professional, patient-friendly draft for each field below, based STRICTLY on the doctor's specialty and input. Return ONLY a JSON object keyed by the EXACT field keys. For fields offering a choice list, return one or more of the given options (comma-separated).\n\nGenerate every list field FRESH for the specialty given below — do not carry over unrelated items. BE COMPREHENSIVE AND THOROUGH — this is the doctor's practice map. For the list fields, generate a RICH, COMPLETE, comma-separated list that genuinely reflects the full scope of THIS specialty, ordered from most common to least. Minimum counts (generate AT LEAST this many, more where the specialty supports it): areas of expertise — at least 6 items; diseases/conditions treated — 12–20 items; procedures/treatments — 12–20 items. Do not stop below the minimum. Every item must be genuinely relevant to this specialty (never padding). Omit a field only if you genuinely cannot infer it. Do NOT invent credentials, registration numbers, prices, or specific statistics that were not provided. NMC-compliant — no superlatives or guarantees.\n\nFields to fill:\n${fieldSpec}`,
+      instruction: `You are drafting ONE section ("${section.title}") of an Indian doctor's professional profile. Write a clear, professional, patient-friendly draft for each field below, based STRICTLY on the doctor's specialty and input. Return ONLY a JSON object keyed by the EXACT field keys. For fields offering a choice list, return one or more of the given options (comma-separated).\n\nGenerate every list field FRESH for the specialty given below — do not carry over unrelated items. BE COMPREHENSIVE AND THOROUGH — this is the doctor's practice map. For the list fields, generate a RICH, COMPLETE, comma-separated list that genuinely reflects the full scope of THIS specialty, ordered from most common to least. Minimum counts (generate AT LEAST this many, more where the specialty supports it): areas of expertise — at least 6 items; diseases/conditions treated — 12–20 items; procedures/treatments — 12–20 items. Do not stop below the minimum. Every item must be genuinely relevant to this specialty (never padding). You MUST fill EVERY field listed below — including short prose fields like "usp" (a 1–2 line unique strength) and "interests" (a comma-separated list of clinical interests). Never return an empty or missing field unless it genuinely cannot be inferred from the specialty. Do NOT invent credentials, registration numbers, prices, or specific statistics that were not provided. NMC-compliant — no superlatives or guarantees.\n\nFields to fill:\n${fieldSpec}`,
       source: `Doctor: ${doc?.displayName || doc?.name || ''}.\nSpecialty (authoritative — generate strictly for THIS specialty): ${specialty || '(unknown)'}\nWhat we already know:\n${known || '(little so far)'}\n\nThe doctor's input for this section:\n${hint || '(none — infer from the specialty above)'}`,
       profileFields: existing,
       extraRules: PROFILE_RULES,
     });
     if (!gen.success) return NextResponse.json({ success: false, error: gen.error }, { status: 502 });
 
-    // Keep only keys that belong to this section; coerce to trimmed strings.
-    const allowed = new Set(section.fields.map((f) => f.key));
+    // Keep only keys we asked for; coerce to trimmed strings.
+    const allowed = new Set(targetFields.map((f) => f.key));
     const values = {};
     for (const [k, v] of Object.entries(gen.data || {})) {
       if (allowed.has(k) && v != null && String(v).trim()) {
