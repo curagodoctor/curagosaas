@@ -42,7 +42,7 @@
     },
     {
       "path": "/api/cron/practice-os-daily-tasks",
-      "schedule": "0 4 * * *"
+      "schedule": "*/30 4-8 * * *"
     }
   ]
 }

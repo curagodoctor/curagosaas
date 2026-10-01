@@ -18,8 +18,20 @@ export const maxDuration = 300;
 // server-side (no credit charge) and EMAIL it with one-tap Publish / Edit (blog)
 // or the content + Open-platform link (GBP/Instagram). Sends exactly one email per
 // task (tracked on the enrollment). Capped per run to stay within the time limit.
+// Image generation is the bottleneck (~25s each), so we process a SMALL batch per
+// run and self-paginate: the cron fires several times across the morning window
+// (see vercel.json) and the per-mission marker means nobody is emailed twice. We
+// also stop cleanly before the 300s wall so the function returns 200 (not a 504
+// kill) and the markers we DID set persist.
 const MAX_PER_RUN = parseInt(process.env.PRACTICE_OS_TASKS_MAX_PER_RUN, 10) > 0
-  ? parseInt(process.env.PRACTICE_OS_TASKS_MAX_PER_RUN, 10) : 12;
+  ? parseInt(process.env.PRACTICE_OS_TASKS_MAX_PER_RUN, 10) : 5;
+const TIME_BUDGET_MS = 250000;      // leave ~50s headroom under maxDuration (300s)
+const PER_DOCTOR_TIMEOUT_MS = 80000; // a single hung AI call must not eat the budget
+
+const withTimeout = (promise, ms) => Promise.race([
+  promise,
+  new Promise((_, reject) => setTimeout(() => reject(new Error('per-doctor timeout')), ms)),
+]);
 
 const EXTERNAL_LABEL = { gbp: 'Google Business Profile', gemini: 'Google Business Profile' };
 
@@ -39,9 +51,11 @@ export async function GET(request) {
 
     const profiles = await PracticeOsProfile.find({ 'optimizationAccess.granted': true }).select('doctorId').lean();
 
+    const startedAt = Date.now();
     let emailed = 0, skipped = 0, noTask = 0, processed = 0, capped = false;
     for (const p of profiles) {
       if (processed >= MAX_PER_RUN) { capped = true; break; }
+      if (Date.now() - startedAt > TIME_BUDGET_MS) { capped = true; break; } // return cleanly before the 300s kill
       const doctorId = p.doctorId;
       try {
         const task = await getDueTaskForDoctor(doctorId);
@@ -55,7 +69,10 @@ export async function GET(request) {
         if (!doctor?.email) { skipped++; continue; }
 
         processed++;
-        const draft = await generateMissionDraft(doctorId, task.id);
+        const draft = await withTimeout(generateMissionDraft(doctorId, task.id), PER_DOCTOR_TIMEOUT_MS).catch((e) => {
+          console.error('[practice-os-daily-tasks] generate timed out/failed:', String(doctorId), e.message);
+          return null;
+        });
         if (!draft) { skipped++; continue; }
 
         const externalUrl = draft.external ? (draft.primaryAction?.url || '') : '';
