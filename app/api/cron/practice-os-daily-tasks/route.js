@@ -78,7 +78,7 @@ export async function GET(request) {
         const externalUrl = draft.external ? (draft.primaryAction?.url || '') : '';
         const res = await sendDailyTaskEmail({
           email: doctor.email,
-          name: doctor.displayName || doctor.name,
+          name: draft.doctorName || doctor.displayName || doctor.name,
           dayNumber: task.dayNumber,
           taskTitle: draft.title,
           contentMarkdown: draft.content,

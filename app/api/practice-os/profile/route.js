@@ -83,6 +83,10 @@ export async function PUT(request) {
     // flow + WhatsApp webhooks use the same values. (One source of truth.)
     const docUpdates = {};
     if (String(fields?.clinic_name ?? '').trim()) docUpdates.clinicName = String(fields.clinic_name).trim();
+    // The name the doctor entered here is the source of truth for their public
+    // website + all emails — mirror it to Doctor.displayName so we never fall back
+    // to their raw Google/Gmail account name anywhere.
+    if (String(fields?.doctor_name ?? '').trim()) docUpdates.displayName = String(fields.doctor_name).trim();
     const wa = String(fields?.whatsapp_number ?? '').replace(/\D/g, '').slice(-10);
     if (wa.length === 10) docUpdates.whatsappNumber = wa;
     if (Object.keys(docUpdates).length) {
