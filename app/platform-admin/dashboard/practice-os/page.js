@@ -15,6 +15,7 @@ const TABS = [
   { id: 'dailyPlan', label: 'Daily Plan' },
   { id: 'knowledge', label: 'Knowledge Base' },
   { id: 'profileFields', label: 'Profile Fields' },
+  { id: 'treatmentMap', label: 'Diseases & Treatments' },
   { id: 'access', label: 'Access Requests' },
   { id: 'gbpGuide', label: 'GBP Guide' },
   { id: 'analytics', label: 'Analytics' },
@@ -73,12 +74,79 @@ export default function PracticeOSPage() {
       {tab === 'dailyPlan' && <DailyPlanTab frameworks={frameworks} />}
       {tab === 'knowledge' && <KnowledgeBaseTab frameworks={frameworks} />}
       {tab === 'profileFields' && <ProfileFieldsTab />}
+      {tab === 'treatmentMap' && <TreatmentMapTab />}
       {tab === 'access' && <AccessRequestsTab />}
       {tab === 'gbpGuide' && <GbpGuideTab />}
       {tab === 'analytics' && <AnalyticsTab />}
       {tab === 'doctors' && <DoctorsTab />}
 
       {showNew && <NewFrameworkModal onClose={() => setShowNew(false)} onDone={loadFrameworks} />}
+    </div>
+  );
+}
+
+/* ---------------- Diseases & Treatments controls ---------------- */
+// Founder controls for the practice-map generator: how many treatments it always
+// produces, and extra steering instructions appended to the generation prompt.
+function TreatmentMapTab() {
+  const [count, setCount] = useState('20');
+  const [instructions, setInstructions] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/platform/practice-os/settings');
+        const data = await res.json();
+        if (data.success) {
+          setCount(String(data.settings.treatmentCount ?? 20));
+          setInstructions(data.settings.clusterGenInstructions || '');
+        }
+      } catch { /* ignore */ } finally { setLoading(false); }
+    })();
+  }, []);
+
+  const save = async () => {
+    setSaving(true); setMsg(null);
+    try {
+      const res = await fetch('/api/platform/practice-os/settings', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ treatmentCount: Number(count), clusterGenInstructions: instructions }),
+      });
+      const data = await res.json();
+      if (data.success) { setMsg({ type: 'ok', text: 'Saved.' }); setCount(String(data.settings.treatmentCount)); }
+      else setMsg({ type: 'err', text: data.error || 'Could not save.' });
+    } catch { setMsg({ type: 'err', text: 'Something went wrong.' }); } finally { setSaving(false); }
+  };
+
+  if (loading) return <div className="bg-white rounded-xl shadow-sm p-6 text-sm text-gray-500">Loading…</div>;
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
+      <h2 className="font-semibold text-gray-900 mb-1">Diseases &amp; Treatments generator</h2>
+      <p className="text-sm text-gray-500 mb-5">Controls how the practice map is generated for every doctor. Applies the next time a map is generated/regenerated.</p>
+
+      <label className="block mb-5">
+        <span className="text-sm font-medium text-gray-700">Number of treatments</span>
+        <p className="text-xs text-gray-400 mb-1.5">How many treatments the map always produces (and the doctor must have before proceeding). 1–40.</p>
+        <input type="number" min={1} max={40} value={count} onChange={(e) => setCount(e.target.value)}
+          className="w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+      </label>
+
+      <label className="block mb-5">
+        <span className="text-sm font-medium text-gray-700">Extra generation instructions</span>
+        <p className="text-xs text-gray-400 mb-1.5">Appended to the AI prompt for both pathways — steer the output (e.g. “prefer minimally-invasive procedures”, “avoid cosmetic-only entries”). Leave blank to use the default prompt only.</p>
+        <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} rows={5} maxLength={2000}
+          placeholder="Optional. Extra rules/guidance for the diseases & treatments generation…"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+      </label>
+
+      {msg && <p className={`text-sm mb-3 ${msg.type === 'ok' ? 'text-green-600' : 'text-red-600'}`}>{msg.text}</p>}
+      <button onClick={save} disabled={saving} className="bg-[#096b17] text-white rounded-lg px-5 py-2 text-sm font-medium disabled:opacity-50">
+        {saving ? 'Saving…' : 'Save'}
+      </button>
     </div>
   );
 }

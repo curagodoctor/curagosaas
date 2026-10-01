@@ -28,14 +28,19 @@ export async function POST(request) {
     const specialty = fields.specialty || fields.specialization || '';
     if (!specialty) return NextResponse.json({ success: false, error: 'Add your specialty in your profile first.' }, { status: 400 });
 
+    // Founder-tunable from the admin dashboard: how many treatments + extra steering.
+    const settings = await (await import('@/models/practice-os/PracticeOsSettings')).default.getSettings();
+    const COUNT = settings.treatmentCount || 20;
+    const adminExtra = (settings.clusterGenInstructions || '').trim();
+
     const gen = await structureContent({
       instruction: `From the specialty "${specialty}"${fields.subspecialty ? ` (subspecialty "${fields.subspecialty}")` : ''}, generate the core TREATMENT / PROCEDURE universe for an INDEPENDENT NON-SURGICAL specialist practising in an Indian Tier-1 or Tier-2 city. This is architecture only — clinically coherent, commercially meaningful, SEO-useful — NOT a keyword list.
 
-Generate EXACTLY 20 distinct treatments/procedures/services this specialist genuinely offers — always return the full 20, never fewer. Weight them toward COMMON + HIGH-DEMAND + HIGH-PRACTICE-VALUE, with a smaller set of complex/high-authority ones. Prioritise the highest patient-demand, highest-value services first. Each must be: medically distinct; clinically legitimate; genuinely within this specialty and an independent specialist's actual scope; consistent with current medical standards. PREFER the doctor's own listed procedures/expertise where they apply. Use full, standard medical terminology paired with a plain patient-facing name where helpful — NEVER abbreviations. Do NOT create separate entries for wording variations. Do NOT list procedures the specialist would not personally perform.
+Generate EXACTLY ${COUNT} distinct treatments/procedures/services this specialist genuinely offers — always return the full ${COUNT}, never fewer. Weight them toward COMMON + HIGH-DEMAND + HIGH-PRACTICE-VALUE, with a smaller set of complex/high-authority ones. Prioritise the highest patient-demand, highest-value services first. Each must be: medically distinct; clinically legitimate; genuinely within this specialty and an independent specialist's actual scope; consistent with current medical standards. PREFER the doctor's own listed procedures/expertise where they apply. Use full, standard medical terminology paired with a plain patient-facing name where helpful — NEVER abbreviations. Do NOT create separate entries for wording variations. Do NOT list procedures the specialist would not personally perform.
 
-CRITICAL — be SPECIFIC, never generic. Every entry must be a REAL, named procedure/treatment for THIS exact specialty (e.g. for a dermatologist: "Chemical Peel", "Microneedling with PRP", "Q-Switched Laser for Pigmentation" — NOT vague fillers like "Skin Treatment", "Consultation", "Medical Management", "Follow-up Care", "General Procedure"). Do NOT repeat the same treatment under different wording. If you cannot find 20 genuinely distinct specialty-specific procedures, go deeper into real sub-procedures of this specialty rather than padding with generic entries.
-
-Return JSON: {"treatments": [{"name": string, "tier": "common"|"authority", "reason": string (one line)}]} with EXACTLY 20 distinct treatments in priority order. NMC-compliant — factual, no superlatives, no outcome/success claims.`,
+CRITICAL — be SPECIFIC, never generic. Every entry must be a REAL, named procedure/treatment for THIS exact specialty (e.g. for a dermatologist: "Chemical Peel", "Microneedling with PRP", "Q-Switched Laser for Pigmentation" — NOT vague fillers like "Skin Treatment", "Consultation", "Medical Management", "Follow-up Care", "General Procedure"). Do NOT repeat the same treatment under different wording. If you cannot find ${COUNT} genuinely distinct specialty-specific procedures, go deeper into real sub-procedures of this specialty rather than padding with generic entries.
+${adminExtra ? `\nADDITIONAL INSTRUCTIONS FROM THE ADMIN (follow these):\n${adminExtra}\n` : ''}
+Return JSON: {"treatments": [{"name": string, "tier": "common"|"authority", "reason": string (one line)}]} with EXACTLY ${COUNT} distinct treatments in priority order. NMC-compliant — factual, no superlatives, no outcome/success claims.`,
       source: `Specialty: ${specialty}\nSubspecialty: ${fields.subspecialty || '(none)'}\nProcedures the doctor listed: ${fields.procedures || '(none)'}\nAreas of expertise: ${fields.expertise || '(none)'}\nConditions the doctor listed: ${fields.diseases || '(none)'}\nCity: ${fields.city || ''}`,
       profileFields: fields,
     });
@@ -46,7 +51,7 @@ Return JSON: {"treatments": [{"name": string, "tier": "common"|"authority", "rea
     await PracticeOsDiseaseCluster.deleteMany({ doctorId: doctor._id });
     const seen = new Set();
     const docs = [];
-    for (const t of list.slice(0, 20)) {
+    for (const t of list.slice(0, COUNT)) {
       const name = String(t.name || '').trim();
       if (!name || seen.has(name.toLowerCase())) continue;
       seen.add(name.toLowerCase());

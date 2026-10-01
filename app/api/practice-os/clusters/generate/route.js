@@ -29,6 +29,11 @@ export async function POST(request) {
     const specialty = fields.specialty || fields.specialization || '';
     if (!specialty) return NextResponse.json({ success: false, error: 'Add your specialty in your profile first.' }, { status: 400 });
 
+    // Founder-tunable from the admin dashboard: total treatments + extra steering.
+    const settings = await (await import('@/models/practice-os/PracticeOsSettings')).default.getSettings();
+    const COUNT = Math.max(10, settings.treatmentCount || 20); // surgical path needs >=1 per disease (10 diseases)
+    const adminExtra = (settings.clusterGenInstructions || '').trim();
+
     const gen = await structureContent({
       instruction: `From the specialty "${specialty}"${fields.subspecialty ? ` (subspecialty "${fields.subspecialty}")` : ''}, generate the core DISEASE and TREATMENT architecture for an INDEPENDENT specialist practising in an Indian Tier-1 or Tier-2 city. This is architecture only — clinically coherent, commercially meaningful, SEO-useful — NOT a keyword list, NOT content.
 
@@ -44,11 +49,11 @@ PREFER the doctor's OWN listed procedures/expertise wherever they legitimately a
 
 CLINICAL ACCURACY — follow current medical knowledge and accepted practice. Do NOT invent diseases, procedures, synonyms, indications or treatment relationships. Never optimise for keywords at the expense of clinical accuracy.
 
-OVERALL LIMIT — EXACTLY 20 treatments in TOTAL across all 10 diseases (each disease still 1-3). Distribute so the total is 20: give the most common/high-demand diseases their full set (3) and keep authority conditions lean (1). Always reach 20 — never return fewer.
+OVERALL LIMIT — EXACTLY ${COUNT} treatments in TOTAL across all 10 diseases (each disease still 1-3). Distribute so the total is ${COUNT}: give the most common/high-demand diseases their full set (3) and keep authority conditions lean (1). Always reach ${COUNT} — never return fewer.
 
 CRITICAL — treatments must be SPECIFIC to EACH disease and DISTINCT across diseases. Do NOT paste the same treatment list under every disease. Each disease's treatments must be the real procedures used for THAT disease only (e.g. Osteoarthritis of the knee → Total Knee Replacement; Gallstones → Laparoscopic Cholecystectomy — never the same generic list repeated). Never use vague fillers ("Surgery", "Medical Management", "General Procedure"). If two diseases would share a treatment, name the disease-specific variant.
-
-Return JSON: {"diseases": [{"name": string, "tier": "common"|"authority", "reason": string (one line), "treatments": string[] (1-3 distinct, real procedures, no abbreviations)}]} with EXACTLY 10 diseases in priority order and EXACTLY 20 treatments overall. NMC-compliant — factual, no superlatives, no outcome/success claims.`,
+${adminExtra ? `\nADDITIONAL INSTRUCTIONS FROM THE ADMIN (follow these):\n${adminExtra}\n` : ''}
+Return JSON: {"diseases": [{"name": string, "tier": "common"|"authority", "reason": string (one line), "treatments": string[] (1-3 distinct, real procedures, no abbreviations)}]} with EXACTLY 10 diseases in priority order and EXACTLY ${COUNT} treatments overall. NMC-compliant — factual, no superlatives, no outcome/success claims.`,
       source: `Specialty: ${specialty}\nSubspecialty: ${fields.subspecialty || '(none)'}\nProcedures the doctor listed: ${fields.procedures || '(none)'}\nAreas of expertise: ${fields.expertise || '(none)'}\nConditions the doctor listed: ${fields.diseases || '(none)'}\nCity: ${fields.city || ''}`,
       profileFields: fields,
     });
@@ -71,7 +76,7 @@ Return JSON: {"diseases": [{"name": string, "tier": "common"|"authority", "reaso
     }));
     // Enforce the 20-treatment overall cap: keep 1 per disease first (min), then
     // fill remaining budget in priority order — so no disease is left empty.
-    const TOTAL_CAP = 20;
+    const TOTAL_CAP = COUNT;
     for (const doc of docs) if (!doc.treatments.length) doc.treatments = []; // (defensive)
     let budget = TOTAL_CAP - docs.reduce((n, doc) => n + Math.min(1, doc.treatments.length), 0);
     for (const doc of docs) {

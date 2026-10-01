@@ -20,7 +20,10 @@ export async function GET(request) {
     // POST /clusters/generate (the doctor's page triggers it when empty), so GET
     // just returns whatever exists — no profile-based seeding here.
     const clusters = await PracticeOsDiseaseCluster.find({ doctorId: doctor._id }).sort({ order: 1, createdAt: 1 }).lean();
-    return NextResponse.json({ success: true, clusters });
+    // The admin-configured target count (gates the review screen's "can proceed").
+    let treatmentCount = 20;
+    try { treatmentCount = (await (await import('@/models/practice-os/PracticeOsSettings')).default.getSettings()).treatmentCount || 20; } catch { /* default */ }
+    return NextResponse.json({ success: true, clusters, treatmentCount });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     if (error.message === 'PaymentRequired') return NextResponse.json({ success: false, error: 'PaymentRequired' }, { status: 402 });

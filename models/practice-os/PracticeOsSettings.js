@@ -13,6 +13,14 @@ const PracticeOsSettingsSchema = new mongoose.Schema({
   // §8 — admin-overridable GBP setup guide (blocks + tasks). Empty = use the
   // built-in default from lib/practice-os/gbpGuide.
   gbpGuide: { type: mongoose.Schema.Types.Mixed, default: null },
+  // Diseases & Treatments map generation — founder-tunable from the dashboard.
+  // How many treatments the map should always produce (surgical: total across
+  // diseases; non-surgical: standalone count). Also gates the review screen.
+  treatmentCount: { type: Number, default: 20, min: 1, max: 40 },
+  // Extra generation instructions appended to the disease/treatment prompts, so the
+  // founder can steer the AI (e.g. "prefer minimally-invasive procedures") without a
+  // code change. Blank = use the built-in prompt only.
+  clusterGenInstructions: { type: String, default: '' },
 }, { timestamps: true });
 
 // Fetch (creating on first use). Seeds price from PRACTICE_OS_PRICE_INR if set,

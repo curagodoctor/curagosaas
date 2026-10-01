@@ -41,6 +41,18 @@ export async function PUT(request) {
       settings.priceInInr = Math.round(price);
     }
 
+    // Diseases & Treatments generation controls.
+    if (body.treatmentCount !== undefined) {
+      const n = Math.round(Number(body.treatmentCount));
+      if (!Number.isFinite(n) || n < 1 || n > 40) {
+        return NextResponse.json({ success: false, error: 'Treatment count must be between 1 and 40.' }, { status: 400 });
+      }
+      settings.treatmentCount = n;
+    }
+    if (body.clusterGenInstructions !== undefined) {
+      settings.clusterGenInstructions = String(body.clusterGenInstructions || '').trim().slice(0, 2000);
+    }
+
     // §8b — the GBP setup guide (blocks + tasks). Sanitised; empty rows dropped.
     if (Array.isArray(body.gbpGuide)) {
       settings.gbpGuide = body.gbpGuide

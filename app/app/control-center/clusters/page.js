@@ -11,7 +11,7 @@ import PosNav from '@/components/practice-os/PosNav';
 //  2. gbp      — post the approved treatments as GBP services.
 const PER_DISEASE_MIN = 1;
 const PER_DISEASE_MAX = 3;
-const TOTAL_TREATMENT_CAP = 20; // across all 10 diseases
+const DEFAULT_TREATMENT_CAP = 20; // admin-configurable (PracticeOsSettings.treatmentCount)
 const LEAF_SOFT = 'var(--green-soft, rgba(9,107,23,.09))';
 
 function ClustersInner() {
@@ -22,6 +22,8 @@ function ClustersInner() {
   const [genErr, setGenErr] = useState('');
   const [busy, setBusy] = useState('');
   const [newTreat, setNewTreat] = useState('');
+  const [cap, setCap] = useState(DEFAULT_TREATMENT_CAP); // the admin-set target count
+  const TOTAL_TREATMENT_CAP = cap;                       // keep existing refs working
   const [mode, setMode] = useState(null); // 'diseases' (surgical) | 'treatments' (non-surgical)
   // Force the pathway-choice screen back up even after a map exists, so the doctor
   // can return and switch approach if they picked the wrong one.
@@ -47,6 +49,7 @@ function ClustersInner() {
     try {
       const d = await fetch('/api/practice-os/clusters', { credentials: 'include' }).then((r) => r.json());
       const cl = d.success ? (d.clusters || []) : [];
+      if (d.treatmentCount) setCap(d.treatmentCount);
       setClusters(cl);
       // Existing map → infer its mode. Empty → show the pathway choice (no auto-gen).
       if (cl.length) setMode(cl[0]?.kind === 'treatment' ? 'treatments' : 'diseases');
@@ -175,7 +178,7 @@ function ClustersInner() {
             </div>
           )
         ) : isTreatmentMode ? (
-          <TreatmentsReview clusters={clusters} setClusters={setClusters} router={router} save={save} genErr={genErr} setGenErr={setGenErr} mono={mono} onBack={() => setForceChoice(true)} />
+          <TreatmentsReview clusters={clusters} setClusters={setClusters} router={router} save={save} genErr={genErr} setGenErr={setGenErr} mono={mono} onBack={() => setForceChoice(true)} cap={cap} />
         ) : cur ? (
           <>
             {/* ---- DISEASE REVIEW ---- */}
@@ -272,7 +275,8 @@ function ClustersInner() {
 
 // Non-surgical path — review a flat list of treatments/procedures (each entry is a
 // treatment-kind cluster), then approve them all at once.
-function TreatmentsReview({ clusters, setClusters, router, save, genErr, setGenErr, mono, onBack }) {
+function TreatmentsReview({ clusters, setClusters, router, save, genErr, setGenErr, mono, onBack, cap }) {
+  const TOTAL_TREATMENT_CAP = cap || DEFAULT_TREATMENT_CAP; // keep existing refs working
   const [newTreat, setNewTreat] = useState('');
   const [busy, setBusy] = useState('');
   const patchLocal = (id, body) => setClusters((arr) => arr.map((c) => c._id === id ? { ...c, ...body } : c));
