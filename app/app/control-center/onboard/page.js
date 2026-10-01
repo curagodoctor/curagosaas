@@ -56,7 +56,11 @@ const IDENTITY_KEYS = ['doctor_name', 'designation', 'specialty', 'subspecialty'
 const GENERATED_KEYS = ['expertise', 'diseases', 'procedures', 'usp', 'interests'];
 const OPTIONAL_KEYS = ['awards', 'publications', 'registration'];
 // Phase A profile flow groups (spec order).
-const MAP_KEYS = ['expertise', 'diseases', 'procedures'];   // "with this create" — generated lists
+const MAP_KEYS = ['expertise', 'diseases', 'procedures'];   // "with this create" — generated lists shown on the map step
+// All AI-draftable derived fields the practice-map generation fills (map lists +
+// the "what sets you apart" block). Identity fields (name/specialty/quals) are
+// NEVER auto-applied, so regenerating for a new specialty can't clobber them.
+const GEN_KEYS = ['expertise', 'diseases', 'procedures', 'usp', 'interests'];
 const USP_KEYS = ['usp', 'interests'];                       // describe your USP / interests
 const AWARDS_KEYS = ['awards', 'publications', 'registration']; // shown unchanged, optional
 const fieldsBy = (section, keys) => keys.map((k) => section.fields.find((f) => f.key === k)).filter(Boolean);
@@ -314,7 +318,7 @@ function Wizard() {
       const d = await res.json();
       if (d.success) {
         const only = {};
-        for (const k of MAP_KEYS) if (d.values[k] != null) only[k] = d.values[k];
+        for (const k of GEN_KEYS) if (d.values[k] != null) only[k] = d.values[k];
         setFields((f) => ({ ...f, ...only }));
         mapSpecialtyRef.current = fields.specialty || '';
       }
