@@ -5,6 +5,7 @@ import Doctor from '@/models/Doctor';
 import BlogArticle from '@/models/BlogArticle';
 import { primaryBaseUrl } from '@/lib/primaryDomain';
 import { buildArticleGraph, jsonLdScript } from '@/lib/seo/schema';
+import { shouldCountView } from '@/lib/viewCount';
 import { getSiteChrome } from '../../_siteChrome';
 import SiteChrome from '@/components/booking-page/SiteChrome';
 
@@ -80,12 +81,11 @@ export default async function DoctorBlogArticlePage({ params }) {
   }
 
   // Scope strictly by doctorId so one doctor never serves another's article, and
-  // increment the view count in the same atomic operation.
-  const article = await BlogArticle.findOneAndUpdate(
-    { doctorId: doctor._id, slug, status: 'published' },
-    { $inc: { 'analytics.views': 1 } },
-    { new: true }
-  ).lean();
+  // increment the view count — but only for real human loads (skip bots/prefetches).
+  const query = { doctorId: doctor._id, slug, status: 'published' };
+  const article = (await shouldCountView())
+    ? await BlogArticle.findOneAndUpdate(query, { $inc: { 'analytics.views': 1 } }, { new: true }).lean()
+    : await BlogArticle.findOne(query).lean();
 
   if (!article) {
     notFound();

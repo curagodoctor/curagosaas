@@ -1,5 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import connectDB from '@/lib/mongodb';
+import { shouldCountView } from '@/lib/viewCount';
 import Doctor from '@/models/Doctor';
 import BookingPage from '@/models/BookingPage';
 import { primaryBaseUrl } from '@/lib/primaryDomain';
@@ -94,10 +95,12 @@ export default async function SubdomainSlugPage({ params }) {
     redirect('/');
   }
 
-  // Increment views
-  await BookingPage.findByIdAndUpdate(bookingPage._id, {
-    $inc: { views: 1 }
-  });
+  // Increment views — real human page loads only (skip bots + prefetches).
+  if (await shouldCountView()) {
+    await BookingPage.findByIdAndUpdate(bookingPage._id, {
+      $inc: { views: 1 }
+    });
+  }
 
   return <SiteBody doctor={JSON.parse(JSON.stringify(doctor))} bookingPage={bookingPage} />;
 }

@@ -6,6 +6,7 @@ import Clinic from '@/models/Clinic';
 import { primaryBaseUrl } from '@/lib/primaryDomain';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 import { buildDoctorGraph, jsonLdScript } from '@/lib/seo/schema';
+import { shouldCountView } from '@/lib/viewCount';
 import SiteBody from './_SiteBody';
 
 // Generate metadata
@@ -81,8 +82,8 @@ export default async function SubdomainSitePage({ params }) {
     status: 'published',
   }).sort({ createdAt: 1 }).lean();
 
-  // Increment views
-  if (bookingPage) {
+  // Increment views — real human page loads only (skip bots + prefetches).
+  if (bookingPage && await shouldCountView()) {
     await BookingPage.findByIdAndUpdate(bookingPage._id, {
       $inc: { views: 1 }
     });
