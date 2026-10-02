@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useModal } from '@/contexts/ModalContext';
+import GoogleCalendarConnect from '@/components/admin/GoogleCalendarConnect';
 
 export default function SettingsPage() {
   const { showAlert, showConfirm } = useModal();
@@ -394,6 +395,9 @@ export default function SettingsPage() {
                   Enter your 10-digit WhatsApp number without country code
                 </p>
               </div>
+
+              {/* Connect the doctor's own Google Calendar for Meet on their account. */}
+              <GoogleCalendarConnect />
 
               {/* GMB review-request settings hidden until the review-request flow
                   is fully wired. Keep the markup for when it's re-enabled. */}

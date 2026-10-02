@@ -193,6 +193,16 @@ const DoctorSchema = new mongoose.Schema({
     // sparse unique index declared below
   },
 
+  // Google Calendar connection — when connected, bookings create a Google Meet
+  // event on THIS doctor's own calendar (doctor + patient as attendees), instead
+  // of the shared CuraGo service-account calendar.
+  googleCalendar: {
+    connected: { type: Boolean, default: false },
+    email: { type: String, default: '' },          // the Google account they connected
+    refreshToken: { type: String, default: '', select: false }, // never sent to the client
+    connectedAt: { type: Date, default: null },
+  },
+
   // Product access flags (which products this account has entered/purchased)
   websiteBuilderActive: {
     type: Boolean,

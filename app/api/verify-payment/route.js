@@ -4,7 +4,7 @@ import {
   confirmReservation,
   getReservationById,
 } from "@/lib/slotManagerDB";
-import { createCalendarEvent } from "@/lib/googleCalendar";
+import { createCalendarEvent, createCalendarEventForDoctor } from "@/lib/googleCalendar";
 import connectDB from "@/lib/mongodb";
 import Doctor from "@/models/Doctor";
 import { sendBookingConfirmationToPatient, sendBookingNotificationToDoctor } from "@/lib/email";
@@ -111,16 +111,17 @@ export async function POST(request) {
       );
     }
 
-    // Fetch doctor info for webhook
+    // Fetch doctor info for webhook (+ calendar token for their own-Google path).
     let doctorInfo = { phone: '', name: '', subdomain: '', email: '' };
+    let doctorDoc = null;
     if (reservation.doctorId) {
-      const doctor = await Doctor.findById(reservation.doctorId);
-      if (doctor) {
+      doctorDoc = await Doctor.findById(reservation.doctorId).select('+googleCalendar.refreshToken');
+      if (doctorDoc) {
         doctorInfo = {
-          phone: doctor.whatsappNumber || doctor.phone || '',
-          name: doctor.displayName || doctor.name || '',
-          subdomain: doctor.subdomain || '',
-          email: doctor.email || '',
+          phone: doctorDoc.whatsappNumber || doctorDoc.phone || '',
+          name: doctorDoc.displayName || doctorDoc.name || '',
+          subdomain: doctorDoc.subdomain || '',
+          email: doctorDoc.email || '',
         };
       }
     }
@@ -135,16 +136,19 @@ export async function POST(request) {
       );
     }
 
-    // Create calendar event
-    const calendarEvent = await createCalendarEvent({
+    // Create calendar event — on the doctor's own Google Calendar if connected,
+    // else the shared CuraGo calendar.
+    const ev = {
       date: reservation.date,
       time: reservation.time,
       name: reservation.name,
       email: reservation.email,
       whatsapp: reservation.whatsapp,
       mode: reservation.mode,
-      doctorEmail: doctorInfo.email, // invite THIS doctor, not the global inbox
-    });
+    };
+    const calendarEvent =
+      (doctorDoc?.googleCalendar?.connected && await createCalendarEventForDoctor(doctorDoc, ev))
+      || await createCalendarEvent({ ...ev, doctorEmail: doctorInfo.email });
 
     if (!calendarEvent.success) {
       return NextResponse.json(

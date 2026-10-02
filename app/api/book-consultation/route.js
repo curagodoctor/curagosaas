@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { addBooking, isSlotBooked } from "@/lib/slotManager";
-import { createCalendarEvent } from "@/lib/googleCalendar";
+import { createCalendarEvent, createCalendarEventForDoctor } from "@/lib/googleCalendar";
 import connectDB from "@/lib/mongodb";
 import Doctor from "@/models/Doctor";
 
@@ -47,29 +47,26 @@ export async function POST(request) {
     // Fetch doctor info for webhook (from subdomain)
     await connectDB();
     let doctorInfo = { phone: '', name: '', subdomain: '', email: '' };
+    let doctorDoc = null;
     const subdomain = getSubdomainFromRequest(request);
     if (subdomain) {
-      const doctor = await Doctor.findOne({ subdomain, isActive: true });
-      if (doctor) {
+      doctorDoc = await Doctor.findOne({ subdomain, isActive: true }).select('+googleCalendar.refreshToken');
+      if (doctorDoc) {
         doctorInfo = {
-          phone: doctor.whatsappNumber || doctor.phone || '',
-          name: doctor.displayName || doctor.name || '',
-          subdomain: doctor.subdomain || '',
-          email: doctor.email || '',
+          phone: doctorDoc.whatsappNumber || doctorDoc.phone || '',
+          name: doctorDoc.displayName || doctorDoc.name || '',
+          subdomain: doctorDoc.subdomain || '',
+          email: doctorDoc.email || '',
         };
       }
     }
 
-    // Create calendar event
-    const calendarEvent = await createCalendarEvent({
-      date,
-      time,
-      name,
-      email,
-      whatsapp,
-      mode: modeOfContact,
-      doctorEmail: doctorInfo.email, // invite THIS doctor, not the global inbox
-    });
+    // Create calendar event — on the doctor's own Google Calendar if connected,
+    // else the shared CuraGo calendar.
+    const ev = { date, time, name, email, whatsapp, mode: modeOfContact };
+    const calendarEvent =
+      (doctorDoc?.googleCalendar?.connected && await createCalendarEventForDoctor(doctorDoc, ev))
+      || await createCalendarEvent({ ...ev, doctorEmail: doctorInfo.email });
 
     if (!calendarEvent.success) {
       throw new Error("Failed to create calendar event");

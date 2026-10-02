@@ -5,7 +5,7 @@ import Booking from "@/models/Booking";
 import Doctor from "@/models/Doctor";
 import ConsultationMode from "@/models/ConsultationMode";
 import { isSlotBooked } from "@/lib/slotManagerDB";
-import { createCalendarEvent } from "@/lib/googleCalendar";
+import { createCalendarEvent, createCalendarEventForDoctor } from "@/lib/googleCalendar";
 import { validatePhone } from "@/lib/validation";
 import { sendBookingConfirmationToPatient, sendBookingNotificationToDoctor } from "@/lib/email";
 import { sendSMS } from "@/lib/twilio";
@@ -73,7 +73,7 @@ export async function POST(request) {
     let doctorInfo = { phone: '', name: '', subdomain: '' };
     let doctorDoc = null;
     if (doctorId) {
-      doctorDoc = await Doctor.findById(doctorId);
+      doctorDoc = await Doctor.findById(doctorId).select('+googleCalendar.refreshToken');
       if (doctorDoc) {
         doctorInfo = {
           phone: doctorDoc.whatsappNumber || doctorDoc.phone || '',
@@ -97,18 +97,22 @@ export async function POST(request) {
       );
     }
 
-    // Create calendar event (required for booking confirmation)
+    // Create calendar event (required for booking confirmation). If the doctor has
+    // connected their own Google Calendar, the Meet is created on THEIR account
+    // (doctor organiser + patient attendee); otherwise fall back to the shared one.
     let calendarEvent;
     try {
-      calendarEvent = await createCalendarEvent({
+      const ev = {
         date: bookingData.date,
         time: bookingData.time,
         name: bookingData.name,
         email: bookingData.email,
         whatsapp: bookingData.whatsapp,
         mode: bookingData.modeOfContact,
-        doctorEmail: doctorDoc?.email, // invite THIS doctor, not the global inbox
-      });
+      };
+      calendarEvent =
+        (doctorDoc?.googleCalendar?.connected && await createCalendarEventForDoctor(doctorDoc, ev))
+        || await createCalendarEvent({ ...ev, doctorEmail: doctorDoc?.email });
 
       if (!calendarEvent || !calendarEvent.success) {
         console.error("Calendar event creation returned failure");
