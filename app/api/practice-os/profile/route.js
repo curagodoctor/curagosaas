@@ -87,6 +87,10 @@ export async function PUT(request) {
     // website + all emails — mirror it to Doctor.displayName so we never fall back
     // to their raw Google/Gmail account name anywhere.
     if (String(fields?.doctor_name ?? '').trim()) docUpdates.displayName = String(fields.doctor_name).trim();
+    // Mirror the profile into the Doctor record so the Settings tab + website show
+    // them pre-filled from onboarding (one source of truth).
+    if (String(fields?.specialty ?? '').trim()) docUpdates.specialization = String(fields.specialty).trim();
+    if (String(fields?.qualifications ?? '').trim()) docUpdates.qualification = String(fields.qualifications).trim();
     const wa = String(fields?.whatsapp_number ?? '').replace(/\D/g, '').slice(-10);
     if (wa.length === 10) docUpdates.whatsappNumber = wa;
     if (Object.keys(docUpdates).length) {
@@ -96,6 +100,14 @@ export async function PUT(request) {
     const summary = await generateDoctorSummary(doctor._id);
     profile.credentials.summary = summary;
     await profile.save();
+    // Pre-fill the website bio from the AI summary — but never overwrite a bio the
+    // doctor has edited themselves (only fill when it's still empty).
+    if (summary) {
+      await Doctor.updateOne(
+        { _id: doctor._id, $or: [{ bio: { $exists: false } }, { bio: '' }, { bio: null }] },
+        { $set: { bio: summary } },
+      );
+    }
 
     return NextResponse.json({ success: true, summary });
   } catch (error) {
