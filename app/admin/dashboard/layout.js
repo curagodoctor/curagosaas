@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import GlobalAssistant from '@/components/practice-os/GlobalAssistant';
+import GoogleCalendarPrompt from '@/components/admin/GoogleCalendarPrompt';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
@@ -371,6 +372,9 @@ export default function DashboardLayout({ children }) {
           </button>
         </div>
       </aside>
+
+      {/* Nudge to connect Google Calendar (until connected). */}
+      <GoogleCalendarPrompt />
 
       {/* Main Content */}
       <main className="pt-16 lg:pt-0 lg:ml-64 min-h-screen">

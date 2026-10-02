@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import PosNav from '@/components/practice-os/PosNav';
+import GoogleCalendarPrompt from '@/components/admin/GoogleCalendarPrompt';
 import StreakCalendar from '@/components/practice-os/StreakCalendar';
 import PendingWorkPrompt from '@/components/practice-os/PendingWorkPrompt';
 import WebsiteStats from '@/components/practice-os/WebsiteStats';
@@ -129,6 +130,9 @@ export default function ControlCenter() {
     <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-6 max-w-[1240px] mx-auto">
       {/* Shared top nav */}
       <PosNav />
+
+      {/* Nudge to connect Google Calendar (shown after onboarding, until connected). */}
+      <GoogleCalendarPrompt />
 
       {/* Welcome */}
       <p className="pos-label mb-2">Control Center</p>
