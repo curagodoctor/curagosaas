@@ -294,9 +294,9 @@ export default function PlatformAdminDashboardPage() {
                 <div key={booking.id} className="px-6 py-3 hover:bg-gray-50">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{booking.patientName}</p>
+                      <p className="text-sm font-medium text-gray-900">{booking.doctor}</p>
                       <p className="text-xs text-gray-500">
-                        {booking.doctor} &bull; {booking.mode}
+                        New booking &bull; {booking.mode}
                       </p>
                     </div>
                     <div className="text-right">

@@ -377,7 +377,7 @@ export default function DoctorDetailsPage({ params }) {
       {activeTab === 'bookings' && (
         <div className="bg-white rounded-xl shadow-sm">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Bookings</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Booking Activity</h3>
           </div>
           <DoctorBookings doctorId={id} />
         </div>
@@ -426,32 +426,29 @@ export default function DoctorDetailsPage({ params }) {
   );
 }
 
-// Separate component for bookings to handle its own loading state
+// Booking ACTIVITY for one doctor — counts only. Patient details are private to the
+// doctor and never shown to the platform admin.
 function DoctorBookings({ doctorId }) {
-  const [bookings, setBookings] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState({ total: 0, pages: 1 });
 
   useEffect(() => {
-    const fetchBookings = async () => {
+    const fetchStats = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/platform/doctors/${doctorId}/bookings?page=${page}&limit=10`);
+        const response = await fetch(`/api/platform/doctors/${doctorId}/bookings`);
         if (response.ok) {
           const data = await response.json();
-          setBookings(data.bookings || []);
-          setPagination(data.pagination || { total: 0, pages: 1 });
+          setStats(data.stats || { total: 0, byStatus: {}, lastBookingAt: null });
         }
       } catch (err) {
-        console.error('Error fetching bookings:', err);
+        console.error('Error fetching booking activity:', err);
       } finally {
         setLoading(false);
       }
     };
-
-    fetchBookings();
-  }, [doctorId, page]);
+    fetchStats();
+  }, [doctorId]);
 
   if (loading) {
     return (
@@ -461,73 +458,34 @@ function DoctorBookings({ doctorId }) {
     );
   }
 
-  if (bookings.length === 0) {
-    return (
-      <div className="p-6 text-center text-gray-500">No bookings found</div>
-    );
+  if (!stats || stats.total === 0) {
+    return <div className="p-6 text-center text-gray-500">No bookings yet</div>;
   }
 
+  const bs = stats.byStatus || {};
   return (
-    <>
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Patient</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mode</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date/Time</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {bookings.map((booking) => (
-            <tr key={booking._id}>
-              <td className="px-6 py-4">
-                <p className="text-sm font-medium text-gray-900">{booking.name}</p>
-                <p className="text-sm text-gray-500">{booking.whatsapp}</p>
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-900">{booking.mode}</td>
-              <td className="px-6 py-4">
-                <p className="text-sm text-gray-900">{booking.date}</p>
-                <p className="text-sm text-gray-500">{booking.time}</p>
-              </td>
-              <td className="px-6 py-4">
-                <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                  booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                  booking.status === 'pending_payment' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {booking.status}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* Pagination */}
-      {pagination.pages > 1 && (
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            Showing {bookings.length} of {pagination.total} bookings
-          </p>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setPage(p => Math.min(pagination.pages, p + 1))}
-              disabled={page === pagination.pages}
-              className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
+    <div className="p-6">
+      <p className="text-sm text-gray-500 mb-4">
+        Patient details are private to the doctor and shown only on their own dashboard. Below is booking activity only.
+      </p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="border border-gray-200 rounded-lg p-4">
+          <p className="text-xs uppercase tracking-wide text-gray-400">Total</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
         </div>
-      )}
-    </>
+        <div className="border border-gray-200 rounded-lg p-4">
+          <p className="text-xs uppercase tracking-wide text-gray-400">Confirmed</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{bs.confirmed || 0}</p>
+        </div>
+        <div className="border border-gray-200 rounded-lg p-4">
+          <p className="text-xs uppercase tracking-wide text-gray-400">Pending</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{bs.pending_payment || 0}</p>
+        </div>
+        <div className="border border-gray-200 rounded-lg p-4">
+          <p className="text-xs uppercase tracking-wide text-gray-400">Last booking</p>
+          <p className="text-sm font-medium text-gray-900 mt-2">{stats.lastBookingAt ? new Date(stats.lastBookingAt).toLocaleDateString() : '—'}</p>
+        </div>
+      </div>
+    </div>
   );
 }

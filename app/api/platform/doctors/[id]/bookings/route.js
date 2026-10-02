@@ -14,14 +14,9 @@ export async function GET(request, { params }) {
 
     const { id } = await params;
     const { searchParams } = new URL(request.url);
-
-    const page = parseInt(searchParams.get('page')) || 1;
-    const limit = parseInt(searchParams.get('limit')) || 20;
     const status = searchParams.get('status');
-    const mode = searchParams.get('mode');
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
-    const search = searchParams.get('search');
 
     await connectDB();
 
@@ -31,55 +26,34 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Doctor not found' }, { status: 404 });
     }
 
-    // Build query
+    // Build query (counts only — patient details are NEVER returned to the platform
+    // admin; they live on the doctor's own dashboard).
     const query = { doctorId: id };
-
-    if (status) {
-      query.status = status;
-    }
-
-    if (mode) {
-      query.mode = mode;
-    }
-
+    if (status) query.status = status;
     if (dateFrom || dateTo) {
       query.date = {};
       if (dateFrom) query.date.$gte = dateFrom;
       if (dateTo) query.date.$lte = dateTo;
     }
 
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { whatsapp: { $regex: search, $options: 'i' } }
-      ];
-    }
-
-    const skip = (page - 1) * limit;
-
-    const [bookings, total] = await Promise.all([
-      Booking.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Booking.countDocuments(query)
+    const [total, statusAgg, lastBookingAt] = await Promise.all([
+      Booking.countDocuments(query),
+      Booking.aggregate([{ $match: query }, { $group: { _id: '$status', count: { $sum: 1 } } }]),
+      Booking.findOne(query).sort({ createdAt: -1 }).select('createdAt').lean(),
     ]);
 
     return NextResponse.json({
       doctor: {
         id: doctor._id,
         name: doctor.displayName || doctor.name,
-        subdomain: doctor.subdomain
+        subdomain: doctor.subdomain,
       },
-      bookings,
-      pagination: {
-        page,
-        limit,
+      // Aggregate activity only — no patient-identifying data.
+      stats: {
         total,
-        pages: Math.ceil(total / limit)
-      }
+        byStatus: statusAgg.reduce((acc, s) => { acc[s._id] = s.count; return acc; }, {}),
+        lastBookingAt: lastBookingAt?.createdAt || null,
+      },
     });
 
   } catch (error) {

@@ -278,9 +278,10 @@ export async function GET() {
         }))
       },
       recent: {
+        // Booking ACTIVITY only — never the patient's identity. Patient name/phone/
+        // email belong to the doctor and are shown only on the doctor's dashboard.
         bookings: recentBookings.map(b => ({
           id: b._id,
-          patientName: b.name,
           doctor: b.doctorId?.displayName || b.doctorId?.name || 'Unknown',
           doctorSubdomain: b.doctorId?.subdomain,
           mode: b.mode,
