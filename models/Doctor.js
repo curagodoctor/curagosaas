@@ -200,6 +200,7 @@ const DoctorSchema = new mongoose.Schema({
     connected: { type: Boolean, default: false },
     email: { type: String, default: '' },          // the Google account they connected
     refreshToken: { type: String, default: '', select: false }, // never sent to the client
+    calendarId: { type: String, default: '' },      // the app-created "CuraGo Appointments" calendar
     connectedAt: { type: Date, default: null },
   },
 

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
 import Doctor from '@/models/Doctor';
-import { exchangeCalendarCode } from '@/lib/googleCalendarOAuth';
+import { exchangeCalendarCode, createAppCalendar } from '@/lib/googleCalendarOAuth';
 
 export const runtime = 'nodejs';
 
@@ -22,8 +22,14 @@ export async function GET(request) {
     try { doctor = await requireDoctorAuth(request); } catch { return back('session'); }
     if (state && String(state) !== String(doctor._id)) return back('mismatch');
 
-    const { refreshToken, email } = await exchangeCalendarCode(code);
+    const { refreshToken, accessToken, email } = await exchangeCalendarCode(code);
     if (!refreshToken) return back('noToken'); // Google only returns it with prompt=consent
+
+    // Create the dedicated "CuraGo Appointments" calendar in the doctor's account
+    // (calendar.app.created can only write to app-created calendars, not primary).
+    let calendarId = '';
+    try { calendarId = await createAppCalendar(accessToken); } catch (e) { console.error('[gcal] create calendar:', e.message); }
+    if (!calendarId) return back('error');
 
     await connectDB();
     await Doctor.updateOne({ _id: doctor._id }, {
@@ -31,6 +37,7 @@ export async function GET(request) {
         'googleCalendar.connected': true,
         'googleCalendar.email': email || '',
         'googleCalendar.refreshToken': refreshToken,
+        'googleCalendar.calendarId': calendarId,
         'googleCalendar.connectedAt': new Date(),
       },
     });
