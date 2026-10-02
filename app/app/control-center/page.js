@@ -63,7 +63,9 @@ export default function ControlCenter() {
         if (crRes.ok) { const cr = await crRes.json(); if (cr.success) setCredits(cr); }
         let granted = false;
         if (aRes.ok) { const a = await aRes.json(); granted = !!a.granted; setAccessStatus(a.status || 'none'); setAccessExpiry(a.access?.expiresAt || null); }
-        if (uRes.ok) { const u = await uRes.json(); if (u.success && !u.username && granted) setNeedsUsername(true); }
+        // Leaderboard is hidden — don't force doctors to pick a leaderboard name.
+        // (Re-enable when the leaderboard ships: setNeedsUsername(true) below.)
+        if (uRes.ok) { await uRes.json().catch(() => {}); }
         // Granted doctors must map their diseases + treatments before any daily
         // content — check whether they've approved any cluster yet.
         if (granted) {
@@ -241,8 +243,8 @@ export default function ControlCenter() {
       {/* 5 · Your website status */}
       <div className="mt-4"><WebsiteStats /></div>
 
-      {/* 6 · Leaderboard */}
-      <div className="mt-4"><LeaderboardCard lb={leaderboard} /></div>
+      {/* 6 · Leaderboard — hidden (deferred). Re-enable the LeaderboardCard here. */}
+      {false && <div className="mt-4"><LeaderboardCard lb={leaderboard} /></div>}
 
       {/* Builder Packs — only real curriculum packs (the Dominate Organic Search
           daily engine is optimization-tier, surfaced above, not a pack). */}

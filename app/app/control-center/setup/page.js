@@ -298,11 +298,14 @@ function SetupInner() {
             ))}
             {days.length === 0 && <div className="px-4 py-6 text-center text-sm text-[var(--muted)]">Your curriculum is being prepared.</div>}
           </div>
+          {/* Leaderboard is hidden (deferred). */}
+          {false && (
           <div className="mt-6 pos-card p-5">
             <p className="pos-label mb-1" style={{ color: 'var(--green)' }}>Join the leaderboard (optional)</p>
             <p className="text-sm text-[var(--muted)] mb-3" style={{ maxWidth: '48ch' }}>Compete anonymously with the cohort on XP, streak and speed. Pick a name — you can change it anytime.</p>
             <UsernamePicker />
           </div>
+          )}
 
           <div className="mt-7">
             <button onClick={finish} disabled={busy} className="pos-action">{busy ? 'Opening Day 1…' : 'Start Day 1'}</button>

@@ -128,11 +128,14 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* Leaderboard is hidden (deferred) — hide the name picker too. */}
+      {false && (
       <div className="pos-card p-5 mb-8">
         <p className="pos-label mb-1" style={{ color: 'var(--green)' }}>Leaderboard name</p>
         <p className="text-sm text-[var(--muted)] mb-3" style={{ maxWidth: '52ch' }}>Your anonymous name on the cohort leaderboard.</p>
         <UsernamePicker />
       </div>
+      )}
 
       {/* CV — upload after skipping, or re-upload to refresh the knowledge base */}
       <div className="pos-card p-5 mb-8">
