@@ -4,9 +4,9 @@ import ConsultationMode from "@/models/ConsultationMode";
 import Clinic from "@/models/Clinic";
 import Doctor from "@/models/Doctor";
 
-// Online booking is disabled for now — hide any "online" mode from the public
-// booking form. To re-enable, set this flag to true.
-const ONLINE_BOOKING_ENABLED = false;
+// Online booking is enabled. Set ONLINE_BOOKING_ENABLED=false in the env to hide
+// any "online" mode from the public booking form again (no redeploy needed).
+const ONLINE_BOOKING_ENABLED = process.env.ONLINE_BOOKING_ENABLED !== 'false';
 const isOnlineMode = (m) => /online/i.test(m.name || "") || /online/i.test(m.displayName || "");
 
 // GET - Public endpoint for the patient booking form.
