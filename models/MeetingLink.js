@@ -42,14 +42,14 @@ const MeetingLinkSchema = new mongoose.Schema({
 MeetingLinkSchema.index({ doctorId: 1, isActive: 1 });
 
 // Ensure only one default meeting link per doctor
-MeetingLinkSchema.pre('save', async function(next) {
+// async middleware must NOT call next() in Mongoose 7+ (throws "next is not a function").
+MeetingLinkSchema.pre('save', async function() {
   if (this.isDefault && this.isModified('isDefault')) {
     await this.constructor.updateMany(
       { doctorId: this.doctorId, _id: { $ne: this._id } },
       { isDefault: false }
     );
   }
-  next();
 });
 
 const MeetingLink = mongoose.models.MeetingLink || mongoose.model('MeetingLink', MeetingLinkSchema);

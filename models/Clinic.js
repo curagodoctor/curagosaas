@@ -77,15 +77,17 @@ const ClinicSchema = new mongoose.Schema({
 // Indexes
 ClinicSchema.index({ doctorId: 1, isActive: 1, sortOrder: 1 });
 
-// Ensure only one primary clinic per doctor
-ClinicSchema.pre('save', async function(next) {
+// Ensure only one primary clinic per doctor. NOTE: async middleware must NOT call
+// next() in Mongoose 7+ — it isn't passed (doing so throws "next is not a function",
+// which minified to "a is not a function" in production). Resolving the async fn is
+// the completion signal.
+ClinicSchema.pre('save', async function() {
   if (this.isPrimary && this.isModified('isPrimary')) {
     await this.constructor.updateMany(
       { doctorId: this.doctorId, _id: { $ne: this._id } },
       { isPrimary: false }
     );
   }
-  next();
 });
 
 const Clinic = mongoose.models.Clinic || mongoose.model('Clinic', ClinicSchema);
