@@ -49,7 +49,26 @@ export async function GET(request) {
     const fw = await Framework.findOne({ tier: 'optimization' }).select('_id').lean();
     if (!fw) return NextResponse.json({ success: true, skipped: 'no-optimization-framework' });
 
-    const profiles = await PracticeOsProfile.find({ 'optimizationAccess.granted': true }).select('doctorId').lean();
+    // Manual/targeted trigger (?email= or ?doctorId=) — send to ONE doctor now and,
+    // with ?force=1, ignore the once-per-day guard. Used to preview the email on
+    // demand; the scheduled run passes neither and processes everyone normally.
+    const url = new URL(request.url);
+    const targetEmail = (url.searchParams.get('email') || '').trim().toLowerCase();
+    const targetDoctorId = (url.searchParams.get('doctorId') || '').trim();
+    const force = url.searchParams.get('force') === '1';
+
+    let profiles;
+    if (targetEmail || targetDoctorId) {
+      let docId = targetDoctorId;
+      if (!docId && targetEmail) {
+        const doc = await Doctor.findOne({ email: targetEmail }).select('_id').lean();
+        if (!doc) return NextResponse.json({ success: false, error: 'doctor not found for email' }, { status: 404 });
+        docId = doc._id;
+      }
+      profiles = await PracticeOsProfile.find({ doctorId: docId }).select('doctorId').lean();
+    } else {
+      profiles = await PracticeOsProfile.find({ 'optimizationAccess.granted': true }).select('doctorId').lean();
+    }
 
     const startedAt = Date.now();
     let emailed = 0, skipped = 0, noTask = 0, processed = 0, capped = false;
@@ -66,7 +85,7 @@ export async function GET(request) {
         // once completed, the next task becomes current and goes out the next day.
         const enr = await PracticeOsEnrollment.findOne({ doctorId, frameworkId: fw._id }).select('lastTaskEmailedAt').lean();
         const istDay = (t) => new Date(new Date(t).getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
-        if (enr?.lastTaskEmailedAt && istDay(enr.lastTaskEmailedAt) === istDay(Date.now())) { skipped++; continue; }
+        if (!force && enr?.lastTaskEmailedAt && istDay(enr.lastTaskEmailedAt) === istDay(Date.now())) { skipped++; continue; }
 
         const doctor = await Doctor.findById(doctorId).select('email displayName name').lean();
         if (!doctor?.email) { skipped++; continue; }
