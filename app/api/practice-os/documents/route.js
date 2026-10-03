@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor } from '@/lib/practice-os/access';
+import { requireTierFeatureOr403, CAP } from '@/lib/accessTier';
 import PracticeOsDocument from '@/models/practice-os/PracticeOsDocument';
 
 export const runtime = 'nodejs';
@@ -19,6 +20,9 @@ export async function GET(request) {
     const url = new URL(request.url);
     const q = url.searchParams.get('q');
     const kind = url.searchParams.get('kind');   // 'note' | 'reel' — omit for notes
+    // Workspace (notes) + Content Planner (reels) are paid/founder only.
+    const gate = await requireTierFeatureOr403(doctor._id, kind === 'reel' ? CAP.CONTENT_PLANNER : CAP.WORKSPACE);
+    if (gate) return gate;
     const filter = { doctorId: doctor._id };
     // Default to plain notes so the workspace never shows reel scripts; the
     // Content Planner asks for kind=reel explicitly.
@@ -61,6 +65,8 @@ export async function POST(request) {
     const title = (body.title || '').trim() || 'Untitled';
     const content = typeof body.content === 'string' ? body.content : '';
     const kind = body.kind === 'reel' ? 'reel' : 'note';
+    const gate = await requireTierFeatureOr403(doctor._id, kind === 'reel' ? CAP.CONTENT_PLANNER : CAP.WORKSPACE);
+    if (gate) return gate;
     const ALLOWED = ['idea', 'script', 'approved', 'scheduled', 'posted'];
     const document = await PracticeOsDocument.create({
       doctorId: doctor._id, title, content, kind,

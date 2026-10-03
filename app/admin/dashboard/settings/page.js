@@ -24,6 +24,7 @@ export default function SettingsPage() {
     timezone: 'Asia/Kolkata',
     ga4MeasurementId: '',
     metaPixelId: '',
+    gtmId: '',
     favicon: '',
   });
   const [faviconUploading, setFaviconUploading] = useState(false);
@@ -153,6 +154,7 @@ export default function SettingsPage() {
           timezone: data.doctor.timezone || 'Asia/Kolkata',
           ga4MeasurementId: data.doctor.ga4MeasurementId || '',
           metaPixelId: data.doctor.metaPixelId || '',
+          gtmId: data.doctor.gtmId || '',
         });
         setDomainInfo({
           subdomain: data.doctor.subdomain || '',
@@ -1227,6 +1229,21 @@ export default function SettingsPage() {
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Find it in Meta Events Manager → Data Sources → your pixel. It&apos;s the numeric Pixel ID.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Google Tag Manager — Container ID</label>
+                <input
+                  type="text"
+                  name="gtmId"
+                  value={formData.gtmId}
+                  onChange={handleChange}
+                  placeholder="GTM-XXXXXXX"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Find it in Google Tag Manager → Workspace, top bar. Starts with <strong>GTM-</strong>.
                 </p>
               </div>
 

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import { requirePracticeOsDoctor, hasAiAccess } from '@/lib/practice-os/access';
+import { requirePracticeOsDoctor } from '@/lib/practice-os/access';
 import { getRemainingCredits, UNLIMITED_CREDITS } from '@/lib/practice-os/aiCredits';
+import { aiRefillEligible } from '@/lib/accessTier';
 import AiCreditLedger from '@/models/practice-os/AiCreditLedger';
 
 export const runtime = 'nodejs';
@@ -12,7 +13,7 @@ export async function GET(request) {
   try {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
-    const paid = await hasAiAccess(doctor._id);
+    const paid = await aiRefillEligible(doctor._id);
     const ledger = await AiCreditLedger.getOrCreateForToday(doctor._id, paid);
     const remaining = await getRemainingCredits(doctor._id);
     return NextResponse.json({

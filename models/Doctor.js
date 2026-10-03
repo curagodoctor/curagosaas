@@ -174,6 +174,7 @@ const DoctorSchema = new mongoose.Schema({
   analytics: {
     ga4MeasurementId: { type: String, trim: true, default: '' }, // e.g. G-XXXXXXXXXX
     metaPixelId: { type: String, trim: true, default: '' },      // numeric Meta Pixel ID
+    gtmId: { type: String, trim: true, default: '' },            // Google Tag Manager, e.g. GTM-XXXXXXX
   },
   // Set once default workflows have been seeded, so deleting all workflows
   // doesn't cause them to regenerate on the next dashboard load.

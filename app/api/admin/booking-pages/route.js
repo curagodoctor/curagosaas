@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import BookingPage from '@/models/BookingPage';
 import { getCurrentDoctor } from '@/lib/doctorAuth';
 import { buildDefaultSections, buildBlankSections } from '@/lib/defaultTemplate';
+import { getEffectiveTier, capabilitiesFor, UPGRADE_URL } from '@/lib/accessTier';
 
 // GET - List all booking pages
 export async function GET(request) {
@@ -90,6 +91,23 @@ export async function POST(request) {
         { success: false, error: 'Slug and title are required' },
         { status: 400 }
       );
+    }
+
+    // Free-tier cap: one website page (the main/home page). Paid & founder are unlimited.
+    const caps = capabilitiesFor(await getEffectiveTier(doctorId));
+    if (caps.maxPages != null) {
+      const count = await BookingPage.countDocuments({ doctorId });
+      if (count >= caps.maxPages) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'FEATURE_LOCKED',
+            error: `Your Free plan includes ${caps.maxPages} website page. Upgrade to add more.`,
+            upgrade: { required: true, url: UPGRADE_URL },
+          },
+          { status: 403 },
+        );
+      }
     }
 
     // Check for reserved slugs

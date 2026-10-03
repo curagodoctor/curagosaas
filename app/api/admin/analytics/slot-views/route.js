@@ -4,6 +4,7 @@ import { getCurrentDoctor } from "@/lib/doctorAuth";
 import connectDB from "@/lib/mongodb";
 import SlotView from "@/models/SlotView";
 import Booking from "@/models/Booking";
+import { requireTierFeatureOr403, CAP } from "@/lib/accessTier";
 
 // GET - Get slot view analytics
 export async function GET(request) {
@@ -14,6 +15,12 @@ export async function GET(request) {
   try {
     const doctor = await getCurrentDoctor(request);
     const doctorId = doctor?._id;
+
+    // Analytics is a paid/founder feature.
+    if (doctorId) {
+      const gate = await requireTierFeatureOr403(doctorId, CAP.ANALYTICS);
+      if (gate) return gate;
+    }
 
     // Strict tenant isolation: return empty if no doctor found
     if (!doctorId) {

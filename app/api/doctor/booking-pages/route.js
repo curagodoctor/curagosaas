@@ -3,6 +3,7 @@ import { getCurrentDoctor } from '@/lib/doctorAuth';
 import BookingPage from '@/models/BookingPage';
 import connectDB from '@/lib/mongodb';
 import { buildDefaultSections } from '@/lib/defaultTemplate';
+import { getEffectiveTier, capabilitiesFor, UPGRADE_URL } from '@/lib/accessTier';
 
 // GET - List all booking pages for the current doctor
 export async function GET(request) {
@@ -84,6 +85,18 @@ export async function POST(request) {
     }
 
     const data = await request.json();
+
+    // Free-tier cap: one website page. Paid & founder are unlimited.
+    const caps = capabilitiesFor(await getEffectiveTier(doctor._id));
+    if (caps.maxPages != null) {
+      const count = await BookingPage.countDocuments({ doctorId: doctor._id });
+      if (count >= caps.maxPages) {
+        return NextResponse.json(
+          { error: `Your Free plan includes ${caps.maxPages} website page. Upgrade to add more.`, code: 'FEATURE_LOCKED', upgrade: { required: true, url: UPGRADE_URL } },
+          { status: 403 },
+        );
+      }
+    }
 
     // For multi-tenant, the slug must be unique per doctor
     // We can use a simple slug since each doctor has their own subdomain
