@@ -70,6 +70,10 @@ export async function GET(request) {
       profiles = await PracticeOsProfile.find({ 'optimizationAccess.granted': true }).select('doctorId').lean();
     }
 
+    const targeted = !!(targetEmail || targetDoctorId);
+    const debug = [];
+    const dbg = (o) => { if (targeted) debug.push(o); };
+
     const startedAt = Date.now();
     let emailed = 0, skipped = 0, noTask = 0, processed = 0, capped = false;
     for (const p of profiles) {
@@ -78,24 +82,25 @@ export async function GET(request) {
       const doctorId = p.doctorId;
       try {
         const task = await getDueTaskForDoctor(doctorId);
-        if (!task) { noTask++; continue; }
+        if (!task) { noTask++; dbg({ reason: 'no-due-task' }); continue; }
 
         // One email PER DAY (a true daily mail): skip only if we already emailed this
         // doctor today (IST). The current task re-sends daily until they complete it;
         // once completed, the next task becomes current and goes out the next day.
         const enr = await PracticeOsEnrollment.findOne({ doctorId, frameworkId: fw._id }).select('lastTaskEmailedAt').lean();
         const istDay = (t) => new Date(new Date(t).getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
-        if (!force && enr?.lastTaskEmailedAt && istDay(enr.lastTaskEmailedAt) === istDay(Date.now())) { skipped++; continue; }
+        if (!force && enr?.lastTaskEmailedAt && istDay(enr.lastTaskEmailedAt) === istDay(Date.now())) { skipped++; dbg({ reason: 'already-emailed-today', day: task.dayNumber }); continue; }
 
         const doctor = await Doctor.findById(doctorId).select('email displayName name').lean();
-        if (!doctor?.email) { skipped++; continue; }
+        if (!doctor?.email) { skipped++; dbg({ reason: 'no-email' }); continue; }
 
         processed++;
+        let genErr = '';
         const draft = await withTimeout(generateMissionDraft(doctorId, task.id), PER_DOCTOR_TIMEOUT_MS).catch((e) => {
           console.error('[practice-os-daily-tasks] generate timed out/failed:', String(doctorId), e.message);
-          return null;
+          genErr = e.message; return null;
         });
-        if (!draft) { skipped++; continue; }
+        if (!draft) { skipped++; dbg({ reason: 'draft-null', day: task.dayNumber, taskId: String(task.id), genErr }); continue; }
 
         const externalUrl = draft.external ? (draft.primaryAction?.url || '') : '';
         const res = await sendDailyTaskEmail({
@@ -111,19 +116,21 @@ export async function GET(request) {
           publishUrl: `${appUrl}/p/publish/${signActionToken({ doctorId, missionId: task.id, action: 'publish' })}`,
           editUrl: `${appUrl}/p/edit/${signActionToken({ doctorId, missionId: task.id, action: 'edit' })}`,
         });
-        if (!res.success) { skipped++; continue; }
+        if (!res.success) { skipped++; dbg({ reason: 'email-send-failed', day: task.dayNumber, error: res.error || '' }); continue; }
 
         await PracticeOsEnrollment.updateOne(
           { doctorId, frameworkId: fw._id },
           { $set: { lastTaskEmailedMissionId: task.id, lastTaskEmailedAt: new Date() } },
         );
         emailed++;
+        dbg({ reason: 'emailed', day: task.dayNumber, to: doctor.email, hasImage: !!draft.imageUrl, external: draft.external });
       } catch (e) {
         console.error('[practice-os-daily-tasks] doctor failed:', String(doctorId), e.message);
+        dbg({ reason: 'exception', error: e.message });
         skipped++;
       }
     }
-    return NextResponse.json({ success: true, granted: profiles.length, emailed, skipped, noTask, capped });
+    return NextResponse.json({ success: true, granted: profiles.length, emailed, skipped, noTask, capped, ...(targeted ? { debug } : {}) });
   } catch (error) {
     console.error('[practice-os-daily-tasks]', error);
     return NextResponse.json({ success: false, error: error.message || 'Cron failed' }, { status: 500 });
