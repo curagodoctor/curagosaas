@@ -48,6 +48,20 @@ export async function POST(request) {
       );
     }
 
+    // Accounts created via Google sign-in have no password — guide them to the
+    // right door instead of returning a generic (or crashing) error.
+    if (!doctor.password) {
+      return NextResponse.json(
+        {
+          error: doctor.authProvider === 'google'
+            ? 'This account was created with Google. Please use "Continue with Google" to sign in.'
+            : 'Invalid email or password',
+          useGoogle: doctor.authProvider === 'google',
+        },
+        { status: 401 }
+      );
+    }
+
     // Verify password
     const isPasswordValid = await doctor.comparePassword(password);
     if (!isPasswordValid) {

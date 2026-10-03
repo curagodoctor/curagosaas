@@ -297,6 +297,9 @@ DoctorSchema.pre('save', function() {
 
 // Compare password method
 DoctorSchema.methods.comparePassword = async function(candidatePassword) {
+  // Accounts created via Google sign-in have no password hash. Guard so bcrypt
+  // never receives an undefined hash ("Illegal arguments: string, undefined").
+  if (!this.password) return false;
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
