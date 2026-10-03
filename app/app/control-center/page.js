@@ -24,6 +24,7 @@ export default function ControlCenter() {
   const [name, setName] = useState('');
   const [leaderboard, setLeaderboard] = useState(null);
   const [credits, setCredits] = useState(null);
+  const [access, setAccess] = useState(null); // { tier, maxPages, maxBlogs, features:{...} }
   const [loading, setLoading] = useState(true);
   const [pendingOpen, setPendingOpen] = useState(true);
   // Whether the doctor has approved their disease/treatment map yet. Until they
@@ -58,7 +59,7 @@ export default function ControlCenter() {
         }
         const pData = await pRes.json();
         if (pData.success) setPacks(pData.packs);
-        if (meRes.ok) { const me = await meRes.json(); setName(me.doctor?.displayName || me.doctor?.name || ''); }
+        if (meRes.ok) { const me = await meRes.json(); setName(me.doctor?.displayName || me.doctor?.name || ''); setAccess(me.access || null); }
         if (lbRes.ok) { const lb = await lbRes.json(); if (lb.success) setLeaderboard(lb); }
         if (actRes.ok) { const act = await actRes.json(); if (act.success) setActiveDays(act.total || 0); }
         if (crRes.ok) { const cr = await crRes.json(); if (cr.success) setCredits(cr); }
@@ -261,40 +262,104 @@ export default function ControlCenter() {
         </div>
       )}
 
-      {/* 7 · Your tools — 9 uniform tiles, a clean 3×3 on mobile and a single
-          launcher row on desktop. Website Builder leads (green); Total XP & best
-          streak closes the set as a stat tile. */}
-      <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)] mt-8 mb-3">Your tools</h2>
-      <div className="grid grid-cols-3 lg:grid-cols-9 gap-2.5 sm:gap-3">
-        {[
-          { label: 'Website Builder', href: '/admin/dashboard', primary: true, d: 'M3 5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM3 9h18' },
-          { label: 'Website enquiries', href: '/app/control-center/leads', accent: 'var(--orange)', soft: 'var(--orange-soft)', d: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
-          { label: 'Content Planner', href: '/app/control-center/planner', accent: 'var(--orange)', soft: 'var(--orange-soft)', d: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-          { label: 'Google Business Profile', href: '/app/control-center/gbp', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z' },
-          { label: 'Diseases & treatments', href: '/app/control-center/clusters', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-          { label: 'Workspace', href: '/app/control-center/workspace', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' },
-          { label: 'Schedule', href: '/app/control-center/schedule', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-          { label: 'My Profile', href: '/app/control-center/profile', accent: 'var(--green)', soft: 'var(--green-soft)', d: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
-          { stat: true },
-        ].map((t, i) => (
-          t.stat ? (
-            <div key="xp" className="rounded-2xl p-3 flex flex-col items-center justify-center text-center gap-1 min-h-[112px]" style={{ background: 'linear-gradient(135deg, var(--green), #053d0b)', color: '#fff' }}>
-              <span className="pos-label" style={{ color: 'rgba(255,255,255,.72)', fontSize: 9 }}>Total XP</span>
-              <span className="pos-num text-[24px] leading-none">{totalXp.toLocaleString('en-IN')}</span>
-              <span className="text-[10.5px] leading-tight" style={{ color: 'rgba(255,255,255,.85)' }}>{bestStreak > 0 ? `🔥 ${bestStreak} best streak` : 'Best streak —'}</span>
-            </div>
-          ) : (
-            <Link key={t.href} href={t.href}
-              className="rounded-2xl p-3 flex flex-col items-center justify-start text-center gap-2 min-h-[112px] hover:shadow-md transition-shadow group"
-              style={t.primary ? { background: 'linear-gradient(135deg, var(--green), #053d0b)', color: '#fff' } : { background: 'var(--card)', border: '1px solid var(--rule-soft)' }}>
-              <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: t.primary ? 'rgba(255,255,255,.15)' : t.soft }}>
-                <svg className="w-5 h-5" style={{ color: t.primary ? '#fff' : t.accent }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d={t.d} /></svg>
-              </span>
-              <span className="text-[11.5px] font-semibold leading-tight" style={{ color: t.primary ? '#fff' : 'var(--ink)' }}>{t.label}</span>
-            </Link>
-          )
-        ))}
+      {/* 7 · Your workspace — every tool, grouped into the six blocks. Items your
+          current plan doesn't include show a lock and route to upgrade. Nothing is
+          hidden — you can always see what a higher plan unlocks. */}
+      <div className="flex items-center justify-between mt-8 mb-3">
+        <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)]">Your workspace</h2>
+        <span className="pos-label text-[var(--muted)]">Total XP {totalXp.toLocaleString('en-IN')}{bestStreak > 0 ? ` · 🔥 ${bestStreak}` : ''}</span>
       </div>
+
+      {/* Free-plan banner */}
+      {access?.tier === 'free' && (
+        <div className="rounded-xl mb-4 p-4 flex flex-col sm:flex-row sm:items-center gap-3" style={{ background: 'var(--orange-soft)', border: '1px solid rgba(242,106,27,.25)' }}>
+          <div className="flex-1">
+            <p className="text-[14.5px] font-semibold text-[var(--ink)]">You&apos;re on the Free plan</p>
+            <p className="text-[13.5px] text-[var(--muted)] mt-0.5">1 website page + 5 blog pages, Google Business Profile, enquiries and settings. Upgrade to unlock bookings, contacts, workflows, analytics and unlimited pages.</p>
+          </div>
+          <Link href="/admin/dashboard/settings?tab=subscription" className="shrink-0 text-center rounded-lg px-4 py-2.5 text-[14px] font-semibold text-white" style={{ background: 'var(--orange)' }}>Upgrade plan</Link>
+        </div>
+      )}
+      {access?.tier === 'founder' && (
+        <div className="rounded-xl mb-4 p-3 text-[13.5px]" style={{ background: 'var(--green-soft, rgba(9,107,23,.06))', border: '1px solid var(--rule)', color: 'var(--muted)' }}>
+          <strong className="text-[var(--green)]">Founder access</strong> — full platform. Dominate Organic Search and AI credit refills are not included.
+        </div>
+      )}
+
+      {(() => {
+        const UPGRADE = '/admin/dashboard/settings?tab=subscription';
+        const can = (f) => !access || !f || access.features?.[f] !== false;
+        const BLOCKS = [
+          { title: 'Website Builder', accent: 'var(--green)', items: [
+            { label: 'AI Generate', href: '/admin/dashboard/ai-generate', f: 'aiGenerate' },
+            { label: 'Website Builder', href: '/admin/dashboard/pages', f: 'websiteBuilder' },
+            { label: 'Blog Builder', href: '/admin/dashboard/blog-articles', f: 'blogBuilder' },
+          ] },
+          { title: 'Bookings & Contacts', accent: 'var(--orange)', items: [
+            { label: 'Website enquiries', href: '/app/control-center/leads', f: 'websiteEnquiries' },
+            { label: 'Bookings', href: '/admin/dashboard/bookings', f: 'bookingSystem' },
+            { label: 'Slot manager', href: '/admin/dashboard/slots', f: 'bookingSystem' },
+            { label: 'Clinic manager', href: '/admin/dashboard/modes', f: 'bookingSystem' },
+            { label: 'Contacts', href: '/admin/dashboard/contacts', f: 'contacts' },
+            { label: 'Workflows', href: '/admin/dashboard/workflows', f: 'workflows' },
+            { label: 'Templates', href: '/admin/dashboard/templates', f: 'templates' },
+          ] },
+          { title: 'Utilities & Settings', accent: 'var(--green)', items: [
+            { label: 'Content planner', href: '/app/control-center/planner', f: 'contentPlanner' },
+            { label: 'Workspace', href: '/app/control-center/workspace', f: 'workspace' },
+            { label: 'Schedule', href: '/app/control-center/schedule', f: 'schedule' },
+            { label: 'Analytics', href: '/admin/dashboard/analytics', f: 'analytics' },
+            { label: 'Settings', href: '/admin/dashboard/settings', f: 'settings' },
+          ] },
+          { title: 'Google Business Profile', accent: 'var(--green)', items: [
+            { label: 'Manage your profile', href: '/app/control-center/gbp', f: 'gbp' },
+          ] },
+          { title: 'Customisation', accent: 'var(--green)', items: [
+            { label: 'Diseases & treatments', href: '/app/control-center/clusters', f: 'customisation' },
+            { label: 'Content instructions', href: '/app/control-center/profile', f: 'customisation' },
+          ] },
+          { title: 'My Profile & Links', accent: 'var(--green)', items: [
+            { label: 'My profile', href: '/app/control-center/profile', f: 'profile' },
+            { label: 'Links', href: '/app/control-center/links', f: 'links' },
+          ] },
+        ];
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {BLOCKS.map((b) => (
+              <div key={b.title} className="rounded-2xl p-4" style={{ background: 'var(--card)', border: '1px solid var(--rule-soft)' }}>
+                <div className="flex items-center gap-2 mb-2.5">
+                  <span className="w-2 h-2 rounded-full" style={{ background: b.accent }} />
+                  <h3 className="text-[13.5px] font-semibold text-[var(--ink)]">{b.title}</h3>
+                </div>
+                <div className="flex flex-col">
+                  {b.items.map((it) => {
+                    const unlocked = can(it.f);
+                    const rowCls = 'flex items-center justify-between py-2 px-2 -mx-2 rounded-lg transition-colors';
+                    const inner = (
+                      <>
+                        <span className="text-[14px]" style={{ color: unlocked ? 'var(--ink)' : 'var(--muted)' }}>{it.label}</span>
+                        {unlocked ? (
+                          <svg className="w-4 h-4 text-[var(--muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: 'var(--orange)' }}>
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                            Upgrade
+                          </span>
+                        )}
+                      </>
+                    );
+                    return unlocked ? (
+                      <Link key={it.label} href={it.href} className={rowCls + ' hover:bg-[var(--rule-soft)]'}>{inner}</Link>
+                    ) : (
+                      <Link key={it.label} href={UPGRADE} className={rowCls + ' hover:bg-[var(--orange-soft)]'}>{inner}</Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* Notes/workspace + assistant now mount globally in the app layout via the
           single floating FAB. */}
