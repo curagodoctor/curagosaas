@@ -25,6 +25,8 @@ export default function ControlCenter() {
   const [leaderboard, setLeaderboard] = useState(null);
   const [credits, setCredits] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [payBusy, setPayBusy] = useState(false);
+  const [payMsg, setPayMsg] = useState('');
   const [pendingOpen, setPendingOpen] = useState(true);
   // Whether the doctor has approved their disease/treatment map yet. Until they
   // do, the daily content has nothing real to draft from — so we route them to
@@ -80,6 +82,42 @@ export default function ControlCenter() {
       }
     })();
   }, [router]);
+
+  // Start the ₹5,000/mo Dominate Organic Search subscription (upfront, Razorpay).
+  // On success the page reloads and the DOS card flips to its active state.
+  const startPayment = async () => {
+    setPayBusy(true); setPayMsg('');
+    try {
+      const d = await fetch('/api/practice-os/optimization/subscribe', { method: 'POST', credentials: 'include' }).then((r) => r.json());
+      if (!d.success) { setPayMsg(d.error || 'Could not start the payment. Please try again.'); setPayBusy(false); return; }
+      const ok = await new Promise((resolve) => {
+        if (window.Razorpay) return resolve(true);
+        const s = document.createElement('script');
+        s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        s.onload = () => resolve(true); s.onerror = () => resolve(false);
+        document.body.appendChild(s);
+      });
+      if (!ok) { setPayMsg('Could not load the payment window.'); setPayBusy(false); return; }
+      const rz = new window.Razorpay({
+        key: d.keyId,
+        subscription_id: d.subscriptionId,
+        name: 'CuraGo — Dominate Organic Search',
+        description: '₹5,000 / month',
+        handler: async (resp) => {
+          try {
+            await fetch('/api/practice-os/optimization/verify', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+              body: JSON.stringify(resp),
+            });
+          } catch { /* webhook also confirms */ }
+          window.location.reload();
+        },
+        modal: { ondismiss: () => setPayBusy(false) },
+        theme: { color: '#096b17' },
+      });
+      rz.open();
+    } catch { setPayMsg('Something went wrong.'); setPayBusy(false); }
+  };
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>;
@@ -162,7 +200,11 @@ export default function ControlCenter() {
               Your daily organic-growth engine isn&apos;t active yet. Talk to our team to get started — ₹5,000 / month, founder price.
             </p>
           </div>
-          <a href="https://wa.me/919148615951" target="_blank" rel="noopener noreferrer" className="pos-action shrink-0 self-start sm:self-auto" style={{ background: 'var(--green)' }}>Contact sales on WhatsApp →</a>
+          <div className="flex flex-col gap-2 shrink-0 self-start sm:self-auto sm:items-end">
+            <button onClick={startPayment} disabled={payBusy} className="pos-action" style={{ background: 'var(--orange)' }}>{payBusy ? 'Opening payment…' : 'Start now · ₹5,000/month →'}</button>
+            <a href="https://wa.me/919148615951" target="_blank" rel="noopener noreferrer" className="pos-card px-4 py-2.5 text-[14px] font-semibold text-center" style={{ color: 'var(--green)', borderColor: 'var(--green)' }}>Contact sales on WhatsApp</a>
+            {payMsg && <p className="text-[12.5px] text-red-600">{payMsg}</p>}
+          </div>
         </div>
       )}
       {accessStatus === 'granted' && (
