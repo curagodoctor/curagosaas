@@ -24,7 +24,10 @@ export async function GET(request) {
   const oauthError = searchParams.get('error');
 
   if (oauthError || !code || !stateRaw) {
-    return redirectTo(origin, '/login?error=google');
+    // Surface WHY so a sudden break is diagnosable (e.g. access_denied = consent
+    // screen in testing / user not allow-listed; no_code = Google returned nothing).
+    const g = oauthError || (!code ? 'no_code' : 'no_state');
+    return redirectTo(origin, `/login?error=google&g=${encodeURIComponent(g)}`);
   }
 
   // Decode + CSRF-check state.
@@ -107,6 +110,8 @@ export async function GET(request) {
     return res;
   } catch (error) {
     console.error('[Google OAuth callback]', error.message);
-    return redirectTo(origin, '/login?error=google');
+    // Carry the real reason (e.g. invalid_client, redirect_uri_mismatch,
+    // invalid_grant) so we can see what changed — token exchange throws with it.
+    return redirectTo(origin, `/login?error=google&g=${encodeURIComponent((error.message || 'exchange_failed').slice(0, 140))}`);
   }
 }
