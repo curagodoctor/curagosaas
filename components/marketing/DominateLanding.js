@@ -185,7 +185,7 @@ h1,h2,h3,h4{letter-spacing:-.055em}
 .cura-copy h3{font-size:26px;line-height:1.2}
 .cura-copy p{font-size:13px;color:var(--muted);line-height:1.65;margin-top:18px}
 /* OFFER */
-.offer-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:58px}
+.offer-grid{display:grid;grid-template-columns:1fr;gap:22px;margin:58px auto 0;max-width:620px}
 .offer{border:1px solid var(--line);border-radius:28px;padding:34px;background:white}
 .offer.featured{background:var(--green);color:white;border-color:var(--green);box-shadow:var(--shadow)}
 .offer-label{font-size:9px;letter-spacing:2px;font-weight:900;color:var(--orange)}
