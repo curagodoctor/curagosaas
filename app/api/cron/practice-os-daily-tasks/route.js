@@ -61,9 +61,12 @@ export async function GET(request) {
         const task = await getDueTaskForDoctor(doctorId);
         if (!task) { noTask++; continue; }
 
-        // One email per task: skip if we already emailed THIS mission.
-        const enr = await PracticeOsEnrollment.findOne({ doctorId, frameworkId: fw._id }).select('lastTaskEmailedMissionId').lean();
-        if (enr && String(enr.lastTaskEmailedMissionId || '') === String(task.id)) { skipped++; continue; }
+        // One email PER DAY (a true daily mail): skip only if we already emailed this
+        // doctor today (IST). The current task re-sends daily until they complete it;
+        // once completed, the next task becomes current and goes out the next day.
+        const enr = await PracticeOsEnrollment.findOne({ doctorId, frameworkId: fw._id }).select('lastTaskEmailedAt').lean();
+        const istDay = (t) => new Date(new Date(t).getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+        if (enr?.lastTaskEmailedAt && istDay(enr.lastTaskEmailedAt) === istDay(Date.now())) { skipped++; continue; }
 
         const doctor = await Doctor.findById(doctorId).select('email displayName name').lean();
         if (!doctor?.email) { skipped++; continue; }
