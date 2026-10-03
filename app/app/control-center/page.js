@@ -153,23 +153,16 @@ export default function ControlCenter() {
 
       {/* 2 · Dominate Organic Search — the prominent status band, given real
           weight in the dashboard. */}
-      {(accessStatus === 'none' || accessStatus === 'denied') && (
-        <div className="pos-card p-6 sm:p-7 mt-5" style={{ borderColor: 'var(--orange)', background: 'var(--orange-soft)' }}>
-          <span className="pos-label" style={{ color: 'var(--orange)' }}>Dominate Organic Search · Early access</span>
-          <p className="text-[19px] sm:text-[21px] font-semibold text-[var(--ink)] mt-1.5" style={{ letterSpacing: '-0.02em' }}>Unlock your daily organic-growth engine</p>
-          <p className="text-[14px] text-[var(--muted)] mt-1.5" style={{ maxWidth: '62ch', lineHeight: 1.55 }}>
-            Free for the first 4 weeks, then ₹5,000 / 4 weeks — founder price, locked in. We prepare your practice&apos;s content daily; you just review and publish. Cancel anytime; your website and content stay yours.
-          </p>
-          <button onClick={() => router.push('/app/control-center/get-access')} className="pos-action mt-4">{accessStatus === 'denied' ? 'Apply again →' : 'Get early access →'}</button>
-        </div>
-      )}
-      {accessStatus === 'pending' && (
-        <div className="pos-card p-6 sm:p-7 mt-5 flex items-start gap-3" style={{ borderColor: 'var(--orange)', background: 'var(--orange-soft)' }}>
-          <span className="pos-label shrink-0" style={{ background: 'var(--orange)', color: '#fff', padding: '3px 8px', borderRadius: 6 }}>Under review</span>
+      {accessStatus !== 'granted' && (
+        <div className="pos-card p-6 sm:p-7 mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ borderColor: 'var(--rule)', background: 'var(--card)' }}>
           <div>
-            <p className="text-[17px] font-semibold text-[var(--ink)]">Dominate Organic Search</p>
-            <p className="text-[14px] text-[var(--muted)] mt-1" style={{ maxWidth: '58ch', lineHeight: 1.55 }}>Your application is in — we&apos;re reviewing your answers and will reach out within 24 hours if you&apos;re a fit for the founding cohort. Meanwhile, keep your website and Google profile polished.</p>
+            <span className="pos-label" style={{ color: 'var(--muted)' }}>Dominate Organic Search · Inactive</span>
+            <p className="text-[19px] sm:text-[21px] font-semibold text-[var(--ink)] mt-1.5" style={{ letterSpacing: '-0.02em' }}>Let CuraGo grow your practice</p>
+            <p className="text-[14px] text-[var(--muted)] mt-1.5" style={{ maxWidth: '62ch', lineHeight: 1.55 }}>
+              Your daily organic-growth engine isn&apos;t active yet. Talk to our team to get started — ₹5,000 / month, founder price.
+            </p>
           </div>
+          <a href="https://wa.me/919148615951" target="_blank" rel="noopener noreferrer" className="pos-action shrink-0 self-start sm:self-auto" style={{ background: 'var(--green)' }}>Contact sales on WhatsApp →</a>
         </div>
       )}
       {accessStatus === 'granted' && (

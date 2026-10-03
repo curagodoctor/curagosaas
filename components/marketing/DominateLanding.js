@@ -205,6 +205,18 @@ h1,h2,h3,h4{letter-spacing:-.055em}
 .approval b{color:var(--green)}
 .featured .approval b{color:var(--lime)}
 .fullbtn{display:block;text-align:center;padding:14px;border-radius:999px;background:var(--orange);color:white;font-size:12px;font-weight:900;margin-top:22px}
+.check{align-items:flex-start}
+.ck{display:flex;flex-direction:column;gap:2px}
+.ck strong{font-size:11.5px;font-weight:800;color:var(--ink);line-height:1.35}
+.ck span{font-size:10px;font-weight:500;color:var(--muted);line-height:1.45}
+.featured .ck strong{color:#fff}
+.featured .ck span{color:#bdd0c3}
+.sublabel{font-size:9px;letter-spacing:2px;font-weight:900;color:var(--orange);margin:20px 0 11px}
+.featured .sublabel{color:var(--lime)}
+.offer-tag{display:inline-block;font-size:8.5px;letter-spacing:1.6px;font-weight:900;padding:4px 10px;border-radius:999px;background:var(--green);color:#fff;margin-bottom:12px}
+.featured .offer-tag{background:var(--lime);color:var(--green)}
+.lifetime{font-size:11.5px;font-weight:800;color:var(--green);margin-top:7px}
+.featured .lifetime{color:var(--lime)}
 /* ROADMAP */
 .roadmap-wrap{margin-top:58px;overflow-x:auto;padding-bottom:10px}
 .road{min-width:940px;height:430px;display:grid;grid-template-columns:repeat(6,1fr);align-items:end;gap:9px;padding:0 10px 45px;position:relative}
@@ -831,39 +843,58 @@ const BODY = `<nav class="nav">
 
   <div class="offer-grid">
     <div class="offer">
-      <div class="offer-label">STEP 1 · APPEAR</div>
+      <span class="offer-tag">NO COST FOR LIFE</span>
+      <div class="offer-label">STEP 1 · BUILD YOUR DIGITAL PRACTICE</div>
       <div class="price">FREE</div>
-      <h3>Be present when patients look for you.</h3>
-      <p>Get the foundation you need to establish your practice online.</p>
+      <div class="lifetime">Lifetime access</div>
+      <p>Everything you need to establish your practice online.</p>
       <div class="checks">
-        <div class="check"><i>✓</i> AI-Built Clinical Practice Website</div><div class="check"><i>✓</i> Instant Subdomain + Easy Custom Domain Connection</div>
-        <div class="check"><i>✓</i> Pages &amp; Blog Builder</div><div class="check"><i>✓</i> Clinical Practice Dashboard &amp; CRM</div>
-        <div class="check"><i>✓</i> Booking &amp; Enquiry Management</div><div class="check"><i>✓</i> Team Access</div>
-        <div class="check"><i>✓</i> Email Automation</div><div class="check"><i>✓</i> Payment Integration</div>
-        <div class="check"><i>✓</i> GBP Setup Guidance</div><div class="check"><i>✓</i> Review Request System</div>
+        <div class="check"><i>✓</i><div class="ck"><strong>AI-generated website</strong><span>Built instantly for your practice</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Live on a CuraGo subdomain / custom domain</strong><span>Seamlessly connect your custom domain from your control center</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Guided Google Business Profile setup</strong><span>Do it the right way, step by step</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Patient enquiry / lead form &amp; WhatsApp button</strong><span>Collect patient leads on your dashboard from all website visitors</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Website builder access</strong><span>Edit your website as per choice</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Build up to 5 blog articles</strong><span>Build your own patient education material</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Connect Meta Pixel &amp; Google Tag Manager</strong><span>Make running ads on your website easy</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Lifetime access</strong><span>No lock-in</span></div></div>
       </div>
-      <div class="approval"><b>Build it once. Use it yourself. Grow from here.</b></div>
-      <p style="margin-top:10px;font-size:11px;color:var(--muted)">No subscription. No expiry. No lock-in.</p>
+      <div class="approval"><b>Build your foundation. Own it. Use it.</b></div>
       <button class="fullbtn" data-start="1">Start Free →</button>
+      <p style="margin-top:10px;font-size:11px;color:var(--muted);text-align:center">Forever.</p>
     </div>
 
     <div class="offer featured">
-      <div class="offer-label">STEP 2 · DOMINATE ORGANIC SEARCH</div>
-      <div class="price">₹5,000 <small>/ month</small> <span class="founder">FOUNDER PRICE</span></div>
-      <h3>Let CuraGo's AI do the work.</h3>
-      <p>Your digital presence doesn't stop at being online. CuraGo's AI continuously works with your practice to build, optimise and improve it.</p>
+      <div class="offer-label">STEP 2 · GROW YOUR DIGITAL PRACTICE</div>
+      <div class="price">₹5,000 <small>/month · Founder Price</small></div>
+      <p>Everything in Free, plus CuraGo continuously works on your practice.</p>
+
+      <div class="sublabel">INFRASTRUCTURE</div>
       <div class="checks">
-        <div class="check"><i>✓</i> Complete Organic Search Mapping</div><div class="check"><i>✓</i> 12-Month Organic Growth Roadmap</div>
-        <div class="check"><i>✓</i> Practice-Specific SEO Strategy</div><div class="check"><i>✓</i> Semantic &amp; Entity-First Search Strategy</div>
-        <div class="check"><i>✓</i> Website + Google Ecosystem Strategy</div><div class="check"><i>✓</i> Automatic Internal Interlinking</div>
-        <div class="check"><i>✓</i> AEO &amp; GEO-Ready Content Architecture</div><div class="check"><i>✓</i> Guided Google Business Profile Optimisation</div>
-        <div class="check"><i>✓</i> Competitor &amp; Search Monitoring</div><div class="check"><i>✓</i> Continuous Optimisation &amp; Iteration</div>
-        <div class="check"><i>✓</i> Doctor + AI Quality Control</div><div class="check"><i>✓</i> Monthly Progress &amp; Growth Report</div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Complete AI-enabled website &amp; page builder</strong><span>Create multiple pages</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Blog / content system</strong><span>Create unlimited blog pages using AI</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>CRM</strong><span>To track your leads</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Booking &amp; enquiry management</strong><span>Full-fledged booking and appointment management system</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Team access</strong><span>Role-based access to your team</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Email automation</strong><span>Send emails to your patients and leads</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Payment integration</strong><span>Collect payment from your patients before they walk in</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Review request system</strong><span>Request reviews from your patients by sending out links</span></div></div>
       </div>
-      <div class="approval"><b>CURAGO's AI</b> prepares → <b>YOU</b> review → <b>YOU</b> approve → <b>CURAGO</b> keeps building ↻</div>
-      <p style="margin-top:13px;font-size:11px;color:#d7e6da;line-height:1.5"><b>Founder Price: ₹5,000/month.</b> Available for a limited time.</p>
-      <button class="fullbtn" data-start="1">Get Early Access (no cost for a month) →</button>
-      <p style="margin-top:12px;font-size:11px;color:#b9cdbd;line-height:1.5">You don't have to figure out what to do next. CuraGo does it with you.</p>
+
+      <div class="sublabel">OPTIMISATION</div>
+      <div class="checks">
+        <div class="check"><i>✓</i><div class="ck"><strong>Complete organic search mapping</strong><span>You map your organic search with CuraGo's help</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>12-month growth roadmap</strong><span>CuraGo builds the depth of your online presence</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Practice-specific SEO strategy</strong><span>Customised local SEO and website SEO for your practice</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Entity search strategy</strong><span>No keywords. Only entity approach</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Website + Google ecosystem optimisation</strong><span>Optimise for how Google search works</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Automatic internal linking</strong><span>Strengthen the signal between GBP and website</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>AEO / GEO-ready content architecture</strong><span>Be AEO and GEO ready</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Continuous optimisation &amp; iteration</strong><span>CuraGo works for you continuously</span></div></div>
+        <div class="check"><i>✓</i><div class="ck"><strong>Monthly progress &amp; growth report</strong><span>Actionable insights</span></div></div>
+      </div>
+
+      <div class="approval">CuraGo figures out what your practice needs next → prepares the work → <b>you approve</b> → CuraGo keeps building.</div>
+      <button class="fullbtn" data-start="1">Start CuraGo — ₹5,000/month →</button>
     </div>
   </div>
 </div>
