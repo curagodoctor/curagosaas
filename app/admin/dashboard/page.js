@@ -218,13 +218,13 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+      <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#EDF1EB]">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
+            <h1 className="text-2xl font-semibold text-[#101A13]">
               Welcome back, {doctor?.displayName || doctor?.name}!
             </h1>
-            <p className="mt-1 text-gray-500">
+            <p className="mt-1 text-[#5E6B5F]">
               Here&apos;s what&apos;s happening with your clinic today.
             </p>
           </div>
@@ -245,7 +245,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Live Website Card */}
-      <div className="bg-[#096b17] rounded-xl shadow-sm p-6 text-white">
+      <div className="bg-[#096b17] rounded-2xl shadow-sm p-6 text-white">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -264,7 +264,7 @@ export default function DashboardPage() {
                     onKeyDown={(e) => { if (e.key === 'Enter' && subAvail === 'available') saveSubdomain(); }}
                     autoFocus maxLength={30}
                     placeholder="yourname"
-                    className="flex-1 min-w-0 px-3 py-2 rounded-l-lg text-gray-900 outline-none"
+                    className="flex-1 min-w-0 px-3 py-2 rounded-l-lg text-[#101A13] outline-none focus:ring-2 focus:ring-[#096b17]"
                   />
                   <span className="px-3 flex items-center bg-white/20 text-white rounded-r-lg text-sm whitespace-nowrap">.curago.in</span>
                 </div>
@@ -346,7 +346,7 @@ export default function DashboardPage() {
       </div>
 
       {/* AI: generate website content instantly */}
-      <div className="bg-gradient-to-br from-[#096b17] to-[#053d0b] rounded-xl shadow-sm p-6 text-white flex items-center justify-between flex-wrap gap-4">
+      <div className="bg-gradient-to-br from-[#096b17] to-[#053d0b] rounded-2xl shadow-sm p-6 text-white flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-lg font-semibold mb-1">✨ Generate your website with AI</h2>
           <p className="text-white/85 text-sm max-w-xl">Write your homepage from your profile — about, services and FAQs — and publish it in one click.</p>
@@ -362,9 +362,9 @@ export default function DashboardPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center" onClick={(e) => e.stopPropagation()}>
             {genResult.error ? (
               <>
-                <h3 className="text-lg font-semibold text-gray-900">Couldn&apos;t generate</h3>
-                <p className="text-sm text-gray-500 mt-1">{genResult.error}</p>
-                <button onClick={() => setGenResult(null)} className="mt-4 px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium">Close</button>
+                <h3 className="text-lg font-semibold text-[#101A13]">Couldn&apos;t generate</h3>
+                <p className="text-sm text-[#5E6B5F] mt-1">{genResult.error}</p>
+                <button onClick={() => setGenResult(null)} className="mt-4 px-4 py-2 bg-white border border-[#DDE4D9] text-[#101A13] rounded-lg text-sm font-medium">Close</button>
               </>
             ) : (
               <>
@@ -374,27 +374,27 @@ export default function DashboardPage() {
                 {genResult.mode === 'draft' ? (
                   <>
                     {/* A homepage already existed — we saved a draft, live site unchanged. */}
-                    <h3 className="text-lg font-semibold text-gray-900">Draft ready to review</h3>
-                    <p className="text-sm text-gray-500 mt-1">Your live website is unchanged. We wrote a fresh AI version as a <strong>draft</strong> — review and approve it to publish.</p>
+                    <h3 className="text-lg font-semibold text-[#101A13]">Draft ready to review</h3>
+                    <p className="text-sm text-[#5E6B5F] mt-1">Your live website is unchanged. We wrote a fresh AI version as a <strong>draft</strong> — review and approve it to publish.</p>
                     <Link href="/admin/dashboard/ai-generate" onClick={() => setGenResult(null)} className="inline-block mt-4 px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-semibold">Review &amp; approve →</Link>
                   </>
                 ) : (
                   <>
-                    <h3 className="text-lg font-semibold text-gray-900">Your website is ready 🎉</h3>
+                    <h3 className="text-lg font-semibold text-[#101A13]">Your website is ready 🎉</h3>
                     {genResult.hasAddress ? (
                       <>
-                        <p className="text-sm text-gray-500 mt-1">Your homepage has been written and published.</p>
+                        <p className="text-sm text-[#5E6B5F] mt-1">Your homepage has been written and published.</p>
                         <a href={genResult.url} target="_blank" rel="noopener noreferrer" className="inline-block mt-4 px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-semibold">View my live site →</a>
                       </>
                     ) : (
                       <>
-                        <p className="text-sm text-gray-500 mt-1">Your homepage content is written and published. Set a website address in <strong>Your Live Website</strong> above to make it reachable.</p>
+                        <p className="text-sm text-[#5E6B5F] mt-1">Your homepage content is written and published. Set a website address in <strong>Your Live Website</strong> above to make it reachable.</p>
                         <button onClick={() => { setGenResult(null); setEditDomain(true); setSubInput(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="inline-block mt-4 px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-semibold">Set my address</button>
                       </>
                     )}
                   </>
                 )}
-                <button onClick={() => setGenResult(null)} className="block mx-auto mt-3 text-gray-400 text-sm">Close</button>
+                <button onClick={() => setGenResult(null)} className="block mx-auto mt-3 text-[#5E6B5F] text-sm">Close</button>
               </>
             )}
           </div>
@@ -402,13 +402,13 @@ export default function DashboardPage() {
       )}
 
       {/* Website Creation Pathways */}
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Create Your Website</h2>
-        <p className="text-sm text-gray-500 mb-6">Choose how you want to build your clinic website</p>
+      <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#EDF1EB]">
+        <h2 className="text-lg font-semibold text-[#101A13] mb-2">Create Your Website</h2>
+        <p className="text-sm text-[#5E6B5F] mb-6">Choose how you want to build your clinic website</p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* DIY - First */}
-          <div className="border-2 border-[#096b17] rounded-xl p-5 relative">
+          <div className="border-2 border-[#096b17] rounded-2xl p-5 relative">
             <span className="absolute -top-3 left-4 bg-[#096b17] text-white text-xs font-medium px-3 py-1 rounded-full">
               Start Here
             </span>
@@ -417,76 +417,76 @@ export default function DashboardPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Do It Yourself</h3>
+            <h3 className="font-semibold text-[#101A13] mb-1">Do It Yourself</h3>
             <p className="text-2xl font-bold text-[#096b17] mb-2">Free</p>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-[#5E6B5F] mb-4">
               Use our drag-and-drop Website Builder to create your clinic website yourself.
             </p>
             <Link
               href="/admin/dashboard/pages"
-              className="block w-full text-center bg-[#096b17] text-white py-2.5 rounded-lg font-medium hover:bg-[#075110] transition-colors"
+              className="block w-full text-center bg-[#F26A1B] text-white py-2.5 rounded-lg font-medium hover:bg-[#d85c12] transition-colors"
             >
               Open Website Builder
             </Link>
           </div>
 
           {/* Done For You */}
-          <div className="border border-gray-200 rounded-xl p-5">
-            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-3">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="border border-[#DDE4D9] rounded-2xl p-5">
+            <div className="w-10 h-10 rounded-lg bg-[#096b17]/10 flex items-center justify-center mb-3">
+              <svg className="w-5 h-5 text-[#096b17]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Done For You</h3>
-            <p className="text-2xl font-bold text-gray-900 mb-2">
-              &#x20B9;2,000 <span className="text-xs font-normal text-gray-500">incl. GST</span>
+            <h3 className="font-semibold text-[#101A13] mb-1">Done For You</h3>
+            <p className="text-2xl font-bold text-[#101A13] mb-2">
+              &#x20B9;2,000 <span className="text-xs font-normal text-[#5E6B5F]">incl. GST</span>
             </p>
-            <ul className="text-sm text-gray-600 space-y-1.5 mb-4">
+            <ul className="text-sm text-[#5E6B5F] space-y-1.5 mb-4">
               <li className="flex items-start gap-2">
-                <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-[#096b17] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 1-time full website setup
               </li>
               <li className="flex items-start gap-2">
-                <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-[#096b17] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 Includes 2 free changes
               </li>
               <li className="flex items-start gap-2">
-                <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-[#096b17] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 3-5 working days turnaround
               </li>
             </ul>
-            <p className="text-xs text-gray-400 mb-3">Terms and conditions apply</p>
+            <p className="text-xs text-[#5E6B5F] mb-3">Terms and conditions apply</p>
             <a
               href="mailto:support@curago.in?subject=Done For You Website Setup"
-              className="block w-full text-center bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="block w-full text-center bg-white border border-[#DDE4D9] text-[#101A13] py-2.5 rounded-lg font-medium hover:bg-[#F7F9F5] transition-colors"
             >
               Reach Out to Us
             </a>
           </div>
 
           {/* AI-Powered */}
-          <div className="border border-gray-200 rounded-xl p-5 relative">
-            <span className="absolute top-3 right-3 bg-green-100 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full">
+          <div className="border border-[#DDE4D9] rounded-2xl p-5 relative">
+            <span className="absolute top-3 right-3 bg-[#096b17]/10 text-[#096b17] text-xs font-medium px-2 py-0.5 rounded-full">
               Live
             </span>
-            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-3">
-              <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 rounded-lg bg-[#096b17]/10 flex items-center justify-center mb-3">
+              <svg className="w-5 h-5 text-[#096b17]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">AI-Powered</h3>
-            <p className="text-sm text-gray-600 mb-4">
+            <h3 className="font-semibold text-[#101A13] mb-1">AI-Powered</h3>
+            <p className="text-sm text-[#5E6B5F] mb-4">
               Use AI to auto-generate your clinic website. Answer a few questions and get a professional site you can edit and publish.
             </p>
             <a
               href="/admin/dashboard/ai-generate"
-              className="block w-full text-center bg-purple-600 text-white py-2.5 rounded-lg font-medium hover:bg-purple-700 transition-colors"
+              className="block w-full text-center bg-white border border-[#DDE4D9] text-[#101A13] py-2.5 rounded-lg font-medium hover:bg-[#F7F9F5] transition-colors"
             >
               Open AI builder
             </a>
@@ -496,31 +496,31 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#EDF1EB]">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 rounded-lg bg-[#096b17]/10 flex items-center justify-center">
+              <svg className="w-6 h-6 text-[#096b17]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Website</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.bookingPages > 0 ? 'Active' : 'Not Set'}</p>
+              <p className="text-sm text-[#5E6B5F]">Website</p>
+              <p className="text-2xl font-semibold text-[#101A13]">{stats.bookingPages > 0 ? 'Active' : 'Not Set'}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#EDF1EB]">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 rounded-lg bg-[#096b17]/10 flex items-center justify-center">
+              <svg className="w-6 h-6 text-[#096b17]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Website Views</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.websiteViews}</p>
+              <p className="text-sm text-[#5E6B5F]">Website Views</p>
+              <p className="text-2xl font-semibold text-[#101A13]">{stats.websiteViews}</p>
             </div>
           </div>
         </div>
@@ -528,11 +528,11 @@ export default function DashboardPage() {
 
       {/* Onboarding Steps */}
       {progressPercent < 100 && (
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#EDF1EB]">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Complete Your Setup</h2>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-lg font-semibold text-[#101A13]">Complete Your Setup</h2>
+              <p className="text-sm text-[#5E6B5F]">
                 {completedSteps} of {onboardingSteps.length} steps completed
               </p>
             </div>
@@ -540,7 +540,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
+          <div className="w-full bg-[#EDF1EB] rounded-full h-2 mb-6">
             <div
               className="bg-[#096b17] h-2 rounded-full transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
@@ -555,15 +555,15 @@ export default function DashboardPage() {
                 href={step.href}
                 className={`flex items-center gap-4 p-4 rounded-lg border transition-colors ${
                   step.completed
-                    ? 'bg-green-50 border-green-200'
-                    : 'bg-gray-50 border-gray-200 hover:border-[#096b17] hover:bg-[#096b17]/5'
+                    ? 'bg-[#096b17]/5 border-[#096b17]/20'
+                    : 'bg-[#F7F9F5] border-[#DDE4D9] hover:border-[#096b17] hover:bg-[#096b17]/5'
                 }`}
               >
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center ${
                     step.completed
-                      ? 'bg-green-500 text-white'
-                      : 'bg-gray-200 text-gray-500'
+                      ? 'bg-[#096b17] text-white'
+                      : 'bg-[#EDF1EB] text-[#5E6B5F]'
                   }`}
                 >
                   {step.completed ? (
@@ -575,15 +575,15 @@ export default function DashboardPage() {
                   )}
                 </div>
                 <div className="flex-1">
-                  <h3 className={`font-medium ${step.completed ? 'text-green-700' : 'text-gray-900'}`}>
+                  <h3 className={`font-medium ${step.completed ? 'text-[#096b17]' : 'text-[#101A13]'}`}>
                     {step.title}
                   </h3>
-                  <p className={`text-sm ${step.completed ? 'text-green-600' : 'text-gray-500'}`}>
+                  <p className={`text-sm ${step.completed ? 'text-[#096b17]' : 'text-[#5E6B5F]'}`}>
                     {step.description}
                   </p>
                 </div>
                 {!step.completed && (
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-[#5E6B5F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 )}
@@ -594,56 +594,56 @@ export default function DashboardPage() {
       )}
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+      <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#EDF1EB]">
+        <h2 className="text-lg font-semibold text-[#101A13] mb-4">Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Link
             href="/admin/dashboard/contacts"
-            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-200 hover:border-[#096b17] hover:bg-[#096b17]/5 transition-colors"
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#DDE4D9] hover:border-[#096b17] hover:bg-[#096b17]/5 transition-colors"
           >
-            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 rounded-lg bg-[#096b17]/10 flex items-center justify-center">
+              <svg className="w-5 h-5 text-[#096b17]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <span className="text-sm font-medium text-gray-700">Contacts</span>
+            <span className="text-sm font-medium text-[#101A13]">Contacts</span>
           </Link>
 
           <Link
             href="/admin/dashboard/pages"
-            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-200 hover:border-[#096b17] hover:bg-[#096b17]/5 transition-colors"
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#DDE4D9] hover:border-[#096b17] hover:bg-[#096b17]/5 transition-colors"
           >
-            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-              <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 rounded-lg bg-[#096b17]/10 flex items-center justify-center">
+              <svg className="w-5 h-5 text-[#096b17]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
-            <span className="text-sm font-medium text-gray-700">Edit Website</span>
+            <span className="text-sm font-medium text-[#101A13]">Edit Website</span>
           </Link>
 
           <Link
             href="/admin/dashboard/blog-articles"
-            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-200 hover:border-[#096b17] hover:bg-[#096b17]/5 transition-colors"
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#DDE4D9] hover:border-[#096b17] hover:bg-[#096b17]/5 transition-colors"
           >
-            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 rounded-lg bg-[#096b17]/10 flex items-center justify-center">
+              <svg className="w-5 h-5 text-[#096b17]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
             </div>
-            <span className="text-sm font-medium text-gray-700">Blog Articles</span>
+            <span className="text-sm font-medium text-[#101A13]">Blog Articles</span>
           </Link>
 
           <Link
             href="/admin/dashboard/settings"
-            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-gray-200 hover:border-[#096b17] hover:bg-[#096b17]/5 transition-colors"
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[#DDE4D9] hover:border-[#096b17] hover:bg-[#096b17]/5 transition-colors"
           >
-            <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-              <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-10 h-10 rounded-lg bg-[#096b17]/10 flex items-center justify-center">
+              <svg className="w-5 h-5 text-[#096b17]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <span className="text-sm font-medium text-gray-700">Settings</span>
+            <span className="text-sm font-medium text-[#101A13]">Settings</span>
           </Link>
         </div>
       </div>

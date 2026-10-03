@@ -55,7 +55,7 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-600">Loading analytics...</div>
+        <div className="text-[#5E6B5F]">Loading analytics...</div>
       </div>
     );
   }
@@ -63,7 +63,7 @@ export default function AnalyticsPage() {
   if (!analytics) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-600">No analytics data available</div>
+        <div className="text-[#5E6B5F]">No analytics data available</div>
       </div>
     );
   }
@@ -77,19 +77,19 @@ export default function AnalyticsPage() {
       {/* Header with Filter Button */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Slot View Analytics</h1>
-          <p className="text-gray-600 mt-1">Track users who viewed available slots</p>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[#101A13]">Slot View Analytics</h1>
+          <p className="text-[#5E6B5F] mt-1">Track users who viewed available slots</p>
         </div>
         <button
           onClick={() => setShowFilterModal(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-[#DDE4D9] rounded-lg hover:bg-[#F7F9F5] transition-colors shadow-sm"
         >
-          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-[#5E6B5F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
           </svg>
-          <span className="text-sm font-medium text-gray-700">Filters</span>
+          <span className="text-sm font-medium text-[#101A13]">Filters</span>
           {hasActiveFilters && (
-            <span className="ml-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+            <span className="ml-1 px-2 py-0.5 bg-[#096B17]/10 text-[#096B17] text-xs font-semibold rounded-full">
               Active
             </span>
           )}
@@ -103,17 +103,17 @@ export default function AnalyticsPage() {
           onClick={() => setShowFilterModal(false)}
         >
           <div
-            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-xl font-semibold text-gray-900">Filter Analytics</h2>
+            <div className="flex items-center justify-between p-6 border-b border-[#EDF1EB]">
+              <h2 className="text-xl font-semibold text-[#101A13]">Filter Analytics</h2>
               <button
                 onClick={() => setShowFilterModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-[#F7F9F5] rounded-lg transition-colors"
               >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-[#5E6B5F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -124,32 +124,32 @@ export default function AnalyticsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Date Range */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                  <label className="block text-sm font-medium text-[#101A13] mb-1">Start Date</label>
                   <input
                     type="date"
                     value={dateRange.startDate}
                     onChange={(e) => handleDateRangeChange('startDate', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                  <label className="block text-sm font-medium text-[#101A13] mb-1">End Date</label>
                   <input
                     type="date"
                     value={dateRange.endDate}
                     onChange={(e) => handleDateRangeChange('endDate', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17]"
                   />
                 </div>
 
                 {/* Mode Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Consultation Mode</label>
+                  <label className="block text-sm font-medium text-[#101A13] mb-1">Consultation Mode</label>
                   <select
                     value={filterMode}
                     onChange={(e) => setFilterMode(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17]"
                   >
                     <option value="all">All Modes</option>
                     <option value="online">Online</option>
@@ -159,11 +159,11 @@ export default function AnalyticsPage() {
 
                 {/* Page Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Page</label>
+                  <label className="block text-sm font-medium text-[#101A13] mb-1">Page</label>
                   <select
                     value={filterPage}
                     onChange={(e) => setFilterPage(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17]"
                   >
                     <option value="all">All Pages</option>
                     {breakdown.byPage.map((page) => (
@@ -177,16 +177,16 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-between p-6 border-t bg-gray-50">
+            <div className="flex items-center justify-between p-6 border-t border-[#EDF1EB] bg-[#F7F9F5]">
               <button
                 onClick={clearFilters}
-                className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm text-[#5E6B5F] hover:text-[#101A13] bg-white border border-[#DDE4D9] rounded-lg transition-colors"
               >
                 Clear All
               </button>
               <button
                 onClick={() => setShowFilterModal(false)}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="px-6 py-2 bg-[#F26A1B] text-white rounded-lg hover:bg-[#d85c14] transition-colors font-medium"
               >
                 Apply Filters
               </button>
@@ -245,8 +245,8 @@ export default function AnalyticsPage() {
 
       {/* Mode Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Consultation Mode Distribution</h3>
+        <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
+          <h3 className="text-lg font-semibold text-[#101A13] mb-4">Consultation Mode Distribution</h3>
           <div className="space-y-3">
             <ProgressBar
               label="Online"
@@ -264,8 +264,8 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Gender Distribution */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Gender Distribution</h3>
+        <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
+          <h3 className="text-lg font-semibold text-[#101A13] mb-4">Gender Distribution</h3>
           <div className="space-y-3">
             {breakdown.byGender.map((item) => (
               <ProgressBar
@@ -281,19 +281,19 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Page Performance */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Views by Page</h3>
+      <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
+        <h3 className="text-lg font-semibold text-[#101A13] mb-4">Views by Page</h3>
         <div className="space-y-3">
           {breakdown.byPage.map((page) => (
             <div key={page.slug} className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">{page.pageName || page.slug}</span>
-                  <span className="text-sm text-gray-600">{page.count} views</span>
+                  <span className="text-sm font-medium text-[#101A13]">{page.pageName || page.slug}</span>
+                  <span className="text-sm text-[#5E6B5F]">{page.count} views</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-[#EDF1EB] rounded-full h-2">
                   <div
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                    className="bg-[#096B17] h-2 rounded-full transition-all duration-300"
                     style={{ width: `${(page.count / stats.totalViews) * 100}%` }}
                   />
                 </div>
@@ -304,23 +304,23 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Top Referrers */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Referrers</h3>
+      <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
+        <h3 className="text-lg font-semibold text-[#101A13] mb-4">Top Referrers</h3>
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
-              <tr className="border-b">
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Source</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Views</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Percentage</th>
+              <tr className="border-b border-[#EDF1EB]">
+                <th className="text-left py-3 px-4 text-sm font-semibold text-[#101A13]">Source</th>
+                <th className="text-right py-3 px-4 text-sm font-semibold text-[#101A13]">Views</th>
+                <th className="text-right py-3 px-4 text-sm font-semibold text-[#101A13]">Percentage</th>
               </tr>
             </thead>
             <tbody>
               {breakdown.byReferrer.map((item, idx) => (
-                <tr key={idx} className="border-b hover:bg-gray-50">
-                  <td className="py-3 px-4 text-sm text-gray-900">{item.referrer}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600 text-right">{item.count}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600 text-right">
+                <tr key={idx} className="border-b border-[#EDF1EB] hover:bg-[#F7F9F5]">
+                  <td className="py-3 px-4 text-sm text-[#101A13]">{item.referrer}</td>
+                  <td className="py-3 px-4 text-sm text-[#5E6B5F] text-right">{item.count}</td>
+                  <td className="py-3 px-4 text-sm text-[#5E6B5F] text-right">
                     {((item.count / stats.totalViews) * 100).toFixed(1)}%
                   </td>
                 </tr>
@@ -331,50 +331,50 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Recent Slot Views */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Slot Views</h3>
+      <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
+        <h3 className="text-lg font-semibold text-[#101A13] mb-4">Recent Slot Views</h3>
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
-              <tr className="border-b">
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date & Time</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Name</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Contact</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Age/Gender</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Mode</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Page</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Converted</th>
+              <tr className="border-b border-[#EDF1EB]">
+                <th className="text-left py-3 px-4 text-sm font-semibold text-[#101A13]">Date & Time</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-[#101A13]">Name</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-[#101A13]">Contact</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-[#101A13]">Age/Gender</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-[#101A13]">Mode</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-[#101A13]">Page</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-[#101A13]">Converted</th>
               </tr>
             </thead>
             <tbody>
               {views.slice(0, 50).map((view) => (
-                <tr key={view._id} className="border-b hover:bg-gray-50">
-                  <td className="py-3 px-4 text-sm text-gray-900">
+                <tr key={view._id} className="border-b border-[#EDF1EB] hover:bg-[#F7F9F5]">
+                  <td className="py-3 px-4 text-sm text-[#101A13]">
                     {new Date(view.createdAt).toLocaleString()}
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-900">{view.name}</td>
-                  <td className="py-3 px-4 text-sm text-gray-600">
+                  <td className="py-3 px-4 text-sm text-[#101A13]">{view.name}</td>
+                  <td className="py-3 px-4 text-sm text-[#5E6B5F]">
                     <div>{view.email}</div>
                     <div className="text-xs">{view.whatsapp}</div>
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-600">
+                  <td className="py-3 px-4 text-sm text-[#5E6B5F]">
                     {view.age} / {view.gender}
                   </td>
                   <td className="py-3 px-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       view.modeOfContact === 'online'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-purple-100 text-purple-800'
+                        ? 'bg-[#096B17]/10 text-[#096B17]'
+                        : 'bg-[#F26A1B]/10 text-[#F26A1B]'
                     }`}>
                       {view.modeOfContact === 'online' ? 'Online' : 'In-Clinic'}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-600">{view.pageName || view.pageSlug}</td>
+                  <td className="py-3 px-4 text-sm text-[#5E6B5F]">{view.pageName || view.pageSlug}</td>
                   <td className="py-3 px-4">
                     {view.convertedToBooking ? (
-                      <span className="text-green-600 text-xs font-medium">✓ Yes</span>
+                      <span className="text-[#096B17] text-xs font-medium">✓ Yes</span>
                     ) : (
-                      <span className="text-gray-400 text-xs">No</span>
+                      <span className="text-[#5E6B5F] text-xs">No</span>
                     )}
                   </td>
                 </tr>
@@ -383,7 +383,7 @@ export default function AnalyticsPage() {
           </table>
         </div>
         {views.length > 50 && (
-          <p className="text-sm text-gray-600 mt-4 text-center">
+          <p className="text-sm text-[#5E6B5F] mt-4 text-center">
             Showing 50 of {views.length} total views
           </p>
         )}
@@ -395,18 +395,18 @@ export default function AnalyticsPage() {
 // Helper Components
 function StatCard({ title, value, icon, color = 'blue' }) {
   const colorClasses = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    purple: 'bg-purple-500',
-    orange: 'bg-orange-500',
+    blue: 'bg-[#096B17]',
+    green: 'bg-[#096B17]',
+    purple: 'bg-[#096B17]',
+    orange: 'bg-[#F26A1B]',
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-600 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-sm text-[#5E6B5F] mb-1">{title}</p>
+          <p className="text-2xl font-semibold text-[#101A13]">{value}</p>
         </div>
         <div className={`${colorClasses[color]} text-white p-3 rounded-lg`}>
           {icon}
@@ -420,18 +420,18 @@ function ProgressBar({ label, value, total, color = 'blue' }) {
   const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
 
   const colorClasses = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    purple: 'bg-purple-500',
+    blue: 'bg-[#096B17]',
+    green: 'bg-[#096B17]',
+    purple: 'bg-[#F26A1B]',
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <span className="text-sm font-medium text-gray-700">{label}</span>
-        <span className="text-sm text-gray-600">{value} ({percentage}%)</span>
+        <span className="text-sm font-medium text-[#101A13]">{label}</span>
+        <span className="text-sm text-[#5E6B5F]">{value} ({percentage}%)</span>
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-2">
+      <div className="w-full bg-[#EDF1EB] rounded-full h-2">
         <div
           className={`${colorClasses[color]} h-2 rounded-full transition-all duration-300`}
           style={{ width: `${percentage}%` }}
