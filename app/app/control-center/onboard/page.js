@@ -154,10 +154,14 @@ function Wizard() {
   const [firstArticleId, setFirstArticleId] = useState('');
   const [firstArticleUrl, setFirstArticleUrl] = useState('');
   const [practiceErr, setPracticeErr] = useState(false);
-  // commitment quiz
+  // commitment quiz (legacy — the milestone now takes upfront payment directly)
   const [quizIdx, setQuizIdx] = useState(0);
   const [quizFailed, setQuizFailed] = useState(false);
   const [quizPhase, setQuizPhase] = useState('milestone'); // milestone → quiz → ready
+  // Milestone → "Grow" decision: pay now (₹5,000/mo), later, or not interested.
+  const [payBusy, setPayBusy] = useState(false);
+  const [payMsg, setPayMsg] = useState('');
+  const [declined, setDeclined] = useState(false);
   const [gbpStage, setGbpStage] = useState('choose'); // choose (status) → guide
   const [gbpChoice, setGbpChoice] = useState('');
   // §5b areas + §5e relevant links
@@ -251,6 +255,55 @@ function Wizard() {
     } catch { /* navigate anyway */ }
     router.push('/app/control-center');
   }, [router]);
+  // Finishing setup (reaching the milestone) ends onboarding — mark it so the
+  // doctor can move freely between the milestone, payment and the control center
+  // without being bounced back into the wizard.
+  const markComplete = useCallback(async () => {
+    try {
+      await fetch('/api/practice-os/profile', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ onboardComplete: true }),
+      });
+    } catch { /* non-blocking */ }
+  }, []);
+
+  // Upfront ₹5,000/month payment for Dominate Organic Search (no trial, no
+  // application). On success, send them into their control center (now active).
+  const startPayment = useCallback(async () => {
+    setPayBusy(true); setPayMsg('');
+    try {
+      await markComplete();
+      const d = await fetch('/api/practice-os/optimization/subscribe', { method: 'POST', credentials: 'include' }).then((r) => r.json());
+      if (!d.success) { setPayMsg(d.error || 'Could not start the payment. Please try again.'); setPayBusy(false); return; }
+      const ok = await new Promise((resolve) => {
+        if (window.Razorpay) return resolve(true);
+        const s = document.createElement('script');
+        s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        s.onload = () => resolve(true); s.onerror = () => resolve(false);
+        document.body.appendChild(s);
+      });
+      if (!ok) { setPayMsg('Could not load the payment window.'); setPayBusy(false); return; }
+      const rz = new window.Razorpay({
+        key: d.keyId,
+        subscription_id: d.subscriptionId,
+        name: 'CuraGo — Dominate Organic Search',
+        description: '₹5,000 / month',
+        handler: async (resp) => {
+          try {
+            await fetch('/api/practice-os/optimization/verify', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+              body: JSON.stringify(resp),
+            });
+          } catch { /* webhook also confirms */ }
+          router.push('/app/control-center');
+        },
+        modal: { ondismiss: () => setPayBusy(false) },
+        theme: { color: '#096b17' },
+      });
+      rz.open();
+    } catch { setPayMsg('Something went wrong.'); setPayBusy(false); }
+  }, [markComplete, router]);
+
   const go = (i) => {
     setStep(i); setErr(''); window.scrollTo(0, 0); persistStep(i);
     // Add a browser-history entry per step so the browser Back button walks the
@@ -937,28 +990,52 @@ function Wizard() {
         {st.id === 'quiz' && (
           quizPhase === 'milestone' ? (
             // MILESTONE — "You're ready to appear" ladder, before the commitment check.
+            declined ? (
+            <div>
+              <p className="pos-label" style={{ color: 'var(--muted)' }}>No problem</p>
+              <h1 className="text-[26px] font-semibold text-[var(--ink)] mt-1 mb-2" style={{ letterSpacing: '-0.02em' }}>Your free foundation stays yours.</h1>
+              <p className="text-[15px] text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '58ch' }}>Your website, Google Business Profile and patient enquiries keep working — forever, at no cost. When you want CuraGo to grow your practice, we are one message away.</p>
+              <a href="https://wa.me/919148615951" target="_blank" rel="noopener noreferrer" className="pos-action inline-block" style={{ background: 'var(--green)' }}>Talk to us on WhatsApp</a>
+              <button onClick={startPayment} disabled={payBusy} className="pos-link text-sm mt-4 block" style={{ color: 'var(--ink)' }}>{payBusy ? 'Opening payment…' : 'Actually, I’m ready → ₹5,000/month'}</button>
+              <button onClick={() => router.push('/')} className="pos-link text-sm mt-3 block" style={{ color: 'var(--muted)' }}>← Back to the CuraGo site</button>
+            </div>
+            ) : (
             <div>
               <p className="pos-label" style={{ color: 'var(--orange)' }}>Milestone</p>
-              <h1 className="text-[26px] font-semibold text-[var(--ink)] mt-1 mb-2" style={{ letterSpacing: '-0.02em' }}>You are ready to appear.</h1>
-              <p className="text-[15px] text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '60ch' }}>Your website and Google Business Profile are live. Patients searching for you can now find your practice. That part is done. Next: compete and dominate — we help you publish new content, consistently, on your website and your Google Business Profile, so you show up for more searches across Google.</p>
-              <div className="grid gap-2.5 mb-6">
-                {[
-                  { tag: 'Done', title: 'Appear', sub: 'Your website is live. Your Google Business Profile is set up. Patients can find you.', done: true },
-                  { tag: 'Next', title: 'Compete and dominate', sub: 'We help you publish new content, consistently, on your website and your Google Business Profile — so you show up for more searches over time.' },
-                ].map((r) => (
-                  <div key={r.title} className="pos-card p-4 flex items-start gap-3" style={{ borderColor: r.done ? 'var(--green)' : 'var(--rule)', background: r.done ? 'var(--green-soft)' : 'var(--card)' }}>
-                    <span className="pos-label shrink-0" style={{ padding: '3px 8px', borderRadius: 6, background: r.done ? 'var(--green)' : 'var(--rule-soft)', color: r.done ? '#fff' : 'var(--muted)' }}>{r.tag}</span>
-                    <div>
-                      <p className="text-[15px] font-semibold text-[var(--ink)]">{r.title}</p>
-                      <p className="text-[13px] text-[var(--muted)] mt-0.5">{r.sub}</p>
-                    </div>
-                  </div>
-                ))}
+              <h1 className="text-[26px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.02em' }}>Your practice is ready.</h1>
+              <p className="text-[15px] text-[var(--ink)] font-medium mb-2">Now decide how much of the work you want CuraGo to do with you.</p>
+              <p className="text-[14.5px] text-[var(--muted)] mb-5" style={{ lineHeight: 1.6, maxWidth: '60ch' }}>Your website and Google Business Profile are live. Your digital practice now has its foundation. But being online is only the beginning. To become visible for more of the searches that matter to your practice, CuraGo needs to keep building and improving it over time.</p>
+
+              <div className="pos-card p-4 mb-3" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)' }}>
+                <span className="pos-label inline-block mb-2" style={{ padding: '3px 8px', borderRadius: 6, background: 'var(--green)', color: '#fff' }}>✓ Foundation — done</span>
+                <p className="text-[15px] font-semibold text-[var(--ink)]">Your digital practice is live</p>
+                <div className="mt-2 space-y-1">
+                  {['Website', 'Google Business Profile', 'Custom domain', 'Patient enquiry form and WhatsApp button', 'Basic practice information'].map((t) => (
+                    <p key={t} className="text-[13.5px] text-[var(--ink)] flex gap-2" style={{ lineHeight: 1.5 }}><span style={{ color: 'var(--green)' }}>✓</span>{t}</p>
+                  ))}
+                </div>
+                <p className="text-[12.5px] text-[var(--muted)] mt-2.5">This is your free CuraGo foundation.</p>
               </div>
-              <p className="text-[14px] text-[var(--ink)] font-medium mb-3">If you&apos;re ready, answer three questions.</p>
-              <button onClick={() => { setQuizIdx(0); setQuizFailed(false); setQuizPhase('quiz'); }} className="pos-action">I am ready</button>
-              <button onClick={() => go(step - 1)} className="pos-link text-sm mt-5 block" style={{ color: 'var(--muted)' }}>← Back</button>
+
+              <div className="pos-card p-4 mb-5">
+                <span className="pos-label inline-block mb-2" style={{ padding: '3px 8px', borderRadius: 6, background: 'var(--rule-soft)', color: 'var(--muted)' }}>→ Growth — next</span>
+                <p className="text-[15px] font-semibold text-[var(--ink)]">Let CuraGo keep working on your practice</p>
+                <p className="text-[13.5px] text-[var(--muted)] mt-1">CuraGo will:</p>
+                <div className="mt-2 space-y-1">
+                  {['Plan what needs to be built next', 'Create the work for your approval', 'Keep optimising for high-intent searches'].map((t) => (
+                    <p key={t} className="text-[13.5px] text-[var(--ink)] flex gap-2" style={{ lineHeight: 1.5 }}><span style={{ color: 'var(--orange)' }}>→</span>{t}</p>
+                  ))}
+                </div>
+                <p className="text-[20px] font-semibold text-[var(--ink)] mt-3" style={{ letterSpacing: '-0.02em' }}>₹5,000 <span className="text-[13px] font-normal text-[var(--muted)]">/ month</span></p>
+                <p className="text-[12.5px] text-[var(--muted)] mt-1">You don’t have to figure out what to do next. CuraGo does that.</p>
+              </div>
+
+              {payMsg && <p className="text-[13px] text-red-600 mb-3">{payMsg}</p>}
+              <button onClick={startPayment} disabled={payBusy} className="pos-action w-full">{payBusy ? 'Opening payment…' : 'I am ready. Let us begin.'}</button>
+              <button onClick={goToControlCenter} className="pos-card w-full px-4 py-3 text-[15px] font-medium mt-3" style={{ color: 'var(--ink)' }}>Not ready yet</button>
+              <button onClick={async () => { await markComplete(); setDeclined(true); }} className="pos-link text-sm mt-4 block" style={{ color: 'var(--muted)' }}>Not interested</button>
             </div>
+            )
           ) : quizPhase === 'ready' ? (
             // ALL THREE · YES — the early-access offer, before the application form.
             <div>
