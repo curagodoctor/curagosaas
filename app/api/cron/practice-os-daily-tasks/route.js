@@ -96,7 +96,10 @@ export async function GET(request) {
 
         processed++;
         let genErr = '';
-        const draft = await withTimeout(generateMissionDraft(doctorId, task.id, { throwOnError: targeted }), PER_DOCTOR_TIMEOUT_MS).catch((e) => {
+        // Targeted preview runs process one doctor, so give generation the whole
+        // budget; scheduled runs keep the tight cap so a hung call can't starve the batch.
+        const perDoctorMs = targeted ? 240000 : PER_DOCTOR_TIMEOUT_MS;
+        const draft = await withTimeout(generateMissionDraft(doctorId, task.id, { throwOnError: targeted }), perDoctorMs).catch((e) => {
           console.error('[practice-os-daily-tasks] generate timed out/failed:', String(doctorId), e.message);
           genErr = e.message; return null;
         });
