@@ -97,9 +97,8 @@ export async function POST(request) {
       );
     }
 
-    // Create calendar event (required for booking confirmation). If the doctor has
-    // connected their own Google Calendar, the Meet is created on THEIR account
-    // (doctor organiser + patient attendee); otherwise fall back to the shared one.
+    // Create the Meet on the doctor's own Google Calendar (doctor organiser +
+    // patient attendee). Never a CuraGo-owned calendar; booking saves regardless.
     let calendarEvent;
     try {
       const ev = {
@@ -110,23 +109,15 @@ export async function POST(request) {
         whatsapp: bookingData.whatsapp,
         mode: bookingData.modeOfContact,
       };
-      calendarEvent =
-        (doctorDoc?.googleCalendar?.connected && await createCalendarEventForDoctor(doctorDoc, ev))
-        || await createCalendarEvent({ ...ev, doctorEmail: doctorDoc?.email });
-
-      if (!calendarEvent || !calendarEvent.success) {
-        console.error("Calendar event creation returned failure");
-        return NextResponse.json(
-          { error: "Failed to create calendar event. Please try again or contact support." },
-          { status: 500 }
-        );
-      }
+      // Doctor's own calendar only — never a CuraGo-owned calendar. If not
+      // connected (or it fails), still save the booking without a Meet link.
+      const created = doctorDoc?.googleCalendar?.connected
+        ? await createCalendarEventForDoctor(doctorDoc, ev)
+        : null;
+      calendarEvent = (created && created.success) ? created : {};
     } catch (calendarError) {
       console.error("Calendar event creation failed:", calendarError);
-      return NextResponse.json(
-        { error: "Failed to create calendar event. Please try again or contact support." },
-        { status: 500 }
-      );
+      calendarEvent = {};
     }
 
     // Create booking in database

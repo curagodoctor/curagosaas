@@ -146,19 +146,13 @@ export async function POST(request) {
       whatsapp: reservation.whatsapp,
       mode: reservation.mode,
     };
-    const calendarEvent =
-      (doctorDoc?.googleCalendar?.connected && await createCalendarEventForDoctor(doctorDoc, ev))
-      || await createCalendarEvent({ ...ev, doctorEmail: doctorInfo.email });
-
-    if (!calendarEvent.success) {
-      return NextResponse.json(
-        {
-          error: "Payment verified but failed to create calendar event",
-          details: "Please contact support with your payment ID",
-        },
-        { status: 500 }
-      );
-    }
+    // Doctor's own calendar only — never a CuraGo-owned calendar. Payment is
+    // already captured, so never fail the booking on a calendar hiccup: if the
+    // doctor isn't connected (or it fails), confirm the booking without a Meet.
+    const created = doctorDoc?.googleCalendar?.connected
+      ? await createCalendarEventForDoctor(doctorDoc, ev)
+      : null;
+    const calendarEvent = (created && created.success) ? created : {};
 
     // Confirm the reservation (convert to confirmed booking)
     const confirmResult = await confirmReservation(reservationId, {
