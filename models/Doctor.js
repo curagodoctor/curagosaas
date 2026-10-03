@@ -101,7 +101,9 @@ const DoctorSchema = new mongoose.Schema({
   },
   bio: {
     type: String,
-    maxlength: [500, 'Bio cannot exceed 500 characters']
+    // AI-generated practice summaries routinely run 500–650 chars, so 500 was too
+    // tight and tripped full-document validation on save(). Give ample headroom.
+    maxlength: [2000, 'Bio cannot exceed 2000 characters']
   },
 
   // Verification
