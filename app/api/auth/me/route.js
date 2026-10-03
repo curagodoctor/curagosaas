@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentDoctor } from '@/lib/doctorAuth';
+import { getTierContext } from '@/lib/accessTier';
 
 export async function GET(request) {
   try {
@@ -12,9 +13,14 @@ export async function GET(request) {
       );
     }
 
+    // The effective access tier + capability matrix drives all gating in the
+    // unified Control Center (Free / Paid / Founder).
+    const access = await getTierContext(doctor);
+
     // Return doctor data (sensitive fields already excluded by select)
     return NextResponse.json({
       success: true,
+      access, // { tier, maxPages, maxBlogs, aiRefill, dos, features:{...} }
       doctor: {
         _id: doctor._id,
         name: doctor.name,
@@ -39,6 +45,7 @@ export async function GET(request) {
         authProvider: doctor.authProvider,
         practiceOsActive: doctor.practiceOsActive,
         websiteBuilderActive: doctor.websiteBuilderActive,
+        accessTier: doctor.accessTier || 'free',
       },
     });
   } catch (error) {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Subscription from '@/models/Subscription';
 import { verifyWebhookSignature } from '@/lib/razorpaySubscription';
+import { syncDoctorTier } from '@/lib/accessTier';
 
 export async function POST(request) {
   try {
@@ -67,6 +68,9 @@ export async function POST(request) {
     }
 
     await sub.save();
+    // Reflect the new subscription state on the doctor's platform tier (paid ↔ free;
+    // founder is preserved). Gating also recomputes live, so this is best-effort.
+    if (sub.doctorId) { try { await syncDoctorTier(sub.doctorId); } catch (e) { console.error('[Razorpay Webhook] tier sync failed:', e.message); } }
     console.log(`[Razorpay Webhook] ${eventType} processed for subscription ${subscriptionId}`);
 
     return NextResponse.json({ success: true });

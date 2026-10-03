@@ -214,6 +214,20 @@ const DoctorSchema = new mongoose.Schema({
     default: false
   },
 
+  // Platform access tier — the single gate the whole app reads (see lib/accessTier.js).
+  //  - 'free'    : limited (1 website page + 5 blogs, most features locked, no AI refill)
+  //  - 'paid'    : full platform (set automatically when the ₹500/mo subscription is active,
+  //                or manually as a comp). Dominate Organic Search remains a separate add-on.
+  //  - 'founder' : full platform EXCEPT Dominate Organic Search, and AI credits are NOT
+  //                refilled daily (capped, manual use). Set manually from platform-admin.
+  // Effective tier is resolved in lib/accessTier.js (founder > paid/active-sub > free),
+  // so a lapsed subscription falls back to 'free' automatically.
+  accessTier: {
+    type: String,
+    enum: ['free', 'paid', 'founder'],
+    default: 'free',
+  },
+
   // Anonymous display name for the Practice OS leaderboard (opt-in, unique).
   username: { type: String, trim: true, default: '' },
   usernameLower: { type: String, trim: true, lowercase: true, sparse: true, unique: true },

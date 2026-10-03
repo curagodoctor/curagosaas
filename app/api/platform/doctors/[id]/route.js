@@ -116,7 +116,10 @@ export async function PATCH(request, { params }) {
       'licenseNumber',
       'timezone',
       'isEmailVerified',
-      'isActive'
+      'isActive',
+      // Platform access tier (free | paid | founder) — the manual control used to
+      // grant Founder comps or force a tier. Enum-validated by the model.
+      'accessTier',
     ];
 
     // Apply updates
@@ -146,7 +149,8 @@ export async function PATCH(request, { params }) {
         email: doctor.email,
         subdomain: doctor.subdomain,
         isActive: doctor.isActive,
-        isEmailVerified: doctor.isEmailVerified
+        isEmailVerified: doctor.isEmailVerified,
+        accessTier: doctor.accessTier,
       }
     });
 

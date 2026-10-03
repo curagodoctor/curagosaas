@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import Subscription from '@/models/Subscription';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
 import { cancelSubscription } from '@/lib/razorpaySubscription';
+import { syncDoctorTier } from '@/lib/accessTier';
 
 export async function POST(request) {
   try {
@@ -33,6 +34,8 @@ export async function POST(request) {
     sub.cancelledAt = new Date();
     sub.plan = sub.plan === 'monthly' ? 'monthly' : 'trial'; // Keep original plan type
     await sub.save();
+    // Cancellation drops them back to free (founder preserved).
+    try { await syncDoctorTier(doctor._id); } catch (e) { console.error('[Subscription Cancel] tier sync failed:', e.message); }
 
     return NextResponse.json({ success: true, message: 'Subscription cancelled.' });
   } catch (error) {
