@@ -67,6 +67,25 @@ export default function DoctorDetailsPage({ params }) {
     }
   };
 
+  const handleSetTier = async (tier) => {
+    if (tier === (doctor.accessTier || 'free')) return;
+    setActionLoading(true);
+    try {
+      const response = await fetch(`/api/platform/doctors/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessTier: tier }),
+      });
+      if (!response.ok) throw new Error('Failed to set access tier');
+      const data = await response.json();
+      setDoctor(prev => ({ ...prev, accessTier: data.doctor?.accessTier || tier }));
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleSuspend = async () => {
     if (!confirm(`Are you sure you want to ${doctor.isActive ? 'suspend' : 'activate'} this doctor?`)) {
       return;
@@ -174,11 +193,31 @@ export default function DoctorDetailsPage({ params }) {
                     Verified
                   </span>
                 )}
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                  (doctor.accessTier || 'free') === 'founder' ? 'bg-purple-100 text-purple-800'
+                    : (doctor.accessTier || 'free') === 'paid' ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-700'
+                }`}>
+                  {(doctor.accessTier || 'free')} tier
+                </span>
               </div>
             </div>
           </div>
 
           <div className="flex items-center space-x-3">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <span className="font-medium">Access tier</span>
+              <select
+                value={doctor.accessTier || 'free'}
+                onChange={(e) => handleSetTier(e.target.value)}
+                disabled={actionLoading}
+                className="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+              >
+                <option value="free">Free</option>
+                <option value="paid">Paid</option>
+                <option value="founder">Founder</option>
+              </select>
+            </label>
             <a
               href={`https://${doctor.subdomain}.curago.in`}
               target="_blank"
