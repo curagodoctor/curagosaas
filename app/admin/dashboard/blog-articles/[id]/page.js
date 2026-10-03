@@ -361,7 +361,7 @@ export default function BlogArticleEditorPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-600">Loading article...</div>
+        <div className="text-[#5E6B5F]">Loading article...</div>
       </div>
     );
   }
@@ -371,7 +371,7 @@ export default function BlogArticleEditorPage() {
       {/* Back Button */}
       <button
         onClick={() => router.push('/admin/dashboard/blog-articles')}
-        className="mb-6 inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium transition-colors"
+        className="mb-6 inline-flex items-center gap-2 text-[#5E6B5F] hover:text-[#101A13] font-medium transition-colors"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -381,16 +381,16 @@ export default function BlogArticleEditorPage() {
 
       <div className="mb-6">
         <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-3xl font-bold text-gray-800">
+          <h1 className="text-3xl font-semibold text-[#101A13]">
             {isNew ? 'Create New Article' : 'Edit Article'}
           </h1>
           {!isNew && (
-            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${formData.status === 'published' ? 'bg-green-100 text-green-700' : formData.status === 'scheduled' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${formData.status === 'published' ? 'bg-green-100 text-green-700' : formData.status === 'scheduled' ? 'bg-blue-100 text-blue-700' : 'bg-[#EDF1EB] text-[#5E6B5F]'}`}>
               {formData.status === 'published' ? '● Live on your website' : formData.status === 'scheduled' ? 'Scheduled' : 'Draft — not live'}
             </span>
           )}
         </div>
-        <p className="text-gray-600 mt-2">
+        <p className="text-[#5E6B5F] mt-2">
           {!isNew && formData.status === 'published'
             ? 'This article is already published. Edit and Save changes to update it, or Unpublish to take it down.'
             : 'Fill in the standardized sections for your medical blog, then Publish to go live.'}
@@ -399,12 +399,12 @@ export default function BlogArticleEditorPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">Basic Information</h2>
+        <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
+          <h2 className="text-xl font-semibold text-[#101A13] mb-4">Basic Information</h2>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[#101A13] mb-2">
                 Title <span className="text-red-500">*</span>
               </label>
               <input
@@ -413,13 +413,13 @@ export default function BlogArticleEditorPage() {
                 onChange={(e) => handleChange('title', e.target.value)}
                 onBlur={generateSlug}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                 placeholder="e.g., Gallbladder Specialist in Tilak Nagar"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[#101A13] mb-2">
                 Slug <span className="text-red-500">*</span>
               </label>
               <div className="flex gap-2">
@@ -428,13 +428,13 @@ export default function BlogArticleEditorPage() {
                   value={formData.slug}
                   onChange={(e) => handleChange('slug', e.target.value)}
                   required
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex-1 px-4 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                   placeholder="e.g., gallbladder-audit-srv-hospital"
                 />
                 <button
                   type="button"
                   onClick={generateSlug}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                  className="px-4 py-2 bg-white border border-[#DDE4D9] hover:bg-[#F7F9F5] text-[#101A13] rounded-lg transition-colors"
                 >
                   Generate
                 </button>
@@ -445,22 +445,22 @@ export default function BlogArticleEditorPage() {
                 (automatic internal linking + reusing links in GBP posts). */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Disease cluster</label>
+                <label className="block text-sm font-medium text-[#101A13] mb-2">Disease cluster</label>
                 <input
                   type="text"
                   value={formData.diseaseCluster}
                   onChange={(e) => handleChange('diseaseCluster', e.target.value.toLowerCase())}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                   placeholder="e.g., gallbladder-stones"
                 />
-                <p className="text-xs text-gray-400 mt-1">Groups related pages so they link to each other automatically.</p>
+                <p className="text-xs text-[#5E6B5F] mt-1">Groups related pages so they link to each other automatically.</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Page type</label>
+                <label className="block text-sm font-medium text-[#101A13] mb-2">Page type</label>
                 <select
                   value={formData.pageType}
                   onChange={(e) => handleChange('pageType', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                 >
                   <option value="">—</option>
                   <option value="disease">Disease / condition</option>
@@ -475,17 +475,17 @@ export default function BlogArticleEditorPage() {
             {/* §10 — social media links (reels / posts) shown on the page */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">Social media links</label>
+                <label className="block text-sm font-medium text-[#101A13]">Social media links</label>
                 <button
                   type="button"
                   onClick={() => handleChange('socialLinks', [...(formData.socialLinks || []), { label: '', url: '' }])}
-                  className="text-sm text-blue-600 hover:underline"
+                  className="text-sm text-[#096B17] hover:underline"
                 >
                   + Add link
                 </button>
               </div>
               {(formData.socialLinks || []).length === 0 && (
-                <p className="text-xs text-gray-400">Add Instagram reels, YouTube videos or post links to show on this page.</p>
+                <p className="text-xs text-[#5E6B5F]">Add Instagram reels, YouTube videos or post links to show on this page.</p>
               )}
               <div className="space-y-2">
                 {(formData.socialLinks || []).map((link, i) => (
@@ -495,14 +495,14 @@ export default function BlogArticleEditorPage() {
                       value={link.label}
                       onChange={(e) => { const next = [...formData.socialLinks]; next[i] = { ...next[i], label: e.target.value }; handleChange('socialLinks', next); }}
                       placeholder="Label (e.g. Watch the reel)"
-                      className="w-1/3 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-1/3 px-3 py-2 border border-[#DDE4D9] rounded-lg text-sm"
                     />
                     <input
                       type="url"
                       value={link.url}
                       onChange={(e) => { const next = [...formData.socialLinks]; next[i] = { ...next[i], url: e.target.value }; handleChange('socialLinks', next); }}
                       placeholder="https://instagram.com/reel/…"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="flex-1 px-3 py-2 border border-[#DDE4D9] rounded-lg text-sm"
                     />
                     <button
                       type="button"
@@ -517,7 +517,7 @@ export default function BlogArticleEditorPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[#101A13] mb-2">
                 Meta Description (SEO)
               </label>
               <textarea
@@ -525,24 +525,24 @@ export default function BlogArticleEditorPage() {
                 onChange={(e) => handleChange('metaDescription', e.target.value)}
                 maxLength={160}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                 placeholder="Brief description for search engines (max 160 characters)"
               />
-              <div className="text-sm text-gray-500 mt-1">
+              <div className="text-sm text-[#5E6B5F] mt-1">
                 {formData.metaDescription.length}/160 characters
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#101A13] mb-2">
                   Category
                 </label>
                 <input
                   type="text"
                   value={formData.category}
                   onChange={(e) => handleChange('category', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                   placeholder="Type a category (e.g., Cardiology, General Health)"
                   list="category-suggestions"
                 />
@@ -559,13 +559,13 @@ export default function BlogArticleEditorPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#101A13] mb-2">
                   Status
                 </label>
                 <select
                   value={formData.status}
                   onChange={(e) => handleChange('status', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                 >
                   <option value="draft">Draft</option>
                   <option value="scheduled">Scheduled</option>
@@ -574,21 +574,21 @@ export default function BlogArticleEditorPage() {
                 </select>
                 {formData.status === 'scheduled' && (
                   <div className="mt-2">
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Go live at</label>
+                    <label className="block text-xs font-medium text-[#5E6B5F] mb-1">Go live at</label>
                     <input
                       type="datetime-local"
                       value={formData.scheduledAt || ''}
                       onChange={(e) => handleChange('scheduledAt', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-[#DDE4D9] rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                     />
-                    <p className="text-xs text-gray-400 mt-1">Published automatically at this time (checked daily).</p>
+                    <p className="text-xs text-[#5E6B5F] mt-1">Published automatically at this time (checked daily).</p>
                   </div>
                 )}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[#101A13] mb-2">
                 Featured Image (Thumbnail)
               </label>
 
@@ -598,7 +598,7 @@ export default function BlogArticleEditorPage() {
                   <img
                     src={formData.featuredImage.url}
                     alt="Featured thumbnail"
-                    className="w-full h-64 object-cover rounded-lg border border-gray-300"
+                    className="w-full h-64 object-cover rounded-lg border border-[#DDE4D9]"
                   />
                   <button
                     type="button"
@@ -622,7 +622,7 @@ export default function BlogArticleEditorPage() {
                     disabled={uploading}
                     className="hidden"
                   />
-                  <div className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-center cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <div className="w-full px-4 py-3 bg-white border border-[#DDE4D9] hover:bg-[#F7F9F5] text-[#101A13] rounded-lg font-medium text-center cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     {uploading ? (
                       <span className="flex items-center justify-center gap-2">
                         <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
@@ -651,20 +651,20 @@ export default function BlogArticleEditorPage() {
                 </button>
               </div>
 
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-[#5E6B5F] mt-2">
                 Recommended: 1200x630px (JPG, PNG, or WebP, max 5MB). AI generation uses 3 credits.
               </p>
 
               {/* Alt Text */}
               <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#101A13] mb-2">
                   Image Alt Text (for SEO)
                 </label>
                 <input
                   type="text"
                   value={formData.featuredImage.alt}
                   onChange={(e) => handleNestedChange('featuredImage', 'alt', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                   placeholder="Describe the image for accessibility"
                 />
               </div>
@@ -673,9 +673,9 @@ export default function BlogArticleEditorPage() {
         </div>
 
         {/* Page type — picks the intent and suggests the H2 headings */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Page type</label>
-          <p className="text-sm text-gray-600 mb-3">Pick what this page is about — we&apos;ll suggest the right H2 headings, which you can fully edit, reorder or remove.</p>
+        <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
+          <label className="block text-sm font-medium text-[#101A13] mb-1">Page type</label>
+          <p className="text-sm text-[#5E6B5F] mb-3">Pick what this page is about — we&apos;ll suggest the right H2 headings, which you can fully edit, reorder or remove.</p>
           <div className="flex flex-wrap gap-2">
             {BLOG_PAGE_TYPES.map((t) => (
               <button
@@ -683,7 +683,7 @@ export default function BlogArticleEditorPage() {
                 type="button"
                 onClick={() => applyPageType(t.id)}
                 title={t.description}
-                className={`px-3 py-2 rounded-lg border text-sm font-medium ${formData.pageType === t.id ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                className={`px-3 py-2 rounded-lg border text-sm font-medium ${formData.pageType === t.id ? 'border-[#096B17] bg-green-50 text-[#096B17]' : 'border-[#DDE4D9] text-[#101A13] hover:bg-[#F7F9F5]'}`}
               >
                 {t.label}
               </button>
@@ -692,22 +692,22 @@ export default function BlogArticleEditorPage() {
         </div>
 
         {/* Content blocks — the modular body */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-800">Content blocks</h2>
-            <span className="text-sm text-gray-500">{formData.blocks.length} block{formData.blocks.length === 1 ? '' : 's'}</span>
+            <h2 className="text-xl font-semibold text-[#101A13]">Content blocks</h2>
+            <span className="text-sm text-[#5E6B5F]">{formData.blocks.length} block{formData.blocks.length === 1 ? '' : 's'}</span>
           </div>
           {formData.blocks.length === 0 && (
-            <p className="text-sm text-gray-500 mb-3">No blocks yet — pick a page type above, or add one manually.</p>
+            <p className="text-sm text-[#5E6B5F] mb-3">No blocks yet — pick a page type above, or add one manually.</p>
           )}
           <div className="space-y-4">
             {formData.blocks.map((b, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4">
+              <div key={index} className="border border-[#EDF1EB] rounded-lg p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-medium text-gray-400">H2 · Block {index + 1}</span>
+                  <span className="text-xs font-medium text-[#5E6B5F]">H2 · Block {index + 1}</span>
                   <div className="ml-auto flex items-center gap-1">
-                    <button type="button" onClick={() => moveBlock(index, -1)} disabled={index === 0} className="px-2 text-gray-400 hover:text-blue-600 disabled:opacity-30" title="Move up">↑</button>
-                    <button type="button" onClick={() => moveBlock(index, 1)} disabled={index === formData.blocks.length - 1} className="px-2 text-gray-400 hover:text-blue-600 disabled:opacity-30" title="Move down">↓</button>
+                    <button type="button" onClick={() => moveBlock(index, -1)} disabled={index === 0} className="px-2 text-[#5E6B5F] hover:text-[#096B17] disabled:opacity-30" title="Move up">↑</button>
+                    <button type="button" onClick={() => moveBlock(index, 1)} disabled={index === formData.blocks.length - 1} className="px-2 text-[#5E6B5F] hover:text-[#096B17] disabled:opacity-30" title="Move down">↓</button>
                     <button type="button" onClick={() => removeBlock(index)} className="px-2 text-red-500 hover:text-red-700 text-sm" title="Remove block">Remove</button>
                   </div>
                 </div>
@@ -716,62 +716,62 @@ export default function BlogArticleEditorPage() {
                   value={b.heading}
                   onChange={(e) => updateBlock(index, 'heading', e.target.value)}
                   placeholder="Section heading (H2)"
-                  className="w-full text-lg font-semibold text-gray-800 px-3 py-2 mb-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full text-lg font-semibold text-[#101A13] px-3 py-2 mb-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17]"
                 />
                 <textarea
                   value={b.content}
                   onChange={(e) => updateBlock(index, 'content', e.target.value)}
                   rows={5}
                   placeholder="Write this section…"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17]"
                 />
               </div>
             ))}
-            <button type="button" onClick={addBlock} className="w-full py-2 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors">
+            <button type="button" onClick={addBlock} className="w-full py-2 px-4 border-2 border-dashed border-[#DDE4D9] rounded-lg text-[#5E6B5F] hover:border-[#096B17] hover:text-[#096B17] transition-colors">
               + Add block
             </button>
           </div>
-          <p className="text-xs text-gray-400 mt-3">Tip: use <span className="font-mono">{'{{doctor_name}}'}</span> and <span className="font-mono">{'{{city}}'}</span> in a heading or body — they fill from the doctor&apos;s profile.</p>
+          <p className="text-xs text-[#5E6B5F] mt-3">Tip: use <span className="font-mono">{'{{doctor_name}}'}</span> and <span className="font-mono">{'{{city}}'}</span> in a heading or body — they fill from the doctor&apos;s profile.</p>
         </div>
 
         {/* Clinic location block (optional) */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Clinic location block (optional)</label>
+        <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
+          <label className="block text-xs uppercase tracking-wide text-[#5E6B5F] mb-1">Clinic location block (optional)</label>
           <input
             type="text"
             value={formData.locationBlock.heading}
             onChange={(e) => handleNestedChange('locationBlock', 'heading', e.target.value)}
             placeholder={LOCATION_BLOCK_HEADING}
-            className="w-full text-xl font-bold text-gray-800 px-3 py-2 mb-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full text-xl font-semibold text-[#101A13] px-3 py-2 mb-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17]"
           />
           <textarea
             value={formData.locationBlock.content}
             onChange={(e) => handleNestedChange('locationBlock', 'content', e.target.value)}
             rows={4}
             placeholder="Clinic address, directions, consultation hours, and how to book an appointment…"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17]"
           />
         </div>
 
         {/* FAQs */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <label className="block text-xs uppercase tracking-wide text-gray-500 mb-1">Section heading</label>
+        <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
+          <label className="block text-xs uppercase tracking-wide text-[#5E6B5F] mb-1">Section heading</label>
           <input
             type="text"
             value={formData.faqSection.heading}
             onChange={(e) => handleNestedChange('faqSection', 'heading', e.target.value)}
             placeholder="FAQs: Clear Answers for Patients"
-            className="w-full text-xl font-bold text-gray-800 px-3 py-2 mb-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full text-xl font-semibold text-[#101A13] px-3 py-2 mb-4 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
           />
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-[#5E6B5F] mb-4">
             Address common fears and concerns with 3 short, punchy Q&As.
           </p>
 
           <div className="space-y-4">
             {formData.faqSection.faqs.map((faq, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-4">
+              <div key={index} className="border border-[#EDF1EB] rounded-lg p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <label className="text-sm font-medium text-gray-700">FAQ #{index + 1}</label>
+                  <label className="text-sm font-medium text-[#101A13]">FAQ #{index + 1}</label>
                   {formData.faqSection.faqs.length > 1 && (
                     <button
                       type="button"
@@ -787,14 +787,14 @@ export default function BlogArticleEditorPage() {
                   value={faq.question}
                   onChange={(e) => handleFAQChange(index, 'question', e.target.value)}
                   placeholder="Question"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2"
+                  className="w-full px-3 py-2 border border-[#DDE4D9] rounded-lg mb-2"
                 />
                 <textarea
                   value={faq.answer}
                   onChange={(e) => handleFAQChange(index, 'answer', e.target.value)}
                   placeholder="Answer"
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-[#DDE4D9] rounded-lg"
                 />
               </div>
             ))}
@@ -802,7 +802,7 @@ export default function BlogArticleEditorPage() {
             <button
               type="button"
               onClick={addFAQ}
-              className="w-full py-2 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors"
+              className="w-full py-2 px-4 border-2 border-dashed border-[#DDE4D9] rounded-lg text-[#5E6B5F] hover:border-[#096B17] hover:text-[#096B17] transition-colors"
             >
               + Add FAQ
             </button>
@@ -814,7 +814,7 @@ export default function BlogArticleEditorPage() {
           <button
             type="button"
             onClick={() => router.push('/admin/dashboard/blog-articles')}
-            className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+            className="flex-1 px-6 py-3 bg-white border border-[#DDE4D9] hover:bg-[#F7F9F5] text-[#101A13] rounded-lg font-medium transition-colors"
           >
             Cancel
           </button>
@@ -823,7 +823,7 @@ export default function BlogArticleEditorPage() {
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 px-6 py-3 bg-gray-800 hover:bg-black text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-6 py-3 bg-[#F26A1B] hover:bg-[#d95d13] text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving…' : (isNew ? 'Create' : 'Save changes')}
           </button>
@@ -832,7 +832,7 @@ export default function BlogArticleEditorPage() {
               type="button"
               disabled={saving}
               onClick={() => handleSubmit(null, 'draft')}
-              className="flex-1 px-6 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors disabled:opacity-50"
+              className="flex-1 px-6 py-3 border border-[#DDE4D9] hover:bg-[#F7F9F5] text-[#101A13] rounded-lg font-medium transition-colors disabled:opacity-50"
             >
               Unpublish
             </button>

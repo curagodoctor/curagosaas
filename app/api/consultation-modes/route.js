@@ -30,15 +30,21 @@ export async function GET(request) {
       return NextResponse.json({ success: true, clinics: [], modes: [] });
     }
 
-    const [allModes, clinicDocs] = await Promise.all([
+    const [allModes, clinicDocs, docCal] = await Promise.all([
       ConsultationMode.find({ doctorId, isActive: true })
         .select("_id name displayName description color sortOrder clinicId")
         .sort({ sortOrder: 1, createdAt: 1 })
         .lean(),
       Clinic.find({ doctorId }).select("_id name address phone isPrimary sortOrder").sort({ isPrimary: -1, sortOrder: 1, createdAt: 1 }).lean(),
+      Doctor.findById(doctorId).select("googleCalendar.connected").lean(),
     ]);
 
-    const visibleModes = ONLINE_BOOKING_ENABLED ? allModes : allModes.filter((m) => !isOnlineMode(m));
+    // Online booking requires the doctor's OWN Google Calendar to be connected —
+    // otherwise no Google Meet can be created for the patient, so we must not offer
+    // online booking at all. (The env flag remains a global kill-switch.)
+    const calendarConnected = !!docCal?.googleCalendar?.connected;
+    const onlineAllowed = ONLINE_BOOKING_ENABLED && calendarConnected;
+    const visibleModes = onlineAllowed ? allModes : allModes.filter((m) => !isOnlineMode(m));
 
     // Group modes by clinic.
     const byClinic = new Map();

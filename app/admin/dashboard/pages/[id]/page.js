@@ -688,7 +688,7 @@ export default function PageBuilderEditor() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#096B17]"></div>
       </div>
     );
   }
@@ -706,13 +706,13 @@ export default function PageBuilderEditor() {
   const selectedSection = selectedSectionIndex !== null ? pageData.sections[selectedSectionIndex] : null;
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-screen flex flex-col bg-[#F7F9F5]">
       {/* Top Bar */}
-      <div className="bg-white border-b border-gray-200 px-3 sm:px-4 py-3 flex items-center justify-between gap-2">
+      <div className="bg-white border-b border-[#EDF1EB] px-3 sm:px-4 py-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
           <Link
             href="/admin/dashboard/pages"
-            className="text-gray-600 hover:text-gray-900 transition-colors flex-shrink-0"
+            className="text-[#5E6B5F] hover:text-[#101A13] transition-colors flex-shrink-0"
           >
             <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -722,7 +722,7 @@ export default function PageBuilderEditor() {
           {/* Mobile: Add Sections Button */}
           <button
             onClick={() => setIsMobilePaletteOpen(!isMobilePaletteOpen)}
-            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
+            className="lg:hidden p-2 hover:bg-[#F7F9F5] rounded-lg transition-colors flex-shrink-0"
             title="Add sections"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -731,8 +731,8 @@ export default function PageBuilderEditor() {
           </button>
 
           <div className="min-w-0 flex-1">
-            <h1 className="font-bold text-sm sm:text-lg truncate">{pageData.title || "Untitled Page"}</h1>
-            <p className="text-xs sm:text-sm text-gray-500 truncate hidden sm:block">
+            <h1 className="text-[#101A13] font-semibold text-sm sm:text-lg truncate">{pageData.title || "Untitled Page"}</h1>
+            <p className="text-xs sm:text-sm text-[#5E6B5F] truncate hidden sm:block">
               {doctorData?.subdomain
                 ? `${doctorData.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'curago.in'}`
                 : `curago.in`
@@ -743,17 +743,17 @@ export default function PageBuilderEditor() {
           <div className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${
             pageData.status === "published" ? "bg-green-100 text-green-800" :
             pageData.status === "draft" ? "bg-yellow-100 text-yellow-800" :
-            "bg-gray-100 text-gray-800"
+            "bg-[#F7F9F5] text-[#101A13]"
           }`}>
             {pageData.status.charAt(0).toUpperCase() + pageData.status.slice(1)}
           </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-          {saveStatus && <span className="text-sm text-green-600 font-medium hidden md:block">{saveStatus}</span>}
+          {saveStatus && <span className="text-sm text-[#096B17] font-medium hidden md:block">{saveStatus}</span>}
 
           {hasUnsavedChanges && !saveStatus && (
-            <span className="text-xs text-orange-600 font-medium hidden md:block">Unsaved changes</span>
+            <span className="text-xs text-[#F26A1B] font-medium hidden md:block">Unsaved changes</span>
           )}
 
           {/* Save Changes Button - Primary when there are unsaved changes */}
@@ -762,8 +762,8 @@ export default function PageBuilderEditor() {
             disabled={saving}
             className={`px-2 sm:px-4 py-2 rounded-lg disabled:opacity-50 transition-colors font-medium text-xs sm:text-sm ${
               hasUnsavedChanges
-                ? "bg-blue-600 hover:bg-blue-700 text-white"
-                : "border border-gray-300 hover:bg-gray-50"
+                ? "bg-[#F26A1B] hover:bg-[#d95c15] text-white"
+                : "border border-[#DDE4D9] hover:bg-[#F7F9F5]"
             }`}
           >
             <span className="hidden sm:inline">{saving ? "Saving..." : "Save Changes"}</span>
@@ -780,7 +780,7 @@ export default function PageBuilderEditor() {
               setSelectedSectionIndex(null);
               setShowConfig(true);
             }}
-            className="px-2 sm:px-4 py-2 border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors font-medium text-xs sm:text-sm flex items-center gap-1 sm:gap-2"
+            className="px-2 sm:px-4 py-2 border border-[#DDE4D9] hover:bg-[#F7F9F5] rounded-lg transition-colors font-medium text-xs sm:text-sm flex items-center gap-1 sm:gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -794,7 +794,7 @@ export default function PageBuilderEditor() {
             <button
               onClick={() => savePage(true)}
               disabled={saving}
-              className="px-2 sm:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50 transition-colors font-medium text-xs sm:text-sm hidden sm:block"
+              className="px-2 sm:px-4 py-2 bg-[#096B17] hover:bg-[#075512] text-white rounded-lg disabled:opacity-50 transition-colors font-medium text-xs sm:text-sm hidden sm:block"
             >
               Publish
             </button>
@@ -808,7 +808,7 @@ export default function PageBuilderEditor() {
             }
             target="_blank"
             rel="noopener noreferrer"
-            className="px-2 sm:px-4 py-2 border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors font-medium text-xs sm:text-sm flex items-center gap-1 sm:gap-2"
+            className="px-2 sm:px-4 py-2 border border-[#DDE4D9] hover:bg-[#F7F9F5] rounded-lg transition-colors font-medium text-xs sm:text-sm flex items-center gap-1 sm:gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -821,14 +821,14 @@ export default function PageBuilderEditor() {
       {/* Mobile-only sticky action bar — on phones the toolbar Save is a tiny
           icon and Publish is hidden, so surface both as full buttons here. */}
       <div
-        className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 px-3 py-2 flex items-center gap-2"
+        className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#EDF1EB] px-3 py-2 flex items-center gap-2"
         style={{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }}
       >
-        {hasUnsavedChanges && <span className="text-[11px] text-orange-600 font-medium mr-auto">Unsaved</span>}
+        {hasUnsavedChanges && <span className="text-[11px] text-[#F26A1B] font-medium mr-auto">Unsaved</span>}
         <button
           onClick={() => savePage(false)}
           disabled={saving}
-          className="flex-1 px-4 py-2.5 rounded-lg font-medium text-sm bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+          className="flex-1 px-4 py-2.5 rounded-lg font-medium text-sm bg-[#F26A1B] hover:bg-[#d95c15] text-white disabled:opacity-50"
         >
           {saving ? 'Saving…' : 'Save'}
         </button>
@@ -836,7 +836,7 @@ export default function PageBuilderEditor() {
           <button
             onClick={() => savePage(true)}
             disabled={saving}
-            className="flex-1 px-4 py-2.5 rounded-lg font-medium text-sm bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 rounded-lg font-medium text-sm bg-[#096B17] hover:bg-[#075512] text-white disabled:opacity-50"
           >
             Publish
           </button>
@@ -860,18 +860,18 @@ export default function PageBuilderEditor() {
         {showSectionPalette && (
           <div className={`
             fixed lg:static inset-y-0 left-0 z-50 lg:z-0
-            w-72 sm:w-80 lg:w-64 bg-white border-r border-gray-200 overflow-y-auto
+            w-72 sm:w-80 lg:w-64 bg-white border-r border-[#EDF1EB] overflow-y-auto
             transform transition-transform duration-300 ease-in-out
             ${isMobilePaletteOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
           `}>
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <div className="p-4 border-b border-[#EDF1EB] flex items-center justify-between">
               <div>
-                <h2 className="font-bold text-gray-900 mb-1">Add Sections</h2>
-                <p className="text-sm text-gray-600">Click to add to page</p>
+                <h2 className="text-[#101A13] font-semibold mb-1">Add Sections</h2>
+                <p className="text-sm text-[#5E6B5F]">Click to add to page</p>
               </div>
               <button
                 onClick={() => setIsMobilePaletteOpen(false)}
-                className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+                className="lg:hidden p-2 hover:bg-[#F7F9F5] rounded-lg"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -899,20 +899,20 @@ export default function PageBuilderEditor() {
                   disabled={section.disabled}
                   className={`w-full text-left p-3 rounded-lg transition-colors border ${
                     section.disabled
-                      ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50'
-                      : 'hover:bg-blue-50 border-gray-200 hover:border-blue-300'
+                      ? 'opacity-50 cursor-not-allowed border-[#EDF1EB] bg-[#F7F9F5]'
+                      : 'hover:bg-[#F7F9F5] border-[#EDF1EB] hover:border-[#DDE4D9]'
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`flex-shrink-0 mt-0.5 ${section.disabled ? 'text-gray-400' : 'text-blue-600'}`}>{section.icon}</div>
+                    <div className={`flex-shrink-0 mt-0.5 ${section.disabled ? 'text-[#5E6B5F]' : 'text-[#096B17]'}`}>{section.icon}</div>
                     <div className="flex-1 min-w-0">
-                      <div className={`font-semibold text-sm ${section.disabled ? 'text-gray-400' : 'text-gray-900'}`}>{section.name}</div>
-                      <div className={`text-xs mt-0.5 ${section.disabled ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <div className={`font-semibold text-sm ${section.disabled ? 'text-[#5E6B5F]' : 'text-[#101A13]'}`}>{section.name}</div>
+                      <div className={`text-xs mt-0.5 ${section.disabled ? 'text-[#5E6B5F]' : 'text-[#5E6B5F]'}`}>
                         {section.disabled ? section.disabledReason : section.description}
                       </div>
                     </div>
                     {section.disabled && (
-                      <svg className="w-4 h-4 text-gray-400 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-[#5E6B5F] flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                     )}
@@ -929,14 +929,14 @@ export default function PageBuilderEditor() {
           <div className="max-w-4xl mx-auto">
             {pageData.sections.length === 0 ? (
               <div className="text-center py-12 sm:py-20">
-                <svg className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-12 h-12 sm:w-16 sm:h-16 text-[#5E6B5F] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No sections yet</h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Add sections to build your page</p>
+                <h3 className="text-lg sm:text-xl font-semibold text-[#101A13] mb-2">No sections yet</h3>
+                <p className="text-sm sm:text-base text-[#5E6B5F] mb-4 sm:mb-6">Add sections to build your page</p>
                 <button
                   onClick={() => setIsMobilePaletteOpen(true)}
-                  className="lg:hidden px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  className="lg:hidden px-4 py-2 bg-[#F26A1B] text-white rounded-lg hover:bg-[#d95c15] transition-colors text-sm font-medium"
                 >
                   Add Section
                 </button>
@@ -950,8 +950,8 @@ export default function PageBuilderEditor() {
                   return (
                     <div
                       key={section._id || index}
-                      className={`bg-white rounded-lg border-2 p-3 sm:p-4 transition-all cursor-pointer ${
-                        isSelected ? "border-blue-500 shadow-lg" : "border-gray-200 hover:border-gray-300"
+                      className={`bg-white rounded-xl border-2 p-3 sm:p-4 transition-all cursor-pointer ${
+                        isSelected ? "border-[#096B17] shadow-sm" : "border-[#EDF1EB] hover:border-[#DDE4D9]"
                       } ${!section.visible ? "opacity-50" : ""}`}
                       onClick={() => {
                         setSelectedSectionIndex(index);
@@ -962,10 +962,10 @@ export default function PageBuilderEditor() {
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                          <div className="text-blue-600 flex-shrink-0">{sectionDef?.icon}</div>
+                          <div className="text-[#096B17] flex-shrink-0">{sectionDef?.icon}</div>
                           <div className="min-w-0 flex-1">
-                            <div className="font-semibold text-sm sm:text-base text-gray-900 truncate">{sectionDef?.name}</div>
-                            <div className="text-xs sm:text-sm text-gray-600">Order: {index + 1}</div>
+                            <div className="font-semibold text-sm sm:text-base text-[#101A13] truncate">{sectionDef?.name}</div>
+                            <div className="text-xs sm:text-sm text-[#5E6B5F]">Order: {index + 1}</div>
                           </div>
                         </div>
 
@@ -975,16 +975,16 @@ export default function PageBuilderEditor() {
                               e.stopPropagation();
                               toggleSectionVisibility(index);
                             }}
-                            className="p-1.5 sm:p-2 hover:bg-gray-100 rounded transition-colors"
+                            className="p-1.5 sm:p-2 hover:bg-[#F7F9F5] rounded transition-colors"
                             title={section.visible ? "Hide" : "Show"}
                           >
                             {section.visible ? (
-                              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#5E6B5F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                               </svg>
                             ) : (
-                              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-[#5E6B5F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                               </svg>
                             )}
@@ -996,7 +996,7 @@ export default function PageBuilderEditor() {
                               moveSectionUp(index);
                             }}
                             disabled={index === 0}
-                            className="p-1.5 sm:p-2 hover:bg-gray-100 rounded transition-colors disabled:opacity-30"
+                            className="p-1.5 sm:p-2 hover:bg-[#F7F9F5] rounded transition-colors disabled:opacity-30"
                             title="Move up"
                           >
                             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1010,7 +1010,7 @@ export default function PageBuilderEditor() {
                               moveSectionDown(index);
                             }}
                             disabled={index === pageData.sections.length - 1}
-                            className="p-1.5 sm:p-2 hover:bg-gray-100 rounded transition-colors disabled:opacity-30"
+                            className="p-1.5 sm:p-2 hover:bg-[#F7F9F5] rounded transition-colors disabled:opacity-30"
                             title="Move down"
                           >
                             <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1043,14 +1043,14 @@ export default function PageBuilderEditor() {
         {/* Right Panel - Configuration */}
         <div className={`
           fixed lg:static inset-y-0 right-0 z-50 lg:z-0
-          w-full sm:w-96 lg:w-96 bg-white border-l border-gray-200 overflow-y-auto
+          w-full sm:w-96 lg:w-96 bg-white border-l border-[#EDF1EB] overflow-y-auto
           transform transition-transform duration-300 ease-in-out
           ${showConfig ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
         `}>
           {selectedSection ? (
             <div className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold text-gray-900 text-base sm:text-lg">
+                <h2 className="text-[#101A13] font-semibold text-base sm:text-lg">
                   {SECTION_TYPES.find((s) => s.type === selectedSection.type)?.name} Settings
                 </h2>
                 <button
@@ -1058,7 +1058,7 @@ export default function PageBuilderEditor() {
                     setShowConfig(false);
                     setSelectedSectionIndex(null);
                   }}
-                  className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+                  className="lg:hidden p-2 hover:bg-[#F7F9F5] rounded-lg"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1066,7 +1066,7 @@ export default function PageBuilderEditor() {
                 </button>
               </div>
 
-              <div className="text-xs sm:text-sm text-gray-600 mb-4">
+              <div className="text-xs sm:text-sm text-[#5E6B5F] mb-4">
                 Configure the selected section below. Changes are saved when you click "Save Draft" or "Publish".
               </div>
 
@@ -1115,10 +1115,10 @@ export default function PageBuilderEditor() {
           ) : (
             <div className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold text-gray-900 text-base sm:text-lg">Page Settings</h2>
+                <h2 className="text-[#101A13] font-semibold text-base sm:text-lg">Page Settings</h2>
                 <button
                   onClick={() => setShowConfig(false)}
-                  className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+                  className="lg:hidden p-2 hover:bg-[#F7F9F5] rounded-lg"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1128,82 +1128,82 @@ export default function PageBuilderEditor() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                  <label className="block text-sm font-medium text-[#101A13] mb-2">Title</label>
                   <input
                     type="text"
                     value={pageData.title}
                     onChange={(e) => updatePageMeta("title", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-[#101A13] mb-2">
                     Slug
-                    <span className="ml-1 text-xs text-gray-400 font-normal">(URL identifier)</span>
+                    <span className="ml-1 text-xs text-[#5E6B5F] font-normal">(URL identifier)</span>
                   </label>
                   <input
                     type="text"
                     value={pageData.slug}
                     onChange={(e) => updatePageMeta("slug", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17]"
                     placeholder="e.g., home, services, about"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-[#5E6B5F] mt-1">
                     A slug is a URL-friendly name for your page. For example, if your slug is "services",
                     your page can be accessed at yourname.curago.in/services. Use lowercase letters, numbers, and hyphens only.
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                  <label className="block text-sm font-medium text-[#101A13] mb-2">Status</label>
                   <select
                     value={pageData.status}
                     onChange={(e) => updatePageMeta("status", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17]"
                   >
                     <option value="draft">Draft</option>
                     <option value="published">Published</option>
                   </select>
                 </div>
 
-                <div className="pt-2 border-t border-gray-100">
+                <div className="pt-2 border-t border-[#EDF1EB]">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={pageData.showInNavbar !== false}
                       onChange={(e) => updatePageMeta("showInNavbar", e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-300 text-[#096b17] focus:ring-[#096b17]"
+                      className="w-4 h-4 rounded border-[#DDE4D9] text-[#096b17] focus:ring-[#096b17]"
                     />
-                    <span className="text-sm font-medium text-gray-700">Show this page in the site navigation bar</span>
+                    <span className="text-sm font-medium text-[#101A13]">Show this page in the site navigation bar</span>
                   </label>
                   {pageData.showInNavbar !== false && (
                     <div className="mt-3 grid grid-cols-3 gap-3">
                       <div className="col-span-2">
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Nav label (optional)</label>
+                        <label className="block text-xs font-medium text-[#5E6B5F] mb-1">Nav label (optional)</label>
                         <input
                           type="text"
                           value={pageData.displayName || ""}
                           onChange={(e) => updatePageMeta("displayName", e.target.value)}
                           placeholder={pageData.title || "Menu label"}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-[#DDE4D9] rounded-lg text-sm focus:ring-2 focus:ring-[#096b17]"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Order</label>
+                        <label className="block text-xs font-medium text-[#5E6B5F] mb-1">Order</label>
                         <input
                           type="number"
                           value={pageData.displayOrder ?? 0}
                           onChange={(e) => updatePageMeta("displayOrder", Number(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border border-[#DDE4D9] rounded-lg text-sm focus:ring-2 focus:ring-[#096b17]"
                         />
                       </div>
                     </div>
                   )}
-                  <p className="text-xs text-gray-500 mt-2">Shorter labels look best. Lower order numbers appear first. Only published pages show in the nav.</p>
+                  <p className="text-xs text-[#5E6B5F] mt-2">Shorter labels look best. Lower order numbers appear first. Only published pages show in the nav.</p>
                 </div>
 
-                <div className="pt-2 border-t border-gray-100">
+                <div className="pt-2 border-t border-[#EDF1EB]">
                   <ThemeSelector
                     selectedTheme={pageData.theme || 'forest'}
                     onChange={(themeId) => updatePageMeta("theme", themeId)}
@@ -1211,20 +1211,20 @@ export default function PageBuilderEditor() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Meta Description</label>
+                  <label className="block text-sm font-medium text-[#101A13] mb-2">Meta Description</label>
                   <textarea
                     value={pageData.metaDescription}
                     onChange={(e) => updatePageMeta("metaDescription", e.target.value)}
                     rows={3}
                     placeholder="Brief description for search engines"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17]"
                   />
-                  <p className="text-xs text-gray-500 mt-1">{(pageData.metaDescription || '').length}/160 characters</p>
+                  <p className="text-xs text-[#5E6B5F] mt-1">{(pageData.metaDescription || '').length}/160 characters</p>
                 </div>
               </div>
 
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-xs sm:text-sm text-blue-800">
+              <div className="mt-6 p-4 bg-[#096B17]/5 border border-[#096B17]/20 rounded-lg">
+                <p className="text-xs sm:text-sm text-[#101A13]">
                   <strong>Tip:</strong> Click on a section in the center panel to configure it.
                 </p>
               </div>
@@ -1238,7 +1238,7 @@ export default function PageBuilderEditor() {
             setSelectedSectionIndex(null);
             setShowConfig(true);
           }}
-          className="lg:hidden fixed bottom-24 left-5 z-40 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors"
+          className="lg:hidden fixed bottom-24 left-5 z-40 bg-[#096B17] text-white p-4 rounded-full shadow-lg hover:bg-[#075110] transition-colors"
           title="Page Settings"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

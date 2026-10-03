@@ -150,27 +150,27 @@ export default function AiSiteEditor() {
   const ConfigForm = selected != null ? CONFIG_FORMS[sections[selected]?.type] : null;
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-gray-50" style={{ zIndex: 50 }}>
+    <div className="fixed inset-0 flex flex-col bg-[#F7F9F5]" style={{ zIndex: 50 }}>
       {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-gray-200 shrink-0">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b border-[#EDF1EB] shrink-0">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push('/admin/dashboard/ai-generate')} className="text-gray-500 hover:text-gray-800 text-sm">← Back</button>
-          <span className="font-semibold text-gray-900 text-sm">AI Website Editor</span>
+          <button onClick={() => router.push('/admin/dashboard/ai-generate')} className="text-[#5E6B5F] hover:text-[#101A13] text-sm">← Back</button>
+          <span className="font-semibold text-[#101A13] text-sm">AI Website Editor</span>
           {hasDraft && <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">Draft</span>}
         </div>
         <div className="flex items-center gap-2">
-          {flash && <span className={`text-xs ${flash.type === 'ok' ? 'text-green-600' : 'text-red-600'}`}>{flash.text}</span>}
-          <button onClick={saveDraft} disabled={!!saving} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50">{saving === 'save' ? 'Saving…' : 'Save draft'}</button>
-          <button onClick={approve} disabled={!!saving} className="px-4 py-1.5 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075512] disabled:opacity-50">{saving === 'approve' ? 'Publishing…' : 'Approve & publish'}</button>
+          {flash && <span className={`text-xs ${flash.type === 'ok' ? 'text-[#096b17]' : 'text-red-600'}`}>{flash.text}</span>}
+          <button onClick={saveDraft} disabled={!!saving} className="px-3 py-1.5 border border-[#DDE4D9] rounded-lg text-sm text-[#5E6B5F] hover:bg-[#F7F9F5] disabled:opacity-50">{saving === 'save' ? 'Saving…' : 'Save draft'}</button>
+          <button onClick={approve} disabled={!!saving} className="px-4 py-1.5 bg-[#F26A1B] text-white rounded-lg text-sm font-medium hover:bg-[#d9590f] disabled:opacity-50">{saving === 'approve' ? 'Publishing…' : 'Approve & publish'}</button>
         </div>
       </div>
 
       <div className="flex-1 flex min-h-0">
         {/* LEFT: chat + sections */}
-        <div className="w-[380px] max-w-[42vw] border-r border-gray-200 bg-white flex flex-col min-h-0">
-          <div className="flex border-b border-gray-100 text-sm">
-            <button onClick={() => setTab('chat')} className={`flex-1 py-2.5 font-medium ${tab === 'chat' ? 'text-[#096b17] border-b-2 border-[#096b17]' : 'text-gray-500'}`}>💬 Edit with AI</button>
-            <button onClick={() => { setTab('sections'); setSelected(null); }} className={`flex-1 py-2.5 font-medium ${tab === 'sections' ? 'text-[#096b17] border-b-2 border-[#096b17]' : 'text-gray-500'}`}>☰ Sections</button>
+        <div className="w-[380px] max-w-[42vw] border-r border-[#EDF1EB] bg-white flex flex-col min-h-0">
+          <div className="flex border-b border-[#EDF1EB] text-sm">
+            <button onClick={() => setTab('chat')} className={`flex-1 py-2.5 font-medium ${tab === 'chat' ? 'text-[#096b17] border-b-2 border-[#096b17]' : 'text-[#5E6B5F]'}`}>💬 Edit with AI</button>
+            <button onClick={() => { setTab('sections'); setSelected(null); }} className={`flex-1 py-2.5 font-medium ${tab === 'sections' ? 'text-[#096b17] border-b-2 border-[#096b17]' : 'text-[#5E6B5F]'}`}>☰ Sections</button>
           </div>
 
           {tab === 'chat' ? (
@@ -178,7 +178,7 @@ export default function AiSiteEditor() {
               <div ref={chatRef} className="flex-1 overflow-y-auto p-3 space-y-3">
                 {messages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[88%] rounded-2xl px-3 py-2 text-[13.5px] leading-snug ${m.role === 'user' ? 'bg-[#096b17] text-white' : 'bg-gray-100 text-gray-800'}`}>{m.content}</div>
+                    <div className={`max-w-[88%] rounded-2xl px-3 py-2 text-[13.5px] leading-snug ${m.role === 'user' ? 'bg-[#096b17] text-white' : 'bg-[#F7F9F5] text-[#101A13]'}`}>{m.content}</div>
                   </div>
                 ))}
                 {pending?.edits?.length > 0 && (
@@ -190,10 +190,10 @@ export default function AiSiteEditor() {
                     </div>
                   </div>
                 )}
-                {chatBusy && <p className="text-[12px] text-gray-400">Thinking…</p>}
+                {chatBusy && <p className="text-[12px] text-[#5E6B5F]">Thinking…</p>}
               </div>
-              <div className="border-t border-gray-100 p-2.5 flex items-end gap-2">
-                <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }} rows={1} placeholder="Ask for a change…" className="flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2 text-sm max-h-24 focus:ring-2 focus:ring-[#096b17] focus:border-transparent" />
+              <div className="border-t border-[#EDF1EB] p-2.5 flex items-end gap-2">
+                <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); } }} rows={1} placeholder="Ask for a change…" className="flex-1 resize-none border border-[#DDE4D9] rounded-lg px-3 py-2 text-sm max-h-24 focus:ring-2 focus:ring-[#096b17] focus:border-transparent" />
                 <button onClick={sendChat} disabled={chatBusy || !input.trim()} className="shrink-0 bg-[#096b17] text-white rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-40">Send</button>
               </div>
             </div>
@@ -202,9 +202,9 @@ export default function AiSiteEditor() {
               {selected == null ? (
                 <ul className="space-y-1.5">
                   {sections.map((s, i) => (
-                    <li key={i} className={`flex items-center justify-between rounded-lg border px-3 py-2 ${s.visible === false ? 'opacity-50 border-gray-100' : 'border-gray-200'}`}>
-                      <button onClick={() => setSelected(i)} className="text-left text-sm text-gray-800 flex-1">{i + 1}. {label(s.type)}</button>
-                      <div className="flex items-center gap-1 text-gray-400">
+                    <li key={i} className={`flex items-center justify-between rounded-lg border px-3 py-2 ${s.visible === false ? 'opacity-50 border-[#EDF1EB]' : 'border-[#DDE4D9]'}`}>
+                      <button onClick={() => setSelected(i)} className="text-left text-sm text-[#101A13] flex-1">{i + 1}. {label(s.type)}</button>
+                      <div className="flex items-center gap-1 text-[#5E6B5F]">
                         <button onClick={() => move(i, -1)} disabled={i === 0} className="px-1.5 disabled:opacity-30" title="Up">↑</button>
                         <button onClick={() => move(i, 1)} disabled={i === sections.length - 1} className="px-1.5 disabled:opacity-30" title="Down">↓</button>
                         <button onClick={() => toggleVisible(i)} className="px-1.5" title="Show/hide">{s.visible === false ? '🚫' : '👁'}</button>
@@ -215,11 +215,11 @@ export default function AiSiteEditor() {
                 </ul>
               ) : (
                 <div>
-                  <button onClick={() => setSelected(null)} className="text-sm text-gray-500 hover:text-gray-800 mb-3">← All sections</button>
-                  <h3 className="font-semibold text-gray-900 text-sm mb-3">{label(sections[selected].type)}</h3>
+                  <button onClick={() => setSelected(null)} className="text-sm text-[#5E6B5F] hover:text-[#101A13] mb-3">← All sections</button>
+                  <h3 className="font-semibold text-[#101A13] text-sm mb-3">{label(sections[selected].type)}</h3>
                   {ConfigForm ? (
                     <ConfigForm config={sections[selected].config} onChange={(c) => setSectionConfig(selected, c)} slug="home" sections={sections} />
-                  ) : <p className="text-sm text-gray-500">This section has no editable settings.</p>}
+                  ) : <p className="text-sm text-[#5E6B5F]">This section has no editable settings.</p>}
                 </div>
               )}
             </div>
