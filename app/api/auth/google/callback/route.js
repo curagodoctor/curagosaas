@@ -71,7 +71,10 @@ export async function GET(request) {
       doctor.isEmailVerified = true;
       if (entry === 'website-builder') doctor.websiteBuilderActive = true;
       doctor.lastLoginAt = new Date();
-      await doctor.save();
+      // Only validate the fields we just changed — a pre-existing account may hold
+      // data saved via updateOne() that bypassed validators (e.g. a bio > 500
+      // chars from an AI summary), and that must never block sign-in.
+      await doctor.save({ validateModifiedOnly: true });
     }
 
     if (!doctor.isActive) {
