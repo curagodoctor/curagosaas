@@ -96,7 +96,7 @@ export async function GET(request) {
 
         processed++;
         let genErr = '';
-        const draft = await withTimeout(generateMissionDraft(doctorId, task.id), PER_DOCTOR_TIMEOUT_MS).catch((e) => {
+        const draft = await withTimeout(generateMissionDraft(doctorId, task.id, { throwOnError: targeted }), PER_DOCTOR_TIMEOUT_MS).catch((e) => {
           console.error('[practice-os-daily-tasks] generate timed out/failed:', String(doctorId), e.message);
           genErr = e.message; return null;
         });
