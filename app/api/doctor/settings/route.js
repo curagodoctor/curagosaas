@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 import Contact from '@/models/Contact';
 import { getCurrentDoctor } from '@/lib/doctorAuth';
+import { formatDoctorName, titleCase, formatQualifications } from '@/lib/formatName';
 
 // GET - Get doctor settings
 export async function GET(request) {
@@ -79,6 +80,14 @@ export async function PUT(request) {
         updates[field] = data[field];
       }
     }
+
+    // Normalize the formats the doctor typed (so ALL-CAPS / inconsistent casing is
+    // stored uniformly): name → "Dr." + Title Case, clinic/specialization → Title
+    // Case, qualification → upper-cased abbreviations.
+    if (typeof updates.displayName === 'string' && updates.displayName.trim()) updates.displayName = formatDoctorName(updates.displayName);
+    if (typeof updates.clinicName === 'string' && updates.clinicName.trim()) updates.clinicName = titleCase(updates.clinicName);
+    if (typeof updates.specialization === 'string' && updates.specialization.trim()) updates.specialization = titleCase(updates.specialization);
+    if (typeof updates.qualification === 'string' && updates.qualification.trim()) updates.qualification = formatQualifications(updates.qualification);
 
     // Validate WhatsApp number format (10 digits)
     if (updates.whatsappNumber) {

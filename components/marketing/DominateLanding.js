@@ -865,7 +865,7 @@ const BODY = `<nav class="nav">
 
     <div class="offer featured">
       <div class="offer-label">STEP 2 · GROW YOUR DIGITAL PRACTICE</div>
-      <div class="price">₹5,000 <small>/month · Founder Price</small></div>
+      <div class="price">₹5,000 <small>/month · Founder Price · + 18% GST</small></div>
       <p>Everything in Free, plus CuraGo continuously works on your practice.</p>
 
       <div class="sublabel">INFRASTRUCTURE</div>
@@ -930,7 +930,7 @@ const BODY = `<nav class="nav">
     <div class="guarantee"><div class="icon">↻</div><h3>Simple weekly involvement</h3><p>At least once a week, or whenever it fits your schedule.</p></div>
     <div class="guarantee"><div class="icon">⌁</div><h3>Cancel anytime</h3><p>Finish the running month. No long-term lock-in. Your work remains part of your practice.</p></div>
   </div>
-  <p style="font-size:11px;color:var(--muted);margin-top:20px">₹5,000 charged monthly · No bulk payments.</p>
+  <p style="font-size:11px;color:var(--muted);margin-top:20px">₹5,000 + 18% GST charged monthly · No bulk payments.</p>
 </div>
 </section>
 

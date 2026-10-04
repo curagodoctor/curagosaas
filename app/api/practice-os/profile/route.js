@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { requirePracticeOsDoctor } from '@/lib/practice-os/access';
 import { getOrCreateProfile, generateDoctorSummary, getDoctorProfileFields } from '@/lib/practice-os/profile';
+import { formatDoctorName, titleCase, formatQualifications } from '@/lib/formatName';
 import Doctor from '@/models/Doctor';
 
 export const runtime = 'nodejs';
@@ -70,6 +71,16 @@ export async function PUT(request) {
     await connectDB();
     const { fields } = await request.json();
     const profile = await getOrCreateProfile(doctor._id);
+
+    // Normalize the formats the doctor typed so what's stored (and shown
+    // everywhere) is consistent: name → "Dr." + Title Case, clinic/specialty →
+    // Title Case, qualifications → upper-cased abbreviations.
+    if (fields && typeof fields === 'object') {
+      if (String(fields.doctor_name ?? '').trim()) fields.doctor_name = formatDoctorName(fields.doctor_name);
+      if (String(fields.clinic_name ?? '').trim()) fields.clinic_name = titleCase(fields.clinic_name);
+      if (String(fields.specialty ?? '').trim()) fields.specialty = titleCase(fields.specialty);
+      if (String(fields.qualifications ?? '').trim()) fields.qualifications = formatQualifications(fields.qualifications);
+    }
 
     const extracted = Object.entries(fields || {})
       .filter(([, v]) => String(v ?? '').trim())
