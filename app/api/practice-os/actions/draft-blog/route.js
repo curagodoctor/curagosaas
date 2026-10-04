@@ -112,20 +112,9 @@ export async function POST(request) {
       ...(firstArticle ? { publishedAt: new Date() } : {}),
     });
 
-    // The featured image is generated AFTER the response is sent (it takes 30-60s),
-    // so the caller gets the article id immediately instead of waiting on the
-    // image. §10 — done for EVERY article (image generated from the page topic),
-    // not just the first onboarding one.
-    {
-      const articleId = article._id;
-      const imgTopic = cluster || type ? `${title} (${[type, cluster].filter(Boolean).join(' · ')})` : title;
-      after(async () => {
-        try {
-          const url = await generateFeaturedImage(doctor._id, imgTopic);
-          if (url) await BlogArticle.updateOne({ _id: articleId }, { $set: { featuredImage: { url, alt: imageAlt || title } } });
-        } catch { /* best-effort */ }
-      });
-    }
+    // Blogs are created WITHOUT a featured image by default — image generation is a
+    // separate, explicit action (3 credits) the doctor triggers from the editor.
+    // (Previously every article auto-generated an image here.)
 
     // The first article ships published — mirror its link into the profile.
     if (firstArticle && cluster) {

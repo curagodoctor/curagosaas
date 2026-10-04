@@ -283,7 +283,7 @@ function GrantedActions({ router, access }) {
           </button>
           {showSubscribe && (
             <button onClick={subscribe} disabled={subBusy} className="pos-card px-4 py-3 text-[14px] font-semibold" style={{ borderColor: 'var(--orange)', color: 'var(--orange)' }}>
-              {subBusy ? 'Opening…' : 'Subscribe · ₹5,000/mo'}
+              {subBusy ? 'Opening…' : 'Subscribe · ₹5,000/mo + 18% GST'}
             </button>
           )}
           <button onClick={() => router.push('/app/control-center')} className="pos-link" style={{ fontSize: 14 }}>Go to control center →</button>

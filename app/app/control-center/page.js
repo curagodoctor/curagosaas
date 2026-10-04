@@ -11,6 +11,7 @@ import WebsiteStats from '@/components/practice-os/WebsiteStats';
 import EngagementNudges from '@/components/practice-os/EngagementNudges';
 import PublishedContent from '@/components/practice-os/PublishedContent';
 import { UsernamePicker } from './_username';
+import { ScheduleChooser } from './_schedule';
 
 // The Control Center — the logged-in landing. Left: welcome + the doctor's
 // Builder Packs. Right: an aggregate progress rail (XP, streak, today's next
@@ -37,6 +38,9 @@ export default function ControlCenter() {
   // boundary: only doctors who've been granted access must pick a name before
   // proceeding. Free/setup doctors aren't gated.
   const [needsUsername, setNeedsUsername] = useState(false);
+  // Post-payment: after the anonymous name, the doctor chooses a notification
+  // schedule (daily, or weekly on a chosen "CuraGo day").
+  const [needsSchedule, setNeedsSchedule] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -67,9 +71,16 @@ export default function ControlCenter() {
         if (crRes.ok) { const cr = await crRes.json(); if (cr.success) setCredits(cr); }
         let granted = false;
         if (aRes.ok) { const a = await aRes.json(); granted = !!a.granted; setAccessStatus(a.status || 'none'); setAccessExpiry(a.access?.expiresAt || null); }
-        // Leaderboard is hidden — don't force doctors to pick a leaderboard name.
-        // (Re-enable when the leaderboard ships: setNeedsUsername(true) below.)
-        if (uRes.ok) { await uRes.json().catch(() => {}); }
+        // Post-payment setup for doctors granted Dominate Organic Search access:
+        // (1) pick an anonymous name, then (2) choose a notification schedule.
+        let hasUsername = false;
+        if (uRes.ok) { const u = await uRes.json().catch(() => ({})); hasUsername = !!u.username; }
+        if (granted) {
+          let scheduleChosen = true;
+          try { const s = await fetch('/api/practice-os/schedule', { credentials: 'include' }).then((r) => r.json()); scheduleChosen = !!s.scheduleChosen; } catch { /* ignore */ }
+          if (!hasUsername) setNeedsUsername(true);
+          else if (!scheduleChosen) setNeedsSchedule(true);
+        }
         // Granted doctors must map their diseases + treatments before any daily
         // content — check whether they've approved any cluster yet.
         if (granted) {
@@ -124,14 +135,29 @@ export default function ControlCenter() {
     return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 rounded-full border-2 border-[var(--green)] border-t-transparent animate-spin" /></div>;
   }
 
+  // Post-payment step 1 — anonymous name.
   if (needsUsername) {
     return (
       <div className="min-h-screen flex items-center justify-center px-5" style={{ background: 'var(--paper)' }}>
         <div className="w-full max-w-md pos-card p-6">
-          <p className="pos-label" style={{ color: 'var(--green)' }}>One quick thing</p>
-          <h1 className="text-[22px] font-semibold text-[var(--ink)] mt-1" style={{ letterSpacing: '-0.02em' }}>Pick your leaderboard name</h1>
-          <p className="text-sm text-[var(--muted)] mt-2 mb-4">Everyone here is on a shared, anonymous leaderboard. Choose a name to continue — your real name is never shown.</p>
-          <UsernamePicker onSaved={() => setNeedsUsername(false)} />
+          <p className="pos-label" style={{ color: 'var(--green)' }}>Step 1 of 2</p>
+          <h1 className="text-[22px] font-semibold text-[var(--ink)] mt-1" style={{ letterSpacing: '-0.02em' }}>Pick your anonymous name</h1>
+          <p className="text-sm text-[var(--muted)] mt-2 mb-4">This is how you&apos;ll show up anonymously — your real name is never shown.</p>
+          <UsernamePicker onSaved={() => { setNeedsUsername(false); setNeedsSchedule(true); }} />
+        </div>
+      </div>
+    );
+  }
+
+  // Post-payment step 2 — notification schedule (daily or weekly CuraGo day).
+  if (needsSchedule) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-5" style={{ background: 'var(--paper)' }}>
+        <div className="w-full max-w-md pos-card p-6">
+          <p className="pos-label" style={{ color: 'var(--green)' }}>Step 2 of 2</p>
+          <h1 className="text-[22px] font-semibold text-[var(--ink)] mt-1" style={{ letterSpacing: '-0.02em' }}>Choose your schedule</h1>
+          <p className="text-sm text-[var(--muted)] mt-2 mb-4">How often should CuraGo nudge you to review and publish your content?</p>
+          <ScheduleChooser onSaved={() => setNeedsSchedule(false)} />
         </div>
       </div>
     );
@@ -198,7 +224,7 @@ export default function ControlCenter() {
             <span className="pos-label" style={{ color: 'var(--muted)' }}>Dominate Organic Search · Inactive</span>
             <p className="text-[19px] sm:text-[21px] font-semibold text-[var(--ink)] mt-1.5" style={{ letterSpacing: '-0.02em' }}>Let CuraGo grow your practice</p>
             <p className="text-[14px] text-[var(--muted)] mt-1.5" style={{ maxWidth: '62ch', lineHeight: 1.55 }}>
-              Your daily organic-growth engine isn&apos;t active yet. Talk to our team to get started — ₹5,000 / month, founder price.
+              Your daily organic-growth engine isn&apos;t active yet. Talk to our team to get started — ₹5,000 / month + 18% GST, founder price.
             </p>
           </div>
           <div className="flex flex-col gap-2 shrink-0 self-start sm:self-auto sm:items-end">

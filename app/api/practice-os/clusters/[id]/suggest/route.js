@@ -22,7 +22,7 @@ export async function POST(request, { params }) {
     const allowed = (await hasOptimizationAccess(doctor._id)) || (await hasAiAccess(doctor._id));
     if (!allowed) return NextResponse.json({ success: false, error: 'PaymentRequired' }, { status: 402 });
     if (!process.env.OPENAI_API_KEY) return NextResponse.json({ success: false, error: 'AI is not configured.' }, { status: 500 });
-    await assertHasCredits(doctor._id);
+    // Diseases & treatments mapping is free — no AI credit guard.
 
     const { id } = await params;
     const cluster = await PracticeOsDiseaseCluster.findOne({ _id: id, doctorId: doctor._id });
@@ -54,8 +54,8 @@ export async function POST(request, { params }) {
     // This disease's treatments changed → clear stale day content so future days
     // regenerate from the updated map.
     try { const { clearDayContent } = await import('@/lib/practice-os/dayContent'); await clearDayContent(doctor._id); } catch { /* best-effort */ }
-    const { remaining } = await chargeAiCredits(doctor._id, { label: 'cluster-suggest', tokens: gen.usage?.total_tokens || 0 });
-    return NextResponse.json({ success: true, cluster: cluster.toObject(), creditsRemaining: remaining });
+    // Free — diseases & treatments mapping does not consume AI credits.
+    return NextResponse.json({ success: true, cluster: cluster.toObject() });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     if (error.message === 'PaymentRequired') return NextResponse.json({ success: false, error: 'PaymentRequired' }, { status: 402 });

@@ -66,6 +66,22 @@ const PracticeOsProfileSchema = new mongoose.Schema({
     default: 'evening',
   },
 
+  // Notification cadence chosen after payment: 'daily' = a notification every day;
+  // 'weekly' = only on their chosen "CuraGo day" (curagoDay: 0=Sun … 6=Sat).
+  // scheduleChosen flags that they've completed the post-payment schedule step.
+  scheduleType: {
+    type: String,
+    enum: ['daily', 'weekly'],
+    default: 'daily',
+  },
+  curagoDay: {
+    type: Number,
+    min: 0,
+    max: 6,
+    default: null,
+  },
+  scheduleChosen: { type: Boolean, default: false },
+
   // §8 — GBP setup task-flow progress (map of "blockKey:taskIndex" → true) and
   // the acknowledgement of the mandatory suspension-risk block.
   gbpProgress: { type: mongoose.Schema.Types.Mixed, default: {} },

@@ -9,6 +9,7 @@ export default function DoctorDetailsPage({ params }) {
   const router = useRouter();
   const [doctor, setDoctor] = useState(null);
   const [bookingPages, setBookingPages] = useState([]);
+  const [practiceOs, setPracticeOs] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('profile');
@@ -29,6 +30,7 @@ export default function DoctorDetailsPage({ params }) {
         const data = await response.json();
         setDoctor(data.doctor);
         setBookingPages(data.bookingPages || []);
+        setPracticeOs(data.practiceOs || null);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -353,6 +355,39 @@ export default function DoctorDetailsPage({ params }) {
                 <dd className="text-sm text-gray-900">{doctor.bio || '-'}</dd>
               </div>
             </dl>
+          </div>
+
+          {/* Plans & packs — what the doctor is currently on */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Plans &amp; packs</h3>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
+                (doctor.accessTier || 'free') === 'founder' ? 'bg-purple-100 text-purple-800'
+                  : (doctor.accessTier || 'free') === 'paid' ? 'bg-green-100 text-green-800'
+                  : 'bg-gray-100 text-gray-700'
+              }`}>{doctor.accessTier || 'free'} tier</span>
+              {doctor.websiteBuilderActive && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Website Builder</span>}
+              {doctor.practiceOsActive && <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Practice OS</span>}
+              {practiceOs?.optimization?.phase && practiceOs.optimization.phase !== 'none' && (
+                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 capitalize">Dominate Organic Search: {practiceOs.optimization.phase}</span>
+              )}
+            </div>
+            <p className="text-sm font-medium text-gray-700 mb-2">Owned packs</p>
+            {practiceOs?.packs?.length ? (
+              <div className="space-y-2">
+                {practiceOs.packs.map((p, i) => (
+                  <div key={i} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                    <span className="text-sm text-gray-900">{p.title}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 capitalize">{p.tier}</span>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${p.started ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>{p.started ? 'Active' : 'Not started'}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No Practice OS packs owned.</p>
+            )}
           </div>
 
           {/* Stats */}

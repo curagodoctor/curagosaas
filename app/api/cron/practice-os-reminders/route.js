@@ -11,6 +11,7 @@ import { sendSMS } from '@/lib/twilio';
 import { fireWyltoWebhook, sendWyltoTemplate } from '@/lib/wylto';
 import PracticeOsProfile from '@/models/practice-os/PracticeOsProfile';
 import { getTreatmentFlat, treatmentVars, fillTreatmentTokens } from '@/lib/practice-os/engine';
+import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 
 export const runtime = 'nodejs';
 
@@ -89,7 +90,12 @@ export async function GET(request) {
 
         // §11/§14 — only send inside the doctor's preferred window (defaults to
         // evening). The cron runs hourly; this delivers at the chosen time.
-        const prof = await PracticeOsProfile.findOne({ doctorId: enrollment.doctorId }).select('notificationWindow').lean();
+        const prof = await PracticeOsProfile.findOne({ doctorId: enrollment.doctorId }).select('notificationWindow scheduleType curagoDay').lean();
+        // Weekly doctors are only reminded on their chosen CuraGo day (0=Sun…6=Sat, IST).
+        if (prof?.scheduleType === 'weekly' && typeof prof.curagoDay === 'number') {
+          const istDow = new Date(now.getTime() + 5.5 * 3600 * 1000).getUTCDay();
+          if (prof.curagoDay !== istDow) continue;
+        }
         if (!inWindow(prof?.notificationWindow || 'evening', hourNow)) {
           continue;
         }
@@ -125,8 +131,20 @@ export async function GET(request) {
           const current = missions.find((m) => !doneIds.has(String(m._id)));
           missionTitle = current?.title || current?.missionText || '';
           if (missionTitle.includes('{{')) {
-            const flat = await getTreatmentFlat(doctor._id);
-            missionTitle = fillTreatmentTokens(missionTitle, treatmentVars(flat)).replace(/\s{2,}/g, ' ').trim();
+            // Pass the doctor's profile fields so the treatment tokens resolve even
+            // when there's no approved cluster map (falls back to profile
+            // procedures) — and profileFields already carries treatment_one…thirty.
+            const pf = await getDoctorProfileFields(doctor._id);
+            const flat = await getTreatmentFlat(doctor._id, pf);
+            missionTitle = fillTreatmentTokens(missionTitle, { ...pf, ...treatmentVars(flat) });
+            // Safety net: NEVER let an unfilled {{token}} reach WhatsApp. Strip any
+            // leftover "— {{x}} & {{y}}" fragment and any stray token, then tidy.
+            if (missionTitle.includes('{{')) {
+              missionTitle = missionTitle
+                .replace(/\s*[—–-]\s*\{\{[^}]*\}\}(?:\s*&\s*\{\{[^}]*\}\})*/g, '')
+                .replace(/\{\{[^}]*\}\}/g, '');
+            }
+            missionTitle = missionTitle.replace(/\s{2,}/g, ' ').trim();
           }
         } catch (lookupError) {
           console.error(`[PracticeOS Reminders] Mission lookup failed for ${enrollment._id}:`, lookupError);

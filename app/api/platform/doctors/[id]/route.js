@@ -63,6 +63,26 @@ export async function GET(request, { params }) {
     const totalViews = bookingPages.reduce((sum, p) => sum + (p.views || 0), 0);
     const totalPageBookings = bookingPages.reduce((sum, p) => sum + (p.bookings || 0), 0);
 
+    // Practice OS plan + packs the doctor is currently on (so admins can see
+    // GBP / Free / Founder / Paid / which packs are active for this doctor).
+    let practiceOs = { optimization: null, packs: [] };
+    try {
+      const { listPacksForDoctor } = await import('@/lib/practice-os/engine');
+      const { getOptimizationAccessState } = await import('@/lib/practice-os/access');
+      const [allPacks, optimization] = await Promise.all([
+        listPacksForDoctor(id).catch(() => []),
+        getOptimizationAccessState(id).catch(() => null),
+      ]);
+      practiceOs = {
+        optimization, // { phase: 'active'|'grace'|'locked'|'none', accessEndAt, graceEndAt }
+        packs: (allPacks || [])
+          .filter((p) => p.owned)
+          .map((p) => ({ title: p.title, tier: p.tier, started: p.started })),
+      };
+    } catch (e) {
+      console.error('[admin doctor practiceOs]', e.message);
+    }
+
     return NextResponse.json({
       doctor: {
         ...doctor,
@@ -74,7 +94,8 @@ export async function GET(request, { params }) {
           bookingPagesCount: bookingPages.length
         }
       },
-      bookingPages
+      bookingPages,
+      practiceOs
     });
 
   } catch (error) {

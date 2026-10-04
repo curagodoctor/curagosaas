@@ -103,9 +103,9 @@ const YEARS_OPTIONS = ['Less than 1', ...Array.from({ length: 40 }, (_, i) => St
 // §2 Block 1 — the identity questions, worded exactly as the September prototype
 // ("Who are you, as patients should see you?"), mapped to our profile fields.
 const IDENTITY_Q = [
-  { key: 'doctor_name', label: 'How should your name appear to patients?', ph: 'Dr. Your Name' },
-  { key: 'specialty', label: 'What is your specialty?', ph: 'Pick one or type your own', type: 'combo', options: INTEREST_OPTIONS },
-  { key: 'qualifications', label: 'What are your qualifications?', ph: 'MBBS, MS' },
+  { key: 'doctor_name', label: 'How should your name appear to patients?', ph: 'Dr. Firstname Lastname', fmt: 'format: Dr. Firstname Lastname' },
+  { key: 'specialty', label: 'What is your specialty?', ph: 'Pick one or type your own', type: 'combo', options: INTEREST_OPTIONS, fmt: 'format: Title Case' },
+  { key: 'qualifications', label: 'What are your qualifications?', ph: 'MBBS, MS', fmt: 'format: UPPERCASE, comma-separated' },
   { key: 'additional_qualifications', label: 'Any additional qualifications?', ph: 'Fellowship, diploma', optional: true },
   { key: 'years_experience', label: 'How many years have you been practising?', type: 'select', options: YEARS_OPTIONS },
 ];
@@ -516,15 +516,12 @@ function Wizard() {
       // §6d — reveal the live site immediately (the "aha"); it must NOT wait behind
       // the slow first-article draft. Navigate by absolute index: `next()` here
       // closes over a stale `step` (deps are [fields]) and would jump backwards.
+      if (typeof g.creditsRemaining === 'number') setCreditsLeft(g.creditsRemaining);
       setGenState('done');
       goToId('live');
-
-      // First educational article drafts in the background from the top condition.
-      const topic = (fields.diseases || '').split(',')[0]?.trim() || (fields.expertise || '').split(',')[0]?.trim() || `${fields.specialty || 'my practice'}`;
-      fetch('/api/practice-os/actions/draft-blog', { method: 'POST', ...J, body: JSON.stringify({ context: `An introductory patient-education article about ${topic}.`, pageType: 'disease' }) })
-        .then((r) => r.json())
-        .then((b) => { if (typeof b.creditsRemaining === 'number') setCreditsLeft(b.creditsRemaining); if (b.id) setFirstArticleId(b.id); if (b.url) setFirstArticleUrl(b.url); })
-        .catch(() => {});
+      // Blog pages are NOT auto-generated anymore — the doctor creates them on
+      // request (and images are a separate, explicit action). Only the website is
+      // built automatically here.
     } catch (x) { setGenState('error'); setErr(x.message || 'Something went wrong.'); }
   }, [fields]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -642,8 +639,9 @@ function Wizard() {
                 const onBlur = (e) => { e.target.style.outline = 'none'; };
                 return (
                 <label key={q.key} className="block">
-                  <span className="flex items-baseline gap-2 mb-1.5">
+                  <span className="flex items-baseline gap-2 mb-1.5 flex-wrap">
                     <span className="text-[13px] font-semibold text-[var(--ink)]">{q.label}</span>
+                    {q.fmt && <span className="text-[12px]" style={{ color: 'var(--muted)' }}>({q.fmt})</span>}
                     {q.optional && <span className="pos-label" style={{ color: 'var(--muted)' }}>Optional</span>}
                   </span>
                   {q.type === 'select' ? (
@@ -906,7 +904,7 @@ function Wizard() {
                 : <p className="text-sm text-[var(--muted)]">Your profile is saved. We&apos;ll use it to build your website next.</p>}
             </div>
             <button onClick={next} className="pos-action mt-6">Build my website →</button>
-            <p className="text-[12px] text-[var(--muted)] mt-3">Next: we generate your website and first article from this profile.</p>
+            <p className="text-[12px] text-[var(--muted)] mt-3">Next: we generate your website from this profile.</p>
           </div>
         )}
 
@@ -935,29 +933,18 @@ function Wizard() {
             <p className="pos-label" style={{ color: 'var(--green)' }}>Your website is live</p>
             <h1 className="text-[24px] font-semibold text-[var(--ink)] mt-1 mb-3" style={{ letterSpacing: '-0.02em' }}>It&apos;s built — and editable, no redirection.</h1>
             <div className="pos-card p-5 mb-4" style={{ background: 'var(--green-soft)', borderColor: 'var(--green)' }}>
-              <p className="text-[15px] text-[var(--ink)]" style={{ lineHeight: 1.6 }}>Your website and your first article are ready. Edit everything from the AI builder — you never leave CuraGo.</p>
+              <p className="text-[15px] text-[var(--ink)]" style={{ lineHeight: 1.6 }}>Your website is ready. Edit everything from the AI builder — you never leave CuraGo.</p>
               <div className="flex flex-wrap gap-3 mt-3">
                 {siteUrl && <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="pos-action inline-block">View my website →</a>}
                 <a href="/admin/dashboard/ai-generate" className="pos-card inline-block px-4 py-3 text-[14px] font-semibold" style={{ borderColor: 'var(--green)', color: 'var(--green)' }}>Edit in the AI builder →</a>
               </div>
             </div>
-            {/* First article — its own distinct (orange) surface, beneath the website card */}
+            {/* Blog pages are created on request (not auto) — invite them to make one. */}
             <div className="pos-card p-5 mb-4" style={{ background: 'var(--orange-soft, rgba(242,106,27,.08))', borderColor: 'var(--orange)' }}>
-              <p className="pos-label" style={{ color: 'var(--orange)' }}>Your first article</p>
-              {firstArticleId ? (
-                <>
-                  <p className="text-[15px] font-semibold text-[var(--ink)] mt-1" style={{ lineHeight: 1.5 }}>Published from your practice — it&apos;s live on your site.</p>
-                  <div className="flex flex-wrap gap-3 mt-3">
-                    {firstArticleUrl && <a href={firstArticleUrl} target="_blank" rel="noopener noreferrer" className="inline-block px-4 py-3 text-[14px] font-semibold rounded-[9px] text-white" style={{ background: 'var(--orange)' }}>View my article →</a>}
-                    <a href={`/admin/dashboard/blog-articles/${firstArticleId}`} className="pos-card inline-block px-4 py-3 text-[14px] font-semibold" style={{ borderColor: 'var(--orange)', color: 'var(--orange)' }}>Edit in the builder →</a>
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center gap-3 mt-2">
-                  <span className="inline-block w-6 h-6 rounded-full shrink-0 animate-spin" style={{ border: '2.5px solid var(--orange)', borderTopColor: 'transparent' }} />
-                  <p className="text-[14px] font-medium text-[var(--ink)]">Your first article is being published…</p>
-                </div>
-              )}
+              <p className="pos-label" style={{ color: 'var(--orange)' }}>Patient-education blog</p>
+              <p className="text-[15px] font-semibold text-[var(--ink)] mt-1" style={{ lineHeight: 1.5 }}>Write your first blog page when you&apos;re ready.</p>
+              <p className="text-[13px] text-[var(--muted)] mt-1">Generate a patient-education article with AI — you can build up to 5 on the free plan.</p>
+              <a href="/admin/dashboard/blog-articles" className="inline-block px-4 py-3 text-[14px] font-semibold rounded-[9px] text-white mt-3" style={{ background: 'var(--orange)' }}>Create a blog page →</a>
             </div>
             <div className="pos-card p-4 mb-4">
               <p className="pos-num text-2xl text-[var(--green)]">{creditsLeft ?? 10}</p>
@@ -1017,21 +1004,23 @@ function Wizard() {
                 <p className="text-[12.5px] text-[var(--muted)] mt-2.5">This is your free CuraGo foundation.</p>
               </div>
 
-              <div className="pos-card p-4 mb-5">
-                <span className="pos-label inline-block mb-2" style={{ padding: '3px 8px', borderRadius: 6, background: 'var(--rule-soft)', color: 'var(--muted)' }}>→ Growth — next</span>
-                <p className="text-[15px] font-semibold text-[var(--ink)]">Let CuraGo keep working on your practice</p>
-                <p className="text-[13.5px] text-[var(--muted)] mt-1">CuraGo will:</p>
+              <div className="pos-card p-4 mb-5" style={{ background: 'var(--orange-soft, rgba(242,106,27,.08))', borderColor: 'var(--orange)' }}>
+                <span className="pos-label inline-block mb-2" style={{ padding: '3px 8px', borderRadius: 6, background: 'var(--orange)', color: '#fff', fontWeight: 700 }}>📈 Growth — next</span>
+                <p className="text-[15px] font-bold text-[var(--ink)]">Let CuraGo keep working on your practice</p>
+                <p className="text-[13.5px] font-semibold text-[var(--ink)] mt-1">CuraGo will:</p>
                 <div className="mt-2 space-y-1">
                   {['Plan what needs to be built next', 'Create the work for your approval', 'Keep optimising for high-intent searches'].map((t) => (
-                    <p key={t} className="text-[13.5px] text-[var(--ink)] flex gap-2" style={{ lineHeight: 1.5 }}><span style={{ color: 'var(--orange)' }}>→</span>{t}</p>
+                    <p key={t} className="text-[13.5px] font-semibold text-[var(--ink)] flex gap-2" style={{ lineHeight: 1.5 }}><span style={{ color: 'var(--orange)' }}>→</span>{t}</p>
                   ))}
                 </div>
-                <p className="text-[20px] font-semibold text-[var(--ink)] mt-3" style={{ letterSpacing: '-0.02em' }}>₹5,000 <span className="text-[13px] font-normal text-[var(--muted)]">/ month</span></p>
-                <p className="text-[12.5px] text-[var(--muted)] mt-1">You don’t have to figure out what to do next. CuraGo does that.</p>
+                <p className="text-[20px] font-bold text-[var(--ink)] mt-3" style={{ letterSpacing: '-0.02em' }}>₹5,000 <span className="text-[13px] font-normal text-[var(--muted)]">/ month</span></p>
+                <p className="text-[12px] font-semibold text-[var(--orange)] mt-0.5">Founder price · + 18% GST</p>
+                <p className="text-[12.5px] font-medium text-[var(--muted)] mt-1.5">You don’t have to figure out what to do next. CuraGo does that.</p>
               </div>
 
               {payMsg && <p className="text-[13px] text-red-600 mb-3">{payMsg}</p>}
               <button onClick={startPayment} disabled={payBusy} className="pos-action w-full">{payBusy ? 'Opening payment…' : 'I am ready. Let us begin.'}</button>
+              <p className="text-[12px] text-[var(--muted)] text-center mt-1.5">Takes you to the secure payment page · ₹5,000/month + 18% GST</p>
               <button onClick={goToControlCenter} className="pos-card w-full px-4 py-3 text-[15px] font-medium mt-3" style={{ color: 'var(--ink)' }}>Not ready yet</button>
               <button onClick={async () => { await markComplete(); setDeclined(true); }} className="pos-link text-sm mt-4 block" style={{ color: 'var(--muted)' }}>Not interested</button>
             </div>

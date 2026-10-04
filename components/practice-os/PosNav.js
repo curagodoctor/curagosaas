@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useRef } from 'react';
+import { Suspense, useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -35,6 +35,19 @@ function PosNavInner({ breadcrumb }) {
   const packId = params.get('pack');
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
+
+  // AI-credits badge — shown on every screen that renders PosNav. Refetches on
+  // mount and when the window regains focus (so it reflects spends elsewhere).
+  const [credits, setCredits] = useState(null);
+  useEffect(() => {
+    const load = () => fetch('/api/practice-os/credits', { credentials: 'include' })
+      .then((r) => r.json()).then((d) => { if (d?.success) setCredits(d); }).catch(() => {});
+    load();
+    const onFocus = () => load();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
+  const creditsLabel = credits ? (credits.unlimited ? '∞' : credits.remaining) : null;
 
   // Keep the active pack in the querystring across nav links.
   const withPack = (path) => (packId ? `${path}${path.includes('?') ? '&' : '?'}pack=${packId}` : path);
@@ -78,6 +91,11 @@ function PosNavInner({ breadcrumb }) {
           ))}
           <MoreMenu items={MORE(withPack)} onNavigate={close} />
           <ProgressMenu packId={packId} withPack={withPack} onNavigate={close} />
+          {creditsLabel != null && (
+            <Link href="/app/control-center" className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[12px] font-semibold" style={{ background: 'rgba(242,106,27,.08)', color: 'var(--orange)', border: '1px solid rgba(242,106,27,.25)' }} title="AI credits remaining">
+              ⚡ {creditsLabel} credits
+            </Link>
+          )}
           <Link href="/admin/dashboard" className="text-white px-3 py-1 rounded-[7px] font-semibold text-[12.5px] shrink-0" style={{ backgroundColor: 'var(--green)' }}>Website Builder</Link>
           <button onClick={logout} className="pos-link" style={{ color: 'var(--muted)' }}>Sign out</button>
         </div>
@@ -95,6 +113,9 @@ function PosNavInner({ breadcrumb }) {
       {/* Mobile collapsible menu */}
       {open && (
         <div className="md:hidden flex flex-col items-start gap-3 pt-3 pb-1 text-[15px]">
+          {creditsLabel != null && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[13px] font-semibold" style={{ background: 'rgba(242,106,27,.08)', color: 'var(--orange)', border: '1px solid rgba(242,106,27,.25)' }}>⚡ {creditsLabel} AI credits</span>
+          )}
           {links}
           <Link href="/admin/dashboard" onClick={close} className="text-white px-3.5 py-1.5 rounded-[7px] font-semibold text-[13px]" style={{ backgroundColor: 'var(--green)' }}>Website Builder</Link>
           <button onClick={logout} className="pos-link" style={{ color: 'var(--muted)' }}>Sign out</button>

@@ -5,6 +5,7 @@ import ReferenceCode from '@/models/ReferenceCode';
 import { sendVerificationEmail } from '@/lib/email';
 import { checkSubdomainAvailability, isValidSubdomain } from '@/lib/doctorAuth';
 import { linkPendingPurchases } from '@/lib/practice-os/claimPending';
+import { formatDoctorName } from '@/lib/formatName';
 
 export async function POST(request) {
   try {
@@ -115,7 +116,7 @@ export async function POST(request) {
       phone,
       password,
       ...(wantsSubdomain ? { subdomain: subdomain.toLowerCase() } : {}),
-      displayName: name, // Default display name to name
+      displayName: formatDoctorName(name), // Public display name: "Dr." + Title Case
       whatsappNumber: phone, // Default WhatsApp to phone
       isLicensedProfessional,
       platformReferenceCode: referenceCode ? referenceCode.toUpperCase() : null,

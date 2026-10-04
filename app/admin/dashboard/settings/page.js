@@ -277,7 +277,7 @@ export default function SettingsPage() {
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-[#101A13] mb-2">
-                  Display Name
+                  Display Name <span className="font-normal text-[#5E6B5F]">(format: Dr. Firstname Lastname)</span>
                 </label>
                 <input
                   type="text"
@@ -294,7 +294,7 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-[#101A13] mb-2">
-                  Clinic / Practice Name
+                  Clinic / Practice Name <span className="font-normal text-[#5E6B5F]">(format: Title Case)</span>
                 </label>
                 <input
                   type="text"
@@ -311,7 +311,7 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-[#101A13] mb-2">
-                  Specialization
+                  Specialization <span className="font-normal text-[#5E6B5F]">(format: Title Case)</span>
                 </label>
                 <input
                   type="text"
@@ -325,7 +325,7 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-[#101A13] mb-2">
-                  Qualification
+                  Qualification <span className="font-normal text-[#5E6B5F]">(format: UPPERCASE, comma-separated — e.g. MBBS, MS, DNB)</span>
                 </label>
                 <input
                   type="text"

@@ -54,16 +54,8 @@ export default function GbpGuide({ renderFooter, onDone }) {
     } catch { /* ignore */ } finally { setAiBusy(''); }
   }, []);
 
-  // When a block with an AI prompt becomes active and has no cached response yet,
-  // run it once automatically.
-  useEffect(() => {
-    if (!blocks || !blocks[active]) return;
-    const b = blocks[active];
-    if (b.aiPrompt && !aiResponses[b.key] && !fired.current.has(b.key)) {
-      fired.current.add(b.key);
-      runBlockAi(b.key);
-    }
-  }, [blocks, active, aiResponses, runBlockAi]);
+  // GBP content is NOT generated automatically — the doctor clicks "Generate" per
+  // block (each generation costs AI credits). (Previously this auto-fired on load.)
 
   const mandatoryComplete = useCallback((prog = progress) => {
     const m = (blocks || []).find((b) => b.mandatory);
@@ -142,6 +134,11 @@ export default function GbpGuide({ renderFooter, onDone }) {
                 <div className="flex flex-col items-center justify-center gap-3 py-8">
                   <span className="w-12 h-12 rounded-full border-[4px] border-[var(--green)] border-t-transparent animate-spin" />
                   <p className="text-[13.5px] font-medium text-[var(--ink)]">Generating a briefing from your practice profile…</p>
+                </div>
+              ) : !aiResponses[blocks[active].key] ? (
+                <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
+                  <p className="text-[13.5px] text-[var(--muted)]" style={{ maxWidth: '40ch' }}>Generate a briefing for this step from your practice profile. This uses <strong>1 AI credit</strong>.</p>
+                  <button onClick={() => runBlockAi(blocks[active].key)} className="pos-action">Generate with AI →</button>
                 </div>
               ) : (
                 <textarea
