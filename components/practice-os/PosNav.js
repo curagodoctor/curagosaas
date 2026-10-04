@@ -96,7 +96,6 @@ function PosNavInner({ breadcrumb }) {
               ⚡ {creditsLabel} credits
             </Link>
           )}
-          <Link href="/admin/dashboard" className="text-white px-3 py-1 rounded-[7px] font-semibold text-[12.5px] shrink-0" style={{ backgroundColor: 'var(--green)' }}>Website Builder</Link>
           <button onClick={logout} className="pos-link" style={{ color: 'var(--muted)' }}>Sign out</button>
         </div>
 
@@ -117,7 +116,6 @@ function PosNavInner({ breadcrumb }) {
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[13px] font-semibold" style={{ background: 'rgba(242,106,27,.08)', color: 'var(--orange)', border: '1px solid rgba(242,106,27,.25)' }}>⚡ {creditsLabel} AI credits</span>
           )}
           {links}
-          <Link href="/admin/dashboard" onClick={close} className="text-white px-3.5 py-1.5 rounded-[7px] font-semibold text-[13px]" style={{ backgroundColor: 'var(--green)' }}>Website Builder</Link>
           <button onClick={logout} className="pos-link" style={{ color: 'var(--muted)' }}>Sign out</button>
         </div>
       )}
