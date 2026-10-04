@@ -1079,11 +1079,11 @@ function fmtDate(d) {
 }
 
 function DoctorsTab() {
+  const router = useRouter();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selected, setSelected] = useState(null);
-  const [creditsFor, setCreditsFor] = useState(null); // { doctorId, name }
+  const openDoctor = (doctorId) => router.push(`/dashboard/doctors/${doctorId}`);
 
   useEffect(() => {
     (async () => {
@@ -1104,7 +1104,7 @@ function DoctorsTab() {
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="p-4 border-b border-gray-100">
         <h2 className="font-semibold text-gray-900">Enrolled Doctors</h2>
-        <p className="text-sm text-gray-500">Click a doctor to see their full Zero To Practice Builder record.</p>
+        <p className="text-sm text-gray-500">Click a doctor to open their full record &amp; controls (tier, DOS access, packs, credits, tracking).</p>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full">
@@ -1131,7 +1131,7 @@ function DoctorsTab() {
               <tr><td colSpan={8} className="px-6 py-12 text-center text-gray-500">No doctors enrolled yet.</td></tr>
             ) : (
               users.map((u) => (
-                <tr key={u.doctorId} className="hover:bg-gray-50 cursor-pointer" onClick={() => setSelected(u.doctorId)}>
+                <tr key={u.doctorId} className="hover:bg-gray-50 cursor-pointer" onClick={() => openDoctor(u.doctorId)}>
                   <td className="px-6 py-4">
                     <div className="font-medium text-blue-600">{u.name}</div>
                     <div className="text-xs text-gray-400">{u.email}</div>
@@ -1147,7 +1147,7 @@ function DoctorsTab() {
                   <td className="px-6 py-4 text-gray-600">{u.currentStreak}</td>
                   <td className="px-6 py-4 text-gray-500 text-sm">{fmtDate(u.lastActiveAt)}</td>
                   <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => setCreditsFor({ doctorId: u.doctorId, name: u.name })} className="text-blue-600 hover:text-blue-700 text-sm font-medium">Edit credits</button>
+                    <button onClick={() => openDoctor(u.doctorId)} className="text-blue-600 hover:text-blue-700 text-sm font-medium">Manage →</button>
                   </td>
                 </tr>
               ))
@@ -1155,9 +1155,6 @@ function DoctorsTab() {
           </tbody>
         </table>
       </div>
-
-      {selected && <DoctorDetailModal doctorId={selected} onClose={() => setSelected(null)} />}
-      {creditsFor && <CreditsModal doctorId={creditsFor.doctorId} name={creditsFor.name} onClose={() => setCreditsFor(null)} />}
     </div>
   );
 }

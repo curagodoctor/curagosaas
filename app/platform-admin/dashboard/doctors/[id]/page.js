@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import DoctorPracticeOsTab from '@/components/platform-admin/DoctorPracticeOsTab';
 
 export default function DoctorDetailsPage({ params }) {
   const { id } = use(params);
@@ -146,6 +147,7 @@ export default function DoctorDetailsPage({ params }) {
 
   const tabs = [
     { id: 'profile', name: 'Profile' },
+    { id: 'practiceos', name: 'Practice OS' },
     { id: 'bookings', name: 'Bookings' },
     { id: 'website', name: 'Website' },
   ];
@@ -357,10 +359,14 @@ export default function DoctorDetailsPage({ params }) {
             </dl>
           </div>
 
-          {/* Plans & packs — what the doctor is currently on */}
+          {/* Plans at a glance — full controls (tier, DOS access, packs, credits,
+              tracking) live in the Practice OS tab. */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Plans &amp; packs</h3>
-            <div className="flex flex-wrap gap-2 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold text-gray-900">Plans &amp; packs</h3>
+              <button onClick={() => setActiveTab('practiceos')} className="text-sm font-medium text-[#096b17] hover:underline">Manage in Practice OS →</button>
+            </div>
+            <div className="flex flex-wrap gap-2">
               <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ${
                 (doctor.accessTier || 'free') === 'founder' ? 'bg-purple-100 text-purple-800'
                   : (doctor.accessTier || 'free') === 'paid' ? 'bg-green-100 text-green-800'
@@ -372,22 +378,6 @@ export default function DoctorDetailsPage({ params }) {
                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 capitalize">Dominate Organic Search: {practiceOs.optimization.phase}</span>
               )}
             </div>
-            <p className="text-sm font-medium text-gray-700 mb-2">Owned packs</p>
-            {practiceOs?.packs?.length ? (
-              <div className="space-y-2">
-                {practiceOs.packs.map((p, i) => (
-                  <div key={i} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-                    <span className="text-sm text-gray-900">{p.title}</span>
-                    <span className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500 capitalize">{p.tier}</span>
-                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${p.started ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>{p.started ? 'Active' : 'Not started'}</span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">No Practice OS packs owned.</p>
-            )}
           </div>
 
           {/* Stats */}
@@ -446,6 +436,10 @@ export default function DoctorDetailsPage({ params }) {
             </dl>
           </div>
         </div>
+      )}
+
+      {activeTab === 'practiceos' && (
+        <DoctorPracticeOsTab doctorId={id} />
       )}
 
       {activeTab === 'bookings' && (
