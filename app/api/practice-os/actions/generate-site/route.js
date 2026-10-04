@@ -88,10 +88,10 @@ export async function POST(request) {
     // usually already exists here. A page that has NEVER been AI-generated or
     // hand-edited is still the free first build (i.e. the onboarding build).
     const firstBuild = !existing || (!existing.aiGeneratedAt && !existing.userEdited);
-    // Every generation (incl. the onboarding first build) deducts from the doctor's
-    // AI credits (the 15 starter pool for free tier, or the daily pool once paid).
+    // The onboarding first build is free (the 10-credit pool is counted from here on
+    // and spent on the doctor's own AI usage); only re-generations are metered.
     await assertAiAccess(doctor._id);
-    await assertHasCredits(doctor._id); // throws NoCredits → 402 below
+    if (!firstBuild) await assertHasCredits(doctor._id); // throws NoCredits → 402 below
 
     const fields = await getDoctorProfileFields(doctor._id);
     // A readable summary of everything we know about the doctor, for grounding.
@@ -212,7 +212,9 @@ export async function POST(request) {
     }
 
     // Charge one credit now that generation succeeded — except the free first build.
-    const remaining = (await chargeAiCredits(doctor._id, { label: 'generate-site' })).remaining;
+    const remaining = firstBuild
+      ? await getRemainingCredits(doctor._id)
+      : (await chargeAiCredits(doctor._id, { label: 'generate-site' })).remaining;
 
     const hasAddress = !!(doc?.customDomain || doc?.subdomain);
     const url = doc?.customDomain ? `https://${doc.customDomain}` : (doc?.subdomain ? `https://${doc.subdomain}.curago.in` : '');

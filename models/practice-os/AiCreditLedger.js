@@ -10,12 +10,13 @@ const DAILY_LIMIT = parseInt(process.env.PRACTICE_OS_AI_DAILY_CREDITS, 10) > 0
 const MAX_BALANCE = parseInt(process.env.PRACTICE_OS_AI_MAX_CREDITS, 10) > 0
   ? parseInt(process.env.PRACTICE_OS_AI_MAX_CREDITS, 10) : DAILY_LIMIT * 90;
 const DAY_MS = 24 * 60 * 60 * 1000;
-// §4 — the FREE tier gets a one-time starter pool of 15 credits, granted from the
-// moment they create any CuraGo account (lazily on first AI use). Every AI
-// generation — website, blog, images, day content — deducts from this pool until
-// they subscribe (paid tiers then use the accumulating daily pool).
+// §4 — the FREE tier gets a one-time starter pool of 10 credits, counted from the
+// moment their website is created (lazily seeded on first AI use). Every AI
+// generation — blog, GBP, images — deducts from this pool until they subscribe
+// (paid tiers then use the accumulating daily pool). The first website build and
+// the diseases & treatments mapping are exempt (not charged).
 const FREE_LIFETIME = parseInt(process.env.PRACTICE_OS_AI_FREE_LIFETIME, 10) >= 0
-  ? parseInt(process.env.PRACTICE_OS_AI_FREE_LIFETIME, 10) : 15;
+  ? parseInt(process.env.PRACTICE_OS_AI_FREE_LIFETIME, 10) : 10;
 
 /**
  * Practice OS — AiCreditLedger

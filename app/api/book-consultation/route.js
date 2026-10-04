@@ -61,16 +61,14 @@ export async function POST(request) {
       }
     }
 
-    // Create calendar event — on the doctor's own Google Calendar if connected,
-    // else the shared CuraGo calendar.
+    // Create the Google Meet on the DOCTOR's OWN Google Calendar only — never on a
+    // CuraGo-owned calendar. If their calendar isn't connected (or it fails), the
+    // booking is still saved; it just won't carry a calendar event / Meet link.
     const ev = { date, time, name, email, whatsapp, mode: modeOfContact };
-    const calendarEvent =
-      (doctorDoc?.googleCalendar?.connected && await createCalendarEventForDoctor(doctorDoc, ev))
-      || await createCalendarEvent({ ...ev, doctorEmail: doctorInfo.email });
-
-    if (!calendarEvent.success) {
-      throw new Error("Failed to create calendar event");
-    }
+    const created = doctorDoc?.googleCalendar?.connected
+      ? await createCalendarEventForDoctor(doctorDoc, ev)
+      : null;
+    const calendarEvent = (created && created.success) ? created : {};
 
     // Store booking in database
     const booking = addBooking({

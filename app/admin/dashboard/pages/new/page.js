@@ -96,15 +96,15 @@ export default function NewBookingPageForm() {
         <div className="flex items-center gap-4 mb-4">
           <Link
             href="/admin/dashboard/pages"
-            className="text-gray-600 hover:text-gray-900 transition-colors"
+            className="text-[#5E6B5F] hover:text-[#101A13] transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Create New Website</h1>
-            <p className="text-gray-600 mt-1">Set up the basic details for your clinic website</p>
+            <h1 className="text-3xl font-semibold text-[#101A13]">Create New Website</h1>
+            <p className="text-[#5E6B5F] mt-1">Set up the basic details for your clinic website</p>
           </div>
         </div>
       </div>
@@ -117,11 +117,11 @@ export default function NewBookingPageForm() {
       )}
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm p-6 md:p-8">
+      <form onSubmit={handleSubmit} className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6 md:p-8">
         <div className="space-y-6">
           {/* Title */}
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="title" className="block text-sm font-medium text-[#101A13] mb-2">
               Page Title *
             </label>
             <input
@@ -132,18 +132,18 @@ export default function NewBookingPageForm() {
               onChange={handleTitleChange}
               required
               placeholder="e.g., Gallbladder Surgery Consultation"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17]"
             />
-            <p className="text-sm text-gray-500 mt-1">This will be shown as the page heading</p>
+            <p className="text-sm text-[#5E6B5F] mt-1">This will be shown as the page heading</p>
           </div>
 
           {/* Slug */}
           <div>
-            <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="slug" className="block text-sm font-medium text-[#101A13] mb-2">
               URL Slug *
             </label>
             <div className="flex items-center gap-2">
-              <span className="text-gray-600 bg-gray-50 px-4 py-3 rounded-lg border border-gray-300">
+              <span className="text-[#5E6B5F] bg-[#F7F9F5] px-4 py-3 rounded-lg border border-[#DDE4D9]">
                 /myclinic/
               </span>
               <input
@@ -155,17 +155,17 @@ export default function NewBookingPageForm() {
                 required
                 pattern="^[a-z0-9]+(?:-[a-z0-9]+)*$"
                 placeholder="gallbladder-surgery"
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="flex-1 px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17]"
               />
             </div>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-[#5E6B5F] mt-1">
               Lowercase letters, numbers, and hyphens only. Auto-generated from title.
             </p>
           </div>
 
           {/* Template choice */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Starting layout</label>
+            <label className="block text-sm font-medium text-[#101A13] mb-2">Starting layout</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { id: 'blank', name: 'Blank page', desc: 'Just a content block + booking. Best for service/condition pages.' },
@@ -175,19 +175,19 @@ export default function NewBookingPageForm() {
                   type="button"
                   key={t.id}
                   onClick={() => setFormData((p) => ({ ...p, template: t.id }))}
-                  className={`text-left rounded-lg border p-3 transition-colors ${formData.template === t.id ? 'border-[#096b17] bg-[#096b17]/5' : 'border-gray-300 hover:border-gray-400'}`}
+                  className={`text-left rounded-lg border p-3 transition-colors ${formData.template === t.id ? 'border-[#096B17] bg-[#096B17]/5' : 'border-[#DDE4D9] hover:border-[#096B17]'}`}
                 >
-                  <div className="font-semibold text-sm text-gray-900">{t.name}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{t.desc}</div>
+                  <div className="font-semibold text-sm text-[#101A13]">{t.name}</div>
+                  <div className="text-xs text-[#5E6B5F] mt-0.5">{t.desc}</div>
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-1.5">Header &amp; footer come from your home page automatically — no need to add them here.</p>
+            <p className="text-xs text-[#5E6B5F] mt-1.5">Header &amp; footer come from your home page automatically — no need to add them here.</p>
           </div>
 
           {/* Meta Description */}
           <div>
-            <label htmlFor="metaDescription" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="metaDescription" className="block text-sm font-medium text-[#101A13] mb-2">
               Meta Description
             </label>
             <textarea
@@ -198,16 +198,16 @@ export default function NewBookingPageForm() {
               rows={3}
               maxLength={160}
               placeholder="Brief description for search engines (max 160 characters)"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17]"
             />
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-[#5E6B5F] mt-1">
               {formData.metaDescription.length}/160 characters
             </p>
           </div>
 
           {/* Meta Keywords */}
           <div>
-            <label htmlFor="metaKeywords" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="metaKeywords" className="block text-sm font-medium text-[#101A13] mb-2">
               Meta Keywords
             </label>
             <input
@@ -217,15 +217,15 @@ export default function NewBookingPageForm() {
               value={formData.metaKeywords}
               onChange={handleChange}
               placeholder="gallbladder, surgery, treatment (comma-separated)"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17]"
             />
-            <p className="text-sm text-gray-500 mt-1">Separate keywords with commas</p>
+            <p className="text-sm text-[#5E6B5F] mt-1">Separate keywords with commas</p>
           </div>
 
           {/* Consultation Fee */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="consultationFee" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="consultationFee" className="block text-sm font-medium text-[#101A13] mb-2">
                 Consultation Fee (₹)
               </label>
               <input
@@ -237,12 +237,12 @@ export default function NewBookingPageForm() {
                 required
                 min={0}
                 step={50}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17]"
               />
             </div>
 
             <div>
-              <label htmlFor="bookingFee" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="bookingFee" className="block text-sm font-medium text-[#101A13] mb-2">
                 Booking Fee (₹)
               </label>
               <input
@@ -254,14 +254,14 @@ export default function NewBookingPageForm() {
                 required
                 min={0}
                 step={10}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17]"
               />
             </div>
           </div>
 
           {/* Status */}
           <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="status" className="block text-sm font-medium text-[#101A13] mb-2">
               Initial Status
             </label>
             <select
@@ -269,39 +269,39 @@ export default function NewBookingPageForm() {
               name="status"
               value={formData.status}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17]"
             >
               <option value="draft">Draft (not visible to public)</option>
               <option value="published">Published (visible to public)</option>
             </select>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-[#5E6B5F] mt-1">
               You can change this later from the page editor
             </p>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-4 mt-8 pt-6 border-t border-gray-200">
+        <div className="flex items-center gap-4 mt-8 pt-6 border-t border-[#EDF1EB]">
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:cursor-not-allowed"
+            className="flex-1 bg-[#F26A1B] hover:bg-[#d95c14] disabled:opacity-60 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:cursor-not-allowed"
           >
             {loading ? "Creating..." : "Create Page & Add Sections"}
           </button>
           <Link
             href="/admin/dashboard/pages"
-            className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-semibold text-gray-700"
+            className="px-6 py-3 bg-white border border-[#DDE4D9] rounded-lg hover:bg-[#F7F9F5] transition-colors font-semibold text-[#101A13]"
           >
             Cancel
           </Link>
         </div>
 
         {/* Info Box */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="mt-6 bg-[#096B17]/5 border border-[#096B17]/20 rounded-lg p-4">
           <div className="flex items-start gap-3">
             <svg
-              className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"
+              className="w-5 h-5 text-[#096B17] flex-shrink-0 mt-0.5"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -311,7 +311,7 @@ export default function NewBookingPageForm() {
                 clipRule="evenodd"
               />
             </svg>
-            <div className="text-sm text-blue-800">
+            <div className="text-sm text-[#101A13]">
               <p className="font-semibold mb-1">Next Steps</p>
               <p>
                 After creating the page, you'll be taken to the page builder where you can add

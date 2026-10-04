@@ -113,7 +113,7 @@ export default function WebsiteBuilderPage() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-[#096b17] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your pages...</p>
+          <p className="text-[#5E6B5F]">Loading your pages...</p>
         </div>
       </div>
     );
@@ -126,14 +126,14 @@ export default function WebsiteBuilderPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Website Builder</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-semibold text-[#101A13] mb-2">Website Builder</h1>
+          <p className="text-[#5E6B5F]">
             Create and manage multiple pages for your clinic website
           </p>
         </div>
         <Link
           href="/admin/dashboard/pages/new"
-          className="bg-[#096b17] hover:bg-[#075110] text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center gap-2"
+          className="bg-[#F26A1B] hover:bg-[#d85a12] text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center gap-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -179,20 +179,20 @@ export default function WebsiteBuilderPage() {
       {/* Pages List */}
       {pages.length === 0 ? (
         /* Empty State */
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+        <div className="bg-white rounded-2xl shadow-sm border border-[#EDF1EB] p-12 text-center">
           <div className="w-16 h-16 bg-[#096b17]/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-[#096b17]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Pages Yet</h3>
-          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+          <h3 className="text-lg font-semibold text-[#101A13] mb-2">No Pages Yet</h3>
+          <p className="text-[#5E6B5F] mb-6 max-w-md mx-auto">
             Create your first clinic page to start receiving online bookings. You can build multiple landing pages for different services.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={handleCreateFirstWebsite}
-              className="bg-[#096b17] hover:bg-[#075110] text-white font-semibold py-3 px-8 rounded-xl transition-colors inline-flex items-center gap-2 cursor-pointer"
+              className="bg-[#F26A1B] hover:bg-[#d85a12] text-white font-semibold py-3 px-8 rounded-lg transition-colors inline-flex items-center gap-2 cursor-pointer"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -201,7 +201,7 @@ export default function WebsiteBuilderPage() {
             </button>
             <Link
               href="/admin/dashboard/pages/new"
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-8 rounded-xl transition-colors inline-flex items-center gap-2"
+              className="bg-white border border-[#DDE4D9] hover:bg-[#F7F9F5] text-[#101A13] font-semibold py-3 px-8 rounded-lg transition-colors inline-flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -216,25 +216,25 @@ export default function WebsiteBuilderPage() {
           {pages.map((page) => (
             <div
               key={page._id}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow"
+              className="bg-white rounded-2xl shadow-sm border border-[#EDF1EB] p-5 hover:shadow-md transition-shadow"
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-lg font-semibold text-gray-900 truncate">
+                    <h3 className="text-lg font-semibold text-[#101A13] truncate">
                       {page.title}
                     </h3>
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                       page.status === 'published'
-                        ? 'bg-green-100 text-green-700'
+                        ? 'bg-[#096b17]/10 text-[#096b17]'
                         : page.status === 'archived'
-                        ? 'bg-gray-100 text-gray-600'
-                        : 'bg-yellow-100 text-yellow-700'
+                        ? 'bg-[#EDF1EB] text-[#5E6B5F]'
+                        : 'bg-[#F26A1B]/10 text-[#F26A1B]'
                     }`}>
                       {page.status === 'published' ? 'Live' : page.status === 'archived' ? 'Archived' : 'Draft'}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-[#5E6B5F]">
                     /{page.slug}
                   </p>
                 </div>
@@ -242,12 +242,12 @@ export default function WebsiteBuilderPage() {
                 {/* Stats */}
                 <div className="hidden sm:flex items-center gap-6 mx-6">
                   <div className="text-center">
-                    <p className="text-lg font-bold text-gray-900">{page.views || 0}</p>
-                    <p className="text-xs text-gray-500">Views</p>
+                    <p className="text-lg font-bold text-[#101A13]">{page.views || 0}</p>
+                    <p className="text-xs text-[#5E6B5F]">Views</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-bold text-gray-900">{page.bookings || 0}</p>
-                    <p className="text-xs text-gray-500">Bookings</p>
+                    <p className="text-lg font-bold text-[#101A13]">{page.bookings || 0}</p>
+                    <p className="text-xs text-[#5E6B5F]">Bookings</p>
                   </div>
                 </div>
 
@@ -255,7 +255,7 @@ export default function WebsiteBuilderPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => router.push(`/admin/dashboard/pages/${page._id}`)}
-                    className="bg-[#096b17] hover:bg-[#075110] text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm flex items-center gap-1.5 cursor-pointer"
+                    className="bg-white border border-[#DDE4D9] hover:bg-[#F7F9F5] text-[#101A13] font-medium py-2 px-4 rounded-lg transition-colors text-sm flex items-center gap-1.5 cursor-pointer"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -267,7 +267,7 @@ export default function WebsiteBuilderPage() {
                       href={`${websiteUrl}/${page.slug === 'home' ? '' : page.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors text-sm flex items-center gap-1.5"
+                      className="bg-white border border-[#DDE4D9] hover:bg-[#F7F9F5] text-[#096b17] font-medium py-2 px-4 rounded-lg transition-colors text-sm flex items-center gap-1.5"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -280,11 +280,11 @@ export default function WebsiteBuilderPage() {
               </div>
 
               {/* Mobile stats */}
-              <div className="flex sm:hidden items-center gap-4 mt-3 pt-3 border-t border-gray-100">
-                <span className="text-sm text-gray-500">{page.views || 0} views</span>
-                <span className="text-sm text-gray-500">{page.bookings || 0} bookings</span>
+              <div className="flex sm:hidden items-center gap-4 mt-3 pt-3 border-t border-[#EDF1EB]">
+                <span className="text-sm text-[#5E6B5F]">{page.views || 0} views</span>
+                <span className="text-sm text-[#5E6B5F]">{page.bookings || 0} bookings</span>
                 {page.updatedAt && (
-                  <span className="text-sm text-gray-400">
+                  <span className="text-sm text-[#5E6B5F]">
                     Updated {new Date(page.updatedAt).toLocaleDateString()}
                   </span>
                 )}
@@ -295,28 +295,28 @@ export default function WebsiteBuilderPage() {
       )}
 
       {/* Tips Section */}
-      <div className="mt-8 bg-blue-50 rounded-xl p-6">
-        <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="mt-8 bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
+        <h3 className="font-semibold text-[#101A13] mb-3 flex items-center gap-2">
+          <svg className="w-5 h-5 text-[#096b17]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           Tips for your pages
         </h3>
-        <ul className="space-y-2 text-sm text-blue-800">
+        <ul className="space-y-2 text-sm text-[#5E6B5F]">
           <li className="flex items-start gap-2">
-            <span className="text-blue-500 mt-1">•</span>
+            <span className="text-[#096b17] mt-1">•</span>
             Create separate pages for different services (e.g., Surgery Consultation, Online Follow-up)
           </li>
           <li className="flex items-start gap-2">
-            <span className="text-blue-500 mt-1">•</span>
+            <span className="text-[#096b17] mt-1">•</span>
             Share specific page links on social media for targeted campaigns
           </li>
           <li className="flex items-start gap-2">
-            <span className="text-blue-500 mt-1">•</span>
+            <span className="text-[#096b17] mt-1">•</span>
             Your home page is shown when patients visit your main URL
           </li>
           <li className="flex items-start gap-2">
-            <span className="text-blue-500 mt-1">•</span>
+            <span className="text-[#096b17] mt-1">•</span>
             Add testimonials and FAQs to increase patient trust
           </li>
         </ul>

@@ -977,6 +977,8 @@ function AnalyticsTab() {
         <StatCard label="Avg Performance" value={data.avgPerformance} sub="overall score" />
         <StatCard label="Avg Streak" value={data.avgStreak} sub="days" />
         <StatCard label="Avg Completion Time" value={`${data.avgCompletionMinutes}m`} sub="per mission" />
+        <StatCard label="Daily schedule" value={data.scheduleCounts?.daily ?? 0} sub="doctors notified daily" />
+        <StatCard label="Weekly schedule" value={data.scheduleCounts?.weekly ?? 0} sub="on a CuraGo day" />
       </div>
 
       {/* AI usage */}

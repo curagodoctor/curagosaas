@@ -176,6 +176,7 @@ const DoctorSchema = new mongoose.Schema({
   analytics: {
     ga4MeasurementId: { type: String, trim: true, default: '' }, // e.g. G-XXXXXXXXXX
     metaPixelId: { type: String, trim: true, default: '' },      // numeric Meta Pixel ID
+    gtmId: { type: String, trim: true, default: '' },            // Google Tag Manager, e.g. GTM-XXXXXXX
   },
   // Set once default workflows have been seeded, so deleting all workflows
   // doesn't cause them to regenerate on the next dashboard load.
@@ -214,6 +215,20 @@ const DoctorSchema = new mongoose.Schema({
   practiceOsActive: {
     type: Boolean,
     default: false
+  },
+
+  // Platform access tier — the single gate the whole app reads (see lib/accessTier.js).
+  //  - 'free'    : limited (1 website page + 5 blogs, most features locked, no AI refill)
+  //  - 'paid'    : full platform (set automatically when the ₹500/mo subscription is active,
+  //                or manually as a comp). Dominate Organic Search remains a separate add-on.
+  //  - 'founder' : full platform EXCEPT Dominate Organic Search, and AI credits are NOT
+  //                refilled daily (capped, manual use). Set manually from platform-admin.
+  // Effective tier is resolved in lib/accessTier.js (founder > paid/active-sub > free),
+  // so a lapsed subscription falls back to 'free' automatically.
+  accessTier: {
+    type: String,
+    enum: ['free', 'paid', 'founder'],
+    default: 'free',
   },
 
   // Anonymous display name for the Practice OS leaderboard (opt-in, unique).

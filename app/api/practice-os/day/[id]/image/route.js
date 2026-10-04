@@ -8,6 +8,9 @@ import Mission from '@/models/practice-os/Mission';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
+// Image generation costs 3 credits (same as the blog-image action).
+const IMAGE_CREDIT_COST = 3;
+
 // POST /api/practice-os/day/[id]/image { topic } — generate an image for this
 // day's task (e.g. a GBP post image), returning a public URL the doctor can
 // download from the day interface. Credit-metered.
@@ -17,7 +20,7 @@ export async function POST(request, { params }) {
     await connectDB();
     await assertAiAccess(doctor._id);
     if (!process.env.OPENAI_API_KEY) return NextResponse.json({ success: false, error: 'AI is not configured.' }, { status: 500 });
-    await assertHasCredits(doctor._id);
+    await assertHasCredits(doctor._id, IMAGE_CREDIT_COST);
 
     const { id } = await params;
     const mission = await Mission.findById(id).select('category missionText').lean();
@@ -30,8 +33,8 @@ export async function POST(request, { params }) {
     const url = await generateAiImage(doctor._id, topic, { kind: 'blog', userPrompt });
     if (!url) return NextResponse.json({ success: false, error: 'Could not generate an image — try again.' }, { status: 502 });
 
-    const { remaining } = await chargeAiCredits(doctor._id, { label: 'day-image' });
-    return NextResponse.json({ success: true, url, creditsRemaining: remaining });
+    const { remaining } = await chargeAiCredits(doctor._id, { amount: IMAGE_CREDIT_COST, label: 'day-image' });
+    return NextResponse.json({ success: true, url, creditsRemaining: remaining, creditsUsed: IMAGE_CREDIT_COST });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     if (error.message === 'PaymentRequired') return NextResponse.json({ success: false, error: 'PaymentRequired' }, { status: 402 });

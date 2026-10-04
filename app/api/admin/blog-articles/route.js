@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb';
 import BlogArticle from '@/models/BlogArticle';
 import { isAuthenticated } from '@/lib/auth';
 import { getCurrentDoctor } from '@/lib/doctorAuth';
+import { getEffectiveTier, capabilitiesFor, UPGRADE_URL } from '@/lib/accessTier';
 
 // GET all blog articles (admin only)
 export async function GET(request) {
@@ -84,6 +85,20 @@ export async function POST(request) {
         { error: 'Title is required' },
         { status: 400 }
       );
+    }
+
+    // Free-tier cap: 5 blog pages. Paid & founder are unlimited.
+    if (doctorId) {
+      const caps = capabilitiesFor(await getEffectiveTier(doctorId));
+      if (caps.maxBlogs != null) {
+        const count = await BlogArticle.countDocuments({ doctorId });
+        if (count >= caps.maxBlogs) {
+          return NextResponse.json(
+            { error: `Your Free plan includes ${caps.maxBlogs} blog pages. Upgrade to add more.`, code: 'FEATURE_LOCKED', upgrade: { required: true, url: UPGRADE_URL } },
+            { status: 403 },
+          );
+        }
+      }
     }
 
     // Generate slug from title if not provided

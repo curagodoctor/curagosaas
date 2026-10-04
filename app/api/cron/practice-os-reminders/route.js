@@ -90,7 +90,12 @@ export async function GET(request) {
 
         // §11/§14 — only send inside the doctor's preferred window (defaults to
         // evening). The cron runs hourly; this delivers at the chosen time.
-        const prof = await PracticeOsProfile.findOne({ doctorId: enrollment.doctorId }).select('notificationWindow').lean();
+        const prof = await PracticeOsProfile.findOne({ doctorId: enrollment.doctorId }).select('notificationWindow scheduleType curagoDay').lean();
+        // Weekly doctors are only reminded on their chosen CuraGo day (0=Sun…6=Sat, IST).
+        if (prof?.scheduleType === 'weekly' && typeof prof.curagoDay === 'number') {
+          const istDow = new Date(now.getTime() + 5.5 * 3600 * 1000).getUTCDay();
+          if (prof.curagoDay !== istDow) continue;
+        }
         if (!inWindow(prof?.notificationWindow || 'evening', hourNow)) {
           continue;
         }

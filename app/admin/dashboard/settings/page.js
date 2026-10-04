@@ -24,6 +24,7 @@ export default function SettingsPage() {
     timezone: 'Asia/Kolkata',
     ga4MeasurementId: '',
     metaPixelId: '',
+    gtmId: '',
     favicon: '',
   });
   const [faviconUploading, setFaviconUploading] = useState(false);
@@ -153,6 +154,7 @@ export default function SettingsPage() {
           timezone: data.doctor.timezone || 'Asia/Kolkata',
           ga4MeasurementId: data.doctor.ga4MeasurementId || '',
           metaPixelId: data.doctor.metaPixelId || '',
+          gtmId: data.doctor.gtmId || '',
         });
         setDomainInfo({
           subdomain: data.doctor.subdomain || '',
@@ -226,7 +228,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-600">Loading settings...</div>
+        <div className="text-[#5E6B5F]">Loading settings...</div>
       </div>
     );
   }
@@ -245,13 +247,13 @@ export default function SettingsPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">Settings</h1>
-        <p className="text-gray-600 mt-2">Manage your profile and preferences</p>
+        <h1 className="text-3xl font-semibold text-[#101A13]">Settings</h1>
+        <p className="text-[#5E6B5F] mt-2">Manage your profile and preferences</p>
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow mb-6">
-        <div className="border-b">
+      <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm mb-6">
+        <div className="border-b border-[#EDF1EB]">
           <nav className="flex -mb-px overflow-x-auto">
             {tabs.map((tab) => (
               <button
@@ -260,7 +262,7 @@ export default function SettingsPage() {
                 className={`px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === tab.id
                     ? 'border-[#096b17] text-[#096b17]'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : 'border-transparent text-[#5E6B5F] hover:text-[#101A13] hover:border-[#DDE4D9]'
                 }`}
               >
                 {tab.label}
@@ -274,8 +276,8 @@ export default function SettingsPage() {
           {activeTab === 'profile' && (
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Display Name <span className="font-normal text-gray-500">(format: Dr. Firstname Lastname)</span>
+                <label className="block text-sm font-medium text-[#101A13] mb-2">
+                  Display Name <span className="font-normal text-[#5E6B5F]">(format: Dr. Firstname Lastname)</span>
                 </label>
                 <input
                   type="text"
@@ -283,16 +285,16 @@ export default function SettingsPage() {
                   value={formData.displayName}
                   onChange={handleChange}
                   placeholder="Dr. John Smith"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-[#5E6B5F]">
                   This name will be displayed on your clinic website
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Clinic / Practice Name <span className="font-normal text-gray-500">(format: Title Case)</span>
+                <label className="block text-sm font-medium text-[#101A13] mb-2">
+                  Clinic / Practice Name <span className="font-normal text-[#5E6B5F]">(format: Title Case)</span>
                 </label>
                 <input
                   type="text"
@@ -300,16 +302,16 @@ export default function SettingsPage() {
                   value={formData.clinicName}
                   onChange={handleChange}
                   placeholder="e.g. Sunrise Gastro Clinic"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-[#5E6B5F]">
                   Used in patient WhatsApp messages (booking, reminder, review request). Defaults to your display name if left blank.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Specialization <span className="font-normal text-gray-500">(format: Title Case)</span>
+                <label className="block text-sm font-medium text-[#101A13] mb-2">
+                  Specialization <span className="font-normal text-[#5E6B5F]">(format: Title Case)</span>
                 </label>
                 <input
                   type="text"
@@ -317,13 +319,13 @@ export default function SettingsPage() {
                   value={formData.specialization}
                   onChange={handleChange}
                   placeholder="Surgical Gastroenterologist"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Qualification <span className="font-normal text-gray-500">(format: UPPERCASE, comma-separated — e.g. MBBS, MS, DNB)</span>
+                <label className="block text-sm font-medium text-[#101A13] mb-2">
+                  Qualification <span className="font-normal text-[#5E6B5F]">(format: UPPERCASE, comma-separated — e.g. MBBS, MS, DNB)</span>
                 </label>
                 <input
                   type="text"
@@ -331,12 +333,12 @@ export default function SettingsPage() {
                   value={formData.qualification}
                   onChange={handleChange}
                   placeholder="MBBS, MS, DNB"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#101A13] mb-2">
                   Bio
                 </label>
                 <textarea
@@ -345,10 +347,10 @@ export default function SettingsPage() {
                   onChange={handleChange}
                   rows={4}
                   placeholder="Brief description about yourself and your practice..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent resize-none"
+                  className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent resize-none"
                   maxLength={500}
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-[#5E6B5F]">
                   {formData.bio.length}/500 characters
                 </p>
               </div>
@@ -374,11 +376,11 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#101A13] mb-2">
                   WhatsApp Number
                 </label>
                 <div className="flex items-center gap-2">
-                  <span className="px-4 py-3 bg-gray-100 border border-gray-300 rounded-l-lg text-gray-600">
+                  <span className="px-4 py-3 bg-[#F7F9F5] border border-[#DDE4D9] rounded-l-lg text-[#5E6B5F]">
                     +91
                   </span>
                   <input
@@ -387,11 +389,11 @@ export default function SettingsPage() {
                     value={formData.whatsappNumber}
                     onChange={handleChange}
                     placeholder="9876543210"
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                    className="flex-1 px-4 py-3 border border-[#DDE4D9] rounded-r-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                     maxLength={10}
                   />
                 </div>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-[#5E6B5F]">
                   Enter your 10-digit WhatsApp number without country code
                 </p>
               </div>
@@ -404,7 +406,7 @@ export default function SettingsPage() {
               {false && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-[#101A13] mb-2">
                       Google Review Link
                     </label>
                     <input
@@ -413,15 +415,15 @@ export default function SettingsPage() {
                       value={formData.googleReviewLink}
                       onChange={handleChange}
                       placeholder="https://g.page/r/..."
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                      className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                     />
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 text-sm text-[#5E6B5F]">
                       Set this once. It&apos;s used automatically as <span className="font-mono">{'{{reviewLink}}'}</span> in every review-request message, workflow and WhatsApp flow — no need to set it per contact.
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-[#101A13] mb-2">
                       Review Request Message (WhatsApp)
                     </label>
                     <textarea
@@ -430,9 +432,9 @@ export default function SettingsPage() {
                       onChange={handleChange}
                       rows={3}
                       placeholder="Hi {{name}}, thank you for visiting. We'd be grateful if you could share your experience: {{reviewLink}}"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                      className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                     />
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 text-sm text-[#5E6B5F]">
                       Optional. Your own wording for the WhatsApp review-request automation. Leave blank to use the default message.
                     </p>
                   </div>
@@ -440,30 +442,30 @@ export default function SettingsPage() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#101A13] mb-2">
                   Website Favicon (browser-tab icon)
                 </label>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg border border-gray-200 bg-gray-50 grid place-items-center overflow-hidden shrink-0">
+                  <div className="w-12 h-12 rounded-lg border border-[#EDF1EB] bg-[#F7F9F5] grid place-items-center overflow-hidden shrink-0">
                     {formData.favicon
                       ? /* eslint-disable-next-line @next/next/no-img-element */ <img src={formData.favicon} alt="favicon" className="w-full h-full object-contain" />
                       : <span className="text-gray-300 text-xs">none</span>}
                   </div>
-                  <label className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+                  <label className="px-4 py-2 border border-[#DDE4D9] rounded-lg text-sm text-[#5E6B5F] hover:bg-[#F7F9F5] cursor-pointer">
                     {faviconUploading ? 'Uploading…' : (formData.favicon ? 'Change favicon' : 'Upload favicon')}
                     <input type="file" accept="image/png,image/webp,image/jpeg" className="hidden" onChange={(e) => handleFaviconUpload(e.target.files?.[0])} disabled={faviconUploading} />
                   </label>
                   {formData.favicon && (
-                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, favicon: '' }))} className="text-sm text-gray-400 hover:text-red-500">Remove</button>
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, favicon: '' }))} className="text-sm text-[#5E6B5F] hover:text-red-500">Remove</button>
                   )}
                 </div>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-[#5E6B5F]">
                   Shows in the browser tab of your published website. Use a square PNG (e.g. 512×512). Saved when you click Save below.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#101A13] mb-2">
                   Phone Number (Account)
                 </label>
                 <input
@@ -472,10 +474,10 @@ export default function SettingsPage() {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="Your registered phone number"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent bg-gray-50"
+                  className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent bg-[#F7F9F5]"
                   disabled
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-[#5E6B5F]">
                   Contact support to change your registered phone number
                 </p>
               </div>
@@ -486,7 +488,7 @@ export default function SettingsPage() {
           {activeTab === 'practice' && (
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#101A13] mb-2">
                   Medical License Number
                 </label>
                 <input
@@ -495,22 +497,22 @@ export default function SettingsPage() {
                   value={formData.licenseNumber}
                   onChange={handleChange}
                   placeholder="Your medical license/registration number"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-[#5E6B5F]">
                   Your medical council registration number (optional but recommended)
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#101A13] mb-2">
                   Timezone
                 </label>
                 <select
                   name="timezone"
                   value={formData.timezone}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                  className="w-full px-4 py-3 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                 >
                   <option value="Asia/Kolkata">India (IST - UTC+5:30)</option>
                   <option value="America/New_York">Eastern Time (ET)</option>
@@ -519,7 +521,7 @@ export default function SettingsPage() {
                   <option value="Asia/Dubai">Dubai (GST)</option>
                   <option value="Asia/Singapore">Singapore (SGT)</option>
                 </select>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-[#5E6B5F]">
                   Used for scheduling and displaying appointment times
                 </p>
               </div>
@@ -553,24 +555,24 @@ export default function SettingsPage() {
                     </svg>
                   </a>
                 ) : (
-                  <p className="text-gray-500 text-sm">No subdomain configured</p>
+                  <p className="text-[#5E6B5F] text-sm">No subdomain configured</p>
                 )}
               </div>
 
               {/* Edit subdomain */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Website address (subdomain)</h3>
-                <p className="text-sm text-gray-500 mb-3">Change your <span className="font-mono">yourname.curago.in</span> address.</p>
+              <div className="border border-[#EDF1EB] rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-[#101A13] mb-1">Website address (subdomain)</h3>
+                <p className="text-sm text-[#5E6B5F] mb-3">Change your <span className="font-mono">yourname.curago.in</span> address.</p>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
                     value={subdomainInput}
                     onChange={(e) => { setSubdomainInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')); setSubdomainMsg(null); }}
                     placeholder="yourname"
-                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none text-sm"
+                    className="flex-1 px-4 py-2.5 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none text-sm"
                     maxLength={30}
                   />
-                  <span className="text-gray-500 font-mono text-sm whitespace-nowrap">.curago.in</span>
+                  <span className="text-[#5E6B5F] font-mono text-sm whitespace-nowrap">.curago.in</span>
                   <button
                     type="button"
                     disabled={subdomainSaving || !subdomainInput.trim() || subdomainInput === domainInfo.subdomain}
@@ -601,7 +603,7 @@ export default function SettingsPage() {
                         setSubdomainMsg({ type: 'err', text: 'Something went wrong.' });
                       } finally { setSubdomainSaving(false); }
                     }}
-                    className="px-4 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50 whitespace-nowrap"
+                    className="px-4 py-2.5 bg-[#F26A1B] text-white rounded-lg text-sm font-medium hover:bg-[#d95a12] disabled:opacity-50 whitespace-nowrap"
                   >
                     {subdomainSaving ? 'Saving…' : 'Update'}
                   </button>
@@ -609,20 +611,20 @@ export default function SettingsPage() {
                 {subdomainMsg && (
                   <p className={`mt-2 text-sm ${subdomainMsg.type === 'ok' ? 'text-green-600' : 'text-red-600'}`}>{subdomainMsg.text}</p>
                 )}
-                <p className="mt-2 text-xs text-gray-400">Lowercase letters, numbers and hyphens only. Changing it re-points your site immediately; the old address stops working.</p>
+                <p className="mt-2 text-xs text-[#5E6B5F]">Lowercase letters, numbers and hyphens only. Changing it re-points your site immediately; the old address stops working.</p>
               </div>
 
               {/* Connect Custom Domain */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Connect Your Custom Domain</h3>
+                <h3 className="text-lg font-semibold text-[#101A13] mb-2">Connect Your Custom Domain</h3>
 
                 {!domainInfo.customDomain ? (
                   <>
                     {/* Step 1: Enter domain */}
-                    <div className="border border-gray-200 rounded-lg p-4 mb-4">
+                    <div className="border border-[#EDF1EB] rounded-lg p-4 mb-4">
                       <div className="flex items-center gap-2 mb-3">
                         <span className="w-6 h-6 bg-[#096b17] text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
-                        <h4 className="font-medium text-gray-900">Enter your domain</h4>
+                        <h4 className="font-medium text-[#101A13]">Enter your domain</h4>
                       </div>
                       <div className="flex gap-2">
                         <input
@@ -630,7 +632,7 @@ export default function SettingsPage() {
                           value={domainInput}
                           onChange={e => setDomainInput(e.target.value)}
                           placeholder="www.yourclinic.com"
-                          className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none text-sm"
+                          className="flex-1 px-4 py-2.5 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none text-sm"
                         />
                         <button
                           type="button"
@@ -658,12 +660,12 @@ export default function SettingsPage() {
                               setDomainLoading(false);
                             }
                           }}
-                          className="px-4 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50"
+                          className="px-4 py-2.5 bg-[#F26A1B] text-white rounded-lg text-sm font-medium hover:bg-[#d95a12] disabled:opacity-50"
                         >
                           {domainLoading ? 'Adding...' : 'Add Domain'}
                         </button>
                       </div>
-                      <p className="text-xs text-gray-500 mt-2">Enter with www (e.g., www.clinic.com) or without (e.g., clinic.com)</p>
+                      <p className="text-xs text-[#5E6B5F] mt-2">Enter with www (e.g., www.clinic.com) or without (e.g., clinic.com)</p>
                     </div>
                   </>
                 ) : (
@@ -673,7 +675,7 @@ export default function SettingsPage() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="w-2.5 h-2.5 rounded-full bg-[#096b17]"></span>
-                          <span className="font-medium text-gray-900">{domainInfo.customDomain}</span>
+                          <span className="font-medium text-[#101A13]">{domainInfo.customDomain}</span>
                         </div>
                         <button
                           type="button"
@@ -698,10 +700,10 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Step 2: DNS Records */}
-                    <div className="border border-gray-200 rounded-lg p-4 mb-4">
+                    <div className="border border-[#EDF1EB] rounded-lg p-4 mb-4">
                       <div className="flex items-center gap-2 mb-3">
                         <span className="w-6 h-6 bg-[#096b17] text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
-                        <h4 className="font-medium text-gray-900">Add DNS records at your registrar</h4>
+                        <h4 className="font-medium text-[#101A13]">Add DNS records at your registrar</h4>
                       </div>
                       {(() => {
                         const isApexDomain = domainInfo.customDomain.split('.').length === 2;
@@ -713,17 +715,17 @@ export default function SettingsPage() {
                           : [{ type: 'CNAME', name: domainInfo.customDomain.split('.')[0], value: 'cname.vercel-dns.com', note: '' }];
                         return (
                           <>
-                            <p className="text-sm text-gray-600 mb-3">
+                            <p className="text-sm text-[#5E6B5F] mb-3">
                               Go to your domain registrar (GoDaddy, Namecheap, Hostinger, etc.) and add {records.length > 1 ? 'these records' : 'this record'}. If an old A record or URL forwarding exists, delete it first.
                             </p>
                             <div className="space-y-3">
                               {records.map((r, i) => (
-                                <div key={i} className="bg-gray-50 rounded-lg p-4 font-mono text-sm">
-                                  {r.note && <p className="text-[11px] text-gray-400 mb-2 font-sans">{r.note}</p>}
-                                  <div className="flex justify-between"><span className="text-gray-500">Type:</span><span className="font-semibold">{r.type}</span></div>
-                                  <div className="flex justify-between"><span className="text-gray-500">Name/Host:</span><span className="font-semibold">{r.name}</span></div>
-                                  <div className="flex justify-between"><span className="text-gray-500">Value:</span><span className="font-semibold">{r.value}</span></div>
-                                  <div className="flex justify-between"><span className="text-gray-500">TTL:</span><span className="font-semibold">3600 (or Auto)</span></div>
+                                <div key={i} className="bg-[#F7F9F5] rounded-lg p-4 font-mono text-sm">
+                                  {r.note && <p className="text-[11px] text-[#5E6B5F] mb-2 font-sans">{r.note}</p>}
+                                  <div className="flex justify-between"><span className="text-[#5E6B5F]">Type:</span><span className="font-semibold">{r.type}</span></div>
+                                  <div className="flex justify-between"><span className="text-[#5E6B5F]">Name/Host:</span><span className="font-semibold">{r.name}</span></div>
+                                  <div className="flex justify-between"><span className="text-[#5E6B5F]">Value:</span><span className="font-semibold">{r.value}</span></div>
+                                  <div className="flex justify-between"><span className="text-[#5E6B5F]">TTL:</span><span className="font-semibold">3600 (or Auto)</span></div>
                                   <button
                                     type="button"
                                     onClick={() => { navigator.clipboard.writeText(r.value); showAlert({ title: 'Copied', message: 'Value copied to clipboard', type: 'success' }); }}
@@ -734,7 +736,7 @@ export default function SettingsPage() {
                                 </div>
                               ))}
                             </div>
-                            <p className="text-xs text-gray-500 mt-3">
+                            <p className="text-xs text-[#5E6B5F] mt-3">
                               https (the padlock) turns on automatically within a few minutes after the records are correct — no extra step.
                             </p>
                           </>
@@ -743,12 +745,12 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Step 3: Verify */}
-                    <div className="border border-gray-200 rounded-lg p-4">
+                    <div className="border border-[#EDF1EB] rounded-lg p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <span className="w-6 h-6 bg-[#096b17] text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
-                        <h4 className="font-medium text-gray-900">Verify DNS</h4>
+                        <h4 className="font-medium text-[#101A13]">Verify DNS</h4>
                       </div>
-                      <p className="text-sm text-gray-600 mb-3">
+                      <p className="text-sm text-[#5E6B5F] mb-3">
                         After adding the DNS record, click below to check if it&apos;s propagated. This can take up to 24-48 hours.
                       </p>
                       <button
@@ -773,7 +775,7 @@ export default function SettingsPage() {
                             setVerifying(false);
                           }
                         }}
-                        className="px-4 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50"
+                        className="px-4 py-2.5 bg-[#F26A1B] text-white rounded-lg text-sm font-medium hover:bg-[#d95a12] disabled:opacity-50"
                       >
                         {verifying ? 'Checking...' : 'Check DNS Status'}
                       </button>
@@ -842,29 +844,29 @@ export default function SettingsPage() {
               )}
 
               {/* Plan Details */}
-              <div className="border border-gray-200 rounded-lg p-4 space-y-3">
+              <div className="border border-[#EDF1EB] rounded-lg p-4 space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Plan</span>
-                  <span className="font-medium text-gray-900 capitalize">{subscription?.plan || 'Free'}</span>
+                  <span className="text-[#5E6B5F]">Plan</span>
+                  <span className="font-medium text-[#101A13] capitalize">{subscription?.plan || 'Free'}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Status</span>
+                  <span className="text-[#5E6B5F]">Status</span>
                   <span className={`font-medium ${subscription?.isActive ? 'text-green-600' : 'text-red-600'}`}>
                     {subscription?.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </div>
                 {subscription?.plan === 'monthly' && subscription?.currentPeriodEnd && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Next Renewal</span>
-                    <span className="font-medium text-gray-900">
+                    <span className="text-[#5E6B5F]">Next Renewal</span>
+                    <span className="font-medium text-[#101A13]">
                       {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
                     </span>
                   </div>
                 )}
                 {subscription?.plan === 'premium' && subscription?.premiumUnlockedAt && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Unlocked On</span>
-                    <span className="font-medium text-gray-900">
+                    <span className="text-[#5E6B5F]">Unlocked On</span>
+                    <span className="font-medium text-[#101A13]">
                       {new Date(subscription.premiumUnlockedAt).toLocaleDateString()}
                     </span>
                   </div>
@@ -876,8 +878,8 @@ export default function SettingsPage() {
                 <>
                   {/* Razorpay Subscription */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Upgrade to Premium</h3>
-                    <div className="border border-gray-200 rounded-lg p-5">
+                    <h3 className="text-lg font-semibold text-[#101A13] mb-3">Upgrade to Premium</h3>
+                    <div className="border border-[#EDF1EB] rounded-lg p-5">
                       <div className="flex items-start gap-4">
                         <div className="w-12 h-12 bg-[#096b17]/10 rounded-xl flex items-center justify-center flex-shrink-0">
                           <svg className="w-6 h-6 text-[#096b17]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -885,8 +887,8 @@ export default function SettingsPage() {
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 mb-1">Monthly Subscription — ₹500/month</h4>
-                          <ul className="text-sm text-gray-600 space-y-1 mb-4">
+                          <h4 className="font-semibold text-[#101A13] mb-1">Monthly Subscription — ₹500/month</h4>
+                          <ul className="text-sm text-[#5E6B5F] space-y-1 mb-4">
                             <li>Contacts</li>
                             <li>Automated Workflows &amp; Campaigns</li>
                             <li>Message Templates</li>
@@ -920,7 +922,7 @@ export default function SettingsPage() {
                                 setCreatingSubscription(false);
                               }
                             }}
-                            className="px-6 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50 transition-colors"
+                            className="px-6 py-2.5 bg-[#F26A1B] text-white rounded-lg text-sm font-medium hover:bg-[#d95a12] disabled:opacity-50 transition-colors"
                           >
                             {creatingSubscription ? 'Creating...' : 'Subscribe with Razorpay'}
                           </button>
@@ -931,9 +933,9 @@ export default function SettingsPage() {
 
                   {/* Promo Code */}
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Have a Promo Code?</h3>
-                    <div className="border border-gray-200 rounded-lg p-5">
-                      <p className="text-sm text-gray-600 mb-4">
+                    <h3 className="text-lg font-semibold text-[#101A13] mb-3">Have a Promo Code?</h3>
+                    <div className="border border-[#EDF1EB] rounded-lg p-5">
+                      <p className="text-sm text-[#5E6B5F] mb-4">
                         Enter a promo code to unlock all premium features and get 50 free SMS credits.
                       </p>
                       <div className="flex gap-2">
@@ -942,7 +944,7 @@ export default function SettingsPage() {
                           value={promoCode}
                           onChange={e => setPromoCode(e.target.value.toUpperCase())}
                           placeholder="Enter promo code"
-                          className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none text-sm uppercase"
+                          className="flex-1 px-4 py-2.5 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none text-sm uppercase"
                           style={{ textTransform: 'uppercase' }}
                         />
                         <button
@@ -996,7 +998,7 @@ export default function SettingsPage() {
                   >
                     {cancellingSubscription ? 'Cancelling...' : 'Cancel Subscription'}
                   </button>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-[#5E6B5F] mt-1">
                     Access continues until the end of your current billing period.
                   </p>
                 </div>
@@ -1008,36 +1010,36 @@ export default function SettingsPage() {
           {activeTab === 'seo' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">SEO Team Access</h3>
-                <p className="text-sm text-gray-600 mb-4">
+                <h3 className="text-lg font-semibold text-[#101A13] mb-2">SEO Team Access</h3>
+                <p className="text-sm text-[#5E6B5F] mb-4">
                   Create accounts for your SEO team. They can only access Website Builder and Blog Articles.
                 </p>
               </div>
 
               {/* Add SEO User Form */}
-              <div className="border border-gray-200 rounded-lg p-4 space-y-3">
-                <h4 className="font-medium text-gray-900">Add SEO User</h4>
+              <div className="border border-[#EDF1EB] rounded-lg p-4 space-y-3">
+                <h4 className="font-medium text-[#101A13]">Add SEO User</h4>
                 <div className="grid grid-cols-3 gap-3">
                   <input
                     type="text"
                     placeholder="Name"
                     value={seoForm.name}
                     onChange={e => setSeoForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
+                    className="px-3 py-2 border border-[#DDE4D9] rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
                   />
                   <input
                     type="email"
                     placeholder="Email"
                     value={seoForm.email}
                     onChange={e => setSeoForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
+                    className="px-3 py-2 border border-[#DDE4D9] rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
                   />
                   <input
                     type="password"
                     placeholder="Password"
                     value={seoForm.password}
                     onChange={e => setSeoForm(prev => ({ ...prev, password: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
+                    className="px-3 py-2 border border-[#DDE4D9] rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
                   />
                 </div>
                 <button
@@ -1066,7 +1068,7 @@ export default function SettingsPage() {
                       setSavingSeo(false);
                     }
                   }}
-                  className="px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50"
+                  className="px-4 py-2 bg-[#F26A1B] text-white rounded-lg text-sm font-medium hover:bg-[#d95a12] disabled:opacity-50"
                 >
                   {savingSeo ? 'Creating...' : 'Add User'}
                 </button>
@@ -1074,20 +1076,20 @@ export default function SettingsPage() {
 
               {/* SEO Users List */}
               {seoUsers.length > 0 ? (
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="border border-[#EDF1EB] rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-[#F7F9F5]">
                       <tr>
-                        <th className="text-left px-4 py-2 font-medium text-gray-500">Name</th>
-                        <th className="text-left px-4 py-2 font-medium text-gray-500">Email</th>
-                        <th className="text-left px-4 py-2 font-medium text-gray-500">Status</th>
+                        <th className="text-left px-4 py-2 font-medium text-[#5E6B5F]">Name</th>
+                        <th className="text-left px-4 py-2 font-medium text-[#5E6B5F]">Email</th>
+                        <th className="text-left px-4 py-2 font-medium text-[#5E6B5F]">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y divide-[#EDF1EB]">
                       {seoUsers.map(user => (
                         <tr key={user._id}>
                           <td className="px-4 py-3">{user.name}</td>
-                          <td className="px-4 py-3 text-gray-600">{user.email}</td>
+                          <td className="px-4 py-3 text-[#5E6B5F]">{user.email}</td>
                           <td className="px-4 py-3">
                             <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">Active</span>
                           </td>
@@ -1097,7 +1099,7 @@ export default function SettingsPage() {
                   </table>
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">No SEO team members added yet.</p>
+                <p className="text-sm text-[#5E6B5F]">No SEO team members added yet.</p>
               )}
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -1112,24 +1114,24 @@ export default function SettingsPage() {
           {activeTab === 'clinic-manager' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Clinic Manager Access</h3>
-                <p className="text-sm text-gray-600 mb-4">
+                <h3 className="text-lg font-semibold text-[#101A13] mb-2">Clinic Manager Access</h3>
+                <p className="text-sm text-[#5E6B5F] mb-4">
                   Create accounts for your clinic managers. They can only access Contacts and Workflows.
                 </p>
               </div>
 
-              <div className="border border-gray-200 rounded-lg p-4 space-y-3">
-                <h4 className="font-medium text-gray-900">Add Clinic Manager</h4>
+              <div className="border border-[#EDF1EB] rounded-lg p-4 space-y-3">
+                <h4 className="font-medium text-[#101A13]">Add Clinic Manager</h4>
                 <div className="grid grid-cols-3 gap-3">
                   <input type="text" placeholder="Name" value={cmForm.name}
                     onChange={e => setCmForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none" />
+                    className="px-3 py-2 border border-[#DDE4D9] rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none" />
                   <input type="email" placeholder="Email" value={cmForm.email}
                     onChange={e => setCmForm(prev => ({ ...prev, email: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none" />
+                    className="px-3 py-2 border border-[#DDE4D9] rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none" />
                   <input type="password" placeholder="Password" value={cmForm.password}
                     onChange={e => setCmForm(prev => ({ ...prev, password: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none" />
+                    className="px-3 py-2 border border-[#DDE4D9] rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none" />
                 </div>
                 <button type="button" disabled={savingCm || !cmForm.name || !cmForm.email || !cmForm.password}
                   onClick={async () => {
@@ -1150,26 +1152,26 @@ export default function SettingsPage() {
                     } catch { await showAlert({ title: 'Error', message: 'Failed to create', type: 'error' }); }
                     finally { setSavingCm(false); }
                   }}
-                  className="px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50">
+                  className="px-4 py-2 bg-[#F26A1B] text-white rounded-lg text-sm font-medium hover:bg-[#d95a12] disabled:opacity-50">
                   {savingCm ? 'Creating...' : 'Add Manager'}
                 </button>
               </div>
 
               {clinicManagers.length > 0 ? (
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="border border-[#EDF1EB] rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-[#F7F9F5]">
                       <tr>
-                        <th className="text-left px-4 py-2 font-medium text-gray-500">Name</th>
-                        <th className="text-left px-4 py-2 font-medium text-gray-500">Email</th>
-                        <th className="text-left px-4 py-2 font-medium text-gray-500">Status</th>
+                        <th className="text-left px-4 py-2 font-medium text-[#5E6B5F]">Name</th>
+                        <th className="text-left px-4 py-2 font-medium text-[#5E6B5F]">Email</th>
+                        <th className="text-left px-4 py-2 font-medium text-[#5E6B5F]">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y divide-[#EDF1EB]">
                       {clinicManagers.map(user => (
                         <tr key={user._id}>
                           <td className="px-4 py-3">{user.name}</td>
-                          <td className="px-4 py-3 text-gray-600">{user.email}</td>
+                          <td className="px-4 py-3 text-[#5E6B5F]">{user.email}</td>
                           <td className="px-4 py-3">
                             <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">Active</span>
                           </td>
@@ -1179,7 +1181,7 @@ export default function SettingsPage() {
                   </table>
                 </div>
               ) : (
-                <p className="text-sm text-gray-500">No clinic managers added yet.</p>
+                <p className="text-sm text-[#5E6B5F]">No clinic managers added yet.</p>
               )}
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -1193,40 +1195,55 @@ export default function SettingsPage() {
           {activeTab === 'analytics' && (
             <div className="space-y-6">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-1">Analytics &amp; Tracking</h2>
-                <p className="text-sm text-gray-600">
+                <h2 className="text-lg font-semibold text-[#101A13] mb-1">Analytics &amp; Tracking</h2>
+                <p className="text-sm text-[#5E6B5F]">
                   Add your own Google Analytics 4 and Meta (Facebook) Pixel IDs. When set, these scripts are
                   injected into <strong>your published website</strong> ({domainInfo.customDomain || (domainInfo.subdomain ? `${domainInfo.subdomain}.curago.in` : 'your site')}) so tracking fires on your own visitors. Leave a field blank to disable it.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Google Analytics 4 — Measurement ID</label>
+                <label className="block text-sm font-medium text-[#101A13] mb-1">Google Analytics 4 — Measurement ID</label>
                 <input
                   type="text"
                   name="ga4MeasurementId"
                   value={formData.ga4MeasurementId}
                   onChange={handleChange}
                   placeholder="G-XXXXXXXXXX"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                  className="w-full px-4 py-2.5 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-[#5E6B5F] mt-1">
                   Find it in Google Analytics → Admin → Data Streams → your web stream. Starts with <strong>G-</strong>.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Meta (Facebook) Pixel ID</label>
+                <label className="block text-sm font-medium text-[#101A13] mb-1">Meta (Facebook) Pixel ID</label>
                 <input
                   type="text"
                   name="metaPixelId"
                   value={formData.metaPixelId}
                   onChange={handleChange}
                   placeholder="123456789012345"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                  className="w-full px-4 py-2.5 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-[#5E6B5F] mt-1">
                   Find it in Meta Events Manager → Data Sources → your pixel. It&apos;s the numeric Pixel ID.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#101A13] mb-1">Google Tag Manager — Container ID</label>
+                <input
+                  type="text"
+                  name="gtmId"
+                  value={formData.gtmId}
+                  onChange={handleChange}
+                  placeholder="GTM-XXXXXXX"
+                  className="w-full px-4 py-2.5 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent"
+                />
+                <p className="text-xs text-[#5E6B5F] mt-1">
+                  Find it in Google Tag Manager → Workspace, top bar. Starts with <strong>GTM-</strong>.
                 </p>
               </div>
 
@@ -1240,11 +1257,11 @@ export default function SettingsPage() {
           )}
 
           {/* Save Button (hidden on read-only tabs) */}
-          <div className={`mt-8 pt-6 border-t flex justify-end ${activeTab === 'domain' || activeTab === 'subscription' || activeTab === 'seo' || activeTab === 'clinic-manager' || activeTab === 'clinics' ? 'hidden' : ''}`}>
+          <div className={`mt-8 pt-6 border-t border-[#EDF1EB] flex justify-end ${activeTab === 'domain' || activeTab === 'subscription' || activeTab === 'seo' || activeTab === 'clinic-manager' || activeTab === 'clinics' ? 'hidden' : ''}`}>
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-3 bg-[#096b17] hover:bg-[#075a13] text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-6 py-3 bg-[#F26A1B] hover:bg-[#d95a12] text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {saving ? (
                 <>

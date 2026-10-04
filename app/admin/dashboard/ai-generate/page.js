@@ -85,40 +85,40 @@ export default function AIGeneratePage() {
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">✨ AI Website Builder</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Generate and edit your website and blog with AI.</p>
+          <h1 className="text-2xl font-semibold text-[#101A13]">✨ AI Website Builder</h1>
+          <p className="text-[#5E6B5F] text-sm mt-0.5">Generate and edit your website and blog with AI.</p>
         </div>
         {credits?.access && (
           <div className="text-right">
-            <div className="text-2xl font-bold text-[#096b17] leading-none">{credits.remaining}</div>
-            <div className="text-[11px] text-gray-400 uppercase tracking-wide">AI credits left</div>
+            <div className="text-2xl font-semibold text-[#096b17] leading-none">{credits.remaining}</div>
+            <div className="text-[11px] text-[#5E6B5F] uppercase tracking-wide">AI credits left</div>
           </div>
         )}
       </div>
 
       {msg && (
-        <div className={`rounded-lg px-4 py-3 text-sm ${msg.type === 'ok' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>{msg.text}</div>
+        <div className={`rounded-lg px-4 py-3 text-sm ${msg.type === 'ok' ? 'bg-[#096b17]/5 text-[#096B17] border border-[#096b17]/30' : 'bg-red-50 text-red-700 border border-red-200'}`}>{msg.text}</div>
       )}
 
       {locked && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
-          <p className="text-amber-900 font-medium">The AI Website Builder is a paid feature.</p>
-          <p className="text-amber-800 text-sm mt-1">Get a Builder Pack to unlock AI website + blog generation (30 AI credits/day).</p>
+        <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6 text-center">
+          <p className="text-[#101A13] font-semibold">The AI Website Builder is a paid feature.</p>
+          <p className="text-[#5E6B5F] text-sm mt-1">Get a Builder Pack to unlock AI website + blog generation (30 AI credits/day).</p>
           <a href="/app/control-center" className="inline-block mt-3 px-5 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium">See Builder Packs →</a>
         </div>
       )}
 
       {credits?.access && (
         <>
-          {noCredits && <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">You&apos;re out of AI credits. You get more each day (unused credits carry over).</div>}
+          {noCredits && <div className="border border-[#DDE4D9] rounded-lg px-4 py-3 text-sm text-[#5E6B5F]" style={{ backgroundColor: 'rgba(242,106,27,.08)' }}>You&apos;re out of AI credits. You get more each day (unused credits carry over).</div>}
 
           {/* Homepage generation */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="font-semibold text-gray-900">Homepage</h2>
-            <p className="text-sm text-gray-500 mt-0.5 mb-3">
+          <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
+            <h2 className="font-semibold text-[#101A13]">Homepage</h2>
+            <p className="text-sm text-[#5E6B5F] mt-0.5 mb-3">
               {home?.exists ? 'Regenerate a fresh AI homepage as a draft — your live page stays up until you approve it.' : 'Generate your homepage from your profile and publish it instantly.'}
             </p>
-            <button onClick={() => router.push('/admin/dashboard/ai-generate/questions')} disabled={noCredits} className="px-5 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium disabled:opacity-50">
+            <button onClick={() => router.push('/admin/dashboard/ai-generate/questions')} disabled={noCredits} className="px-5 py-2.5 bg-[#F26A1B] text-white rounded-lg text-sm font-medium disabled:opacity-50">
               {home?.exists ? 'Generate new draft' : 'Generate my homepage'}
             </button>
 
@@ -126,11 +126,11 @@ export default function AIGeneratePage() {
             {home?.hasDraft && (
               <div className="mt-4 border border-[#096b17]/30 bg-[#096b17]/5 rounded-lg p-4">
                 <p className="text-sm font-medium text-[#096b17]">A homepage draft is waiting for approval.</p>
-                <p className="text-xs text-gray-600 mt-0.5">Approve to make it live, or discard to keep your current homepage.</p>
+                <p className="text-xs text-[#5E6B5F] mt-0.5">Approve to make it live, or discard to keep your current homepage.</p>
                 <div className="flex items-center gap-2 mt-3">
                   <button onClick={() => draftAction('approve')} disabled={!!busy} className="px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-medium disabled:opacity-50">{busy === 'draft:approve' ? 'Publishing…' : 'Approve & publish'}</button>
-                  <a href="/admin/dashboard/ai-generate/edit" className="px-4 py-2 border border-[#096b17] text-[#096b17] rounded-lg text-sm font-medium hover:bg-[#096b17]/5">Preview &amp; edit</a>
-                  <button onClick={() => draftAction('discard')} disabled={!!busy} className="px-4 py-2 text-gray-500 text-sm hover:text-gray-700">Discard</button>
+                  <a href="/admin/dashboard/ai-generate/edit" className="px-4 py-2 border border-[#DDE4D9] text-[#101A13] rounded-lg text-sm font-medium hover:bg-[#F7F9F5]">Preview &amp; edit</a>
+                  <button onClick={() => draftAction('discard')} disabled={!!busy} className="px-4 py-2 text-[#5E6B5F] text-sm hover:text-[#101A13]">Discard</button>
                 </div>
               </div>
             )}
@@ -138,23 +138,23 @@ export default function AIGeneratePage() {
             {/* Version history */}
             {home?.versions?.length > 0 && (
               <div className="mt-4">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Version history</p>
-                <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
+                <p className="text-xs font-medium text-[#5E6B5F] uppercase tracking-wide mb-1.5">Version history</p>
+                <ul className="divide-y divide-[#EDF1EB] border border-[#EDF1EB] rounded-lg">
                   {home.versions.map((v) => (
                     <li key={v.index} className="px-3 py-2 text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-600">{v.source || 'version'} · {v.sectionCount} sections</span>
+                        <span className="text-[#5E6B5F]">{v.source || 'version'} · {v.sectionCount} sections</span>
                         <div className="flex items-center gap-3">
-                          <button onClick={() => setViewIdx(viewIdx === v.index ? null : v.index)} className="text-gray-600 hover:underline">{viewIdx === v.index ? 'Hide' : 'View'}</button>
-                          <button onClick={() => draftAction('restore', v.index)} disabled={!!busy} className="text-blue-600 hover:underline disabled:opacity-50">Restore</button>
+                          <button onClick={() => setViewIdx(viewIdx === v.index ? null : v.index)} className="text-[#5E6B5F] hover:underline">{viewIdx === v.index ? 'Hide' : 'View'}</button>
+                          <button onClick={() => draftAction('restore', v.index)} disabled={!!busy} className="text-[#096b17] hover:underline disabled:opacity-50">Restore</button>
                         </div>
                       </div>
                       {viewIdx === v.index && (
-                        <ol className="mt-2 pl-4 list-decimal text-xs text-gray-500 space-y-0.5">
+                        <ol className="mt-2 pl-4 list-decimal text-xs text-[#5E6B5F] space-y-0.5">
                           {(v.sections || []).map((s, si) => (
-                            <li key={si}><span className="font-medium text-gray-700">{s.type?.replace(/_/g, ' ')}</span>{s.title ? ` — ${s.title}` : ''}</li>
+                            <li key={si}><span className="font-medium text-[#101A13]">{s.type?.replace(/_/g, ' ')}</span>{s.title ? ` — ${s.title}` : ''}</li>
                           ))}
-                          {(!v.sections || v.sections.length === 0) && <li className="list-none text-gray-400">No section details.</li>}
+                          {(!v.sections || v.sections.length === 0) && <li className="list-none text-[#5E6B5F]">No section details.</li>}
                         </ol>
                       )}
                     </li>
@@ -165,20 +165,20 @@ export default function AIGeneratePage() {
           </div>
 
           {/* Blog drafting — conversational assistant (same as the mission assistant) */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h2 className="font-semibold text-gray-900">Write a blog with AI</h2>
-                <p className="text-sm text-gray-500 mt-0.5">Chat to draft and refine an article, then tap “Draft as blog” to review &amp; publish.</p>
+                <h2 className="font-semibold text-[#101A13]">Write a blog with AI</h2>
+                <p className="text-sm text-[#5E6B5F] mt-0.5">Chat to draft and refine an article, then tap “Draft as blog” to review &amp; publish.</p>
               </div>
-              <a href="/admin/dashboard/blog-articles" className="text-sm text-blue-600 hover:underline whitespace-nowrap">All articles →</a>
+              <a href="/admin/dashboard/blog-articles" className="text-sm text-[#096b17] hover:underline whitespace-nowrap">All articles →</a>
             </div>
             <BlogChat onCredits={(n) => setCredits((c) => ({ ...c, remaining: n }))} />
           </div>
 
           {/* Fine edits pointer */}
-          <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-600">
-            Want to fine-tune with AI chat + live preview and edit sections by hand? Open the <a href="/admin/dashboard/ai-generate/edit" className="text-blue-600 hover:underline">AI Website Editor</a>.
+          <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-4 text-sm text-[#5E6B5F]">
+            Want to fine-tune with AI chat + live preview and edit sections by hand? Open the <a href="/admin/dashboard/ai-generate/edit" className="text-[#096b17] hover:underline">AI Website Editor</a>.
           </div>
         </>
       )}

@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 
-// A prominent one-time prompt to connect Google Calendar, shown when the doctor
-// lands on the Control Center / Website Builder and hasn't connected yet — so they
-// don't miss it. Not blocking (bookings still work without it); "Later" snoozes for
-// a day so it nudges again until they connect.
+// A prompt to connect Google Calendar, shown when the doctor lands on the Control
+// Center / Website Builder and hasn't connected yet. "Maybe later" snoozes it for a
+// day so it nudges again until they connect — connecting lets online bookings
+// create a Google Meet on their own calendar (doctor + patient both get the invite).
 const SNOOZE_KEY = 'gcal_prompt_snoozed_until';
 const SNOOZE_MS = 24 * 60 * 60 * 1000;
 
@@ -61,7 +61,6 @@ export default function GoogleCalendarPrompt() {
             Maybe later
           </button>
         </div>
-        <p style={{ fontSize: 12, color: '#99A399', margin: '14px 0 0' }}>If you skip this, bookings still work — the meeting link is just created on CuraGo’s default calendar instead.</p>
       </div>
     </div>
   );

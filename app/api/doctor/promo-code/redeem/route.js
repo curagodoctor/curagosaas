@@ -4,6 +4,7 @@ import PromoCode from '@/models/PromoCode';
 import Subscription from '@/models/Subscription';
 import MessageQuota from '@/models/MessageQuota';
 import { requireDoctorAuth } from '@/lib/doctorAuth';
+import { syncDoctorTier } from '@/lib/accessTier';
 
 export async function POST(request) {
   try {
@@ -74,6 +75,9 @@ export async function POST(request) {
 
     // Mark promo code as used
     await PromoCode.markUsed(promo._id, doctor._id);
+
+    // Premium unlock → paid tier (founder preserved).
+    try { await syncDoctorTier(doctor._id); } catch (e) { console.error('[Promo Code Redeem] tier sync failed:', e.message); }
 
     return NextResponse.json({
       success: true,

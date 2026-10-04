@@ -51,6 +51,7 @@ export default async function SiteLayout({ children, params }) {
 
   let ga4 = '';
   let pixel = '';
+  let gtm = '';
   try {
     await connectDB();
     const doctor = await Doctor.findOne({ subdomain: (subdomain || '').toLowerCase(), isActive: true })
@@ -58,14 +59,27 @@ export default async function SiteLayout({ children, params }) {
       .lean();
     const raw4 = doctor?.analytics?.ga4MeasurementId?.trim() || '';
     const rawP = doctor?.analytics?.metaPixelId?.trim() || '';
+    const rawG = doctor?.analytics?.gtmId?.trim().toUpperCase() || '';
     if (/^G-[A-Z0-9]{4,}$/i.test(raw4)) ga4 = raw4;
     if (/^\d{6,20}$/.test(rawP)) pixel = rawP;
+    if (/^GTM-[A-Z0-9]{4,}$/.test(rawG)) gtm = rawG;
   } catch {
     // Never let analytics lookup break the site.
   }
 
   return (
     <div className="min-h-screen">
+      {gtm && (
+        <>
+          <Script id="gtm-init" strategy="afterInteractive">
+            {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtm}');`}
+          </Script>
+          <noscript>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <iframe src={`https://www.googletagmanager.com/ns.html?id=${gtm}`} height="0" width="0" style={{ display: 'none', visibility: 'hidden' }} />
+          </noscript>
+        </>
+      )}
       {ga4 && (
         <>
           <Script src={`https://www.googletagmanager.com/gtag/js?id=${ga4}`} strategy="afterInteractive" />

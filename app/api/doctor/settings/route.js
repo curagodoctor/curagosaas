@@ -34,6 +34,7 @@ export async function GET(request) {
         email: doctor.email,
         ga4MeasurementId: doctor.analytics?.ga4MeasurementId || '',
         metaPixelId: doctor.analytics?.metaPixelId || '',
+        gtmId: doctor.analytics?.gtmId || '',
       }
     });
   } catch (error) {
@@ -123,6 +124,13 @@ export async function PUT(request) {
         return NextResponse.json({ error: 'Meta Pixel ID should be the numeric ID (6–20 digits)' }, { status: 400 });
       }
       updates['analytics.metaPixelId'] = pixel;
+    }
+    if (data.gtmId !== undefined) {
+      const gtm = String(data.gtmId).trim().toUpperCase();
+      if (gtm && !/^GTM-[A-Z0-9]{4,}$/.test(gtm)) {
+        return NextResponse.json({ error: 'GTM Container ID should look like GTM-XXXXXXX' }, { status: 400 });
+      }
+      updates['analytics.gtmId'] = gtm;
     }
 
     const updatedDoctor = await Doctor.findByIdAndUpdate(

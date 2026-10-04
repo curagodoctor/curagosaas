@@ -65,14 +65,17 @@ export async function GET(request) {
         if (!doc) return NextResponse.json({ success: false, error: 'doctor not found for email' }, { status: 404 });
         docId = doc._id;
       }
-      profiles = await PracticeOsProfile.find({ doctorId: docId }).select('doctorId').lean();
+      profiles = await PracticeOsProfile.find({ doctorId: docId }).select('doctorId scheduleType curagoDay').lean();
     } else {
-      profiles = await PracticeOsProfile.find({ 'optimizationAccess.granted': true }).select('doctorId').lean();
+      profiles = await PracticeOsProfile.find({ 'optimizationAccess.granted': true }).select('doctorId scheduleType curagoDay').lean();
     }
 
     const targeted = !!(targetEmail || targetDoctorId);
     const debug = [];
     const dbg = (o) => { if (targeted) debug.push(o); };
+
+    // Today's weekday in IST (0=Sun … 6=Sat) — used to honor weekly "CuraGo day".
+    const istDow = new Date(Date.now() + 5.5 * 3600 * 1000).getUTCDay();
 
     const startedAt = Date.now();
     let emailed = 0, skipped = 0, noTask = 0, processed = 0, capped = false;
@@ -81,6 +84,12 @@ export async function GET(request) {
       if (Date.now() - startedAt > TIME_BUDGET_MS) { capped = true; break; } // return cleanly before the 300s kill
       const doctorId = p.doctorId;
       try {
+        // Weekly doctors are only notified on their chosen CuraGo day (unless this
+        // is a manual/forced preview). Daily doctors (or no preference) run every day.
+        if (!force && p.scheduleType === 'weekly' && typeof p.curagoDay === 'number' && p.curagoDay !== istDow) {
+          skipped++; dbg({ reason: 'not-curago-day', curagoDay: p.curagoDay, today: istDow }); continue;
+        }
+
         const task = await getDueTaskForDoctor(doctorId);
         if (!task) { noTask++; dbg({ reason: 'no-due-task' }); continue; }
 

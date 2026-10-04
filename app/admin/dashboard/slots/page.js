@@ -281,20 +281,20 @@ export default function WeeklySchedulePage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Weekly Schedule</h1>
-          <p className="text-gray-600 mt-1">Configure available slots for each consultation mode</p>
+          <h1 className="text-2xl font-semibold text-[#101A13]">Weekly Schedule</h1>
+          <p className="text-[#5E6B5F] mt-1">Configure available slots for each consultation mode</p>
         </div>
         <div className="flex gap-2 mt-4 md:mt-0">
           <Link
             href="/admin/dashboard/modes"
-            className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium text-sm"
+            className="bg-white border border-[#DDE4D9] hover:bg-[#F7F9F5] text-[#101A13] px-4 py-2 rounded-lg font-medium text-sm"
           >
             Manage Modes
           </Link>
           <button
             onClick={resetAllTimeSlots}
             disabled={isResetting}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium text-sm disabled:opacity-50"
+            className="bg-[#F26A1B] hover:bg-[#d95a12] text-white px-4 py-2 rounded-lg font-medium text-sm disabled:opacity-50"
           >
             {isResetting ? "Resetting..." : "Reset Time Slots"}
           </button>
@@ -304,7 +304,7 @@ export default function WeeklySchedulePage() {
       {/* Mode Selector */}
       {modes.length > 0 && (
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-[#5E6B5F] mb-2">
             Consultation Mode
           </label>
           <div className="flex flex-wrap gap-2">
@@ -314,8 +314,8 @@ export default function WeeklySchedulePage() {
                 onClick={() => setSelectedMode(mode)}
                 className={`px-4 py-2 rounded-lg font-medium transition-all ${
                   selectedMode?._id === mode._id
-                    ? "text-white shadow-md"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "text-white shadow-sm"
+                    : "bg-white border border-[#DDE4D9] text-[#101A13] hover:bg-[#F7F9F5]"
                 }`}
                 style={{
                   backgroundColor: selectedMode?._id === mode._id ? mode.color : undefined,
@@ -330,12 +330,12 @@ export default function WeeklySchedulePage() {
 
       {/* Messages */}
       {success && (
-        <div className="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg text-sm">
+        <div className="mb-4 bg-white border border-[#096B17]/30 text-[#096B17] px-4 py-2 rounded-lg text-sm">
           {success}
         </div>
       )}
       {error && (
-        <div className="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded-lg text-sm">
+        <div className="mb-4 bg-white border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm">
           {error}
           <button onClick={() => setError("")} className="ml-2 underline">Dismiss</button>
         </div>
@@ -343,11 +343,11 @@ export default function WeeklySchedulePage() {
 
       {/* No modes message */}
       {modes.length === 0 && !isLoading && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-          <p className="text-yellow-800 mb-4">No consultation modes found.</p>
+        <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6 text-center">
+          <p className="text-[#5E6B5F] mb-4">No consultation modes found.</p>
           <Link
             href="/admin/dashboard/modes"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium inline-block"
+            className="bg-[#F26A1B] hover:bg-[#d95a12] text-white px-6 py-2 rounded-lg font-medium inline-block"
           >
             Create Your First Mode
           </Link>
@@ -356,33 +356,33 @@ export default function WeeklySchedulePage() {
 
       {/* Schedule Grid */}
       {selectedMode && (
-        <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-[#EDF1EB] shadow-sm overflow-hidden">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#096B17]"></div>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-50 border-b">
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 sticky left-0 bg-gray-50 z-10">
+                  <tr className="bg-[#F7F9F5] border-b border-[#EDF1EB]">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-[#101A13] sticky left-0 bg-[#F7F9F5] z-10">
                       Time Slot
                     </th>
                     {DAYS.map((day) => (
-                      <th key={day.id} className="px-3 py-3 text-center text-sm font-semibold text-gray-700 min-w-[80px]">
+                      <th key={day.id} className="px-3 py-3 text-center text-sm font-semibold text-[#101A13] min-w-[80px]">
                         {day.short}
                       </th>
                     ))}
-                    <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
+                    <th className="px-3 py-3 text-center text-sm font-semibold text-[#101A13]">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {/* Day Enable/Disable Row */}
-                  <tr className="bg-blue-50 border-b">
-                    <td className="px-4 py-3 font-medium text-gray-900 sticky left-0 bg-blue-50 z-10">
+                  <tr className="bg-[#F7F9F5] border-b border-[#EDF1EB]">
+                    <td className="px-4 py-3 font-medium text-[#101A13] sticky left-0 bg-[#F7F9F5] z-10">
                       Day Enabled
                     </td>
                     {DAYS.map((day) => (
@@ -392,8 +392,8 @@ export default function WeeklySchedulePage() {
                           disabled={isSaving}
                           className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
                             isDayEnabled(day.id)
-                              ? "bg-green-500 text-white"
-                              : "bg-gray-200 text-gray-400"
+                              ? "bg-[#096B17] text-white"
+                              : "bg-[#F7F9F5] border border-[#DDE4D9] text-[#5E6B5F]"
                           } ${isSaving ? "opacity-50" : "hover:opacity-80"}`}
                         >
                           {isDayEnabled(day.id) ? (
@@ -413,8 +413,8 @@ export default function WeeklySchedulePage() {
 
                   {/* Time Slot Rows */}
                   {activeTimeSlots.map((slot) => (
-                    <tr key={slot.time} className="border-b hover:bg-gray-50">
-                      <td className="px-4 py-2 font-medium text-gray-900 sticky left-0 bg-white z-10">
+                    <tr key={slot.time} className="border-b border-[#EDF1EB] hover:bg-[#F7F9F5]">
+                      <td className="px-4 py-2 font-medium text-[#101A13] sticky left-0 bg-white z-10">
                         {slot.label}
                       </td>
                       {DAYS.map((day) => {
@@ -428,8 +428,8 @@ export default function WeeklySchedulePage() {
                                 disabled={isSaving}
                                 className={`w-8 h-8 rounded flex items-center justify-center transition-all ${
                                   slotEnabled
-                                    ? "bg-green-100 text-green-600 hover:bg-green-200"
-                                    : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                                    ? "bg-[#096B17]/10 text-[#096B17] hover:bg-[#096B17]/20"
+                                    : "bg-[#F7F9F5] border border-[#DDE4D9] text-[#5E6B5F] hover:bg-[#EDF1EB]"
                                 } ${isSaving ? "opacity-50" : ""}`}
                               >
                                 {slotEnabled ? (
@@ -437,11 +437,11 @@ export default function WeeklySchedulePage() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                   </svg>
                                 ) : (
-                                  <span className="w-2 h-2 bg-gray-300 rounded-full"></span>
+                                  <span className="w-2 h-2 bg-[#DDE4D9] rounded-full"></span>
                                 )}
                               </button>
                             ) : (
-                              <span className="text-gray-300">—</span>
+                              <span className="text-[#DDE4D9]">—</span>
                             )}
                           </td>
                         );
@@ -465,7 +465,7 @@ export default function WeeklySchedulePage() {
                     <td colSpan={DAYS.length + 2} className="px-4 py-4">
                       <button
                         onClick={() => setShowAddSlotModal(true)}
-                        className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-all flex items-center justify-center gap-2"
+                        className="w-full py-2 border-2 border-dashed border-[#DDE4D9] rounded-lg text-[#5E6B5F] hover:border-[#F26A1B] hover:text-[#F26A1B] transition-all flex items-center justify-center gap-2"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -482,9 +482,9 @@ export default function WeeklySchedulePage() {
       )}
 
       {/* Legend */}
-      <div className="mt-6 flex flex-wrap gap-4 text-sm text-gray-600">
+      <div className="mt-6 flex flex-wrap gap-4 text-sm text-[#5E6B5F]">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-green-500 rounded flex items-center justify-center text-white">
+          <div className="w-6 h-6 bg-[#096B17] rounded flex items-center justify-center text-white">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
@@ -492,7 +492,7 @@ export default function WeeklySchedulePage() {
           <span>Day/Slot Enabled</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-gray-200 rounded flex items-center justify-center text-gray-400">
+          <div className="w-6 h-6 bg-[#F7F9F5] border border-[#DDE4D9] rounded flex items-center justify-center text-[#5E6B5F]">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -500,7 +500,7 @@ export default function WeeklySchedulePage() {
           <span>Disabled</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-gray-400">—</span>
+          <span className="text-[#DDE4D9]">—</span>
           <span>Day not available</span>
         </div>
       </div>
@@ -508,17 +508,17 @@ export default function WeeklySchedulePage() {
       {/* Add Slot Modal */}
       {showAddSlotModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Add Time Slot</h2>
+          <div className="bg-white rounded-2xl border border-[#EDF1EB] shadow-sm p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-semibold text-[#101A13] mb-4">Add Time Slot</h2>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[#5E6B5F] mb-2">
                 Select Time
               </label>
               <select
                 value={newSlotTime}
                 onChange={(e) => setNewSlotTime(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17]"
               >
                 <option value="">Select a time...</option>
                 {availableToCreate.map((slot) => (
@@ -535,14 +535,14 @@ export default function WeeklySchedulePage() {
                   setShowAddSlotModal(false);
                   setNewSlotTime("");
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="flex-1 px-4 py-2 border border-[#DDE4D9] text-[#101A13] rounded-lg hover:bg-[#F7F9F5]"
               >
                 Cancel
               </button>
               <button
                 onClick={addTimeSlot}
                 disabled={!newSlotTime}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-[#F26A1B] hover:bg-[#d95a12] text-white rounded-lg font-medium disabled:opacity-50"
               >
                 Add Slot
               </button>

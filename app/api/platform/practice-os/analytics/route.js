@@ -7,6 +7,7 @@ import UserMissionProgress from '@/models/practice-os/UserMissionProgress';
 import PerformanceScore from '@/models/practice-os/PerformanceScore';
 import Mission from '@/models/practice-os/Mission';
 import AiCreditLedger from '@/models/practice-os/AiCreditLedger';
+import PracticeOsProfile from '@/models/practice-os/PracticeOsProfile';
 
 export const runtime = 'nodejs';
 
@@ -37,6 +38,13 @@ export async function GET() {
     ).length;
     const setupPending = enrollments.filter((e) => e.status === 'setup_pending').length;
     const completed = enrollments.filter((e) => e.status === 'completed').length;
+
+    // ---- Notification cadence: how many doctors are on Daily vs Weekly ----
+    const schedProfiles = await PracticeOsProfile.find({ 'optimizationAccess.granted': true })
+      .select('scheduleType').lean();
+    const weeklyCount = schedProfiles.filter((p) => p.scheduleType === 'weekly').length;
+    const dailyCount = schedProfiles.length - weeklyCount; // daily or unset default
+    const scheduleCounts = { daily: dailyCount, weekly: weeklyCount };
 
     const avgDaysCompleted = round1(avg(enrollments.map((e) => e.daysCompleted || 0)));
     const avgPerformance = round1(avg(scores.map((s) => s.overallScore || 0)));
@@ -142,6 +150,7 @@ export async function GET() {
         activeUsers,
         setupPending,
         completed,
+        scheduleCounts, // { daily, weekly } — notification cadence split
         avgDaysCompleted,
         avgPerformance,
         avgStreak,

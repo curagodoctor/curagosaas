@@ -85,13 +85,13 @@ export default function BookingsPage() {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      confirmed: { bg: 'bg-green-100', text: 'text-green-800', label: 'Confirmed' },
-      pending_payment: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending Payment' },
-      cancelled: { bg: 'bg-red-100', text: 'text-red-800', label: 'Cancelled' },
-      expired: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Expired' },
+      confirmed: { bg: 'bg-[#096B17]/10', text: 'text-[#096B17]', label: 'Confirmed' },
+      pending_payment: { bg: 'bg-amber-50', text: 'text-amber-700', label: 'Pending Payment' },
+      cancelled: { bg: 'bg-red-50', text: 'text-red-700', label: 'Cancelled' },
+      expired: { bg: 'bg-[#EDF1EB]', text: 'text-[#5E6B5F]', label: 'Expired' },
     };
 
-    const config = statusConfig[status] || { bg: 'bg-gray-100', text: 'text-gray-800', label: status };
+    const config = statusConfig[status] || { bg: 'bg-[#EDF1EB]', text: 'text-[#5E6B5F]', label: status };
 
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
@@ -102,11 +102,11 @@ export default function BookingsPage() {
 
   const getModeBadge = (mode) => {
     return mode === 'online' ? (
-      <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+      <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
         Online
       </span>
     ) : (
-      <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+      <span className="px-2 py-1 rounded-full text-xs font-medium bg-[#F26A1B]/10 text-[#F26A1B]">
         In-Clinic
       </span>
     );
@@ -172,7 +172,7 @@ export default function BookingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-600">Loading bookings...</div>
+        <div className="text-[#5E6B5F]">Loading bookings...</div>
       </div>
     );
   }
@@ -181,22 +181,22 @@ export default function BookingsPage() {
     <div>
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Appointments</h1>
-          <p className="text-gray-600 mt-2">View and manage all consultation bookings</p>
+          <h1 className="text-3xl font-semibold text-[#101A13]">Appointments</h1>
+          <p className="text-[#5E6B5F] mt-2">View and manage all consultation bookings</p>
         </div>
         {/* §9 — the clinic manager lives within Appointments */}
-        <a href="/admin/dashboard/modes" className="mt-1 inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 whitespace-nowrap">
+        <a href="/admin/dashboard/modes" className="mt-1 inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#DDE4D9] rounded-lg text-sm font-medium text-[#101A13] hover:bg-[#F7F9F5] whitespace-nowrap">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5" /></svg>
           Manage clinics &amp; consultation modes
         </a>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
+      <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-4 sm:p-6 mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Search */}
           <div className="sm:col-span-2 lg:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[#101A13] mb-2">
               Search
             </label>
             <input
@@ -204,19 +204,19 @@ export default function BookingsPage() {
               placeholder="Search by name, email, phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="w-full px-4 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent text-sm"
             />
           </div>
 
           {/* Mode Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[#101A13] mb-2">
               Mode
             </label>
             <select
               value={filterMode}
               onChange={(e) => setFilterMode(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="w-full px-4 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent text-sm"
             >
               <option value="all">All Modes</option>
               <option value="online">Online</option>
@@ -226,13 +226,13 @@ export default function BookingsPage() {
 
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[#101A13] mb-2">
               Status
             </label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="w-full px-4 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent text-sm"
             >
               <option value="all">All Status</option>
               <option value="confirmed">Confirmed</option>
@@ -244,14 +244,14 @@ export default function BookingsPage() {
 
           {/* Date Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[#101A13] mb-2">
               Date
             </label>
             <input
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              className="w-full px-4 py-2 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-transparent text-sm"
             />
           </div>
         </div>
@@ -266,7 +266,7 @@ export default function BookingsPage() {
                 setFilterStatus('all');
                 setFilterDate('');
               }}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="text-sm text-[#F26A1B] hover:opacity-80 font-medium"
             >
               Clear all filters
             </button>
@@ -276,79 +276,79 @@ export default function BookingsPage() {
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm text-gray-600">Total Bookings</div>
-          <div className="text-2xl font-bold text-gray-800 mt-1">{bookings.length}</div>
+        <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
+          <div className="text-sm text-[#5E6B5F]">Total Bookings</div>
+          <div className="text-2xl font-semibold text-[#101A13] mt-1">{bookings.length}</div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm text-gray-600">Confirmed</div>
-          <div className="text-2xl font-bold text-green-600 mt-1">
+        <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
+          <div className="text-sm text-[#5E6B5F]">Confirmed</div>
+          <div className="text-2xl font-semibold text-[#096B17] mt-1">
             {bookings.filter((b) => b.status === 'confirmed').length}
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm text-gray-600">Pending</div>
-          <div className="text-2xl font-bold text-yellow-600 mt-1">
+        <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
+          <div className="text-sm text-[#5E6B5F]">Pending</div>
+          <div className="text-2xl font-semibold text-amber-600 mt-1">
             {bookings.filter((b) => b.status === 'pending_payment').length}
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm text-gray-600">Cancelled</div>
-          <div className="text-2xl font-bold text-red-600 mt-1">
+        <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6">
+          <div className="text-sm text-[#5E6B5F]">Cancelled</div>
+          <div className="text-2xl font-semibold text-red-600 mt-1">
             {bookings.filter((b) => b.status === 'cancelled').length}
           </div>
         </div>
       </div>
 
       {/* Bookings Table - Desktop */}
-      <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
+      <div className="hidden md:block bg-white border border-[#EDF1EB] rounded-2xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-[#EDF1EB]">
+            <thead className="bg-[#F7F9F5]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#5E6B5F] uppercase tracking-wider">
                   Date & Time
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#5E6B5F] uppercase tracking-wider">
                   Patient Details
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#5E6B5F] uppercase tracking-wider">
                   Contact
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#5E6B5F] uppercase tracking-wider">
                   Mode
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#5E6B5F] uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-[#5E6B5F] uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-[#EDF1EB]">
               {filteredBookings.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan="6" className="px-6 py-8 text-center text-[#5E6B5F]">
                     No bookings found
                   </td>
                 </tr>
               ) : (
                 filteredBookings.map((booking) => (
-                  <tr key={booking._id} className="hover:bg-gray-50">
+                  <tr key={booking._id} className="hover:bg-[#F7F9F5]">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{formatDate(booking.date)}</div>
-                      <div className="text-sm text-gray-500">{booking.time}</div>
+                      <div className="text-sm font-medium text-[#101A13]">{formatDate(booking.date)}</div>
+                      <div className="text-sm text-[#5E6B5F]">{booking.time}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{booking.name}</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm font-medium text-[#101A13]">{booking.name}</div>
+                      <div className="text-sm text-[#5E6B5F]">
                         Age: {booking.age} • {booking.gender}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{booking.email}</div>
-                      <div className="text-sm text-gray-500">{booking.whatsapp}</div>
+                      <div className="text-sm text-[#101A13]">{booking.email}</div>
+                      <div className="text-sm text-[#5E6B5F]">{booking.whatsapp}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getModeBadge(booking.mode)}
@@ -359,7 +359,7 @@ export default function BookingsPage() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button
                         onClick={() => setSelectedBooking(booking)}
-                        className="text-blue-600 hover:text-blue-700 font-medium"
+                        className="text-[#F26A1B] hover:opacity-80 font-medium"
                       >
                         View Details
                       </button>
@@ -375,16 +375,16 @@ export default function BookingsPage() {
       {/* Bookings Cards - Mobile */}
       <div className="md:hidden space-y-4">
         {filteredBookings.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
+          <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-6 text-center text-[#5E6B5F]">
             No bookings found
           </div>
         ) : (
           filteredBookings.map((booking) => (
-            <div key={booking._id} className="bg-white rounded-lg shadow p-4">
+            <div key={booking._id} className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm p-4">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <div className="text-sm font-medium text-gray-900">{formatDate(booking.date)}</div>
-                  <div className="text-sm text-gray-500">{booking.time}</div>
+                  <div className="text-sm font-medium text-[#101A13]">{formatDate(booking.date)}</div>
+                  <div className="text-sm text-[#5E6B5F]">{booking.time}</div>
                 </div>
                 <div className="flex gap-2">
                   {getModeBadge(booking.mode)}
@@ -393,17 +393,17 @@ export default function BookingsPage() {
               </div>
 
               <div className="space-y-2 mb-3">
-                <div className="text-base font-semibold text-gray-900">{booking.name}</div>
-                <div className="text-sm text-gray-600">
+                <div className="text-base font-semibold text-[#101A13]">{booking.name}</div>
+                <div className="text-sm text-[#5E6B5F]">
                   Age: {booking.age} • {booking.gender}
                 </div>
-                <div className="text-sm text-gray-600">{booking.email}</div>
-                <div className="text-sm text-gray-600">{booking.whatsapp}</div>
+                <div className="text-sm text-[#5E6B5F]">{booking.email}</div>
+                <div className="text-sm text-[#5E6B5F]">{booking.whatsapp}</div>
               </div>
 
               <button
                 onClick={() => setSelectedBooking(booking)}
-                className="w-full text-center py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="w-full text-center py-2 px-4 bg-[#F26A1B] hover:opacity-90 text-white rounded-lg text-sm font-medium transition-colors"
               >
                 View Details
               </button>
@@ -415,13 +415,13 @@ export default function BookingsPage() {
       {/* Booking Details Modal */}
       {selectedBooking && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b">
+          <div className="bg-white border border-[#EDF1EB] rounded-2xl shadow-sm max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-[#EDF1EB]">
               <div className="flex justify-between items-start">
-                <h2 className="text-2xl font-bold text-gray-800">Booking Details</h2>
+                <h2 className="text-2xl font-semibold text-[#101A13]">Booking Details</h2>
                 <button
                   onClick={() => setSelectedBooking(null)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-[#5E6B5F] hover:text-[#101A13]"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -439,46 +439,46 @@ export default function BookingsPage() {
 
               {/* Patient Information */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Patient Information</h3>
-                <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-[#101A13] mb-3">Patient Information</h3>
+                <div className="grid grid-cols-2 gap-4 bg-[#F7F9F5] p-4 rounded-lg">
                   <div>
-                    <div className="text-sm text-gray-600">Name</div>
-                    <div className="font-medium text-gray-900">{selectedBooking.name}</div>
+                    <div className="text-sm text-[#5E6B5F]">Name</div>
+                    <div className="font-medium text-[#101A13]">{selectedBooking.name}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-600">Age</div>
-                    <div className="font-medium text-gray-900">{selectedBooking.age}</div>
+                    <div className="text-sm text-[#5E6B5F]">Age</div>
+                    <div className="font-medium text-[#101A13]">{selectedBooking.age}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-600">Gender</div>
-                    <div className="font-medium text-gray-900 capitalize">{selectedBooking.gender}</div>
+                    <div className="text-sm text-[#5E6B5F]">Gender</div>
+                    <div className="font-medium text-[#101A13] capitalize">{selectedBooking.gender}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-gray-600">Email</div>
-                    <div className="font-medium text-gray-900">{selectedBooking.email}</div>
+                    <div className="text-sm text-[#5E6B5F]">Email</div>
+                    <div className="font-medium text-[#101A13]">{selectedBooking.email}</div>
                   </div>
                   <div className="col-span-2">
-                    <div className="text-sm text-gray-600">WhatsApp</div>
-                    <div className="font-medium text-gray-900">{selectedBooking.whatsapp}</div>
+                    <div className="text-sm text-[#5E6B5F]">WhatsApp</div>
+                    <div className="font-medium text-[#101A13]">{selectedBooking.whatsapp}</div>
                   </div>
                 </div>
               </div>
 
               {/* Appointment Details */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Appointment Details</h3>
-                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                <h3 className="text-lg font-semibold text-[#101A13] mb-3">Appointment Details</h3>
+                <div className="bg-[#F7F9F5] p-4 rounded-lg space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Date:</span>
-                    <span className="font-medium text-gray-900">{formatDate(selectedBooking.date)}</span>
+                    <span className="text-[#5E6B5F]">Date:</span>
+                    <span className="font-medium text-[#101A13]">{formatDate(selectedBooking.date)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Time:</span>
-                    <span className="font-medium text-gray-900">{selectedBooking.time}</span>
+                    <span className="text-[#5E6B5F]">Time:</span>
+                    <span className="font-medium text-[#101A13]">{selectedBooking.time}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Mode:</span>
-                    <span className="font-medium text-gray-900 capitalize">{selectedBooking.mode}</span>
+                    <span className="text-[#5E6B5F]">Mode:</span>
+                    <span className="font-medium text-[#101A13] capitalize">{selectedBooking.mode}</span>
                   </div>
                 </div>
               </div>
@@ -486,11 +486,11 @@ export default function BookingsPage() {
               {/* Payment Information */}
               {selectedBooking.paymentId && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Payment Information</h3>
-                  <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                  <h3 className="text-lg font-semibold text-[#101A13] mb-3">Payment Information</h3>
+                  <div className="bg-[#F7F9F5] p-4 rounded-lg space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Payment ID:</span>
-                      <span className="font-medium text-gray-900 text-sm">{selectedBooking.paymentId}</span>
+                      <span className="text-[#5E6B5F]">Payment ID:</span>
+                      <span className="font-medium text-[#101A13] text-sm">{selectedBooking.paymentId}</span>
                     </div>
                   </div>
                 </div>
@@ -499,13 +499,13 @@ export default function BookingsPage() {
               {/* Meeting Link */}
               {selectedBooking.meetLink && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Meeting Link</h3>
+                  <h3 className="text-lg font-semibold text-[#101A13] mb-3">Meeting Link</h3>
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <a
                       href={selectedBooking.meetLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-700 break-all"
+                      className="text-blue-700 hover:opacity-80 break-all"
                     >
                       {selectedBooking.meetLink}
                     </a>
@@ -515,7 +515,7 @@ export default function BookingsPage() {
 
               {/* Actions */}
               {(selectedBooking.status === 'confirmed' || selectedBooking.status === 'pending_payment') && (
-                <div className="pt-4 border-t">
+                <div className="pt-4 border-t border-[#EDF1EB]">
                   <button
                     onClick={() => handleCancelBooking(selectedBooking._id)}
                     className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 rounded-lg transition-colors"

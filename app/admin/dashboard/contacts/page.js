@@ -479,13 +479,13 @@ function ContactsPageInner() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Contacts</h1>
-          <p className="text-gray-500 text-sm mt-1">{totalContacts} total contacts</p>
+          <h1 className="text-2xl font-semibold text-[#101A13]">Contacts</h1>
+          <p className="text-[#5E6B5F] text-sm mt-1">{totalContacts} total contacts</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setShowImportModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-[#DDE4D9] rounded-lg text-sm font-medium text-[#101A13] bg-white hover:bg-[#F7F9F5] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -494,7 +494,7 @@ function ContactsPageInner() {
           </button>
           <a
             href="/api/doctor/contacts/export"
-            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-[#DDE4D9] rounded-lg text-sm font-medium text-[#101A13] bg-white hover:bg-[#F7F9F5] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -508,7 +508,7 @@ function ContactsPageInner() {
               setFormData({ name: '', phone: '', email: '', status: 'new', notes: '', clinicId: '', consultedDate: '' });
               setShowAddModal(true);
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#F26A1B] text-white rounded-lg text-sm font-medium hover:bg-[#d85b12] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -519,7 +519,7 @@ function ContactsPageInner() {
             <button
               onClick={handleStartAllWorkflows}
               disabled={startingAll || contacts.length === 0}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-[#DDE4D9] bg-white text-[#101A13] rounded-lg text-sm font-medium hover:bg-[#F7F9F5] transition-colors disabled:opacity-50"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -561,10 +561,10 @@ function ContactsPageInner() {
       )}
 
       {/* Search & Filter */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-[#EDF1EB] p-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#5E6B5F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
@@ -572,13 +572,13 @@ function ContactsPageInner() {
               placeholder="Search by name, phone, or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
+              className="w-full pl-10 pr-4 py-2.5 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
             />
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none bg-white"
+            className="px-4 py-2.5 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none bg-white"
           >
             <option value="all">All Statuses</option>
             {statuses.map(s => (
@@ -589,13 +589,13 @@ function ContactsPageInner() {
       </div>
 
       {/* Contacts Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-[#EDF1EB] overflow-hidden">
         {contacts.length === 0 ? (
           <div className="text-center py-12">
-            <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-12 h-12 text-[#DDE4D9] mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <p className="text-gray-500">No contacts found</p>
+            <p className="text-[#5E6B5F]">No contacts found</p>
             <button
               onClick={() => setShowAddModal(true)}
               className="mt-3 text-[#096b17] hover:underline text-sm font-medium"
@@ -608,24 +608,24 @@ function ContactsPageInner() {
             {/* Desktop Table */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-[#F7F9F5] border-b border-[#EDF1EB]">
                   <tr>
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Name</th>
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Phone</th>
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Email</th>
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Source</th>
-                    <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    <th className="text-left px-6 py-3 text-xs font-medium text-[#5E6B5F] uppercase">Name</th>
+                    <th className="text-left px-6 py-3 text-xs font-medium text-[#5E6B5F] uppercase">Phone</th>
+                    <th className="text-left px-6 py-3 text-xs font-medium text-[#5E6B5F] uppercase">Email</th>
+                    <th className="text-left px-6 py-3 text-xs font-medium text-[#5E6B5F] uppercase">Status</th>
+                    <th className="text-left px-6 py-3 text-xs font-medium text-[#5E6B5F] uppercase">Source</th>
+                    <th className="text-right px-6 py-3 text-xs font-medium text-[#5E6B5F] uppercase">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-[#EDF1EB]">
                   {contacts.map(contact => (
-                    <tr key={contact._id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={contact._id} className="hover:bg-[#F7F9F5] transition-colors">
                       <td className="px-6 py-4">
-                        <p className="font-medium text-gray-900">{contact.name}</p>
+                        <p className="font-medium text-[#101A13]">{contact.name}</p>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{contact.phone || '—'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{contact.email || '—'}</td>
+                      <td className="px-6 py-4 text-sm text-[#5E6B5F]">{contact.phone || '—'}</td>
+                      <td className="px-6 py-4 text-sm text-[#5E6B5F]">{contact.email || '—'}</td>
                       <td className="px-6 py-4">
                         <select
                           value={contact.status}
@@ -639,12 +639,12 @@ function ContactsPageInner() {
                         </select>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-xs text-gray-500 capitalize">{contact.source}</span>
+                        <span className="text-xs text-[#5E6B5F] capitalize">{contact.source}</span>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           {contact.reviewRequestSentAt ? (
-                            <span className="text-[11px] text-green-600 font-medium" title={`Sent ${new Date(contact.reviewRequestSentAt).toLocaleDateString()}`}>✓ Review requested</span>
+                            <span className="text-[11px] text-[#096B17] font-medium" title={`Sent ${new Date(contact.reviewRequestSentAt).toLocaleDateString()}`}>✓ Review requested</span>
                           ) : (
                             <button
                               onClick={() => handleReviewRequest(contact)}
@@ -657,7 +657,7 @@ function ContactsPageInner() {
                           )}
                           <button
                             onClick={() => handleEdit(contact)}
-                            className="p-1.5 text-gray-400 hover:text-[#096b17] transition-colors"
+                            className="p-1.5 text-[#5E6B5F] hover:text-[#096b17] transition-colors"
                             title="Edit"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -666,7 +666,7 @@ function ContactsPageInner() {
                           </button>
                           <button
                             onClick={() => handleDelete(contact)}
-                            className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                            className="p-1.5 text-[#5E6B5F] hover:text-red-500 transition-colors"
                             title="Delete"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -686,7 +686,7 @@ function ContactsPageInner() {
                                 if (e.target.value) handleStartWorkflow(contact._id, e.target.value);
                                 e.target.value = '';
                               }}
-                              className="text-xs border border-gray-300 rounded px-1.5 py-1 text-gray-600 bg-white cursor-pointer focus:ring-1 focus:ring-[#096b17]"
+                              className="text-xs border border-[#DDE4D9] rounded px-1.5 py-1 text-[#5E6B5F] bg-white cursor-pointer focus:ring-1 focus:ring-[#096b17]"
                               defaultValue=""
                               disabled={workflows.length === 0}
                             >
@@ -705,18 +705,18 @@ function ContactsPageInner() {
             </div>
 
             {/* Mobile Cards */}
-            <div className="md:hidden divide-y divide-gray-100">
+            <div className="md:hidden divide-y divide-[#EDF1EB]">
               {contacts.map(contact => (
                 <div key={contact._id} className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="font-medium text-gray-900">{contact.name}</p>
+                    <p className="font-medium text-[#101A13]">{contact.name}</p>
                     {getStatusBadge(contact.status)}
                   </div>
-                  {contact.phone && <p className="text-sm text-gray-600">{contact.phone}</p>}
-                  {contact.email && <p className="text-sm text-gray-600">{contact.email}</p>}
+                  {contact.phone && <p className="text-sm text-[#5E6B5F]">{contact.phone}</p>}
+                  {contact.email && <p className="text-sm text-[#5E6B5F]">{contact.email}</p>}
                   <div className="flex gap-2 mt-3 flex-wrap items-center">
                     {contact.reviewRequestSentAt ? (
-                      <span className="text-xs text-green-600 font-medium">✓ Review requested</span>
+                      <span className="text-xs text-[#096B17] font-medium">✓ Review requested</span>
                     ) : (
                       <button onClick={() => handleReviewRequest(contact)} disabled={reviewBusy === contact._id} className="text-xs text-[#096b17] border border-[#096b17]/30 rounded px-2 py-0.5 disabled:opacity-50">{reviewBusy === contact._id ? 'Sending…' : 'Request review'}</button>
                     )}
@@ -733,7 +733,7 @@ function ContactsPageInner() {
                           if (e.target.value) handleStartWorkflow(contact._id, e.target.value);
                           e.target.value = '';
                         }}
-                        className="text-xs border border-gray-300 rounded px-1.5 py-1 text-gray-600 bg-white"
+                        className="text-xs border border-[#DDE4D9] rounded px-1.5 py-1 text-[#5E6B5F] bg-white"
                         defaultValue=""
                       >
                         <option value="" disabled>Start Workflow...</option>
@@ -749,22 +749,22 @@ function ContactsPageInner() {
 
             {/* Pagination */}
             {pagination.pages > 1 && (
-              <div className="flex items-center justify-between px-6 py-3 border-t bg-gray-50">
-                <p className="text-sm text-gray-500">
+              <div className="flex items-center justify-between px-6 py-3 border-t border-[#EDF1EB] bg-[#F7F9F5]">
+                <p className="text-sm text-[#5E6B5F]">
                   Page {pagination.page} of {pagination.pages} ({pagination.total} contacts)
                 </p>
                 <div className="flex gap-2">
                   <button
                     onClick={() => fetchContacts(pagination.page - 1)}
                     disabled={pagination.page <= 1}
-                    className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    className="px-3 py-1.5 text-sm border border-[#DDE4D9] bg-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#F7F9F5]"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => fetchContacts(pagination.page + 1)}
                     disabled={pagination.page >= pagination.pages}
-                    className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                    className="px-3 py-1.5 text-sm border border-[#DDE4D9] bg-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#F7F9F5]"
                   >
                     Next
                   </button>
@@ -779,8 +779,8 @@ function ContactsPageInner() {
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <h2 className="text-lg font-semibold text-gray-900">
+            <div className="p-6 border-b border-[#EDF1EB]">
+              <h2 className="text-lg font-semibold text-[#101A13]">
                 {editingContact ? 'Edit Contact' : 'Add Contact'}
               </h2>
             </div>
@@ -791,7 +791,7 @@ function ContactsPageInner() {
                   type="text"
                   value={formData.name}
                   onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
+                  className="w-full px-4 py-2.5 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
                   placeholder="Patient name"
                 />
               </div>
@@ -799,13 +799,13 @@ function ContactsPageInner() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                   <div className="flex items-stretch">
-                    <span className="inline-flex items-center px-3 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-500 text-sm">+91</span>
+                    <span className="inline-flex items-center px-3 bg-[#F7F9F5] border border-r-0 border-[#DDE4D9] rounded-l-lg text-[#5E6B5F] text-sm">+91</span>
                     <input
                       type="tel"
                       inputMode="numeric"
                       value={formData.phone}
                       onChange={e => setFormData(prev => ({ ...prev, phone: digits10(e.target.value) }))}
-                      className="w-full min-w-0 px-4 py-2.5 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
+                      className="w-full min-w-0 px-4 py-2.5 border border-[#DDE4D9] rounded-r-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
                       placeholder="9876543210"
                       maxLength={10}
                     />
@@ -817,7 +817,7 @@ function ContactsPageInner() {
                     type="email"
                     value={formData.email}
                     onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
+                    className="w-full px-4 py-2.5 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
                     placeholder="patient@email.com"
                   />
                 </div>
@@ -838,15 +838,15 @@ function ContactsPageInner() {
                         type="text" value={newClinic.name}
                         onChange={e => setNewClinic(prev => ({ ...prev, name: e.target.value }))}
                         placeholder="Clinic name"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] outline-none"
+                        className="w-full px-3 py-2 border border-[#DDE4D9] rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] outline-none"
                       />
                       <div className="flex items-stretch">
-                        <span className="inline-flex items-center px-2.5 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-500 text-xs">+91</span>
+                        <span className="inline-flex items-center px-2.5 bg-[#F7F9F5] border border-r-0 border-[#DDE4D9] rounded-l-lg text-[#5E6B5F] text-xs">+91</span>
                         <input
                           type="tel" inputMode="numeric" value={newClinic.phone} maxLength={10}
                           onChange={e => setNewClinic(prev => ({ ...prev, phone: digits10(e.target.value) }))}
                           placeholder="Clinic phone (optional)"
-                          className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-r-lg text-sm focus:ring-2 focus:ring-[#096b17] outline-none"
+                          className="w-full min-w-0 px-3 py-2 border border-[#DDE4D9] rounded-r-lg text-sm focus:ring-2 focus:ring-[#096b17] outline-none"
                         />
                       </div>
                       <button type="button" onClick={addClinicInline} disabled={!newClinic.name.trim()}
@@ -857,7 +857,7 @@ function ContactsPageInner() {
                       <select
                         value={formData.clinicId}
                         onChange={e => setFormData(prev => ({ ...prev, clinicId: e.target.value }))}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] outline-none bg-white"
+                        className="w-full px-4 py-2.5 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] outline-none bg-white"
                       >
                         <option value="">No clinic</option>
                         {clinics.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
@@ -865,7 +865,7 @@ function ContactsPageInner() {
                       {(() => {
                         const c = clinics.find(x => x._id === formData.clinicId);
                         return c?.phone ? (
-                          <p className="mt-1.5 text-xs text-gray-500">Clinic phone: <span className="font-medium text-gray-700">{c.phone}</span></p>
+                          <p className="mt-1.5 text-xs text-[#5E6B5F]">Clinic phone: <span className="font-medium text-gray-700">{c.phone}</span></p>
                         ) : null;
                       })()}
                     </>
@@ -877,7 +877,7 @@ function ContactsPageInner() {
                     type="date"
                     value={formData.consultedDate}
                     onChange={e => setFormData(prev => ({ ...prev, consultedDate: e.target.value }))}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
+                    className="w-full px-4 py-2.5 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
                   />
                 </div>
               </div>
@@ -899,13 +899,13 @@ function ContactsPageInner() {
                       value={newStatus.label}
                       onChange={e => setNewStatus(prev => ({ ...prev, label: e.target.value }))}
                       placeholder="Status name"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
+                      className="flex-1 px-3 py-2 border border-[#DDE4D9] rounded-lg text-sm focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none"
                     />
                     <input
                       type="color"
                       value={newStatus.color}
                       onChange={e => setNewStatus(prev => ({ ...prev, color: e.target.value }))}
-                      className="w-10 h-10 border border-gray-300 rounded-lg cursor-pointer flex-shrink-0"
+                      className="w-10 h-10 border border-[#DDE4D9] rounded-lg cursor-pointer flex-shrink-0"
                     />
                     <button
                       type="button"
@@ -944,7 +944,7 @@ function ContactsPageInner() {
                   <select
                     value={formData.status}
                     onChange={e => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none bg-white"
+                    className="w-full px-4 py-2.5 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none bg-white"
                   >
                     {statuses.map(s => (
                       <option key={s._id} value={s.name}>{s.label}</option>
@@ -958,7 +958,7 @@ function ContactsPageInner() {
                   value={formData.notes}
                   onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                   rows={3}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none resize-none"
+                  className="w-full px-4 py-2.5 border border-[#DDE4D9] rounded-lg focus:ring-2 focus:ring-[#096b17] focus:border-[#096b17] outline-none resize-none"
                   placeholder="Any notes about this contact..."
                 />
               </div>
@@ -966,14 +966,14 @@ function ContactsPageInner() {
                 <button
                   type="button"
                   onClick={() => { setShowAddModal(false); setEditingContact(null); }}
-                  className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  className="px-4 py-2.5 border border-[#DDE4D9] rounded-lg text-sm font-medium text-[#101A13] hover:bg-[#F7F9F5]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-4 py-2.5 bg-[#096b17] text-white rounded-lg text-sm font-medium hover:bg-[#075110] disabled:opacity-50"
+                  className="px-4 py-2.5 bg-[#F26A1B] text-white rounded-lg text-sm font-medium hover:bg-[#d85b12] disabled:opacity-50"
                 >
                   {saving ? 'Saving...' : editingContact ? 'Update Contact' : 'Add Contact'}
                 </button>
@@ -987,8 +987,8 @@ function ContactsPageInner() {
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Import Contacts</h2>
-            <p className="text-sm text-gray-600 mb-4">
+            <h2 className="text-lg font-semibold text-[#101A13] mb-4">Import Contacts</h2>
+            <p className="text-sm text-[#5E6B5F] mb-4">
               Upload an Excel file (.xlsx) with columns: Name, Phone, Email, Status, Notes
             </p>
             <a
@@ -1003,11 +1003,11 @@ function ContactsPageInner() {
               onChange={(e) => {
                 if (e.target.files[0]) handleImport(e.target.files[0]);
               }}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#096b17]/10 file:text-[#096b17] hover:file:bg-[#096b17]/20 mb-4"
+              className="block w-full text-sm text-[#5E6B5F] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#096b17]/10 file:text-[#096b17] hover:file:bg-[#096b17]/20 mb-4"
             />
             <button
               onClick={() => setShowImportModal(false)}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="w-full px-4 py-2.5 border border-[#DDE4D9] rounded-lg text-sm font-medium text-[#101A13] hover:bg-[#F7F9F5]"
             >
               Cancel
             </button>
