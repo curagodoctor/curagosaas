@@ -114,7 +114,7 @@ export default function ControlCenter() {
         key: d.keyId,
         subscription_id: d.subscriptionId,
         name: 'CuraGo — Dominate Organic Search',
-        description: '₹5,000 / month',
+        description: '₹5,000 + 18% GST (₹5,900) / month',
         handler: async (resp) => {
           try {
             await fetch('/api/practice-os/optimization/verify', {
@@ -224,7 +224,7 @@ export default function ControlCenter() {
             <span className="pos-label" style={{ color: 'var(--muted)' }}>Dominate Organic Search · Inactive</span>
             <p className="text-[19px] sm:text-[21px] font-semibold text-[var(--ink)] mt-1.5" style={{ letterSpacing: '-0.02em' }}>Let CuraGo grow your practice</p>
             <p className="text-[14px] text-[var(--muted)] mt-1.5" style={{ maxWidth: '62ch', lineHeight: 1.55 }}>
-              Your daily organic-growth engine isn&apos;t active yet. Talk to our team to get started — ₹5,000 / month + 18% GST, founder price.
+              Your daily organic-growth engine isn&apos;t active yet. Talk to our team to get started — ₹5,000 / month exclusive of GST (₹5,900 incl. 18% GST), founder price.
             </p>
           </div>
           <div className="flex flex-col gap-2 shrink-0 self-start sm:self-auto sm:items-end">

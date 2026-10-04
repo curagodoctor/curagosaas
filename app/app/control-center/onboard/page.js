@@ -287,7 +287,7 @@ function Wizard() {
         key: d.keyId,
         subscription_id: d.subscriptionId,
         name: 'CuraGo — Dominate Organic Search',
-        description: '₹5,000 / month',
+        description: '₹5,000 + 18% GST (₹5,900) / month',
         handler: async (resp) => {
           try {
             await fetch('/api/practice-os/optimization/verify', {
@@ -1014,13 +1014,13 @@ function Wizard() {
                   ))}
                 </div>
                 <p className="text-[20px] font-bold text-[var(--ink)] mt-3" style={{ letterSpacing: '-0.02em' }}>₹5,000 <span className="text-[13px] font-normal text-[var(--muted)]">/ month</span></p>
-                <p className="text-[12px] font-semibold text-[var(--orange)] mt-0.5">Founder price · + 18% GST</p>
+                <p className="text-[12px] font-semibold text-[var(--orange)] mt-0.5">Founder price · exclusive of GST (₹5,900 incl. 18% GST)</p>
                 <p className="text-[12.5px] font-medium text-[var(--muted)] mt-1.5">You don’t have to figure out what to do next. CuraGo does that.</p>
               </div>
 
               {payMsg && <p className="text-[13px] text-red-600 mb-3">{payMsg}</p>}
               <button onClick={startPayment} disabled={payBusy} className="pos-action w-full">{payBusy ? 'Opening payment…' : 'I am ready. Let us begin.'}</button>
-              <p className="text-[12px] text-[var(--muted)] text-center mt-1.5">Takes you to the secure payment page · ₹5,000/month + 18% GST</p>
+              <p className="text-[12px] text-[var(--muted)] text-center mt-1.5">Takes you to the secure payment page · ₹5,000/month exclusive of GST (₹5,900 incl. GST)</p>
               <button onClick={goToControlCenter} className="pos-card w-full px-4 py-3 text-[15px] font-medium mt-3" style={{ color: 'var(--ink)' }}>Not ready yet</button>
               <button onClick={async () => { await markComplete(); setDeclined(true); }} className="pos-link text-sm mt-4 block" style={{ color: 'var(--muted)' }}>Not interested</button>
             </div>

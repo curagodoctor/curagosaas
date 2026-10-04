@@ -253,7 +253,7 @@ function GrantedActions({ router, access }) {
         key: d.keyId,
         subscription_id: d.subscriptionId,
         name: 'CuraGo — Dominate Organic Search',
-        description: '₹5,000 / month',
+        description: '₹5,000 + 18% GST (₹5,900) / month',
         handler: async (resp) => {
           await fetch('/api/practice-os/optimization/verify', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
