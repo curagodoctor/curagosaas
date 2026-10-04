@@ -8,6 +8,7 @@ export default function PlatformDoctorsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [tier, setTier] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -24,6 +25,7 @@ export default function PlatformDoctorsPage() {
         limit: '20',
         ...(search && { search }),
         ...(status && { status }),
+        ...(tier && { tier }),
       });
 
       const response = await fetch(`/api/platform/doctors?${params}`);
@@ -42,7 +44,7 @@ export default function PlatformDoctorsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, status]);
+  }, [page, search, status, tier]);
 
   useEffect(() => {
     fetchDoctors();
@@ -125,6 +127,16 @@ export default function PlatformDoctorsPage() {
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
+            <select
+              value={tier}
+              onChange={(e) => { setTier(e.target.value); setPage(1); }}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+            >
+              <option value="">All Tiers</option>
+              <option value="free">Free</option>
+              <option value="paid">Paid</option>
+              <option value="founder">Founder</option>
+            </select>
             <button
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -149,6 +161,9 @@ export default function PlatformDoctorsPage() {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Subdomain
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tier
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Bookings
@@ -182,6 +197,9 @@ export default function PlatformDoctorsPage() {
                       <div className="h-4 w-36 bg-gray-200 rounded"></div>
                     </td>
                     <td className="px-6 py-4">
+                      <div className="h-6 w-14 bg-gray-200 rounded-full"></div>
+                    </td>
+                    <td className="px-6 py-4">
                       <div className="h-4 w-12 bg-gray-200 rounded"></div>
                     </td>
                     <td className="px-6 py-4">
@@ -194,7 +212,7 @@ export default function PlatformDoctorsPage() {
                 ))
               ) : doctors.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center">
                       <svg
                         className="w-12 h-12 text-gray-400 mb-4"
@@ -253,6 +271,15 @@ export default function PlatformDoctorsPage() {
                       >
                         {doctor.subdomain}.{rootDomain}
                       </a>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+                        (doctor.accessTier || 'free') === 'founder' ? 'bg-purple-100 text-purple-800'
+                          : (doctor.accessTier || 'free') === 'paid' ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {doctor.accessTier || 'free'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-medium text-gray-900">

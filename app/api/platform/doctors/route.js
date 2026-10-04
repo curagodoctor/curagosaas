@@ -69,6 +69,15 @@ export async function GET(request) {
       query.isEmailVerified = false;
     }
 
+    // Platform access tier filter (free | paid | founder). 'free' includes docs
+    // with no accessTier set yet (schema default is free).
+    const tier = searchParams.get('tier') || '';
+    if (tier === 'free') {
+      query.$and = [...(query.$and || []), { $or: [{ accessTier: 'free' }, { accessTier: { $exists: false } }, { accessTier: null }] }];
+    } else if (tier === 'paid' || tier === 'founder') {
+      query.accessTier = tier;
+    }
+
     // Build sort
     const validSortFields = ['createdAt', 'name', 'email', 'lastLoginAt', 'subdomain'];
     const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
