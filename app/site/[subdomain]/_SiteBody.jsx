@@ -2,6 +2,12 @@ import { resolveThemeId } from '@/lib/themes';
 import connectDB from '@/lib/mongodb';
 import BlogArticle from '@/models/BlogArticle';
 import BookingPage from '@/models/BookingPage';
+import { getEffectiveTier, capabilitiesFor } from '@/lib/accessTier';
+
+// Booking section types gated behind the paid `bookingSystem` capability. On the
+// free tier these never render on the live site (so patients can't book), even on
+// pages that still carry a booking section from when the doctor was paid.
+const BOOKING_TYPES = new Set(['booking_form', 'book_now_sticky']);
 
 // Import section components (reuse existing booking page sections)
 import HeaderSection from '@/components/booking-page/sections/HeaderSection';
@@ -86,6 +92,14 @@ export default async function SiteBody({ doctor, bookingPage }) {
 
   await connectDB();
 
+  // Free tier: booking is disabled — strip booking sections before rendering.
+  // Fail open (keep booking) on any lookup error so a transient issue never hides
+  // a paying doctor's booking widget.
+  let bookingEnabled = true;
+  try {
+    bookingEnabled = capabilitiesFor(await getEffectiveTier(doctorData._id)).features.bookingSystem;
+  } catch { bookingEnabled = true; }
+
   // Cross-page navigation: the doctor's OTHER published pages that opt into the
   // navbar. Without this, creating a new page never appears in the nav (the
   // section-based nav only links to anchors within the current page).
@@ -149,9 +163,10 @@ export default async function SiteBody({ doctor, bookingPage }) {
   // duplicate headers/footers left by the builder don't stack.
   const SINGLETON_TYPES = new Set(['header', 'footer']);
 
-  // Sort once by order, then suppress empties + collapse singletons.
+  // Sort once by order, then suppress empties + collapse singletons. On free tier,
+  // booking sections are dropped here so they never reach any downstream render.
   const visibleSorted = [...bookingPage.sections]
-    .filter((s) => s.visible !== false && !isEmptySection(s))
+    .filter((s) => s.visible !== false && !isEmptySection(s) && (bookingEnabled || !BOOKING_TYPES.has(s.type)))
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
   const seenSingleton = new Set();
@@ -190,12 +205,21 @@ export default async function SiteBody({ doctor, bookingPage }) {
     type: 'footer', order: 9999, visible: true,
     config: { companyName: brandName, showQuickLinks: true },
   };
-  const sharedHeader = homeSections.find((s) => s.type === 'header' && s.visible !== false) || DEFAULT_HEADER;
+  let sharedHeader = homeSections.find((s) => s.type === 'header' && s.visible !== false) || DEFAULT_HEADER;
   const sharedFooter = homeSections.find((s) => s.type === 'footer' && s.visible !== false) || DEFAULT_FOOTER;
+  // Free tier (no booking): hide a header CTA that points at the booking form, so
+  // there's no dead "Book Appointment" button once the booking section is stripped.
+  if (!bookingEnabled) {
+    const cta = sharedHeader.config?.ctaButton;
+    if (cta?.show && /booking/i.test(cta.url || '')) {
+      sharedHeader = { ...sharedHeader, config: { ...sharedHeader.config, ctaButton: { ...cta, show: false } } };
+    }
+  }
   // Drive the header's auto-nav from the HOME page's content sections so the nav
   // is identical on every page (missing-anchor clicks route to the home section).
   const homeNavSections = homeSections.filter(
     (s) => s.visible !== false && !['header', 'footer', 'whatsapp_sticky', 'book_now_sticky'].includes(s.type)
+      && (bookingEnabled || !BOOKING_TYPES.has(s.type))
   );
   // The current page's own header/footer are ignored — the shared ones win.
   const contentSections = regularSections

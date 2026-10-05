@@ -452,6 +452,9 @@ export default function PageBuilderEditor() {
 
   // Doctor data for preview URL
   const [doctorData, setDoctorData] = useState(null);
+  // Booking (booking_form / book_now_sticky) is a paid feature. Default true so we
+  // never flash a lock for paid doctors while access loads; flips false for free.
+  const [bookingEnabled, setBookingEnabled] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // UI state
@@ -487,6 +490,14 @@ export default function PageBuilderEditor() {
 
     if (id) fetchPage();
   }, [id]);
+
+  // Resolve whether this doctor's plan includes the booking system.
+  useEffect(() => {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.access) setBookingEnabled(d.access.features?.bookingSystem !== false); })
+      .catch(() => {});
+  }, []);
 
   // Track unsaved changes - warn before leaving with unsaved changes
   useEffect(() => {
@@ -546,6 +557,8 @@ export default function PageBuilderEditor() {
   const addSection = (sectionType) => {
     const sectionDef = SECTION_TYPES.find((s) => s.type === sectionType);
     if (!sectionDef) return;
+    // Booking is a paid feature — free doctors can't add it.
+    if (!bookingEnabled && (sectionType === 'booking_form' || sectionType === 'book_now_sticky')) return;
 
     const config = { ...sectionDef.defaultConfig };
 
@@ -885,9 +898,13 @@ export default function PageBuilderEditor() {
                 // be ignored at render and confuse the doctor.
                 const isShared = sectionDef.type === 'header' || sectionDef.type === 'footer';
                 const lockedShared = isShared && pageData.slug !== 'home';
+                const isBooking = sectionDef.type === 'booking_form' || sectionDef.type === 'book_now_sticky';
+                const lockedBooking = isBooking && !bookingEnabled;
                 const section = lockedShared
                   ? { ...sectionDef, disabled: true, disabledReason: 'Shared across your site — edit it on your home page' }
-                  : sectionDef;
+                  : lockedBooking
+                    ? { ...sectionDef, disabled: true, disabledReason: 'Booking is available on a paid plan' }
+                    : sectionDef;
                 return (
                 <button
                   key={section.type}
