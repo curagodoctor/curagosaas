@@ -21,9 +21,10 @@ const FREE_LIFETIME = parseInt(process.env.PRACTICE_OS_AI_FREE_LIFETIME, 10) >= 
 /**
  * Practice OS — AiCreditLedger
  *
- * Per-doctor AI credit balance. Each day adds `dailyLimit` credits; UNUSED
- * credits carry over (accumulate) up to MAX_BALANCE, so a doctor who logs in
- * every few days can do bulk work. Consumed by the AI engine.
+ * Per-doctor AI credit balance. Each day the balance RESETS to `dailyLimit` —
+ * credits do NOT carry over or accumulate; unused credits are lost at the day
+ * boundary. (Free tier gets a one-time FREE_LIFETIME pool that only drains.)
+ * Consumed by the AI engine.
  */
 const UsageSchema = new mongoose.Schema({
   missionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Mission' },
@@ -58,8 +59,9 @@ const AiCreditLedgerSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Get (or create) the doctor's ledger for today.
-//  - paid tier: top up the accumulating daily pool (one day's allowance per
-//    elapsed day, capped at a week's worth).
+//  - paid tier: credits RESET to that day's allowance each day — they do NOT
+//    accumulate/carry over. Each day you get the daily allowance, and unused
+//    credits are lost at the day boundary.
 //  - free tier: seed a one-time FREE_LIFETIME pool and NEVER top up.
 AiCreditLedgerSchema.statics.getOrCreateForToday = async function (doctorId, paid = true) {
   const today = startOfDay(new Date());
@@ -73,17 +75,14 @@ AiCreditLedgerSchema.statics.getOrCreateForToday = async function (doctorId, pai
       freeInitialized: !paid,
     });
   }
-  // Free tier: no daily accumulation — the lifetime pool just drains.
+  // Free tier: no daily reset — the one-time lifetime pool just drains.
   if (!paid) return ledger;
 
   const last = ledger.lastResetDate ? startOfDay(new Date(ledger.lastResetDate)) : null;
-  // How many day-boundaries have passed since the last top-up.
   const daysElapsed = last ? Math.max(0, Math.floor((today.getTime() - last.getTime()) / DAY_MS)) : 1;
   if (daysElapsed > 0) {
-    // Add one day's allowance for each elapsed day, keeping whatever is unused,
-    // capped at a week's worth.
-    ledger.dailyLimit = DAILY_LIMIT;
-    ledger.dailyBalance = Math.min(MAX_BALANCE, (ledger.dailyBalance || 0) + daysElapsed * DAILY_LIMIT);
+    // A new day — RESET to the day's allowance (no carry-over, no accumulation).
+    ledger.dailyBalance = ledger.dailyLimit || DAILY_LIMIT;
     ledger.lastResetDate = today;
     await ledger.save();
   }

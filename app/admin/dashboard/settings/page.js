@@ -10,6 +10,13 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
 
+  // Honor a ?tab= deep link (e.g. the "Upgrade plan" CTA → ?tab=subscription).
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('tab');
+    const known = ['profile', 'contact', 'practice', 'domain', 'subscription', 'seo', 'clinic-manager', 'analytics'];
+    if (t && known.includes(t)) setActiveTab(t);
+  }, []);
+
   const [formData, setFormData] = useState({
     displayName: '',
     clinicName: '',
