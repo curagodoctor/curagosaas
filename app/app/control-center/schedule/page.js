@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import PosNav from '@/components/practice-os/PosNav';
 import NotificationWindowCard from '@/components/practice-os/NotificationWindowCard';
 
 // The Schedule screen — one card per owned+started pack that has a next task.
@@ -75,7 +74,6 @@ export default function SchedulePage() {
 
   return (
     <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-6 max-w-[900px] mx-auto">
-      <PosNav breadcrumb="Schedule" />
 
       {/* Title */}
       <p className="pos-label mb-2">Your schedule</p>

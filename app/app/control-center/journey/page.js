@@ -3,7 +3,6 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import PosNav from '@/components/practice-os/PosNav';
 
 // Journey & record, combined (§18 + §4/§6). Two views of the same history:
 // "Timeline" — milestones, KPIs, achievements; "Record" — the day-by-day logbook.
@@ -72,7 +71,6 @@ function JourneyInner() {
 
   return (
     <div className="max-w-2xl mx-auto px-5 pt-[64px] pb-10">
-      <PosNav breadcrumb={state.pack?.title} />
 
       <Link href={`/app/control-center/track?pack=${packId}`} className="pos-link text-sm inline-block mt-6">← Back to today</Link>
 

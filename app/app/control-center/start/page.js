@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import PosNav from '@/components/practice-os/PosNav';
 
 // §2 — the free setup funnel as a guided checklist. Sequences the steps a new
 // doctor moves through (address → profile → website → first article → GBP),
@@ -45,7 +44,6 @@ export default function StartPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-5 pt-[64px] pb-10">
-      <PosNav breadcrumb="Get set up" />
 
       <div className="mt-8 mb-5">
         <p className="pos-label mb-1">Get set up</p>

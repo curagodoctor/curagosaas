@@ -2,7 +2,6 @@
 
 import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import PosNav from '@/components/practice-os/PosNav';
 
 // Disease-cluster review (matches the Dominate onboarding prototype). Two stages:
 //  1. disease  — review each AI-drafted disease + its 1-2 treatments, one at a
@@ -139,7 +138,6 @@ function ClustersInner() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--paper)' }}>
       <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-12 max-w-[860px] mx-auto">
-        <PosNav breadcrumb="Practice map review" />
 
         {/* ---- empty OR "change approach": pathway choice / generating ---- */}
         {clusters.length === 0 || forceChoice ? (

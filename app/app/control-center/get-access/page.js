@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import PosNav from '@/components/practice-os/PosNav';
 
 // §11/§C — the early-access application. One question per page with a progress
 // bar; the founder reviews the answers and grants access. States: questionnaire
@@ -101,7 +100,6 @@ export default function GetAccessPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-5 pt-[64px] pb-10">
-      <PosNav breadcrumb="Early access" />
 
       {status === null && <p className="text-sm text-[var(--muted)] mt-8">Loading…</p>}
 

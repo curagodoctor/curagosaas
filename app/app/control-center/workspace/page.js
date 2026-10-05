@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import PosNav from '@/components/practice-os/PosNav';
 import RichTextEditor from '@/components/practice-os/RichTextEditor';
 
 // Workspace — a private, per-doctor notes app (Notes/Notion style). Text is saved
@@ -161,7 +160,6 @@ export default function WorkspacePage() {
 
   return (
     <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-6 max-w-[1240px] mx-auto">
-      <PosNav breadcrumb="Workspace" />
 
       <div className="flex items-end justify-between gap-4 flex-wrap">
         <div>

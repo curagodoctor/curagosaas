@@ -3,7 +3,6 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import PosNav from '@/components/practice-os/PosNav';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { SCORE_WEIGHTS, SCORE_LABELS } from '../_score';
 
@@ -34,7 +33,6 @@ function ScoreInner() {
 
   return (
     <div className="max-w-xl mx-auto px-5 pt-[64px] pb-10">
-      <PosNav breadcrumb={state.pack?.title} />
 
       <Link href={`/app/control-center/track?pack=${packId}`} className="pos-link text-sm inline-block mt-6">← Back to today</Link>
 

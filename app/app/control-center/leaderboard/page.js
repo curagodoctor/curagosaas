@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import PosNav from '@/components/practice-os/PosNav';
 import { UsernamePicker } from '../_username';
 
 // Anonymous leaderboard — ranked by XP + streak + speed. Real names never shown.
@@ -29,7 +28,6 @@ export default function LeaderboardPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-5 pt-[64px] pb-10">
-      <PosNav breadcrumb="Leaderboard" />
 
       <div className="mt-8 mb-6">
         <p className="pos-label mb-1">Leaderboard</p>

@@ -1,7 +1,6 @@
 'use client';
 
 import { Suspense, useState, useEffect, useCallback, useMemo } from 'react';
-import PosNav from '@/components/practice-os/PosNav';
 
 // The Content Planner — a day-wise content calendar with AI. Doctors capture
 // ideas, refine them into scripts with the assistant, schedule them onto days,
@@ -89,7 +88,6 @@ function PlannerInner() {
 
   return (
     <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-10 max-w-[1100px] mx-auto">
-      <PosNav breadcrumb="Content Planner" />
       <p className="pos-label mb-2">Content Planner</p>
       <h1 className="text-[28px] md:text-[36px] font-semibold text-[var(--ink)] leading-tight" style={{ letterSpacing: '-0.027em' }}>Content Planner</h1>
       <p className="text-[15px] text-[var(--muted)] mt-2.5 leading-relaxed" style={{ maxWidth: '58ch' }}>

@@ -4,7 +4,6 @@
 // PracticeOsProfile.variables.relevantLinks — the one place links live — so they
 // no longer have to go through the profile onboarding to update them.
 import { useState, useEffect } from 'react';
-import PosNav from '@/components/practice-os/PosNav';
 
 const SUGGESTED = ['Google Maps', 'Google Business Profile', 'Instagram', 'Facebook', 'LinkedIn', 'YouTube', 'Website'];
 
@@ -48,7 +47,6 @@ export default function LinksPage() {
 
   return (
     <div style={{ background: '#F7F9F5', minHeight: '100vh' }}>
-      <PosNav />
       <div className="pt-[64px]" />
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 20px 80px' }}>
         <p style={{ fontFamily: 'var(--mono, monospace)', fontSize: 11, letterSpacing: '0.11em', textTransform: 'uppercase', color: '#5E6B5F', margin: 0 }}>My Profile &amp; Links</p>

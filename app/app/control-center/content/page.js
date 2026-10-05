@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import PosNav from '@/components/practice-os/PosNav';
 
 // §3 — the optimization surface. To the doctor this is "content", not "tasks":
 // they review AI-generated output and approve/publish it. Simplified — no
@@ -47,7 +46,6 @@ export default function ContentPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-5 pt-[64px] pb-10">
-      <PosNav breadcrumb="Your content" />
 
       {state === null ? (
         <p className="text-sm text-[var(--muted)] mt-8">Loading…</p>

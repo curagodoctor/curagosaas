@@ -4,7 +4,6 @@ import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import WorkspaceDrawer from '@/components/practice-os/WorkspaceDrawer';
-import PosNav from '@/components/practice-os/PosNav';
 import { Spine, ContextRail, WEEK_THEMES } from '../_components';
 
 // The Day view for ONE pack — read via ?pack=<frameworkId>. One task, one reason.
@@ -66,7 +65,6 @@ function TrackView() {
 
   return (
     <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-6">
-      <PosNav breadcrumb={pack?.title} />
 
       {daysAway >= 4 && !allComplete && (
         <div className="pos-card p-5 mb-6 border-l-4" style={{ borderLeftColor: 'var(--green)' }}>

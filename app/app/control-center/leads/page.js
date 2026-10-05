@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import PosNav from '@/components/practice-os/PosNav';
 
 // Website enquiries — the "Request a call back" form submissions from the doctor's
 // site. Its own tab so every doctor sees their leads (not behind the premium
@@ -26,7 +25,6 @@ export default function LeadsPage() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--paper)' }}>
       <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-12 max-w-[900px] mx-auto">
-        <PosNav breadcrumb="Website enquiries" />
         <p className="pos-label" style={{ color: 'var(--green)' }}>Website enquiries</p>
         <h1 className="text-[24px] md:text-[30px] font-semibold text-[var(--ink)] mt-1 mb-1.5" style={{ letterSpacing: '-0.027em' }}>Request-a-call-back submissions</h1>
         <p className="text-[14px] text-[var(--muted)] mb-6" style={{ maxWidth: '60ch' }}>Everyone who filled the &ldquo;Request a call back&rdquo; form on your website appears here — newest first.</p>

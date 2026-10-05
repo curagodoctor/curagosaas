@@ -2,7 +2,6 @@
 
 import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import PosNav from '@/components/practice-os/PosNav';
 
 // The assistant writes light Markdown. GBP posts / services are copy-pasted into
 // Google, which shows literal ** and ### — so flatten Markdown to clean plain
@@ -252,7 +251,6 @@ function DayInner() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--paper)' }}>
       <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-12 max-w-[820px] mx-auto">
-        <PosNav breadcrumb="Today’s task" />
 
         {mission?.category && <p className="pos-label mb-1.5" style={{ color: 'var(--orange)' }}>{mission.category}</p>}
         <h1 className="text-[24px] md:text-[30px] font-semibold text-[var(--ink)] leading-tight" style={{ letterSpacing: '-0.027em' }}>{mission?.title}</h1>

@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import PosNav from '@/components/practice-os/PosNav';
 import GoogleCalendarPrompt from '@/components/admin/GoogleCalendarPrompt';
 import StreakCalendar from '@/components/practice-os/StreakCalendar';
 import PendingWorkPrompt from '@/components/practice-os/PendingWorkPrompt';
 import WebsiteStats from '@/components/practice-os/WebsiteStats';
 import EngagementNudges from '@/components/practice-os/EngagementNudges';
 import PublishedContent from '@/components/practice-os/PublishedContent';
+import { openUpgrade } from '@/components/practice-os/UpgradePopup';
 import { UsernamePicker } from './_username';
 import { ScheduleChooser } from './_schedule';
 
@@ -41,10 +41,6 @@ export default function ControlCenter() {
   // Post-payment: after the anonymous name, the doctor chooses a notification
   // schedule (daily, or weekly on a chosen "CuraGo day").
   const [needsSchedule, setNeedsSchedule] = useState(false);
-  // The "unlock premium tools" popup. There's no separate per-tool subscription —
-  // every paid tool unlocks with the Dominate Organic Search subscription, so the
-  // upgrade CTA opens this and routes straight to the DOS payment.
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -98,11 +94,6 @@ export default function ControlCenter() {
       }
     })();
   }, [router]);
-
-  // Arriving from a locked premium tool (?upgrade=1) opens the subscribe popup.
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('upgrade') === '1') setUpgradeOpen(true);
-  }, []);
 
   // Start the ₹5,000/mo Dominate Organic Search subscription (upfront, Razorpay).
   // On success the page reloads and the DOS card flips to its active state.
@@ -202,11 +193,24 @@ export default function ControlCenter() {
 
   return (
     <div className="w-full px-4 sm:px-8 lg:px-12 pt-[64px] pb-6 max-w-[1240px] mx-auto">
-      {/* Shared top nav */}
-      <PosNav />
-
       {/* Nudge to connect Google Calendar (shown after onboarding, until connected). */}
       <GoogleCalendarPrompt />
+
+      {/* Plan banner — kept on top of the dashboard. */}
+      {access?.tier === 'free' && (
+        <div className="rounded-xl mt-4 mb-4 p-4 flex flex-col sm:flex-row sm:items-center gap-3" style={{ background: 'var(--orange-soft)', border: '1px solid rgba(242,106,27,.25)' }}>
+          <div className="flex-1">
+            <p className="text-[14.5px] font-semibold text-[var(--ink)]">You&apos;re on the Free plan</p>
+            <p className="text-[13.5px] text-[var(--muted)] mt-0.5">1 website page + 5 blog pages, Google Business Profile, enquiries and settings. Upgrade to unlock bookings, contacts, workflows, analytics and unlimited pages.</p>
+          </div>
+          <button onClick={openUpgrade} className="shrink-0 text-center rounded-lg px-4 py-2.5 text-[14px] font-semibold text-white" style={{ background: 'var(--green)' }}>Upgrade plan</button>
+        </div>
+      )}
+      {access?.tier === 'founder' && (
+        <div className="rounded-xl mt-4 mb-4 p-3 text-[13.5px]" style={{ background: 'var(--green-soft, rgba(9,107,23,.06))', border: '1px solid var(--rule)', color: 'var(--muted)' }}>
+          <strong className="text-[var(--green)]">Founder access</strong> — full platform. Dominate Organic Search and AI credit refills are not included.
+        </div>
+      )}
 
       {/* Welcome */}
       <p className="pos-label mb-2">Control Center</p>
@@ -219,9 +223,12 @@ export default function ControlCenter() {
           : <>Your control center. Finish your setup and start building your organic presence — a little each day.</>}
       </p>
 
-      {/* 1 · Heat map — the first thing under the welcome. Today sits left-of-
-          middle with future days visible to its right (see StreakCalendar). */}
+      {/* 1 · Heat map — the first thing under the welcome, with the XP/streak
+          tally sitting just above it. */}
       <div className="mt-6">
+        <div className="flex items-center justify-end mb-2">
+          <span className="pos-label text-[var(--muted)]">Total XP {totalXp.toLocaleString('en-IN')}{bestStreak > 0 ? ` · 🔥 ${bestStreak}` : ''}</span>
+        </div>
         <StreakCalendar />
       </div>
 
@@ -332,127 +339,9 @@ export default function ControlCenter() {
         </div>
       )}
 
-      {/* 7 · Your workspace — every tool, grouped into the six blocks. Items your
-          current plan doesn't include show a lock and route to upgrade. Nothing is
-          hidden — you can always see what a higher plan unlocks. */}
-      <div className="flex items-center justify-between mt-8 mb-3">
-        <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)]">Your workspace</h2>
-        <span className="pos-label text-[var(--muted)]">Total XP {totalXp.toLocaleString('en-IN')}{bestStreak > 0 ? ` · 🔥 ${bestStreak}` : ''}</span>
-      </div>
-
-      {/* Free-plan banner */}
-      {access?.tier === 'free' && (
-        <div className="rounded-xl mb-4 p-4 flex flex-col sm:flex-row sm:items-center gap-3" style={{ background: 'var(--orange-soft)', border: '1px solid rgba(242,106,27,.25)' }}>
-          <div className="flex-1">
-            <p className="text-[14.5px] font-semibold text-[var(--ink)]">You&apos;re on the Free plan</p>
-            <p className="text-[13.5px] text-[var(--muted)] mt-0.5">1 website page + 5 blog pages, Google Business Profile, enquiries and settings. Upgrade to unlock bookings, contacts, workflows, analytics and unlimited pages.</p>
-          </div>
-          <button onClick={() => setUpgradeOpen(true)} className="shrink-0 text-center rounded-lg px-4 py-2.5 text-[14px] font-semibold text-white" style={{ background: 'var(--green)' }}>Upgrade plan</button>
-        </div>
-      )}
-      {access?.tier === 'founder' && (
-        <div className="rounded-xl mb-4 p-3 text-[13.5px]" style={{ background: 'var(--green-soft, rgba(9,107,23,.06))', border: '1px solid var(--rule)', color: 'var(--muted)' }}>
-          <strong className="text-[var(--green)]">Founder access</strong> — full platform. Dominate Organic Search and AI credit refills are not included.
-        </div>
-      )}
-
-      {(() => {
-        const can = (f) => !access || !f || access.features?.[f] !== false;
-        const BLOCKS = [
-          { title: 'Website Builder', accent: 'var(--green)', items: [
-            { label: 'AI Generate', href: '/admin/dashboard/ai-generate', f: 'aiGenerate' },
-            { label: 'Website Builder', href: '/admin/dashboard/pages', f: 'websiteBuilder' },
-            { label: 'Blog Builder', href: '/admin/dashboard/blog-articles', f: 'blogBuilder' },
-          ] },
-          { title: 'Bookings & Contacts', accent: 'var(--orange)', items: [
-            { label: 'Website enquiries', href: '/app/control-center/leads', f: 'websiteEnquiries' },
-            { label: 'Bookings', href: '/admin/dashboard/bookings', f: 'bookingSystem' },
-            { label: 'Slot manager', href: '/admin/dashboard/slots', f: 'bookingSystem' },
-            { label: 'Clinic manager', href: '/admin/dashboard/modes', f: 'bookingSystem' },
-            { label: 'Contacts', href: '/admin/dashboard/contacts', f: 'contacts' },
-            { label: 'Workflows', href: '/admin/dashboard/workflows', f: 'workflows' },
-            { label: 'Templates', href: '/admin/dashboard/templates', f: 'templates' },
-          ] },
-          { title: 'Utilities & Settings', accent: 'var(--green)', items: [
-            { label: 'Content planner', href: '/app/control-center/planner', f: 'contentPlanner' },
-            { label: 'Workspace', href: '/app/control-center/workspace', f: 'workspace' },
-            { label: 'Schedule', href: '/app/control-center/schedule', f: 'schedule' },
-            { label: 'Analytics', href: '/admin/dashboard/analytics', f: 'analytics' },
-            { label: 'Settings', href: '/admin/dashboard/settings', f: 'settings' },
-          ] },
-          { title: 'Google Business Profile', accent: 'var(--green)', items: [
-            { label: 'Manage your profile', href: '/app/control-center/gbp', f: 'gbp' },
-          ] },
-          { title: 'Customisation', accent: 'var(--green)', items: [
-            { label: 'Diseases & treatments', href: '/app/control-center/clusters', f: 'customisation' },
-            { label: 'Content instructions', href: '/app/control-center/profile', f: 'customisation' },
-          ] },
-          { title: 'My Profile & Links', accent: 'var(--green)', items: [
-            { label: 'My profile', href: '/app/control-center/profile', f: 'profile' },
-            { label: 'Links', href: '/app/control-center/links', f: 'links' },
-          ] },
-        ];
-        return (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {BLOCKS.map((b) => (
-              <div key={b.title} className="rounded-2xl p-4" style={{ background: 'var(--card)', border: '1px solid var(--rule-soft)' }}>
-                <div className="flex items-center gap-2 mb-2.5">
-                  <span className="w-2 h-2 rounded-full" style={{ background: b.accent }} />
-                  <h3 className="text-[13.5px] font-semibold text-[var(--ink)]">{b.title}</h3>
-                </div>
-                <div className="flex flex-col">
-                  {b.items.map((it) => {
-                    const unlocked = can(it.f);
-                    const rowCls = 'flex items-center justify-between py-2 px-2 -mx-2 rounded-lg transition-colors';
-                    const inner = (
-                      <>
-                        <span className="text-[14px]" style={{ color: unlocked ? 'var(--ink)' : 'var(--muted)' }}>{it.label}</span>
-                        {unlocked ? (
-                          <svg className="w-4 h-4 text-[var(--muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: 'var(--green)' }}>
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                            Upgrade
-                          </span>
-                        )}
-                      </>
-                    );
-                    return unlocked ? (
-                      <Link key={it.label} href={it.href} className={rowCls + ' hover:bg-[var(--rule-soft)]'}>{inner}</Link>
-                    ) : (
-                      <button key={it.label} type="button" onClick={() => setUpgradeOpen(true)} className={rowCls + ' w-full text-left hover:bg-[rgba(9,107,23,.06)]'}>{inner}</button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-      })()}
-
-      {/* Unlock-premium-tools popup. Every paid tool unlocks with the Dominate
-          Organic Search subscription — there's no separate per-tool plan — so the
-          single Subscribe button goes straight to the ₹5,000 (incl. GST) gateway. */}
-      {upgradeOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(16,26,19,.55)' }} onClick={() => { if (!payBusy) { setUpgradeOpen(false); setPayMsg(''); } }}>
-          <div className="w-full max-w-md rounded-2xl p-6 sm:p-7" style={{ background: 'var(--card)' }} onClick={(e) => e.stopPropagation()}>
-            <span className="pos-label" style={{ color: 'var(--green)' }}>Dominate Organic Search</span>
-            <h3 className="text-[21px] font-semibold text-[var(--ink)] mt-2" style={{ letterSpacing: '-0.02em' }}>Unlock all premium tools</h3>
-            <p className="text-[14.5px] text-[var(--muted)] mt-2.5 leading-relaxed">
-              All premium tools are available only for Dominate Organic Search subscribers. Click subscribe to unlock — bookings, contacts, workflows, templates, analytics and unlimited pages, plus the full daily engine.
-            </p>
-            {payMsg && <p className="text-[13px] mt-3" style={{ color: '#c0392b' }}>{payMsg}</p>}
-            <button onClick={startPayment} disabled={payBusy} className="w-full mt-5 rounded-lg px-4 py-3 text-[15px] font-semibold text-white disabled:opacity-60" style={{ background: 'var(--green)' }}>
-              {payBusy ? 'Opening payment…' : 'Subscribe · ₹5,000/month →'}
-            </button>
-            <p className="text-[12px] text-center text-[var(--muted)] mt-2.5">Inclusive of GST — ₹5,900/month, billed securely via Razorpay.</p>
-            <button onClick={() => { setUpgradeOpen(false); setPayMsg(''); }} disabled={payBusy} className="w-full mt-1.5 py-2 text-[13px] text-[var(--muted)] disabled:opacity-60">Maybe later</button>
-          </div>
-        </div>
-      )}
-
-      {/* Notes/workspace + assistant now mount globally in the app layout via the
-          single floating FAB. */}
+      {/* Notes/workspace + assistant mount globally in the app layout; nav,
+          workspace sidebar and the subscribe popup live in the control-center
+          layout shell. */}
     </div>
   );
 }

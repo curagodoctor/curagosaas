@@ -1,7 +1,6 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import PosNav from '@/components/practice-os/PosNav';
 import GbpGuide from '@/components/practice-os/GbpGuide';
 
 // §8 — the standalone Google Business Profile guide, reachable from the setup
@@ -11,7 +10,6 @@ export default function GbpPage() {
   const router = useRouter();
   return (
     <div className="max-w-2xl mx-auto px-5 pt-[64px] pb-10">
-      <PosNav breadcrumb="Google Business Profile" />
 
       <div className="mt-8 mb-4">
         <p className="pos-label" style={{ color: 'var(--green)' }}>Google Business Profile</p>
