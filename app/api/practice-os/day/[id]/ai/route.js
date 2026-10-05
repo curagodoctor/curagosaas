@@ -1,9 +1,10 @@
 import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import { requirePracticeOsDoctor } from '@/lib/practice-os/access';
+import { requirePracticeOsDoctor, getOptimizationAccessState } from '@/lib/practice-os/access';
 import AiCreditLedger from '@/models/practice-os/AiCreditLedger';
 import PracticeOsChatMessage from '@/models/practice-os/PracticeOsChatMessage';
+import Framework from '@/models/practice-os/Framework';
 import { getDay } from '@/lib/practice-os/engine';
 import { runMissionAssistant, isAiConfigured } from '@/lib/practice-os/ai';
 import { getDoctorProfileContext, getDoctorProfileFields, isProfileReadyForAi } from '@/lib/practice-os/profile';
@@ -75,6 +76,18 @@ export async function POST(request, { params }) {
 
     const found = await getDay(doctor._id, id);
     if (!found?.day) return NextResponse.json({ success: false, error: 'Mission not found' }, { status: 404 });
+
+    // Guardrail: Dominate Organic Search tasks are read-only once access has lapsed
+    // (grace or locked) — no new content/AI generation until the doctor resubscribes.
+    if (found.day.frameworkId) {
+      const fw = await Framework.findById(found.day.frameworkId).select('tier').lean();
+      if ((fw?.tier || 'optimization') === 'optimization') {
+        const { phase } = await getOptimizationAccessState(doctor._id);
+        if (phase === 'grace' || phase === 'locked') {
+          return NextResponse.json({ success: false, error: 'AccessEnded', message: 'Your Dominate Organic Search access has ended. Resubscribe to generate new content.' }, { status: 402 });
+        }
+      }
+    }
 
     // Credit check — one prompt = one credit, reset daily (PRD §8).
     const ledger = await AiCreditLedger.getOrCreateForToday(doctor._id);
