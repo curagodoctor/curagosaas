@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import GlobalAssistant from '@/components/practice-os/GlobalAssistant';
 import GoogleCalendarPrompt from '@/components/admin/GoogleCalendarPrompt';
 import PosNav from '@/components/practice-os/PosNav';
@@ -12,8 +12,16 @@ import '@/app/app/practiceos.css';
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // The page builder (/pages/<id>, /pages/new) is a self-contained full-screen
+  // app — it has its own top bar, back button and Save, and sizes itself with
+  // h-screen. Rendering it inside the PosNav shell (pt-[64px] + padding) makes it
+  // overflow the viewport, so on scroll its toolbar slides under the nav. Give it
+  // the whole viewport instead.
+  const isBuilder = /^\/admin\/dashboard\/pages\/[^/]+/.test(pathname || '');
 
   useEffect(() => {
     // Auth via httpOnly cookie — same gate as before, just without the sidebar.
@@ -42,6 +50,9 @@ export default function DashboardLayout({ children }) {
   }
 
   if (!isAuthenticated) return null;
+
+  // Full-screen builder — no PosNav/padding, it owns the viewport.
+  if (isBuilder) return children;
 
   // The same chrome as /app/control-center: the fixed PosNav top bar + warm paper
   // background. Every website-builder screen now lives under this one shell.
