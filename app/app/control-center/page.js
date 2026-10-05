@@ -41,6 +41,10 @@ export default function ControlCenter() {
   // Post-payment: after the anonymous name, the doctor chooses a notification
   // schedule (daily, or weekly on a chosen "CuraGo day").
   const [needsSchedule, setNeedsSchedule] = useState(false);
+  // The "unlock premium tools" popup. There's no separate per-tool subscription —
+  // every paid tool unlocks with the Dominate Organic Search subscription, so the
+  // upgrade CTA opens this and routes straight to the DOS payment.
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -94,6 +98,11 @@ export default function ControlCenter() {
       }
     })();
   }, [router]);
+
+  // Arriving from a locked premium tool (?upgrade=1) opens the subscribe popup.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('upgrade') === '1') setUpgradeOpen(true);
+  }, []);
 
   // Start the ₹5,000/mo Dominate Organic Search subscription (upfront, Razorpay).
   // On success the page reloads and the DOS card flips to its active state.
@@ -338,7 +347,7 @@ export default function ControlCenter() {
             <p className="text-[14.5px] font-semibold text-[var(--ink)]">You&apos;re on the Free plan</p>
             <p className="text-[13.5px] text-[var(--muted)] mt-0.5">1 website page + 5 blog pages, Google Business Profile, enquiries and settings. Upgrade to unlock bookings, contacts, workflows, analytics and unlimited pages.</p>
           </div>
-          <Link href="/admin/dashboard/settings?tab=subscription" className="shrink-0 text-center rounded-lg px-4 py-2.5 text-[14px] font-semibold text-white" style={{ background: 'var(--orange)' }}>Upgrade plan</Link>
+          <button onClick={() => setUpgradeOpen(true)} className="shrink-0 text-center rounded-lg px-4 py-2.5 text-[14px] font-semibold text-white" style={{ background: 'var(--green)' }}>Upgrade plan</button>
         </div>
       )}
       {access?.tier === 'founder' && (
@@ -348,7 +357,6 @@ export default function ControlCenter() {
       )}
 
       {(() => {
-        const UPGRADE = '/admin/dashboard/settings?tab=subscription';
         const can = (f) => !access || !f || access.features?.[f] !== false;
         const BLOCKS = [
           { title: 'Website Builder', accent: 'var(--green)', items: [
@@ -402,7 +410,7 @@ export default function ControlCenter() {
                         {unlocked ? (
                           <svg className="w-4 h-4 text-[var(--muted)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: 'var(--orange)' }}>
+                          <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-wide" style={{ color: 'var(--green)' }}>
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                             Upgrade
                           </span>
@@ -412,7 +420,7 @@ export default function ControlCenter() {
                     return unlocked ? (
                       <Link key={it.label} href={it.href} className={rowCls + ' hover:bg-[var(--rule-soft)]'}>{inner}</Link>
                     ) : (
-                      <Link key={it.label} href={UPGRADE} className={rowCls + ' hover:bg-[var(--orange-soft)]'}>{inner}</Link>
+                      <button key={it.label} type="button" onClick={() => setUpgradeOpen(true)} className={rowCls + ' w-full text-left hover:bg-[rgba(9,107,23,.06)]'}>{inner}</button>
                     );
                   })}
                 </div>
@@ -421,6 +429,27 @@ export default function ControlCenter() {
           </div>
         );
       })()}
+
+      {/* Unlock-premium-tools popup. Every paid tool unlocks with the Dominate
+          Organic Search subscription — there's no separate per-tool plan — so the
+          single Subscribe button goes straight to the ₹5,000 (incl. GST) gateway. */}
+      {upgradeOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(16,26,19,.55)' }} onClick={() => { if (!payBusy) { setUpgradeOpen(false); setPayMsg(''); } }}>
+          <div className="w-full max-w-md rounded-2xl p-6 sm:p-7" style={{ background: 'var(--card)' }} onClick={(e) => e.stopPropagation()}>
+            <span className="pos-label" style={{ color: 'var(--green)' }}>Dominate Organic Search</span>
+            <h3 className="text-[21px] font-semibold text-[var(--ink)] mt-2" style={{ letterSpacing: '-0.02em' }}>Unlock all premium tools</h3>
+            <p className="text-[14.5px] text-[var(--muted)] mt-2.5 leading-relaxed">
+              All premium tools are available only for Dominate Organic Search subscribers. Click subscribe to unlock — bookings, contacts, workflows, templates, analytics and unlimited pages, plus the full daily engine.
+            </p>
+            {payMsg && <p className="text-[13px] mt-3" style={{ color: '#c0392b' }}>{payMsg}</p>}
+            <button onClick={startPayment} disabled={payBusy} className="w-full mt-5 rounded-lg px-4 py-3 text-[15px] font-semibold text-white disabled:opacity-60" style={{ background: 'var(--green)' }}>
+              {payBusy ? 'Opening payment…' : 'Subscribe · ₹5,000/month →'}
+            </button>
+            <p className="text-[12px] text-center text-[var(--muted)] mt-2.5">Inclusive of GST — ₹5,900/month, billed securely via Razorpay.</p>
+            <button onClick={() => { setUpgradeOpen(false); setPayMsg(''); }} disabled={payBusy} className="w-full mt-1.5 py-2 text-[13px] text-[var(--muted)] disabled:opacity-60">Maybe later</button>
+          </div>
+        </div>
+      )}
 
       {/* Notes/workspace + assistant now mount globally in the app layout via the
           single floating FAB. */}

@@ -13,7 +13,7 @@ export default function SettingsPage() {
   // Honor a ?tab= deep link (e.g. the "Upgrade plan" CTA → ?tab=subscription).
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get('tab');
-    const known = ['profile', 'contact', 'practice', 'domain', 'subscription', 'seo', 'clinic-manager', 'analytics'];
+    const known = ['profile', 'contact', 'practice', 'domain', 'seo', 'clinic-manager', 'analytics'];
     if (t && known.includes(t)) setActiveTab(t);
   }, []);
 
@@ -246,7 +246,6 @@ export default function SettingsPage() {
     { id: 'practice', label: 'Practice Info' },
     { id: 'domain', label: 'Domain & DNS' },
     { id: 'analytics', label: 'Analytics & Tracking' },
-    { id: 'subscription', label: 'Subscription' },
     { id: 'seo', label: 'SEO Team' },
     { id: 'clinic-manager', label: 'Clinic Manager' },
   ];

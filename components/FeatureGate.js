@@ -62,8 +62,6 @@ function UpgradeScreen({ title, entitlements, onUnlocked }) {
   const [redeeming, setRedeeming] = useState(false);
   const [message, setMessage] = useState(null); // { type: 'error'|'success', text }
 
-  const trialExpired = entitlements?.plan === 'trial' && !entitlements?.isActive;
-
   const handleRedeem = async (e) => {
     e.preventDefault();
     if (!code.trim()) return;
@@ -100,21 +98,17 @@ function UpgradeScreen({ title, entitlements, onUnlocked }) {
         </div>
 
         <h2 className="text-2xl font-bold text-gray-900 mb-2">{title} is a premium feature</h2>
-        <p className="text-gray-600 mb-1">
-          {trialExpired
-            ? 'Your free trial has ended.'
-            : 'This module is available on a paid plan.'}
-        </p>
         <p className="text-gray-600 mb-6">
-          Upgrade your subscription or enter a promo code to unlock <strong>Contacts</strong>,{' '}
-          <strong>Workflows</strong>, <strong>Templates</strong> and <strong>Messaging</strong>.
+          All premium tools are available only for <strong>Dominate Organic Search</strong> subscribers.
+          Subscribe to unlock <strong>Contacts</strong>, <strong>Workflows</strong>,{' '}
+          <strong>Templates</strong>, <strong>Messaging</strong> and more.
         </p>
 
         <a
-          href="/admin/dashboard/settings?tab=subscription"
+          href="/app/control-center?upgrade=1"
           className="inline-flex items-center justify-center gap-2 w-full bg-[#096b17] hover:bg-[#075110] text-white px-6 py-3 rounded-xl font-semibold transition-colors mb-6"
         >
-          Upgrade Plan
+          Subscribe to unlock
         </a>
 
         <div className="relative my-6">
