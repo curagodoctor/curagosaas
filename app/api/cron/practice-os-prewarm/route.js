@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import PracticeOsProfile from '@/models/practice-os/PracticeOsProfile';
 import PracticeOsChatMessage from '@/models/practice-os/PracticeOsChatMessage';
 import Framework from '@/models/practice-os/Framework';
 import { isAiConfigured } from '@/lib/practice-os/ai';
 import { getDueTaskForDoctor } from '@/lib/practice-os/engine';
+import { listActiveOptimizationDoctorIds } from '@/lib/practice-os/access';
 import { generateMissionDraft } from '@/lib/practice-os/autoContent';
 
 export const runtime = 'nodejs';
@@ -34,7 +34,8 @@ export async function GET(request) {
     const fw = await Framework.findOne({ tier: 'optimization' }).select('_id').lean();
     if (!fw) return NextResponse.json({ success: true, skipped: 'no-optimization-framework' });
 
-    const profiles = await PracticeOsProfile.find({ 'optimizationAccess.granted': true }).select('doctorId').lean();
+    // Only doctors with working DOS access (unexpired grant or active subscription).
+    const profiles = (await listActiveOptimizationDoctorIds()).map((id) => ({ doctorId: id }));
 
     const startedAt = Date.now();
     let warmed = 0, cached = 0, noTask = 0, skipped = 0, processed = 0, capped = false;

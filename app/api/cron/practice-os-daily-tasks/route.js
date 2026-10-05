@@ -6,6 +6,7 @@ import Doctor from '@/models/Doctor';
 import Framework from '@/models/practice-os/Framework';
 import { isAiConfigured } from '@/lib/practice-os/ai';
 import { getDueTaskForDoctor } from '@/lib/practice-os/engine';
+import { listActiveOptimizationDoctorIds } from '@/lib/practice-os/access';
 import { generateMissionDraft } from '@/lib/practice-os/autoContent';
 import { signActionToken } from '@/lib/practice-os/actionToken';
 import { sendDailyTaskEmail } from '@/lib/email';
@@ -67,7 +68,17 @@ export async function GET(request) {
       }
       profiles = await PracticeOsProfile.find({ doctorId: docId }).select('doctorId scheduleType curagoDay').lean();
     } else {
-      profiles = await PracticeOsProfile.find({ 'optimizationAccess.granted': true }).select('doctorId scheduleType curagoDay').lean();
+      // Only doctors with WORKING DOS access right now — an unexpired grant window OR
+      // an active paid subscription. This excludes expired/revoked grants (no more
+      // mail once access lapses) and includes paid subscribers (whose access is a
+      // subscription, not a `granted` flag).
+      const activeIds = await listActiveOptimizationDoctorIds();
+      profiles = activeIds.length
+        ? await PracticeOsProfile.find({ doctorId: { $in: activeIds } }).select('doctorId scheduleType curagoDay').lean()
+        : [];
+      // Active doctors without a profile row still get the daily task (default schedule).
+      const haveProfile = new Set(profiles.map((p) => String(p.doctorId)));
+      for (const id of activeIds) if (!haveProfile.has(String(id))) profiles.push({ doctorId: id });
     }
 
     const targeted = !!(targetEmail || targetDoctorId);

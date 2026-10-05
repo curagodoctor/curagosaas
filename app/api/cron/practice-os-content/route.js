@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import PracticeOsProfile from '@/models/practice-os/PracticeOsProfile';
 import BlogArticle from '@/models/BlogArticle';
 import { isAiConfigured } from '@/lib/practice-os/ai';
+import { listActiveOptimizationDoctorIds } from '@/lib/practice-os/access';
 import { generateNextPage } from '@/lib/practice-os/contentGen';
 
 export const runtime = 'nodejs';
@@ -30,7 +30,8 @@ export async function GET(request) {
     if (!isAiConfigured()) return NextResponse.json({ success: true, skipped: 'ai-not-configured' });
 
     await connectDB();
-    const profiles = await PracticeOsProfile.find({ 'optimizationAccess.granted': true }).select('doctorId').lean();
+    // Only doctors with working DOS access (unexpired grant or active subscription).
+    const profiles = (await listActiveOptimizationDoctorIds()).map((id) => ({ doctorId: id }));
 
     const startedAt = Date.now();
     let created = 0, skipped = 0, done = 0, capped = false;

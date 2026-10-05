@@ -10,6 +10,7 @@ import { sendPracticeOsReminderEmail } from '@/lib/email';
 import { sendSMS } from '@/lib/twilio';
 import { fireWyltoWebhook, sendWyltoTemplate } from '@/lib/wylto';
 import PracticeOsProfile from '@/models/practice-os/PracticeOsProfile';
+import { hasOptimizationWorkingAccess } from '@/lib/practice-os/access';
 import { getTreatmentFlat, treatmentVars, fillTreatmentTokens } from '@/lib/practice-os/engine';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 
@@ -62,7 +63,9 @@ export async function GET(request) {
     const allActive = await PracticeOsEnrollment.find({ status: 'active' });
     // Skip enrollments whose pack no longer exists — otherwise a deleted pack
     // keeps emailing its doctors (handles orphans from packs deleted earlier).
-    const liveFwIds = new Set((await Framework.find({ deletedAt: null }).select('_id').lean()).map((f) => String(f._id)));
+    const liveFws = await Framework.find({ deletedAt: null }).select('_id tier').lean();
+    const liveFwIds = new Set(liveFws.map((f) => String(f._id)));
+    const optimizationFwIds = new Set(liveFws.filter((f) => (f.tier || 'optimization') === 'optimization').map((f) => String(f._id)));
     const enrollments = allActive.filter((e) => liveFwIds.has(String(e.frameworkId)));
 
     const now = new Date();
@@ -80,6 +83,13 @@ export async function GET(request) {
       try {
         // At most one reminder per calendar day.
         if (enrollment.lastReminderAt && isSameDay(enrollment.lastReminderAt, now)) {
+          continue;
+        }
+
+        // Dominate Organic Search reminders only go to doctors with working access —
+        // once a grant expires or is revoked (or a subscription lapses), the daily
+        // nudges stop. Non-DOS packs are unaffected.
+        if (optimizationFwIds.has(String(enrollment.frameworkId)) && !(await hasOptimizationWorkingAccess(enrollment.doctorId))) {
           continue;
         }
 
