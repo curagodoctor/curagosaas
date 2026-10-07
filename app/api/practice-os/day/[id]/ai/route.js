@@ -9,6 +9,7 @@ import { getDay } from '@/lib/practice-os/engine';
 import { runMissionAssistant, isAiConfigured } from '@/lib/practice-os/ai';
 import { getDoctorProfileContext, getDoctorProfileFields, isProfileReadyForAi } from '@/lib/practice-os/profile';
 import { getRemainingCredits } from '@/lib/practice-os/aiCredits';
+import { recordTextUsage } from '@/lib/practice-os/aiUsage';
 import { recordAiUse } from '@/lib/practice-os/performance';
 import { findModule } from '@/lib/practice-os/modules';
 
@@ -166,6 +167,12 @@ export async function POST(request, { params }) {
         promptTokens: usage.promptTokens, completionTokens: usage.completionTokens, totalTokens: usage.totalTokens,
       },
     ]);
+
+    // Per-model usage tracking (admin cost/token visibility).
+    await recordTextUsage(doctor._id, {
+      model: result.model, promptTokens: usage.promptTokens, completionTokens: usage.completionTokens,
+      totalTokens: usage.totalTokens, source: 'assistant', label: found.day?.category || 'assistant', missionId: id,
+    });
 
     // +2 Learning once/day for effective AI use (§10) — scoped to this pack.
     await recordAiUse(doctor._id, found.day.frameworkId);

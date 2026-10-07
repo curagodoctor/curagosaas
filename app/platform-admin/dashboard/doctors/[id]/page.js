@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DoctorPracticeOsTab from '@/components/platform-admin/DoctorPracticeOsTab';
+import DoctorAiUsageTab from '@/components/platform-admin/DoctorAiUsageTab';
 
 export default function DoctorDetailsPage({ params }) {
   const { id } = use(params);
@@ -148,6 +149,7 @@ export default function DoctorDetailsPage({ params }) {
   const tabs = [
     { id: 'profile', name: 'Profile' },
     { id: 'practiceos', name: 'Practice OS' },
+    { id: 'aiusage', name: 'AI Usage' },
     { id: 'bookings', name: 'Bookings' },
     { id: 'website', name: 'Website' },
   ];
@@ -440,6 +442,10 @@ export default function DoctorDetailsPage({ params }) {
 
       {activeTab === 'practiceos' && (
         <DoctorPracticeOsTab doctorId={id} />
+      )}
+
+      {activeTab === 'aiusage' && (
+        <DoctorAiUsageTab doctorId={id} />
       )}
 
       {activeTab === 'bookings' && (
