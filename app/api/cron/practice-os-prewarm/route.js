@@ -22,6 +22,7 @@ const PER_DOCTOR_TIMEOUT_MS = 90000;
 const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('per-doctor timeout')), ms))]);
 
 export async function GET(request) {
+  const runStartedAt = new Date();
   try {
     const cronSecret = process.env.CRON_SECRET;
     const authHeader = request.headers.get('authorization');
@@ -60,9 +61,14 @@ export async function GET(request) {
         skipped++;
       }
     }
+    try {
+      const CronRunLog = (await import('@/models/practice-os/CronRunLog')).default;
+      await CronRunLog.create({ job: 'practice-os-prewarm', startedAt: runStartedAt, finishedAt: new Date(), durationMs: Date.now() - startedAt, ok: true, counts: { candidates: profiles.length, warmed, cached, noTask, skipped, capped } });
+    } catch { /* best-effort */ }
     return NextResponse.json({ success: true, granted: profiles.length, warmed, cached, noTask, skipped, capped });
   } catch (error) {
     console.error('[practice-os-prewarm]', error);
+    try { const CronRunLog = (await import('@/models/practice-os/CronRunLog')).default; await CronRunLog.create({ job: 'practice-os-prewarm', startedAt: runStartedAt, finishedAt: new Date(), ok: false, error: error.message || 'Cron failed' }); } catch { /* best-effort */ }
     return NextResponse.json({ success: false, error: error.message || 'Cron failed' }, { status: 500 });
   }
 }

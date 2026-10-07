@@ -47,6 +47,7 @@ function inWindow(window, hour) {
  * says "you missed". No medical claims (NMC-safe).
  */
 export async function GET(request) {
+  const runStartedAt = new Date();
   try {
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
@@ -320,9 +321,14 @@ export async function GET(request) {
       console.error('[PracticeOS Reminders] Content reminders pass failed:', contentErr);
     }
 
+    try {
+      const CronRunLog = (await import('@/models/practice-os/CronRunLog')).default;
+      await CronRunLog.create({ job: 'practice-os-reminders', startedAt: runStartedAt, finishedAt: new Date(), durationMs: Date.now() - runStartedAt.getTime(), ok: true, counts: { processed, sent, contentReminders } });
+    } catch { /* best-effort */ }
     return NextResponse.json({ processed, sent, results, contentReminders });
   } catch (error) {
     console.error('[PracticeOS Reminders] Error:', error);
+    try { const CronRunLog = (await import('@/models/practice-os/CronRunLog')).default; await CronRunLog.create({ job: 'practice-os-reminders', startedAt: runStartedAt, finishedAt: new Date(), ok: false, error: error.message || 'Cron job failed' }); } catch { /* best-effort */ }
     return NextResponse.json(
       { success: false, error: error.message || 'Cron job failed' },
       { status: 500 }
