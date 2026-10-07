@@ -91,44 +91,45 @@ export async function GET(request) {
     const istDow = new Date(Date.now() + 5.5 * 3600 * 1000).getUTCDay();
 
     const startedAt = Date.now();
-    let emailed = 0, skipped = 0, noTask = 0, processed = 0, capped = false;
+    let emailed = 0, generated = 0, skipped = 0, noTask = 0, processed = 0, capped = false;
     for (const p of profiles) {
       if (processed >= MAX_PER_RUN) { capped = true; break; }
       if (Date.now() - startedAt > TIME_BUDGET_MS) { capped = true; break; } // return cleanly before the 300s kill
       const doctorId = p.doctorId;
       const r = { doctorId, name: '', draft: false, image: false, email: false, ok: true, reason: '' };
       try {
-        // Weekly doctors are only notified on their chosen CuraGo day (unless this
-        // is a manual/forced preview). Daily doctors (or no preference) run every day.
-        if (!force && p.scheduleType === 'weekly' && typeof p.curagoDay === 'number' && p.curagoDay !== istDow) {
-          skipped++; r.reason = 'not-curago-day'; dbg({ reason: 'not-curago-day', curagoDay: p.curagoDay, today: istDow }); continue;
-        }
-
         const task = await getDueTaskForDoctor(doctorId);
         if (!task) { noTask++; r.reason = 'no-due-task'; dbg({ reason: 'no-due-task' }); continue; }
 
-        // One email PER DAY (a true daily mail): skip only if we already emailed this
-        // doctor today (IST). The current task re-sends daily until they complete it;
-        // once completed, the next task becomes current and goes out the next day.
-        const enr = await PracticeOsEnrollment.findOne({ doctorId, frameworkId: fw._id }).select('lastTaskEmailedAt').lean();
-        const istDay = (t) => new Date(new Date(t).getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
-        if (!force && enr?.lastTaskEmailedAt && istDay(enr.lastTaskEmailedAt) === istDay(Date.now())) { skipped++; r.reason = 'already-emailed-today'; dbg({ reason: 'already-emailed-today', day: task.dayNumber }); continue; }
-
         const doctor = await Doctor.findById(doctorId).select('email displayName name').lean();
         r.name = doctor?.displayName || doctor?.name || '';
-        if (!doctor?.email) { skipped++; r.ok = false; r.reason = 'no-email'; dbg({ reason: 'no-email' }); continue; }
 
         processed++;
         let genErr = '';
         // Targeted preview runs process one doctor, so give generation the whole
         // budget; scheduled runs keep the tight cap so a hung call can't starve the batch.
         const perDoctorMs = targeted ? 240000 : PER_DOCTOR_TIMEOUT_MS;
+        // ALWAYS generate the current task's content daily — the weekly setting only
+        // controls the EMAIL below, never the content generation. So every doctor gets
+        // their day's task prepared on the dashboard every day.
         const draft = await withTimeout(generateMissionDraft(doctorId, task.id, { throwOnError: targeted }), perDoctorMs).catch((e) => {
           console.error('[practice-os-daily-tasks] generate timed out/failed:', String(doctorId), e.message);
           genErr = e.message; return null;
         });
         if (!draft) { skipped++; r.ok = false; r.reason = `draft-failed${genErr ? ': ' + genErr : ''}`; dbg({ reason: 'draft-null', day: task.dayNumber, taskId: String(task.id), genErr }); continue; }
         r.draft = true; r.image = !!draft.imageUrl;
+
+        // The EMAIL goes out per the doctor's schedule: daily doctors every day; weekly
+        // doctors only on their chosen CuraGo day. Content was generated above regardless.
+        const isEmailDay = force || p.scheduleType !== 'weekly' || (typeof p.curagoDay === 'number' && p.curagoDay === istDow);
+        if (!isEmailDay) { generated++; r.reason = 'generated (weekly — no email today)'; dbg({ reason: 'generated-no-email', day: task.dayNumber }); continue; }
+
+        if (!doctor?.email) { skipped++; r.ok = false; r.reason = 'no-email'; dbg({ reason: 'no-email' }); continue; }
+
+        // One email PER DAY (IST): the current task re-sends daily until completed.
+        const enr = await PracticeOsEnrollment.findOne({ doctorId, frameworkId: fw._id }).select('lastTaskEmailedAt').lean();
+        const istDay = (t) => new Date(new Date(t).getTime() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
+        if (!force && enr?.lastTaskEmailedAt && istDay(enr.lastTaskEmailedAt) === istDay(Date.now())) { skipped++; r.reason = 'already-emailed-today'; dbg({ reason: 'already-emailed-today', day: task.dayNumber }); continue; }
 
         const externalUrl = draft.external ? (draft.primaryAction?.url || '') : '';
         const res = await sendDailyTaskEmail({
@@ -166,10 +167,10 @@ export async function GET(request) {
       const CronRunLog = (await import('@/models/practice-os/CronRunLog')).default;
       await CronRunLog.create({
         job: 'practice-os-daily-tasks', startedAt: runStartedAt, finishedAt: new Date(), durationMs: Date.now() - startedAt,
-        ok: true, counts: { candidates: profiles.length, emailed, skipped, noTask, capped }, results,
+        ok: true, counts: { candidates: profiles.length, emailed, generated, skipped, noTask, capped }, results,
       });
     } catch { /* best-effort */ }
-    return NextResponse.json({ success: true, granted: profiles.length, emailed, skipped, noTask, capped, ...(targeted ? { debug } : {}) });
+    return NextResponse.json({ success: true, granted: profiles.length, emailed, generated, skipped, noTask, capped, ...(targeted ? { debug } : {}) });
   } catch (error) {
     console.error('[practice-os-daily-tasks]', error);
     try {

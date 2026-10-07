@@ -3,7 +3,7 @@ import connectDB from '@/lib/mongodb';
 import PracticeOsChatMessage from '@/models/practice-os/PracticeOsChatMessage';
 import Framework from '@/models/practice-os/Framework';
 import { isAiConfigured } from '@/lib/practice-os/ai';
-import { getDueTaskForDoctor } from '@/lib/practice-os/engine';
+import { getPendingTasksForDoctor } from '@/lib/practice-os/engine';
 import { listActiveOptimizationDoctorIds } from '@/lib/practice-os/access';
 import { generateMissionDraft } from '@/lib/practice-os/autoContent';
 
@@ -19,6 +19,10 @@ const MAX_PER_RUN = parseInt(process.env.PRACTICE_OS_PREWARM_MAX_PER_RUN, 10) > 
   ? parseInt(process.env.PRACTICE_OS_PREWARM_MAX_PER_RUN, 10) : 5;
 const TIME_BUDGET_MS = 260000;
 const PER_DOCTOR_TIMEOUT_MS = 120000; // room for text + image (incl. a fallback image attempt)
+// Cap NEW generations per doctor per run so a big accumulated backlog fills over
+// several runs (the job fires repeatedly across the window) rather than in one burst.
+const PER_DOCTOR_CAP = parseInt(process.env.PRACTICE_OS_PREWARM_PER_DOCTOR_CAP, 10) > 0
+  ? parseInt(process.env.PRACTICE_OS_PREWARM_PER_DOCTOR_CAP, 10) : 3;
 const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('per-doctor timeout')), ms))]);
 
 export async function GET(request) {
@@ -45,17 +49,27 @@ export async function GET(request) {
       if (Date.now() - startedAt > TIME_BUDGET_MS) { capped = true; break; }
       const doctorId = p.doctorId;
       try {
-        const task = await getDueTaskForDoctor(doctorId);
-        if (!task) { noTask++; continue; }
-        // Already warmed? skip (cheap check, no getDay/AI).
-        const exists = await PracticeOsChatMessage.exists({ doctorId, missionId: task.id, role: 'assistant' });
-        if (exists) { cached++; continue; }
-        processed++;
-        const draft = await withTimeout(generateMissionDraft(doctorId, task.id), PER_DOCTOR_TIMEOUT_MS).catch((e) => {
-          console.error('[practice-os-prewarm] generate failed:', String(doctorId), e.message);
-          return null;
-        });
-        if (draft) warmed++; else skipped++;
+        // Generate content for EVERY accumulated day's task (not just the oldest), so
+        // each day's output is ready on the dashboard. Newest-first (today's task
+        // first), capped per doctor so a large backlog fills over several runs.
+        const pending = await getPendingTasksForDoctor(doctorId);
+        if (!pending.length) { noTask++; continue; }
+        let madeThisDoctor = 0;
+        for (const task of [...pending].reverse()) {
+          if (processed >= MAX_PER_RUN) { capped = true; break; }
+          if (madeThisDoctor >= PER_DOCTOR_CAP) break;
+          if (Date.now() - startedAt > TIME_BUDGET_MS) { capped = true; break; }
+          // Already warmed? skip (cheap check, no getDay/AI).
+          const exists = await PracticeOsChatMessage.exists({ doctorId, missionId: task.id, role: 'assistant' });
+          if (exists) { cached++; continue; }
+          processed++;
+          const draft = await withTimeout(generateMissionDraft(doctorId, task.id), PER_DOCTOR_TIMEOUT_MS).catch((e) => {
+            console.error('[practice-os-prewarm] generate failed:', String(doctorId), e.message);
+            return null;
+          });
+          if (draft) { warmed++; madeThisDoctor++; } else skipped++;
+        }
+        if (capped) break;
       } catch (e) {
         console.error('[practice-os-prewarm] doctor failed:', String(doctorId), e.message);
         skipped++;
