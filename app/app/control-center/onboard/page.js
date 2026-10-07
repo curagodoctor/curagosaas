@@ -936,7 +936,7 @@ function Wizard() {
               <p className="text-[15px] text-[var(--ink)]" style={{ lineHeight: 1.6 }}>Your website is ready. Edit everything from the AI builder — you never leave CuraGo.</p>
               <div className="flex flex-wrap gap-3 mt-3">
                 {siteUrl && <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="pos-action inline-block">View my website →</a>}
-                <a href="/admin/dashboard/ai-generate" className="pos-card inline-block px-4 py-3 text-[14px] font-semibold" style={{ borderColor: 'var(--green)', color: 'var(--green)' }}>Edit in the AI builder →</a>
+                <a href="/admin/dashboard/ai-generate" target="_blank" rel="noopener noreferrer" className="pos-card inline-block px-4 py-3 text-[14px] font-semibold" style={{ borderColor: 'var(--green)', color: 'var(--green)' }}>Edit in the AI builder →</a>
               </div>
             </div>
             {/* Blog pages are created on request (not auto) — invite them to make one. */}
@@ -944,7 +944,7 @@ function Wizard() {
               <p className="pos-label" style={{ color: 'var(--orange)' }}>Patient-education blog</p>
               <p className="text-[15px] font-semibold text-[var(--ink)] mt-1" style={{ lineHeight: 1.5 }}>Write your first blog page when you&apos;re ready.</p>
               <p className="text-[13px] text-[var(--muted)] mt-1">Generate a patient-education article with AI — you can build up to 5 on the free plan.</p>
-              <a href="/admin/dashboard/blog-articles" className="inline-block px-4 py-3 text-[14px] font-semibold rounded-[9px] text-white mt-3" style={{ background: 'var(--orange)' }}>Create a blog page →</a>
+              <a href="/admin/dashboard/blog-articles" target="_blank" rel="noopener noreferrer" className="inline-block px-4 py-3 text-[14px] font-semibold rounded-[9px] text-white mt-3" style={{ background: 'var(--orange)' }}>Create a blog page →</a>
             </div>
             <div className="pos-card p-4 mb-4">
               <p className="pos-num text-2xl text-[var(--green)]">{creditsLeft ?? 10}</p>
