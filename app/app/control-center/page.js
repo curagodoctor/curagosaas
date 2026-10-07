@@ -250,46 +250,50 @@ export default function ControlCenter() {
           </div>
         </div>
       )}
+      {/* Dominate Organic Search — the pack band and the accumulated day-wise tasks
+          combined into one accordion card. Each day's task has a View button that
+          opens its generated output. */}
       {accessStatus === 'granted' && (
-        <div className="pos-card p-6 sm:p-7 mt-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ borderColor: 'var(--green)', background: 'var(--green-soft)' }}>
-          <div>
-            <span className="pos-label" style={{ color: 'var(--green)' }}>Your pack · active</span>
-            <p className="text-[19px] sm:text-[22px] font-semibold text-[var(--ink)] mt-1.5" style={{ letterSpacing: '-0.02em' }}>Dominate Organic Search{cycleDaysLeft != null ? ` — ${cycleDaysLeft} days left this cycle` : ''}</p>
-            <p className="text-[13.5px] text-[var(--muted)] mt-1" style={{ maxWidth: '58ch', lineHeight: 1.55 }}>
-              {diseasesReviewed
-                ? 'We prepare your practice’s work; you review and approve it. 28-day cycle.'
-                : 'First, review the diseases you treat and their treatments — everything we draft is built from these.'}
-            </p>
+        <div className="pos-card mt-5 overflow-hidden" style={{ borderColor: 'var(--green)' }}>
+          {/* Pack band */}
+          <div className="p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style={{ background: 'var(--green-soft)' }}>
+            <div>
+              <span className="pos-label" style={{ color: 'var(--green)' }}>Your pack · active</span>
+              <p className="text-[19px] sm:text-[22px] font-semibold text-[var(--ink)] mt-1.5" style={{ letterSpacing: '-0.02em' }}>Dominate Organic Search{cycleDaysLeft != null ? ` — ${cycleDaysLeft} days left this cycle` : ''}</p>
+              <p className="text-[13.5px] text-[var(--muted)] mt-1" style={{ maxWidth: '58ch', lineHeight: 1.55 }}>
+                {diseasesReviewed
+                  ? 'We prepare your practice’s work each day; you review and approve it. 28-day cycle.'
+                  : 'First, review the diseases you treat and their treatments — everything we draft is built from these.'}
+              </p>
+            </div>
+            <button onClick={() => router.push(reviewContentHref)} className="pos-action shrink-0 self-start sm:self-auto">{diseasesReviewed ? "Review today's content →" : 'Review my diseases & treatments →'}</button>
           </div>
-          <button onClick={() => router.push(reviewContentHref)} className="pos-action shrink-0 self-start sm:self-auto">{diseasesReviewed ? "Review today's content →" : 'Review my diseases & treatments →'}</button>
-        </div>
-      )}
 
-      {/* Pending tasks — the pickable backlog across started packs. The first
-          actionable thing right under the pack band. */}
-      {pendingTasks.length > 0 && diseasesReviewed && (
-        <div className="mt-6">
-          <button onClick={() => setPendingOpen((v) => !v)} className="w-full flex items-center justify-between mb-3 group" aria-expanded={pendingOpen}>
-            <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)]">Pending tasks <span className="text-[var(--orange)]">· {pendingTasks.length}</span></h2>
-            <svg className="w-4 h-4 text-[var(--muted)] transition-transform" style={{ transform: pendingOpen ? 'rotate(180deg)' : 'none' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-          </button>
-          {pendingOpen && (<>
-          <div className={`grid grid-cols-1 gap-3${pendingTasks.length > 1 ? ' sm:grid-cols-2' : ''}`}>
-            {pendingTasks.slice(0, 12).map(({ pack, m }) => (
-              <Link key={m.id} href={`/app/control-center/day/${m.id}?pack=${pack.id}`} className="pos-card p-4 flex items-start gap-3 hover:shadow-md transition-shadow group" style={{ borderColor: 'var(--orange)' }}>
-                <span className="w-9 h-9 rounded-xl grid place-items-center shrink-0" style={{ background: 'var(--orange-soft)' }}>
-                  <svg className="w-[18px] h-[18px]" style={{ color: 'var(--orange)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[11px] text-[var(--muted)]">Day {m.dayNumber}{m.category ? ` · ${m.category}` : ''}</p>
-                  <p className="font-semibold text-[14.5px] text-[var(--ink)] leading-snug mt-0.5">{m.title}</p>
-                  <span className="text-[13px] font-medium mt-1 inline-block" style={{ color: 'var(--orange)' }}>See day {m.dayNumber} →</span>
+          {/* Accordion — the accumulated day-wise tasks, each with a View button. */}
+          {diseasesReviewed && pendingTasks.length > 0 && (
+            <div style={{ borderTop: '1px solid var(--rule)' }}>
+              <button onClick={() => setPendingOpen((v) => !v)} className="w-full flex items-center justify-between px-6 py-3.5 hover:bg-[var(--rule-soft)] transition-colors" aria-expanded={pendingOpen}>
+                <span className="text-[13px] font-semibold uppercase tracking-wide text-[var(--muted)]">Your tasks <span style={{ color: 'var(--orange)' }}>· {pendingTasks.length} to approve</span></span>
+                <svg className="w-4 h-4 text-[var(--muted)] transition-transform" style={{ transform: pendingOpen ? 'rotate(180deg)' : 'none' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              {pendingOpen && (
+                <div className="max-h-[420px] overflow-y-auto">
+                  {pendingTasks.map(({ pack, m }) => (
+                    <div key={m.id} className="flex items-center gap-3 px-6 py-3" style={{ borderTop: '1px solid var(--rule-soft)' }}>
+                      <span className="w-9 h-9 rounded-xl grid place-items-center shrink-0" style={{ background: 'var(--orange-soft)' }}>
+                        <span className="pos-num text-[15px] leading-none" style={{ color: 'var(--orange)' }}>{m.dayNumber}</span>
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] text-[var(--muted)]">Day {m.dayNumber}{m.category ? ` · ${m.category}` : ''}</p>
+                        <p className="font-medium text-[14px] text-[var(--ink)] leading-snug truncate">{m.title}</p>
+                      </div>
+                      <Link href={`/app/control-center/day/${m.id}?pack=${pack.id}`} className="shrink-0 rounded-lg px-4 py-1.5 text-[13px] font-semibold text-white" style={{ background: 'var(--orange)' }}>View</Link>
+                    </div>
+                  ))}
                 </div>
-              </Link>
-            ))}
-          </div>
-          {pendingTasks.length > 12 && <p className="text-[12px] text-[var(--muted)] mt-2">+{pendingTasks.length - 12} more — open the pack to see all.</p>}
-          </>)}
+              )}
+            </div>
+          )}
         </div>
       )}
 
