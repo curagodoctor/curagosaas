@@ -18,7 +18,7 @@ export const maxDuration = 300;
 const MAX_PER_RUN = parseInt(process.env.PRACTICE_OS_PREWARM_MAX_PER_RUN, 10) > 0
   ? parseInt(process.env.PRACTICE_OS_PREWARM_MAX_PER_RUN, 10) : 5;
 const TIME_BUDGET_MS = 260000;
-const PER_DOCTOR_TIMEOUT_MS = 90000;
+const PER_DOCTOR_TIMEOUT_MS = 120000; // room for text + image (incl. a fallback image attempt)
 const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('per-doctor timeout')), ms))]);
 
 export async function GET(request) {

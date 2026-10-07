@@ -27,7 +27,7 @@ export const maxDuration = 300;
 const MAX_PER_RUN = parseInt(process.env.PRACTICE_OS_TASKS_MAX_PER_RUN, 10) > 0
   ? parseInt(process.env.PRACTICE_OS_TASKS_MAX_PER_RUN, 10) : 5;
 const TIME_BUDGET_MS = 250000;      // leave ~50s headroom under maxDuration (300s)
-const PER_DOCTOR_TIMEOUT_MS = 80000; // a single hung AI call must not eat the budget
+const PER_DOCTOR_TIMEOUT_MS = 120000; // room for text + image (incl. a fallback image attempt); a single hung call still can't run forever
 
 const withTimeout = (promise, ms) => Promise.race([
   promise,
