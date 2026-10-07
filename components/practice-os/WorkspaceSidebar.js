@@ -2,7 +2,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { openUpgrade } from './UpgradePopup';
+
+// Is the current route this nav item's page (exact, or a sub-route of it)?
+function isActive(pathname, href) {
+  if (!pathname || !href) return false;
+  const p = pathname.replace(/\/+$/, '');
+  const h = href.replace(/\/+$/, '');
+  return p === h || p.startsWith(h + '/');
+}
 
 // Every workspace tool, grouped into the six blocks. Items the current plan
 // doesn't include show a lock + "Upgrade" and open the subscribe popup. Nothing
@@ -54,6 +63,7 @@ const LockChip = () => (
 
 // The nav list — shared by the desktop rail and the mobile drawer.
 function Nav({ access, onNavigate }) {
+  const pathname = usePathname();
   const can = (f) => !access || !f || access.features?.[f] !== false;
   const rowCls = 'flex items-center justify-between gap-2 py-[7px] px-2.5 -mx-1 rounded-lg transition-colors';
   return (
@@ -67,14 +77,16 @@ function Nav({ access, onNavigate }) {
           <div className="flex flex-col">
             {b.items.map((it) => {
               const unlocked = can(it.f);
+              const active = unlocked && isActive(pathname, it.href);
               const inner = (
                 <>
-                  <span className="text-[13.5px] truncate" style={{ color: unlocked ? 'var(--ink)' : 'var(--muted)' }}>{it.label}</span>
+                  <span className="text-[13.5px] truncate" style={{ color: active ? 'var(--green)' : unlocked ? 'var(--ink)' : 'var(--muted)', fontWeight: active ? 600 : 400 }}>{it.label}</span>
                   {unlocked ? <ChevronRight /> : <LockChip />}
                 </>
               );
+              const activeCls = active ? ' bg-[rgba(9,107,23,.08)] font-medium' : '';
               return unlocked ? (
-                <Link key={it.label} href={it.href} onClick={onNavigate} className={rowCls + ' hover:bg-[var(--rule-soft)]'}>{inner}</Link>
+                <Link key={it.label} href={it.href} onClick={onNavigate} aria-current={active ? 'page' : undefined} className={rowCls + activeCls + (active ? '' : ' hover:bg-[var(--rule-soft)]')}>{inner}</Link>
               ) : (
                 <button key={it.label} type="button" onClick={() => { openUpgrade(); onNavigate?.(); }} className={rowCls + ' w-full text-left hover:bg-[rgba(9,107,23,.06)]'}>{inner}</button>
               );

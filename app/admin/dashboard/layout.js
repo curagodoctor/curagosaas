@@ -5,6 +5,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import GlobalAssistant from '@/components/practice-os/GlobalAssistant';
 import GoogleCalendarPrompt from '@/components/admin/GoogleCalendarPrompt';
 import PosNav from '@/components/practice-os/PosNav';
+import WorkspaceSidebar from '@/components/practice-os/WorkspaceSidebar';
+import UpgradePopup from '@/components/practice-os/UpgradePopup';
 // Same design tokens (--paper, pos-link, …) the Control Center uses, so these
 // website-builder screens render inside the one unified shell instead of a
 // separate sidebar app.
@@ -15,6 +17,7 @@ export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [access, setAccess] = useState(null);
 
   // The page builder (/pages/<id>, /pages/new) is a self-contained full-screen
   // app — it has its own top bar, back button and Save, and sizes itself with
@@ -28,7 +31,7 @@ export default function DashboardLayout({ children }) {
     (async () => {
       try {
         const res = await fetch('/api/auth/me');
-        if (res.ok) setIsAuthenticated(true);
+        if (res.ok) { const data = await res.json().catch(() => ({})); setIsAuthenticated(true); setAccess(data.access || null); }
         else router.push('/login');
       } catch {
         router.push('/login');
@@ -54,15 +57,21 @@ export default function DashboardLayout({ children }) {
   // Full-screen builder — no PosNav/padding, it owns the viewport.
   if (isBuilder) return children;
 
-  // The same chrome as /app/control-center: the fixed PosNav top bar + warm paper
-  // background. Every website-builder screen now lives under this one shell.
+  // The same shell as /app/control-center: fixed PosNav + the workspace sidebar
+  // (with the current page highlighted) + warm paper background, so every
+  // website-builder screen lives under one unified shell.
   return (
     <div style={{ background: 'var(--paper)', minHeight: '100vh' }}>
       <PosNav />
-      <GoogleCalendarPrompt />
-      <main className="pt-[64px] min-h-screen">
-        <div className="px-4 sm:px-6 lg:px-8 py-6">{children}</div>
-      </main>
+      <WorkspaceSidebar access={access} />
+      {/* Offset content past the fixed desktop rail. */}
+      <div className="lg:pl-[240px]">
+        <GoogleCalendarPrompt />
+        <main className="pt-[64px] min-h-screen">
+          <div className="px-4 sm:px-6 lg:px-8 py-6">{children}</div>
+        </main>
+      </div>
+      <UpgradePopup />
       <GlobalAssistant />
     </div>
   );
