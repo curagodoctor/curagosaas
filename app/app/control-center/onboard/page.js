@@ -153,6 +153,8 @@ function Wizard() {
   const [creditsLeft, setCreditsLeft] = useState(null);
   const [firstArticleId, setFirstArticleId] = useState('');
   const [firstArticleUrl, setFirstArticleUrl] = useState('');
+  const [blogBusy, setBlogBusy] = useState(false);
+  const [blogErr, setBlogErr] = useState('');
   const [practiceErr, setPracticeErr] = useState(false);
   // commitment quiz (legacy — the milestone now takes upfront payment directly)
   const [quizIdx, setQuizIdx] = useState(0);
@@ -526,6 +528,26 @@ function Wizard() {
   }, [fields]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { if (st.id === 'generate' && genState === 'idle') runGenerate(); }, [st.id, genState, runGenerate]);
+
+  // Create the first blog page INLINE (no leaving onboarding). The first article
+  // ships published and returns a live URL; the doctor just views it. Topic comes
+  // from their own profile (a condition/procedure they treat).
+  const createBlog = useCallback(async () => {
+    setBlogBusy(true); setBlogErr('');
+    try {
+      const pick = (v) => String(v || '').split(',')[0]?.trim();
+      const topic = pick(fields.diseases) || pick(fields.procedures) || pick(fields.expertise) || fields.specialty || 'a common condition you treat';
+      const r = await fetch('/api/practice-os/actions/draft-blog', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ context: `A patient-education article about ${topic}.` }),
+      }).then((x) => x.json());
+      if (!r.success) throw new Error(r.error || 'Could not create your blog page.');
+      if (typeof r.creditsRemaining === 'number') setCreditsLeft(r.creditsRemaining);
+      setFirstArticleId(r.id || '');
+      setFirstArticleUrl(r.url || '');
+    } catch (x) { setBlogErr(x.message || 'Something went wrong — try again.'); }
+    finally { setBlogBusy(false); }
+  }, [fields]);
 
   // §5b — AI-suggest local areas from the city.
   const suggestAreas = async () => {
@@ -939,12 +961,24 @@ function Wizard() {
                 <a href="/admin/dashboard/ai-generate" target="_blank" rel="noopener noreferrer" className="pos-card inline-block px-4 py-3 text-[14px] font-semibold" style={{ borderColor: 'var(--green)', color: 'var(--green)' }}>Edit in the AI builder →</a>
               </div>
             </div>
-            {/* Blog pages are created on request (not auto) — invite them to make one. */}
+            {/* Blog pages are created on request (not auto) — generated INLINE here,
+                so the doctor never leaves onboarding. The first one ships published. */}
             <div className="pos-card p-5 mb-4" style={{ background: 'var(--orange-soft, rgba(242,106,27,.08))', borderColor: 'var(--orange)' }}>
               <p className="pos-label" style={{ color: 'var(--orange)' }}>Patient-education blog</p>
-              <p className="text-[15px] font-semibold text-[var(--ink)] mt-1" style={{ lineHeight: 1.5 }}>Write your first blog page when you&apos;re ready.</p>
-              <p className="text-[13px] text-[var(--muted)] mt-1">Generate a patient-education article with AI — you can build up to 5 on the free plan.</p>
-              <a href="/admin/dashboard/blog-articles" target="_blank" rel="noopener noreferrer" className="inline-block px-4 py-3 text-[14px] font-semibold rounded-[9px] text-white mt-3" style={{ background: 'var(--orange)' }}>Create a blog page →</a>
+              {firstArticleUrl ? (
+                <>
+                  <p className="text-[15px] font-semibold text-[var(--ink)] mt-1" style={{ lineHeight: 1.5 }}>Your first blog page is live. 🎉</p>
+                  <p className="text-[13px] text-[var(--muted)] mt-1">Written from your profile and published to your website. You can create up to 5 on the free plan.</p>
+                  <a href={firstArticleUrl} target="_blank" rel="noopener noreferrer" className="inline-block px-4 py-3 text-[14px] font-semibold rounded-[9px] text-white mt-3" style={{ background: 'var(--orange)' }}>View my blog page →</a>
+                </>
+              ) : (
+                <>
+                  <p className="text-[15px] font-semibold text-[var(--ink)] mt-1" style={{ lineHeight: 1.5 }}>Write your first blog page now.</p>
+                  <p className="text-[13px] text-[var(--muted)] mt-1">We&apos;ll generate a patient-education article from your profile and publish it to your website — right here. You can build up to 5 on the free plan.</p>
+                  {blogErr && <p className="text-[13px] mt-2" style={{ color: '#c0392b' }}>{blogErr}</p>}
+                  <button onClick={createBlog} disabled={blogBusy} className="inline-block px-4 py-3 text-[14px] font-semibold rounded-[9px] text-white mt-3 disabled:opacity-60" style={{ background: 'var(--orange)' }}>{blogBusy ? 'Writing your blog page… (~20s)' : 'Create a blog page'}</button>
+                </>
+              )}
             </div>
             <div className="pos-card p-4 mb-4">
               <p className="pos-num text-2xl text-[var(--green)]">{creditsLeft ?? 10}</p>
