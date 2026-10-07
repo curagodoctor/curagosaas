@@ -33,7 +33,7 @@ export async function POST(request) {
     const COUNT = settings.treatmentCount || 20;
     const adminExtra = (settings.clusterGenInstructions || '').trim();
 
-    const gen = await structureContent({
+    const gen = await structureContent({ meta: { doctorId: doctor._id, source: 'onboarding-treatments' },
       instruction: `From the specialty "${specialty}"${fields.subspecialty ? ` (subspecialty "${fields.subspecialty}")` : ''}, generate the core TREATMENT / PROCEDURE universe for an INDEPENDENT NON-SURGICAL specialist practising in an Indian Tier-1 or Tier-2 city. This is architecture only — clinically coherent, commercially meaningful, SEO-useful — NOT a keyword list.
 
 Generate EXACTLY ${COUNT} distinct treatments/procedures/services this specialist genuinely offers — always return the full ${COUNT}, never fewer. Weight them toward COMMON + HIGH-DEMAND + HIGH-PRACTICE-VALUE, with a smaller set of complex/high-authority ones. Prioritise the highest patient-demand, highest-value services first. Each must be: medically distinct; clinically legitimate; genuinely within this specialty and an independent specialist's actual scope; consistent with current medical standards. PREFER the doctor's own listed procedures/expertise where they apply. Use full, standard medical terminology paired with a plain patient-facing name where helpful — NEVER abbreviations. Do NOT create separate entries for wording variations. Do NOT list procedures the specialist would not personally perform.

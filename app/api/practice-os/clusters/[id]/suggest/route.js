@@ -29,7 +29,7 @@ export async function POST(request, { params }) {
     if (!cluster) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
 
     const fields = await getDoctorProfileFields(doctor._id);
-    const gen = await structureContent({
+    const gen = await structureContent({ meta: { doctorId: doctor._id, source: 'clusters-suggest' },
       instruction: `List the SPECIFIC treatments THIS doctor would offer for "${cluster.name}" — minimum 1, maximum 3 — genuinely used for THIS disease (never generic). PREFER the doctor's own listed procedures where they apply; otherwise use standard, medically-accurate procedures for this specialty. Each treatment: a real procedure with full, correct medical terminology (never abbreviations). Return JSON: {"treatments": string[] } (1-3 items). Never invent procedures outside their specialty.`,
       source: `Disease: ${cluster.name}\nSpecialty: ${fields.specialty || ''}\nSubspecialty: ${fields.subspecialty || '(none)'}\nProcedures the doctor listed: ${fields.procedures || '(none)'}\nAreas of expertise: ${fields.expertise || ''}`,
       profileFields: fields,

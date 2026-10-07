@@ -30,7 +30,7 @@ export async function POST(request, { params }) {
     const idea = `${doc.title || ''}\n${doc.content || ''}`.trim() || 'A short educational piece for my patients.';
 
     const fields = await getDoctorProfileFields(doctor._id);
-    const gen = await structureContent({
+    const gen = await structureContent({ meta: { doctorId: doctor._id, source: 'draft-script' },
       instruction: `Turn this idea into a ready-to-record ${format} script for an Indian doctor's own patient education. Return JSON: {"title": string (<=80 chars — a clear, specific title for this piece), "script": string}. The script must have: a one-line HOOK, then the body broken into short spoken beats (each on its own line, plain language a patient understands), and a calm closing line (e.g. "If this sounds like you, consult a specialist"). Keep it ~150-220 words — the length of a 45-60 second video. Ground it ONLY in the doctor's real profile and scope; do not invent conditions, procedures, statistics or claims.`,
       source: `Idea from the doctor:\n${idea}`,
       profileFields: fields,

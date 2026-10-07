@@ -57,7 +57,7 @@ export async function POST(request) {
     const type = PAGE_TYPES.includes(pageType) ? pageType : '';
 
     const fields = await getDoctorProfileFields(doctor._id);
-    const gen = await structureLongContent({
+    const gen = await structureLongContent({ meta: { doctorId: doctor._id, source: 'draft-blog' },
       instruction: 'Write a COMPREHENSIVE, in-depth patient-facing blog article grounded in the doctor\'s profile and knowledge base. Return JSON: {"title": string (<=90 chars, no clickbait), "excerpt": string (<=180 chars), "metaDescription": string (<=155 chars, SEO), "imageAlt": string (<=120 chars, describes a fitting featured image), "category": string, "blocks": [{"heading": string, "content": string (3-6 substantial paragraphs of plain text each)}] (the BODY only — do NOT put an FAQ block here), "faqs": [{"question": string, "answer": string (2-3 sentences)}] (4-6 short Q&As)} with 6-9 body blocks covering the topic thoroughly (what it is, causes, symptoms, when to see a doctor, diagnosis, treatment options, prevention/aftercare). Informative and NMC-compliant — educational, no superlatives, no guarantees, no soliciting.',
       source: context,
       profileFields: fields,

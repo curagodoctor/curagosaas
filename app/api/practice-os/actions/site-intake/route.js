@@ -24,7 +24,7 @@ export async function POST(request) {
       .map(([k, v]) => `${k}: ${String(v).slice(0, 160)}`)
       .join('\n');
 
-    const gen = await structureContent({
+    const gen = await structureContent({ meta: { doctorId: doctor._id, source: 'site-intake' },
       instruction: `You are setting up an Indian doctor's clinic website. Based on what we already know (below), ask a SHORT set of CONTENT questions to fill the gaps needed for a great, accurate website. Rules:
 - Ask only what's missing or would materially improve the site. 3 to 6 content questions max. Do NOT ask for things already known.
 - Prefer "select" or "multiselect" with sensible ready options so the doctor can just tap; use "text"/"textarea" only when free input is needed.

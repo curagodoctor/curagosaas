@@ -35,7 +35,7 @@ export async function POST(request) {
       return NextResponse.json({ success: true, fields: [], parsed: false, note: 'Could not read text from this file — please type your details.' });
     }
 
-    const { fields, configured } = await extractProfileFields(text);
+    const { fields, configured } = await extractProfileFields(text, { doctorId: doctor._id });
     return NextResponse.json({ success: true, fields, parsed: true, aiConfigured: configured !== false });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });

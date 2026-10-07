@@ -50,7 +50,7 @@ export async function POST(request) {
       // Unstructured text → let the LLM structure it (spends a credit).
       await assertHasCredits(doctor._id);
       chargeForAi = true;
-      const gen = await structureContent({
+      const gen = await structureContent({ meta: { doctorId: doctor._id, source: 'publish-blog' },
         instruction: 'Turn the source content into a patient-facing blog article. Return JSON: {"title": string (<=90 chars, no clickbait), "excerpt": string (<=180 chars), "metaDescription": string (<=155 chars, SEO), "imageAlt": string (<=120 chars, describes a fitting featured image), "category": string, "blocks": [{"heading": string, "content": string (plain text — keep ALL detail, do not summarise)}], "faqs": [{"question": string, "answer": string}]}. Preserve every section of the source. Informative and NMC-compliant — no superlatives, no guarantees.',
         source: text,
         profileFields: fields,

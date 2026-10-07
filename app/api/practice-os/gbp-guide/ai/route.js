@@ -41,7 +41,7 @@ export async function POST(request) {
       ? `Here is the current draft:\n\n${prior}\n\nThe doctor asks: ${message.trim()}\n\nReturn the updated version.`
       : `${block.aiPrompt}\n\nThis is for the "${block.title || block.label}" step of setting up the doctor's Google Business Profile.`;
 
-    const result = await runAssistant({ userPrompt, profileContext, profileFields, history: [] });
+    const result = await runAssistant({ userPrompt, profileContext, profileFields, history: [], meta: { doctorId: doctor._id, source: 'gbp-guide' } });
     if (!result.success || !result.text) return NextResponse.json({ success: false, error: result.error || 'Could not generate.' }, { status: 502 });
 
     // Cache the latest response for this block.

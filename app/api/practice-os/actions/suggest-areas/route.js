@@ -16,7 +16,7 @@ export async function POST(request) {
     const c = String(city || '').trim();
     if (!c) return NextResponse.json({ success: false, error: 'Enter your city first.' }, { status: 400 });
 
-    const gen = await structureContent({
+    const gen = await structureContent({ meta: { doctorId: doctor._id, source: 'suggest-areas' },
       instruction: `The doctor practises in ${c}${specialty ? ` (${specialty})` : ''}. List 8–12 well-known localities, neighbourhoods or nearby towns within/around ${c} that patients would search from — the areas worth mentioning across the website and Google profile for local visibility. Return ONLY JSON: {"areas": [string]}. Real places only; no inventions.`,
       source: `City: ${c}. Specialty: ${specialty || ''}.`,
     });

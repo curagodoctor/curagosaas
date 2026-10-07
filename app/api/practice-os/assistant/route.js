@@ -97,6 +97,7 @@ export async function POST(request) {
         instruction: 'Write Google Business Profile content for this Indian doctor based on the request. Return JSON: {"heading": string (short), "text": string (<=1400 chars, plain, patient-friendly, NMC-compliant — no superlatives, no guarantees, no soliciting; end with a soft line like "Book an appointment to know more.")}. Ground it only in the doctor\'s profile — never invent services, prices or credentials.',
         source: prompt,
         profileFields,
+        meta: { doctorId: doctor._id, source: 'assistant-gbp' },
       });
       if (gen.success && gen.data?.text) {
         const { remaining } = await chargeAiCredits(doctor._id, { label: 'assistant-gbp', tokens: 0 });
@@ -105,7 +106,7 @@ export async function POST(request) {
       }
     }
 
-    const result = await runAssistant({ userPrompt: prompt, profileContext, profileFields, history });
+    const result = await runAssistant({ userPrompt: prompt, profileContext, profileFields, history, meta: { doctorId: doctor._id, source: 'assistant' } });
     if (!result.success) return NextResponse.json({ success: false, error: result.error }, { status: 502 });
 
     const usage = result.usage || {};

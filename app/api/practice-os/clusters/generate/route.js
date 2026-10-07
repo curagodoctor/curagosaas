@@ -34,7 +34,7 @@ export async function POST(request) {
     const COUNT = Math.max(10, settings.treatmentCount || 20); // surgical path needs >=1 per disease (10 diseases)
     const adminExtra = (settings.clusterGenInstructions || '').trim();
 
-    const gen = await structureContent({
+    const gen = await structureContent({ meta: { doctorId: doctor._id, source: 'onboarding-clusters' },
       instruction: `From the specialty "${specialty}"${fields.subspecialty ? ` (subspecialty "${fields.subspecialty}")` : ''}, generate the core DISEASE and TREATMENT architecture for an INDEPENDENT specialist practising in an Indian Tier-1 or Tier-2 city. This is architecture only — clinically coherent, commercially meaningful, SEO-useful — NOT a keyword list, NOT content.
 
 DISEASE SELECTION — generate EXACTLY 10 distinct diseases/clinical conditions.
