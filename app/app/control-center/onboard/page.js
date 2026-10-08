@@ -660,8 +660,10 @@ function Wizard() {
                 const onFocus = (e) => { e.target.style.outline = '2px solid var(--orange)'; e.target.style.outlineOffset = '1px'; };
                 const onBlur = (e) => { e.target.style.outline = 'none'; };
                 return (
-                <label key={q.key} className="block">
-                  <span className="flex items-baseline gap-2 mb-1.5 flex-wrap">
+                <label key={q.key} className="flex flex-col">
+                  {/* Fixed-height header so labels that wrap to 2 lines don't push
+                      their input below the single-line one next to it in the row. */}
+                  <span className="flex items-baseline gap-x-2 gap-y-0.5 mb-1.5 flex-wrap content-start" style={{ minHeight: '2.6rem' }}>
                     <span className="text-[13px] font-semibold text-[var(--ink)]">{q.label}</span>
                     {q.fmt && <span className="text-[12px]" style={{ color: 'var(--muted)' }}>({q.fmt})</span>}
                     {q.optional && <span className="pos-label" style={{ color: 'var(--muted)' }}>Optional</span>}

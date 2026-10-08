@@ -139,6 +139,7 @@ export async function GET(request) {
           taskTitle: draft.title,
           contentMarkdown: draft.content,
           imageUrl: draft.imageUrl,
+          imagePrompt: draft.imagePrompt,
           external: draft.external,
           externalLabel: EXTERNAL_LABEL[draft.primaryAction?.type] || 'the platform',
           externalUrl,

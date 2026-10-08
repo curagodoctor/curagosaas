@@ -6,6 +6,7 @@ import BlogArticle from '@/models/BlogArticle';
 import { primaryBaseUrl } from '@/lib/primaryDomain';
 import { buildArticleGraph, jsonLdScript } from '@/lib/seo/schema';
 import { shouldCountView } from '@/lib/viewCount';
+import { stripAssistantPreamble } from '@/lib/practice-os/parseArticle';
 import { getSiteChrome } from '../../_siteChrome';
 import SiteChrome from '@/components/booking-page/SiteChrome';
 
@@ -99,6 +100,16 @@ export default async function DoctorBlogArticlePage({ params }) {
   // Fill {{doctor_name}} / {{city}} tokens used in modular blog copy.
   const vars = { doctor_name: doctorName || '', city: article.location?.city || doctor.city || '' };
   const fill = (t) => String(t || '').replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, k) => (vars[k] != null ? String(vars[k]) : ''));
+  // Render inline markdown bold (**text**) as real <strong> instead of literal
+  // asterisks, after token-filling. whitespace-pre-line on the container keeps line
+  // breaks; this only handles **bold** (the one markdown the model emits inline).
+  const renderRich = (t) => {
+    const s = fill(t);
+    return s.split(/(\*\*[^*\n]+\*\*)/g).map((p, i) => {
+      const m = /^\*\*([^*\n]+)\*\*$/.exec(p);
+      return m ? <strong key={i}>{m[1]}</strong> : p;
+    });
+  };
 
   // Modular content blocks; fall back to the legacy fixed sections for older
   // articles so existing published blogs keep rendering unchanged.
@@ -106,7 +117,7 @@ export default async function DoctorBlogArticlePage({ params }) {
     .filter((s) => s && s.content && s.content.trim())
     .map((s) => ({ heading: s.heading || '', content: s.content }));
   const blocks = (article.blocks && article.blocks.length)
-    ? article.blocks.filter((b) => (b.heading && b.heading.trim()) || (b.content && b.content.trim()))
+    ? article.blocks.map((b) => ({ ...b, content: stripAssistantPreamble(b.content) })).filter((b) => (b.heading && b.heading.trim()) || (b.content && b.content.trim()))
     : legacyBlocks;
   const locationBlock = article.locationBlock && (article.locationBlock.heading?.trim() || article.locationBlock.content?.trim())
     ? article.locationBlock
@@ -181,7 +192,7 @@ export default async function DoctorBlogArticlePage({ params }) {
                 </h2>
               )}
               <div className="text-gray-700 leading-relaxed whitespace-pre-line">
-                {fill(b.content)}
+                {renderRich(b.content)}
               </div>
             </section>
           ))}
@@ -193,7 +204,7 @@ export default async function DoctorBlogArticlePage({ params }) {
                 {fill(locationBlock.heading) || 'Clinic Location & Consultation Information'}
               </h2>
               <div className="text-gray-700 leading-relaxed whitespace-pre-line">
-                {fill(locationBlock.content)}
+                {renderRich(locationBlock.content)}
               </div>
             </section>
           )}
@@ -211,7 +222,7 @@ export default async function DoctorBlogArticlePage({ params }) {
                       <span>{fill(faq.question)}</span>
                     </h3>
                     <div className="pl-6 text-gray-700 leading-relaxed whitespace-pre-line text-sm">
-                      {fill(faq.answer)}
+                      {renderRich(faq.answer)}
                     </div>
                   </div>
                 ))}
