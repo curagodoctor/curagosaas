@@ -38,7 +38,7 @@ export default function UpgradePopup() {
         key: d.keyId,
         subscription_id: d.subscriptionId,
         name: 'CuraGo — Dominate Organic Search',
-        description: '₹5,000 + 18% GST (₹5,900) / month',
+        description: '₹5,000 + 18% GST (₹5,900) every 28 days',
         handler: async (resp) => {
           try {
             await fetch('/api/practice-os/optimization/verify', {
