@@ -42,6 +42,7 @@ const BLOCKS = [
     { label: 'Templates', href: '/admin/dashboard/templates', f: 'templates' },
   ] },
   { title: 'Utilities & Settings', accent: 'var(--green)', icon: Icon.utilities, items: [
+    { label: 'Search trends', href: '/app/control-center/search-trends', f: 'analytics' },
     { label: 'Content planner', href: '/app/control-center/planner', f: 'contentPlanner' },
     { label: 'Workspace', href: '/app/control-center/workspace', f: 'workspace' },
     { label: 'Schedule', href: '/app/control-center/schedule', f: 'schedule' },

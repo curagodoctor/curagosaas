@@ -329,6 +329,9 @@ export default function ControlCenter() {
       {/* 5 · Your website status */}
       <div className="mt-4"><WebsiteStats /></div>
 
+      {/* 5b · This week's patient search trends (SerpAPI) */}
+      <div className="mt-4"><SearchTrendsWidget /></div>
+
       {/* 6 · Leaderboard — hidden (deferred). Re-enable the LeaderboardCard here. */}
       {false && <div className="mt-4"><LeaderboardCard lb={leaderboard} /></div>}
 
@@ -546,6 +549,48 @@ function MiniStat({ n, label, suffix = '' }) {
     <div>
       <p className="pos-num text-lg text-[var(--ink)]">{n}{suffix && <span className="text-[13px]"> {suffix}</span>}</p>
       <p className="text-[10px] text-[var(--muted)] uppercase tracking-wide">{label}</p>
+    </div>
+  );
+}
+
+// Compact "what patients searched this week" card. Self-fetches; renders nothing
+// until a report with a summary exists (so it stays quiet for doctors who haven't
+// set a specialty yet). Full detail lives at /app/control-center/search-trends.
+function SearchTrendsWidget() {
+  const [report, setReport] = useState(null);
+  useEffect(() => {
+    let on = true;
+    fetch('/api/practice-os/search-trends', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => { if (on && d.success && d.report?.summary) setReport(d.report); })
+      .catch(() => {});
+    return () => { on = false; };
+  }, []);
+  if (!report) return null;
+
+  const topics = (report.suggestedTopics || []).slice(0, 3);
+  return (
+    <div className="pos-card p-5">
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--orange)' }} />
+          <p className="pos-label" style={{ color: 'var(--orange)' }}>Patient search trends</p>
+        </div>
+        <Link href="/app/control-center/search-trends" className="text-[12.5px] font-semibold" style={{ color: 'var(--green)' }}>View all →</Link>
+      </div>
+      <p className="text-[11.5px] text-[var(--muted)] mb-2">
+        {report.specialty}{report.city ? ` · ${report.city}` : ''} · this week
+      </p>
+      <p className="text-[14px] leading-[1.6] text-[var(--ink)]" style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        {report.summary}
+      </p>
+      {topics.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-3">
+          {topics.map((t, i) => (
+            <span key={i} className="inline-block rounded-full px-2.5 py-1 text-[12px]" style={{ background: 'var(--rule-soft)', color: 'var(--ink)' }}>{t}</span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
