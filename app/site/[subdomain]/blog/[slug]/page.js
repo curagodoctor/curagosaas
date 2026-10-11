@@ -152,9 +152,21 @@ export default async function DoctorBlogArticlePage({ params }) {
             </span>
           )}
 
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3 leading-tight">
             {article.title}
           </h1>
+
+          {/* NMC disclosure — this is patient-education content, AI-assisted and
+              reviewed by the doctor. Shown beneath the title on every article. */}
+          <div className="mb-4">
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-medium bg-[#096b17]/[0.08] text-[#096b17] border border-[#096b17]/20"
+              title="This health-education article was AI-assisted and reviewed by the doctor. For general information only — not a substitute for professional medical advice."
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              Health education · AI-assisted
+            </span>
+          </div>
 
           <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
             <span className="font-medium">{authorName}</span>
