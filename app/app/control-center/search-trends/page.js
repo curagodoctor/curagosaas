@@ -55,7 +55,7 @@ export default function SearchTrendsPage() {
         <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
           <div>
             <div className="text-[10.5px] font-mono uppercase tracking-[0.11em]" style={{ color: 'var(--muted)' }}>
-              Search trends
+              Research Agent
             </div>
             <h1 className="text-[26px] md:text-[32px] font-semibold leading-tight mt-1" style={{ color: 'var(--ink)', letterSpacing: '-0.025em' }}>
               What your patients are searching for

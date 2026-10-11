@@ -223,6 +223,10 @@ export default function ControlCenter() {
           : <>Your control center. Finish your setup and start building your organic presence — a little each day.</>}
       </p>
 
+      {/* Research Agent — this week's patient search trends, surfaced right under
+          the welcome, above the heat map. */}
+      <div className="mt-6"><SearchTrendsWidget /></div>
+
       {/* 1 · Heat map — the first thing under the welcome, with the XP/streak
           tally sitting just above it. */}
       <div className="mt-6">
@@ -328,9 +332,6 @@ export default function ControlCenter() {
 
       {/* 5 · Your website status */}
       <div className="mt-4"><WebsiteStats /></div>
-
-      {/* 5b · This week's patient search trends (SerpAPI) */}
-      <div className="mt-4"><SearchTrendsWidget /></div>
 
       {/* 6 · Leaderboard — hidden (deferred). Re-enable the LeaderboardCard here. */}
       {false && <div className="mt-4"><LeaderboardCard lb={leaderboard} /></div>}
@@ -574,7 +575,7 @@ function SearchTrendsWidget() {
       <div className="flex items-center justify-between gap-3 mb-2">
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--orange)' }} />
-          <p className="pos-label" style={{ color: 'var(--orange)' }}>Patient search trends</p>
+          <p className="pos-label" style={{ color: 'var(--orange)' }}>Research Agent</p>
         </div>
         <Link href="/app/control-center/search-trends" className="text-[12.5px] font-semibold" style={{ color: 'var(--green)' }}>View all →</Link>
       </div>
