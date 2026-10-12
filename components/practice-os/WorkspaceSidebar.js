@@ -58,6 +58,7 @@ const BLOCKS = [
   ] },
   { title: 'My Profile & Links', accent: 'var(--green)', icon: Icon.profile, items: [
     { label: 'My profile', href: '/app/control-center/profile', f: 'profile' },
+    { label: 'My library', href: '/app/control-center/library' },
     { label: 'Links', href: '/app/control-center/links', f: 'links' },
   ] },
 ];

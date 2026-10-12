@@ -135,6 +135,8 @@ export async function POST(request) {
     // that lost the token still attaches the pack. Best-effort; never blocks signup.
     try {
       await linkPendingPurchases(doctor, { claimToken });
+      const { linkPendingStorePurchases } = await import('@/lib/store/claimPending');
+      await linkPendingStorePurchases(doctor, { claimToken });
     } catch (e) {
       console.error('[signup claim link]', e.message);
     }

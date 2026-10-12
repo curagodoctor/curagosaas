@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { getCurrentDoctor } from '@/lib/doctorAuth';
 import { linkPendingPurchases } from '@/lib/practice-os/claimPending';
+import { linkPendingStorePurchases } from '@/lib/store/claimPending';
 
 export const runtime = 'nodejs';
 
@@ -15,7 +16,8 @@ export async function POST(request) {
     await connectDB();
     const { claimToken } = await request.json().catch(() => ({}));
     const result = await linkPendingPurchases(doctor, { claimToken });
-    return NextResponse.json({ success: true, linked: result.linked });
+    const storeResult = await linkPendingStorePurchases(doctor, { claimToken });
+    return NextResponse.json({ success: true, linked: (result.linked || 0) + (storeResult.linked || 0) });
   } catch (error) {
     console.error('[claim-pending]', error);
     return NextResponse.json({ success: false, error: 'Failed to link purchase' }, { status: 500 });

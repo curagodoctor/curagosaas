@@ -86,6 +86,8 @@ export async function GET(request) {
     try {
       const { linkPendingPurchases } = await import('@/lib/practice-os/claimPending');
       await linkPendingPurchases(doctor, {});
+      const { linkPendingStorePurchases } = await import('@/lib/store/claimPending');
+      await linkPendingStorePurchases(doctor, {});
     } catch (e) {
       console.error('[google claim link]', e.message);
     }

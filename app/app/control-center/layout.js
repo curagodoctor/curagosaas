@@ -30,6 +30,7 @@ const BREADCRUMB = {
   track: 'Your pack',
   start: 'Get started',
   'get-access': 'Get access',
+  library: 'My library',
 };
 
 function breadcrumbFor(pathname) {
