@@ -168,6 +168,13 @@ export default function SettingsPage() {
           customDomain: data.doctor.customDomain || null,
         });
         setSubdomainInput(data.doctor.subdomain || '');
+        // Populate the domain status on load (so an already-verified domain shows
+        // its "connected" badge, instead of looking unverified until a re-check).
+        if (data.doctor.customDomain) {
+          fetch('/api/doctor/domain', { credentials: 'include' })
+            .then((r) => r.json()).then((dd) => { if (dd?.success && dd.domain) setDomainStatus(dd); })
+            .catch(() => {});
+        }
       }
       setLoading(false);
     } catch (error) {
@@ -793,14 +800,22 @@ export default function SettingsPage() {
                             <p className="mt-1">Your domain also points to <span className="font-mono">{domainStatus.conflict.join(', ')}</span> (not Vercel). Delete that A record at your registrar — keep only the Vercel record above. The site will be unreliable until you do.</p>
                           </div>
                         ) : (
-                          <div className={`mt-3 flex items-center gap-2 ${domainStatus.verified || domainStatus.configured ? 'text-green-700' : 'text-yellow-700'}`}>
-                            <span className={`w-2.5 h-2.5 rounded-full ${domainStatus.verified || domainStatus.configured ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
-                            <span className="text-sm">
-                              {domainStatus.verified || domainStatus.configured
-                                ? 'Domain verified and connected!'
-                                : 'DNS not propagated yet. Try again in a few hours.'}
-                            </span>
-                          </div>
+                          (() => {
+                            // Our verified flag is authoritative (we only set it once the
+                            // domain genuinely serves the site); fall back to Vercel's live
+                            // config while it's still pending.
+                            const connected = domainStatus.customDomainVerified || domainStatus.verified || domainStatus.configured;
+                            return (
+                              <div className={`mt-3 flex items-center gap-2 ${connected ? 'text-green-700' : 'text-yellow-700'}`}>
+                                <span className={`w-2.5 h-2.5 rounded-full ${connected ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
+                                <span className="text-sm">
+                                  {connected
+                                    ? 'Domain verified and connected!'
+                                    : 'DNS not propagated yet. Try again in a few hours.'}
+                                </span>
+                              </div>
+                            );
+                          })()
                         )
                       )}
                     </div>

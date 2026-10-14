@@ -15,6 +15,7 @@ export async function GET(request) {
         success: true,
         domain: null,
         subdomain: doctor.subdomain,
+        customDomainVerified: false,
       });
     }
 
@@ -25,6 +26,12 @@ export async function GET(request) {
       success: true,
       domain: doctor.customDomain,
       subdomain: doctor.subdomain,
+      // Our own verified flag is the source of truth for whether we actually serve
+      // + canonicalize the custom domain (set only once it genuinely serves our
+      // site). The Vercel config below can lag/omit fields, so the UI should trust
+      // this flag for the "connected" state.
+      customDomainVerified: !!doctor.customDomainVerified,
+      customDomainVerifiedAt: doctor.customDomainVerifiedAt || null,
       ...config,
     });
   } catch (error) {
