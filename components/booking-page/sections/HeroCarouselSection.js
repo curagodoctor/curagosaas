@@ -17,10 +17,12 @@ export default function HeroCarouselSection({
 }) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Filter out images with empty urls
+  // Filter out images with empty urls AND the seeded placeholder art — a real
+  // doctor site must never ship /placeholders/hero-*.svg. If nothing real remains
+  // the hero renders nothing (below) rather than fake imagery.
   const validImages = images.filter(image => {
     const url = typeof image === 'string' ? image : image?.url;
-    return url && url.trim() !== '';
+    return url && url.trim() !== '' && !url.includes('/placeholders/');
   });
 
   // Auto-scroll carousel

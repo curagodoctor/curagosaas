@@ -35,6 +35,18 @@ export async function generateMetadata({ params }) {
     // Canonical/OG resolve to the doctor's PRIMARY domain (verified custom domain
     // else subdomain) — never the request host — so both hosts agree on one URL.
     const base = primaryBaseUrl(doctor);
+
+    // Specialty/city-aware defaults from VERIFIED profile data (never invented) —
+    // used only when the doctor hasn't set a custom title/description in the builder.
+    const name = doctor.displayName || doctor.name || 'Doctor';
+    const specialty = (doctor.specialization || '').trim();
+    const city = (doctor.city || '').trim();
+    const where = [specialty && specialty, city && `in ${city}`].filter(Boolean).join(' ');
+    const defaultTitle = where ? `${name} | ${where}` : `${name} - Book Appointment`;
+    const defaultDesc = `${name}${specialty ? `, ${specialty}` : ''}${city ? ` in ${city}` : ''} — qualifications, services and how to book an appointment.`;
+
+    const title = bookingPage?.title || defaultTitle;
+    const description = bookingPage?.metaDescription || defaultDesc;
     return {
       // Override the app-wide curago.in metadataBase so relative canonical/OG
       // URLs resolve to THIS doctor's own domain.
@@ -43,12 +55,12 @@ export async function generateMetadata({ params }) {
       // the SAME segment as the site layout, so the layout's "%s" template doesn't
       // reach it (templates apply to child segments only) — absolute is required
       // here to strip CuraGo. Child pages (sub-pages, blog) inherit the layout's %s.
-      title: { absolute: bookingPage?.title || `${doctor.displayName || doctor.name} - Book Appointment` },
-      description: bookingPage?.metaDescription || `Book an appointment with ${doctor.displayName || doctor.name}`,
+      title: { absolute: title },
+      description,
       alternates: { canonical: '/' },
       openGraph: {
-        title: bookingPage?.title || doctor.displayName || doctor.name,
-        description: bookingPage?.metaDescription || `Book an appointment with ${doctor.displayName || doctor.name}`,
+        title,
+        description,
         url: '/',
         images: bookingPage?.ogImage ? [bookingPage.ogImage] : [],
       },

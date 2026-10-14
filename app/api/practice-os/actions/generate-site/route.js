@@ -66,7 +66,11 @@ export async function POST(request) {
         (prof?.variables?.clinicPhotos || []).forEach((u) => { if (typeof u === 'string' && /^https?:\/\//i.test(u)) clinicPhotos.push(u); });
       } catch { /* best-effort */ }
     }
-    if (!clinicPhotos.length) clinicPhotos.push(...DEFAULT_HERO_IMAGES);
+    // Do NOT seed placeholder hero art — an empty hero renders nothing (clean)
+    // and the doctor/admin is prompted to add real clinic photos. Shipping
+    // /placeholders/hero-*.svg on a live doctor site is an SEO + credibility miss.
+    // (DEFAULT_HERO_IMAGES kept for reference/local preview only.)
+    void DEFAULT_HERO_IMAGES;
 
     // Guard: never overwrite a website the doctor has already customized. If the
     // home page exists and is user-edited, refuse unless they explicitly force it.

@@ -1,6 +1,7 @@
 import connectDB from '@/lib/mongodb';
 import Doctor from '@/models/Doctor';
 import BookingPage from '@/models/BookingPage';
+import BlogArticle from '@/models/BlogArticle';
 import { primaryBaseUrl } from '@/lib/primaryDomain';
 
 // Per-tenant sitemap generator. Middleware rewrites `<host>/sitemap.xml` (any
@@ -48,6 +49,16 @@ export async function GET(request) {
         lastmod: new Date(p.updatedAt || p.publishedAt || p.createdAt || Date.now()).toISOString(),
         priority: i === 0 ? '1.0' : '0.8',
       }));
+      // Published blog articles (+ the /blog index) so Google can crawl them too.
+      const posts = await BlogArticle.find({ doctorId: doctor._id, status: 'published' })
+        .select('slug updatedAt publishedAt createdAt').sort({ publishedAt: -1 }).lean();
+      if (posts.length) {
+        urls.push({ loc: `${base}/blog`, lastmod: new Date().toISOString(), priority: '0.6' });
+        for (const a of posts) {
+          if (!a.slug) continue;
+          urls.push({ loc: `${base}/blog/${a.slug}`, lastmod: new Date(a.updatedAt || a.publishedAt || a.createdAt || Date.now()).toISOString(), priority: '0.7' });
+        }
+      }
     }
   } catch (e) {
     console.error('[tenant sitemap]', e.message);

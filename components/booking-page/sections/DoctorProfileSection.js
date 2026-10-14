@@ -34,9 +34,12 @@ export default function DoctorProfileSection({
 
           {/* Content */}
           <div className={`${!isLeftLayout ? "lg:col-start-1 lg:row-start-1" : ""}`}>
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary-600 mb-6">
+            {/* The page's single H1 — the doctor-identity section is the primary
+                heading (hero is images only). Styling is class-driven, so h1 looks
+                identical to the previous h2. */}
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary-600 mb-6">
               {title}
-            </h2>
+            </h1>
 
             {/* Credentials */}
             {credentials && credentials.length > 0 && (

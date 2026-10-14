@@ -2,7 +2,23 @@ import { resolveThemeId } from '@/lib/themes';
 import connectDB from '@/lib/mongodb';
 import BlogArticle from '@/models/BlogArticle';
 import BookingPage from '@/models/BookingPage';
+import Clinic from '@/models/Clinic';
 import { getEffectiveTier, capabilitiesFor } from '@/lib/accessTier';
+
+// Map a Clinic document to the shape the visible clinic_info section expects, so
+// verified local NAP (name/address/phone/hours/map) shows on the page and matches
+// the JSON-LD — never fabricated, only what the doctor actually entered.
+function clinicToCard(c) {
+  const a = c.address || {};
+  const address = [a.street, a.city, a.state, a.pincode].map((x) => (x || '').trim()).filter(Boolean).join(', ');
+  return {
+    name: c.name || '',
+    address,
+    phone: c.phone || '',
+    timings: c.timings || '',
+    locationLink: c.mapUrl || '',
+  };
+}
 
 // Booking section types gated behind the paid `bookingSystem` capability. On the
 // free tier these never render on the live site (so patients can't book), even on
@@ -35,7 +51,10 @@ function renderSection(section, doctor, index, allSections = [], extraNavLinks =
   // Spread the config directly so section components receive their props
   const props = {
     key: section._id || index,
-    sectionId: section.type, // Use section type as anchor ID for smooth scrolling
+    // Unique anchor/DOM id: the first section of a type keeps its clean type
+    // (so nav anchors still resolve), duplicates get a suffix — no duplicate
+    // element IDs (e.g. two benefits_list sections).
+    sectionId: section._anchorId || section.type,
     ...section.config, // Spread config fields as individual props
     doctor, // Pass doctor object for components that need it
   };
@@ -225,6 +244,34 @@ export default async function SiteBody({ doctor, bookingPage }) {
   const contentSections = regularSections
     .filter((s) => !['header', 'footer'].includes(s.type))
     .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  // Hydrate a visible clinic_info section that the builder left empty with the
+  // doctor's verified Clinic records — so the public page shows real local
+  // name/address/phone/hours (matching the JSON-LD), instead of silently hiding
+  // the NAP. Only fills when there's nothing set and real clinics exist.
+  try {
+    const needsNap = contentSections.some((s) => s.type === 'clinic_info' && !(Array.isArray(s.config?.clinics) && s.config.clinics.length));
+    if (needsNap) {
+      const clinics = await Clinic.find({ doctorId: doctorData._id, isActive: true })
+        .sort({ isPrimary: -1, sortOrder: 1, createdAt: 1 }).lean();
+      const cards = clinics.map(clinicToCard).filter((c) => c.name || c.address || c.phone);
+      if (cards.length) {
+        for (const s of contentSections) {
+          if (s.type === 'clinic_info' && !(Array.isArray(s.config?.clinics) && s.config.clinics.length)) {
+            s.config = { ...(s.config || {}), clinics: cards };
+          }
+        }
+      }
+    }
+  } catch { /* best-effort — never break the page over NAP hydration */ }
+
+  // Unique anchor/DOM ids per content section (first of a type keeps the clean
+  // type for nav anchors; duplicates get a numbered suffix).
+  const anchorCounts = {};
+  for (const s of contentSections) {
+    const n = (anchorCounts[s.type] = (anchorCounts[s.type] || 0) + 1);
+    s._anchorId = n === 1 ? s.type : `${s.type}-${n}`;
+  }
 
   return (
     <div className="min-h-screen" data-theme={themeId}>
