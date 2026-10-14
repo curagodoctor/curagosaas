@@ -621,6 +621,7 @@ const BODY = `<nav class="nav">
     <a href="#why" data-closenav="1">Why Google</a>
     <a href="#system" data-closenav="1">How to work on Google</a>
     <a href="#offer" data-closenav="1">How CuraGo helps</a>
+    <a href="/store" data-closenav="1">Store</a>
     <button class="btn btn-white navbtn navlinks-cta" data-login="1">Login</button>
     <button class="btn btn-orange navbtn navlinks-cta" data-start="1">Sign up</button>
   </div>
