@@ -9,22 +9,34 @@ export default function DoctorPracticeOsTab({ doctorId }) {
   const [dos, setDos] = useState(null);
   const [data, setData] = useState(null);      // /practice-os/users/[id]
   const [credits, setCredits] = useState(null);
+  const [seo, setSeo] = useState(null);         // /doctors/[id]/seo-readiness
   const [busy, setBusy] = useState('');
   const [msg, setMsg] = useState('');
 
   const load = useCallback(async () => {
     try {
-      const [d, u, c] = await Promise.all([
+      const [d, u, c, s] = await Promise.all([
         fetch(`/api/platform/doctors/${doctorId}/dos-access`).then((r) => r.json()).catch(() => null),
         fetch(`/api/platform/practice-os/users/${doctorId}`).then((r) => r.json()).catch(() => null),
         fetch(`/api/platform/practice-os/doctors/${doctorId}/credits`).then((r) => r.json()).catch(() => null),
+        fetch(`/api/platform/doctors/${doctorId}/seo-readiness`).then((r) => r.json()).catch(() => null),
       ]);
       if (d?.success) setDos(d);
       if (u) setData(u);
       if (c) setCredits(c);
+      if (s?.success) setSeo(s);
     } catch { /* ignore */ }
   }, [doctorId]);
   useEffect(() => { load(); }, [load]);
+
+  const queueServicePages = async () => {
+    setBusy('service-pages'); setMsg('');
+    try {
+      const r = await fetch(`/api/platform/doctors/${doctorId}/service-pages`, { method: 'POST' }).then((x) => x.json());
+      setMsg(r.success ? `Queued ${r.added} service page(s) from ${r.total} approved service(s)${r.skipped ? ` (${r.skipped} already covered)` : ''}. They’ll be written as drafts for review.` : (r.error || 'Failed'));
+      await load();
+    } finally { setBusy(''); }
+  };
 
   const dosAction = async (action, days) => {
     setBusy(`dos-${action}-${days || ''}`); setMsg('');
@@ -175,6 +187,29 @@ export default function DoctorPracticeOsTab({ doctorId }) {
               );
             })}
           </div>
+        )}
+      </Card>
+
+      {/* SEO readiness / needs-data */}
+      <Card title="SEO readiness">
+        {!seo ? <p className="text-sm text-gray-500">Loading…</p> : (
+          <>
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-2xl font-bold text-gray-900">{seo.score?.pct ?? 0}%</span>
+              <span className="text-sm text-gray-500">{seo.score?.done}/{seo.score?.total} ready · {seo.urls?.indexable || 0} indexable URLs</span>
+            </div>
+            <div className="space-y-1.5 mb-4">
+              {(seo.items || []).map((it) => (
+                <div key={it.key} className="flex items-start gap-2 text-sm">
+                  <span className={it.ok ? 'text-green-600' : (it.needsDoctorData ? 'text-amber-600' : 'text-gray-400')}>{it.ok ? '✓' : (it.needsDoctorData ? '⚠' : '○')}</span>
+                  <span className="text-gray-700">{it.label}</span>
+                  <span className="text-gray-400">— {it.detail}</span>
+                </div>
+              ))}
+            </div>
+            <Btn onClick={queueServicePages} k="service-pages" kind="primary">Queue service pages</Btn>
+            <p className="text-xs text-gray-500 mt-1.5">Generates a draft service page for each approved treatment (via the double-run). Drafts need clinician review before publishing.</p>
+          </>
         )}
       </Card>
 

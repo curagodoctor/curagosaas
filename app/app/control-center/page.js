@@ -333,6 +333,9 @@ export default function ControlCenter() {
       {/* 5 · Your website status */}
       <div className="mt-4"><WebsiteStats /></div>
 
+      {/* 5c · Finish-your-site-for-search nudge (only when data is missing) */}
+      <div className="mt-4"><SeoReadinessWidget /></div>
+
       {/* 6 · Leaderboard — hidden (deferred). Re-enable the LeaderboardCard here. */}
       {false && <div className="mt-4"><LeaderboardCard lb={leaderboard} /></div>}
 
@@ -550,6 +553,45 @@ function MiniStat({ n, label, suffix = '' }) {
     <div>
       <p className="pos-num text-lg text-[var(--ink)]">{n}{suffix && <span className="text-[13px]"> {suffix}</span>}</p>
       <p className="text-[10px] text-[var(--muted)] uppercase tracking-wide">{label}</p>
+    </div>
+  );
+}
+
+// "Finish your site for search" — surfaces the verified-data gaps the doctor can
+// fix (hero image, clinic NAP, hours, services). Renders nothing when nothing is
+// missing. Links each gap to where it's filled in.
+function SeoReadinessWidget() {
+  const [seo, setSeo] = useState(null);
+  useEffect(() => {
+    let on = true;
+    fetch('/api/practice-os/seo-readiness', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => { if (on && d.success && d.items) setSeo(d); })
+      .catch(() => {});
+    return () => { on = false; };
+  }, []);
+  const gaps = (seo?.items || []).filter((i) => !i.ok && i.needsDoctorData);
+  if (!seo || gaps.length === 0) return null;
+
+  const FIX_LINK = {
+    hero: '/admin/dashboard/pages', clinic: '/admin/dashboard/modes', phone: '/admin/dashboard/modes',
+    hours: '/admin/dashboard/modes', services: '/app/control-center/clusters', title: '/app/control-center/profile', schema: '/app/control-center/profile',
+  };
+  return (
+    <div className="pos-card p-5">
+      <div className="flex items-center justify-between gap-3 mb-1">
+        <p className="pos-label" style={{ color: 'var(--orange)' }}>Finish your site for search</p>
+        <span className="text-[12px] text-[var(--muted)]">{seo.score?.pct}% ready</span>
+      </div>
+      <p className="text-[12.5px] text-[var(--muted)] mb-3">Add the details below so patients (and Google) find your real clinic. We never fill these in with made-up information.</p>
+      <div className="flex flex-col gap-1.5">
+        {gaps.map((g) => (
+          <Link key={g.key} href={FIX_LINK[g.key] || '/app/control-center/profile'} className="flex items-center justify-between gap-2 rounded-lg px-3 py-2 hover:bg-[var(--rule-soft)]" style={{ border: '1px solid var(--rule-soft)' }}>
+            <span className="text-[13.5px] text-[var(--ink)]">{g.label}</span>
+            <span className="text-[12px] font-semibold" style={{ color: 'var(--green)' }}>Add →</span>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
