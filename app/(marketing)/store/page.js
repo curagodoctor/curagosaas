@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import MarketingHeader from '@/components/marketing/MarketingHeader';
 
 const GREEN = '#096B17';
 const ORANGE = '#F26A1B';
@@ -105,7 +106,8 @@ export default function StorePage() {
 
   return (
     <main style={{ background: '#F7F9F5', minHeight: '100vh', fontFamily: "'Instrument Sans', system-ui, sans-serif" }}>
-      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '56px 20px 80px' }}>
+      <MarketingHeader />
+      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '40px 20px 80px' }}>
         <div style={{ textAlign: 'center', marginBottom: 44 }}>
           <p style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: GREEN, fontWeight: 700 }}>CuraGo Store</p>
           <h1 style={{ fontSize: 'clamp(30px,4vw,46px)', fontWeight: 600, color: '#101A13', letterSpacing: '-0.025em', margin: '8px 0 10px' }}>Books &amp; courses for your practice</h1>
