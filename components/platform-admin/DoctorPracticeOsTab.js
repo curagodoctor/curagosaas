@@ -10,24 +10,44 @@ export default function DoctorPracticeOsTab({ doctorId }) {
   const [data, setData] = useState(null);      // /practice-os/users/[id]
   const [credits, setCredits] = useState(null);
   const [seo, setSeo] = useState(null);         // /doctors/[id]/seo-readiness
+  const [sched, setSched] = useState(null);     // /doctors/[id]/content-schedule
   const [busy, setBusy] = useState('');
   const [msg, setMsg] = useState('');
 
   const load = useCallback(async () => {
     try {
-      const [d, u, c, s] = await Promise.all([
+      const [d, u, c, s, sc] = await Promise.all([
         fetch(`/api/platform/doctors/${doctorId}/dos-access`).then((r) => r.json()).catch(() => null),
         fetch(`/api/platform/practice-os/users/${doctorId}`).then((r) => r.json()).catch(() => null),
         fetch(`/api/platform/practice-os/doctors/${doctorId}/credits`).then((r) => r.json()).catch(() => null),
         fetch(`/api/platform/doctors/${doctorId}/seo-readiness`).then((r) => r.json()).catch(() => null),
+        fetch(`/api/platform/doctors/${doctorId}/content-schedule`).then((r) => r.json()).catch(() => null),
       ]);
       if (d?.success) setDos(d);
       if (u) setData(u);
       if (c) setCredits(c);
       if (s?.success) setSeo(s);
+      if (sc?.success) setSched(sc);
     } catch { /* ignore */ }
   }, [doctorId]);
   useEffect(() => { load(); }, [load]);
+
+  const saveSchedule = async (patch) => {
+    setBusy('sched'); setMsg('');
+    try {
+      await fetch(`/api/platform/doctors/${doctorId}/content-schedule`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) });
+      await load();
+    } finally { setBusy(''); }
+  };
+
+  const generateBatch = async () => {
+    setBusy('gen-batch'); setMsg('');
+    try {
+      const r = await fetch(`/api/platform/doctors/${doctorId}/content-schedule`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'generate' }) }).then((x) => x.json());
+      setMsg(r.success ? `Generated + scheduled ${r.generated} page(s). Click again for more; the rest also publish on the cadence.` : (r.error || 'Failed'));
+      await load();
+    } finally { setBusy(''); }
+  };
 
   const queueServicePages = async () => {
     setBusy('service-pages'); setMsg('');
@@ -209,6 +229,28 @@ export default function DoctorPracticeOsTab({ doctorId }) {
             </div>
             <Btn onClick={queueServicePages} k="service-pages" kind="primary">Queue service pages</Btn>
             <p className="text-xs text-gray-500 mt-1.5">Generates a draft service page for each approved treatment (via the double-run). Drafts need clinician review before publishing.</p>
+          </>
+        )}
+      </Card>
+
+      {/* Content scheduling */}
+      <Card title="Content scheduling">
+        {!sched ? <p className="text-sm text-gray-500">Loading…</p> : (
+          <>
+            <label className="flex items-center gap-2 text-sm mb-3">
+              <input type="checkbox" checked={!!sched.auto} onChange={(e) => saveSchedule({ auto: e.target.checked })} disabled={busy === 'sched'} />
+              Auto-schedule generated pages (write &amp; drip-publish automatically)
+            </label>
+            <div className="flex items-center gap-2 mb-3 text-sm">
+              <span className="text-gray-600">Publish one every</span>
+              <input type="number" min={1} max={30} defaultValue={sched.cadenceDays} id="cadence"
+                className="w-16 px-2 py-1 border border-gray-300 rounded-lg text-sm" />
+              <span className="text-gray-600">days</span>
+              <button onClick={() => saveSchedule({ cadenceDays: Number(document.getElementById('cadence')?.value) || 3 })} className="text-xs text-green-700 font-semibold ml-1">Save</button>
+              <span className="text-gray-400 ml-2">· {sched.scheduledCount} scheduled</span>
+            </div>
+            <Btn onClick={generateBatch} k="gen-batch" kind="primary">Generate &amp; schedule now</Btn>
+            <p className="text-xs text-gray-500 mt-1.5">Writes the next few queued pages (trends + services) and spaces them across future dates; the content-scheduler publishes each on its day. Drafts otherwise wait for review.</p>
           </>
         )}
       </Card>

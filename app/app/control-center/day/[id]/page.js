@@ -55,6 +55,8 @@ function DayInner() {
   const [primaryAction, setPrimaryAction] = useState(null); // { type, label, url }
   const [showPublishModal, setShowPublishModal] = useState(false); // CTA + image chooser
   const [pubCta, setPubCta] = useState('none');
+  const [pubWhen, setPubWhen] = useState('now');   // 'now' | 'later'
+  const [pubSchedAt, setPubSchedAt] = useState(''); // datetime-local value
   const [promptCopied, setPromptCopied] = useState(false);
   const started = useRef(false);
   const primaryTreatmentRef = useRef(''); // treatment this day is about (for staleness check)
@@ -197,17 +199,17 @@ function DayInner() {
     } catch { window.open(image.url, '_blank'); }
   };
 
-  const pushBlog = async (ctaType = 'none') => {
+  const pushBlog = async (ctaType = 'none', scheduledAt = null) => {
     if (publish === 'saving' || !content.trim()) return;
     setPublish('saving'); setErr('');
     try {
       const d = await fetch('/api/practice-os/actions/publish-blog', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        // Attach the image the doctor added + the chosen CTA + the day this came
-        // from, so re-pushing/regenerating this day updates the same article.
-        body: JSON.stringify({ text: content, imageUrl: image?.url || '', missionId, cta: ctaType }),
+        // Attach the image the doctor added + the chosen CTA + an optional schedule
+        // date + the day this came from, so re-pushing updates the same article.
+        body: JSON.stringify({ text: content, imageUrl: image?.url || '', missionId, cta: ctaType, scheduledAt }),
       }).then((r) => r.json());
-      if (d.success) { setShowPublishModal(false); setPublish({ url: d.url, id: d.id, title: d.title }); } // opens the confirmation modal
+      if (d.success) { setShowPublishModal(false); setPublish({ url: d.url, id: d.id, title: d.title, scheduled: d.scheduled, scheduledAt: d.scheduledAt }); } // opens the confirmation modal
       else { setPublish(null); setErr(d.error || 'Could not publish.'); }
     } catch { setPublish(null); setErr('Could not publish.'); }
   };
@@ -472,8 +474,27 @@ function DayInner() {
               </div>
             )}
 
+            <p className="pos-label mb-2 mt-4" style={{ color: 'var(--green)' }}>When to publish</p>
+            <div className="flex flex-col gap-2 mb-1">
+              <label className="flex items-center gap-2.5 cursor-pointer text-[14px]" style={{ color: 'var(--ink)' }}>
+                <input type="radio" name="pub-when" checked={pubWhen === 'now'} onChange={() => setPubWhen('now')} /> Publish now
+              </label>
+              <label className="flex items-center gap-2.5 cursor-pointer text-[14px]" style={{ color: 'var(--ink)' }}>
+                <input type="radio" name="pub-when" checked={pubWhen === 'later'} onChange={() => setPubWhen('later')} /> Schedule for later
+              </label>
+              {pubWhen === 'later' && (
+                <input type="datetime-local" value={pubSchedAt} onChange={(e) => setPubSchedAt(e.target.value)}
+                  className="mt-1 px-3 py-2 text-[14px] rounded-[9px]" style={{ border: '1px solid var(--rule)', background: 'var(--paper)' }} />
+              )}
+            </div>
+
             <div className="flex gap-2.5 mt-4 items-center">
-              <button onClick={() => pushBlog(pubCta)} disabled={publish === 'saving'} className="pos-action" style={{ background: 'var(--green)' }}>{publish === 'saving' ? 'Publishing…' : 'Publish page'}</button>
+              <button
+                onClick={() => pushBlog(pubCta, pubWhen === 'later' ? pubSchedAt : null)}
+                disabled={publish === 'saving' || (pubWhen === 'later' && !pubSchedAt)}
+                className="pos-action" style={{ background: 'var(--green)', opacity: (publish === 'saving' || (pubWhen === 'later' && !pubSchedAt)) ? 0.6 : 1 }}>
+                {publish === 'saving' ? 'Saving…' : pubWhen === 'later' ? 'Schedule page' : 'Publish page'}
+              </button>
               <button onClick={() => setShowPublishModal(false)} className="pos-link text-[13px]" style={{ color: 'var(--muted)' }}>Cancel</button>
             </div>
           </div>
@@ -485,8 +506,8 @@ function DayInner() {
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-5" style={{ background: 'rgba(16,26,19,.45)' }}>
           <div className="pos-card w-full max-w-md p-6" style={{ background: 'var(--card)' }} onClick={(e) => e.stopPropagation()}>
             <div className="w-12 h-12 rounded-full grid place-items-center mx-auto mb-3" style={{ background: 'var(--green-soft, rgba(9,107,23,.08))', color: 'var(--green)', fontSize: 22 }}>✓</div>
-            <h2 className="text-[20px] font-semibold text-[var(--ink)] text-center" style={{ letterSpacing: '-0.02em' }}>Blog page published</h2>
-            <p className="text-[13.5px] text-[var(--muted)] text-center mt-1">Your page is live. View it, or edit and republish.</p>
+            <h2 className="text-[20px] font-semibold text-[var(--ink)] text-center" style={{ letterSpacing: '-0.02em' }}>{publish.scheduled ? 'Blog page scheduled' : 'Blog page published'}</h2>
+            <p className="text-[13.5px] text-[var(--muted)] text-center mt-1">{publish.scheduled ? `It will publish automatically on ${(() => { try { return new Date(publish.scheduledAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }); } catch { return 'the scheduled date'; } })()}.` : 'Your page is live. View it, or edit and republish.'}</p>
             {publish.title && <p className="text-[14px] font-medium text-[var(--ink)] text-center mt-3">{publish.title}</p>}
             <div className="flex items-center gap-2 mt-3 rounded-xl p-2.5" style={{ background: 'var(--paper)', border: '1px solid var(--rule)' }}>
               <span className="text-[12.5px] text-[var(--muted)] truncate flex-1">{publish.url}</span>

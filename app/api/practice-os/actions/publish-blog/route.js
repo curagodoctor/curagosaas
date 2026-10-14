@@ -25,10 +25,14 @@ export async function POST(request) {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
     await assertAiAccess(doctor._id);
-    const { text, imageUrl, missionId, cta } = await request.json();
+    const { text, imageUrl, missionId, cta, scheduledAt } = await request.json();
     if (!text || !text.trim()) return NextResponse.json({ success: false, error: 'Nothing to publish.' }, { status: 400 });
     const providedImage = /^https?:\/\//i.test(String(imageUrl || '').trim()) ? String(imageUrl).trim() : '';
     const ctaType = CTA_TYPES.has(cta) ? cta : 'none';
+    // Optional future publish date → schedule instead of publishing now. The
+    // content-scheduler cron publishes it when the time arrives.
+    const schedTs = Date.parse(scheduledAt || '');
+    const schedAt = Number.isFinite(schedTs) && schedTs > Date.now() + 60000 ? new Date(schedTs) : null;
     // A day produces exactly ONE article: if this day already published one,
     // we UPDATE it in place (below) instead of creating a near-duplicate.
     const sourceMissionId = /^[a-f0-9]{24}$/i.test(String(missionId || '')) ? String(missionId) : null;
@@ -95,8 +99,8 @@ export async function POST(request) {
       blocks,
       faqSection: faqs.length ? { heading: 'FAQs: Clear Answers for Patients', faqs } : undefined,
       ctaType,
-      status: 'published',
-      publishedAt: new Date(),
+      // Schedule for later, or publish now.
+      ...(schedAt ? { status: 'scheduled', scheduledAt: schedAt } : { status: 'published', publishedAt: new Date() }),
       ...(sourceMissionId ? { sourceMissionId } : {}),
       // Use the image the doctor generated here, if any (keep the old one otherwise).
       ...(providedImage ? { featuredImage: { url: providedImage, alt: imageAlt } } : {}),
@@ -133,7 +137,7 @@ export async function POST(request) {
     // Live URL on the doctor's PRIMARY domain (verified custom domain else subdomain).
     const site = primaryBaseUrl(doc);
     const url = site ? `${site}/blog/${slug}` : `/blog/${slug}`;
-    return NextResponse.json({ success: true, id: String(article._id), url, slug, title: article.title, creditsRemaining: remaining });
+    return NextResponse.json({ success: true, id: String(article._id), url, slug, title: article.title, creditsRemaining: remaining, scheduled: !!schedAt, scheduledAt: schedAt });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     if (error.message === 'PaymentRequired') return NextResponse.json({ success: false, error: 'PaymentRequired' }, { status: 402 });

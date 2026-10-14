@@ -82,6 +82,15 @@ const PracticeOsProfileSchema = new mongoose.Schema({
   },
   scheduleChosen: { type: Boolean, default: false },
 
+  // Auto-scheduling of AI-generated blog/service pages. When `auto` is on, the
+  // content engine writes each generated page as a SCHEDULED article spaced
+  // `cadenceDays` apart; the content-scheduler cron publishes them on their date.
+  // Default off — opt-in per doctor (auto-publishing medical content is a choice).
+  contentSchedule: {
+    auto: { type: Boolean, default: false },
+    cadenceDays: { type: Number, default: 3, min: 1, max: 30 },
+  },
+
   // §8 — GBP setup task-flow progress (map of "blockKey:taskIndex" → true) and
   // the acknowledgement of the mandatory suspension-risk block.
   gbpProgress: { type: mongoose.Schema.Types.Mixed, default: {} },

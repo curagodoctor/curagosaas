@@ -3,6 +3,8 @@ import connectDB from '@/lib/mongodb';
 import { listActiveOptimizationDoctorIds } from '@/lib/practice-os/access';
 import { refreshTrendTopicsForDoctor } from '@/lib/practice-os/trendTopics';
 import { produceNextTrendTopic } from '@/lib/practice-os/trendContent';
+import { nextScheduleSlot } from '@/lib/practice-os/scheduleContent';
+import PracticeOsProfile from '@/models/practice-os/PracticeOsProfile';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -33,9 +35,16 @@ export async function GET(request) {
         const added = ref?.added || 0, covered = ref?.covered || 0;
         if (ref && !ref.error) refreshed++;
 
-        const prod = await withTimeout(produceNextTrendTopic(doctorId), PER_DOCTOR_TIMEOUT_MS).catch((e) => ({ produced: false, reason: e.message }));
-        r.draft = !!prod?.produced; // a draft blog was generated this run
-        r.reason = `+${added} new, ${covered} covered` + (prod?.produced ? `, drafted "${prod.title}"` : ` · produce: ${prod?.reason || 'none'}`);
+        // Auto-schedule the generated page onto a future date when the doctor opted in.
+        let scheduleAt = null;
+        try {
+          const prof = await PracticeOsProfile.findOne({ doctorId }).select('contentSchedule').lean();
+          if (prof?.contentSchedule?.auto) scheduleAt = await nextScheduleSlot(doctorId, prof.contentSchedule.cadenceDays || 3);
+        } catch { /* best-effort */ }
+
+        const prod = await withTimeout(produceNextTrendTopic(doctorId, { scheduleAt }), PER_DOCTOR_TIMEOUT_MS).catch((e) => ({ produced: false, reason: e.message }));
+        r.draft = !!prod?.produced; // a page was generated this run
+        r.reason = `+${added} new, ${covered} covered` + (prod?.produced ? `, ${prod.scheduledAt ? 'scheduled' : 'drafted'} "${prod.title}"` : ` · produce: ${prod?.reason || 'none'}`);
         if (prod?.produced) produced++;
       } catch (e) {
         r.ok = false; r.reason = `exception: ${e.message}`;

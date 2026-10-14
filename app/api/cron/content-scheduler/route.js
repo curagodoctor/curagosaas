@@ -4,6 +4,7 @@ import BlogArticle from '@/models/BlogArticle';
 import BookingPage from '@/models/BookingPage';
 import Doctor from '@/models/Doctor';
 import { sendPracticeOsReminderEmail } from '@/lib/email';
+import { primaryBaseUrl } from '@/lib/primaryDomain';
 
 export const runtime = 'nodejs';
 
@@ -31,11 +32,12 @@ export async function GET(request) {
     const getDoctor = async (id) => {
       const key = String(id);
       if (doctorCache.has(key)) return doctorCache.get(key);
-      const d = await Doctor.findById(id).select('email name displayName subdomain customDomain').lean();
+      const d = await Doctor.findById(id).select('email name displayName subdomain customDomain customDomainVerified').lean();
       doctorCache.set(key, d);
       return d;
     };
-    const siteBase = (d) => d?.customDomain ? `https://${d.customDomain}` : (d?.subdomain ? `https://${d.subdomain}.curago.in` : '');
+    // Link on the doctor's PRIMARY domain (verified custom domain else subdomain).
+    const siteBase = (d) => primaryBaseUrl(d) || '';
     const notify = async (d, heading, body, url) => {
       if (!d?.email) return;
       try {
