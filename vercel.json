@@ -47,6 +47,10 @@
     {
       "path": "/api/cron/practice-os-trend-content",
       "schedule": "30 9 * * *"
+    },
+    {
+      "path": "/api/cron/reconcile-custom-domains",
+      "schedule": "0 2 * * *"
     }
   ]
 }
