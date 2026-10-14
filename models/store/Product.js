@@ -15,7 +15,11 @@ const LessonSchema = new mongoose.Schema({
 const ProductSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
   slug: { type: String, required: true, unique: true, index: true },
-  type: { type: String, enum: ['book', 'course'], required: true },
+  type: { type: String, enum: ['book', 'course', 'bundle'], required: true },
+
+  // Bundle: a single-priced product that unlocks several other products. Buying it
+  // grants access to every item below (each becomes individually readable/streamable).
+  bundleItems: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'StoreProduct' }], default: [] },
 
   summary: { type: String, default: '' },        // short — the card
   description: { type: String, default: '' },     // long — the detail/buy view

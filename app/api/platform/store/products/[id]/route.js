@@ -7,7 +7,7 @@ import { buildReaderHtml } from '@/lib/store/extract';
 export const runtime = 'nodejs';
 
 function readFields(body) {
-  const type = body.type === 'course' ? 'course' : 'book';
+  const type = ['course', 'bundle'].includes(body.type) ? body.type : 'book';
   const lessons = Array.isArray(body.lessons)
     ? body.lessons.map((l, i) => ({ title: String(l.title || '').trim(), videoRef: String(l.videoRef || '').trim(), durationLabel: String(l.durationLabel || '').trim(), order: Number.isFinite(l.order) ? l.order : i }))
       .filter((l) => l.title || l.videoRef)
@@ -22,6 +22,7 @@ function readFields(body) {
     fileRef: type === 'book' ? String(body.fileRef || '').trim() : '',
     fileType: type === 'book' ? String(body.fileType || '').toLowerCase().trim() : '',
     lessons: type === 'course' ? lessons : [],
+    bundleItems: type === 'bundle' && Array.isArray(body.bundleItems) ? body.bundleItems.filter((x) => /^[a-f0-9]{24}$/i.test(String(x))) : [],
     isPublished: !!body.isPublished,
     order: Number.isFinite(body.order) ? body.order : 0,
   };

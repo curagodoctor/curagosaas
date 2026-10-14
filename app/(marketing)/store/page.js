@@ -124,12 +124,19 @@ export default function StorePage() {
             {products.map((p) => (
               <div key={p.id} style={{ background: '#fff', border: '1px solid #DDE4D9', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ aspectRatio: '16/10', background: '#EDF1EB', position: 'relative' }}>
-                  {p.coverUrl ? <img src={p.coverUrl} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#9FB0A0', fontSize: 13 }}>{p.type === 'course' ? 'Video course' : 'Book'}</div>}
-                  <span style={{ position: 'absolute', top: 10, left: 10, background: p.type === 'course' ? ORANGE : GREEN, color: '#fff', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '3px 8px', borderRadius: 999 }}>{p.type === 'course' ? `Course · ${p.lessonCount} lessons` : 'Book'}</span>
+                  {p.coverUrl ? <img src={p.coverUrl} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#9FB0A0', fontSize: 13 }}>{p.type === 'course' ? 'Video course' : p.type === 'bundle' ? 'Bundle' : 'Book'}</div>}
+                  <span style={{ position: 'absolute', top: 10, left: 10, background: p.type === 'book' ? GREEN : ORANGE, color: '#fff', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '3px 8px', borderRadius: 999 }}>{p.type === 'course' ? `Course · ${p.lessonCount} lessons` : p.type === 'bundle' ? `Bundle · ${p.bundle?.count || 0} items` : 'Book'}</span>
                 </div>
                 <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
                   <h3 style={{ fontSize: 17, fontWeight: 600, color: '#101A13' }}>{p.title}</h3>
-                  {p.summary && <p style={{ fontSize: 13.5, color: '#5E6B5F', lineHeight: 1.5, flex: 1 }}>{p.summary}</p>}
+                  {p.summary && <p style={{ fontSize: 13.5, color: '#5E6B5F', lineHeight: 1.5 }}>{p.summary}</p>}
+                  {p.type === 'bundle' && p.bundle?.titles?.length > 0 && (
+                    <ul style={{ margin: '4px 0 0', padding: 0, listStyle: 'none', flex: 1 }}>
+                      {p.bundle.titles.map((t, i) => (
+                        <li key={i} style={{ fontSize: 12.5, color: '#5E6B5F', display: 'flex', gap: 6 }}><span style={{ color: GREEN }}>✓</span>{t}</li>
+                      ))}
+                    </ul>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
                     <span style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 26, color: '#101A13' }}>{p.isFree ? 'Free' : inr(p.priceInInr)}</span>
                     <button onClick={() => onBuy(p)} disabled={buying === p.id} style={{ background: ORANGE, color: '#fff', border: 'none', padding: '10px 18px', borderRadius: 9, fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: buying === p.id ? 0.6 : 1 }}>

@@ -50,11 +50,16 @@ function Uploader({ kind, value, onChange, accept, label }) {
   );
 }
 
-const emptyProduct = () => ({ title: '', type: 'book', summary: '', description: '', priceInInr: 0, coverImage: '', fileRef: '', fileType: '', lessons: [], isPublished: false, order: 0 });
+const emptyProduct = () => ({ title: '', type: 'book', summary: '', description: '', priceInInr: 0, coverImage: '', fileRef: '', fileType: '', lessons: [], bundleItems: [], isPublished: false, order: 0 });
 
-function ProductForm({ initial, onSave, onCancel, saving }) {
+function ProductForm({ initial, onSave, onCancel, saving, allProducts = [] }) {
   const [p, setP] = useState(initial);
   const set = (k, v) => setP((s) => ({ ...s, [k]: v }));
+  const bundleIds = (p.bundleItems || []).map(String);
+  const toggleBundle = (id) => setP((s) => {
+    const cur = (s.bundleItems || []).map(String);
+    return { ...s, bundleItems: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] };
+  });
   const setLesson = (i, k, v) => setP((s) => ({ ...s, lessons: s.lessons.map((l, j) => (j === i ? { ...l, [k]: v } : l)) }));
   const addLesson = () => setP((s) => ({ ...s, lessons: [...s.lessons, { title: '', videoRef: '', durationLabel: '' }] }));
   const removeLesson = (i) => setP((s) => ({ ...s, lessons: s.lessons.filter((_, j) => j !== i) }));
@@ -68,6 +73,7 @@ function ProductForm({ initial, onSave, onCancel, saving }) {
           <select className={INPUT} value={p.type} onChange={(e) => set('type', e.target.value)}>
             <option value="book">Book (PDF / DOCX / TXT)</option>
             <option value="course">Video course</option>
+            <option value="bundle">Bundle (multiple books/courses, one price)</option>
           </select>
         </div>
       </div>
@@ -83,6 +89,23 @@ function ProductForm({ initial, onSave, onCancel, saving }) {
           <Uploader kind="book" label="Book file (PDF / DOCX / TXT)" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
             value={p.fileRef} onChange={({ gsUri, fileType }) => setP((s) => ({ ...s, fileRef: gsUri, fileType }))} />
           <p className="text-[11px] text-gray-500 mt-1">The file is extracted into an in-app reader on save. The original is never downloadable by buyers.</p>
+        </div>
+      ) : p.type === 'bundle' ? (
+        <div className="p-3 bg-gray-50 rounded-lg">
+          <p className="text-sm font-semibold text-gray-700 mb-2">Books &amp; courses in this bundle</p>
+          {allProducts.filter((x) => x.type !== 'bundle' && String(x._id) !== String(p._id)).length === 0 ? (
+            <p className="text-xs text-gray-500">Create some books/courses first, then add them here.</p>
+          ) : (
+            <div className="space-y-1.5 max-h-56 overflow-y-auto">
+              {allProducts.filter((x) => x.type !== 'bundle' && String(x._id) !== String(p._id)).map((x) => (
+                <label key={x._id} className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={bundleIds.includes(String(x._id))} onChange={() => toggleBundle(String(x._id))} />
+                  <span>{x.title} <span className="text-xs text-gray-400">· {x.type}{x.priceInInr > 0 ? ` · ₹${x.priceInInr}` : ' · Free'}</span></span>
+                </label>
+              ))}
+            </div>
+          )}
+          <p className="text-[11px] text-gray-500 mt-2">Buyers get all selected items for the single bundle price above. {bundleIds.length} selected.</p>
         </div>
       ) : (
         <div className="p-3 bg-gray-50 rounded-lg space-y-3">
@@ -158,7 +181,7 @@ export default function StoreAdminPage() {
       {editing ? (
         <div className="bg-white border border-gray-200 rounded-xl p-6">
           <h2 className="text-lg font-semibold mb-4">{editing === 'new' ? 'New product' : `Edit — ${editing.title}`}</h2>
-          <ProductForm initial={editing === 'new' ? emptyProduct() : { ...emptyProduct(), ...editing, lessons: editing.lessons || [] }} onSave={save} onCancel={() => setEditing(null)} saving={saving} />
+          <ProductForm initial={editing === 'new' ? emptyProduct() : { ...emptyProduct(), ...editing, lessons: editing.lessons || [], bundleItems: editing.bundleItems || [] }} onSave={save} onCancel={() => setEditing(null)} saving={saving} allProducts={products} />
         </div>
       ) : loading ? (
         <p className="text-gray-500">Loading…</p>
