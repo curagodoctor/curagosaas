@@ -49,6 +49,16 @@ export default function DoctorPracticeOsTab({ doctorId }) {
     } finally { setBusy(''); }
   };
 
+  const restartTasks = async () => {
+    if (!confirm('Restart this doctor’s tasks from Day 1?\n\nThis clears all task/mission progress (days completed → 0) and reopens Day 1. Published blogs, scores and history are NOT deleted.')) return;
+    setBusy('restart'); setMsg('');
+    try {
+      const r = await fetch(`/api/platform/doctors/${doctorId}/restart-tasks`, { method: 'POST' }).then((x) => x.json());
+      setMsg(r.success ? `Tasks restarted — ${r.enrollmentsReset} enrolment(s) reset, ${r.progressCleared} progress record(s) cleared.` : (r.error || 'Failed to restart'));
+      await load();
+    } finally { setBusy(''); }
+  };
+
   const saveCredits = async (patch) => {
     setBusy('credits'); setMsg('');
     try {
@@ -192,6 +202,11 @@ export default function DoctorPracticeOsTab({ doctorId }) {
             </div>
           </>
         )}
+        {/* Admin override: restart the programme from Day 1. */}
+        <div className="mt-4 pt-3 border-t border-gray-100">
+          <Btn onClick={restartTasks} k="restart" kind="danger">Restart tasks from Day 1</Btn>
+          <p className="text-xs text-gray-500 mt-1.5">Clears task/mission progress and reopens Day 1 for this doctor. Published content, scores and history are kept.</p>
+        </div>
       </Card>
     </div>
   );
