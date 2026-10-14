@@ -97,6 +97,17 @@ export default async function DoctorBlogArticlePage({ params }) {
   const faqs = article.faqSection?.faqs?.filter((f) => f.question && f.answer) || [];
   const socialLinks = (article.socialLinks || []).filter((l) => l.url && l.url.trim());
 
+  // End-of-article CTA — chosen by the doctor at publish time. Default 'none' = no
+  // CTA (no more hardcoded "Book an appointment"). Internal links are relative so
+  // they stay on whichever domain served the page (custom domain included).
+  const waDigits = String(doctor.whatsappNumber || '').replace(/[^0-9]/g, '');
+  const CTA_MAP = {
+    contact: { heading: `Have a question for ${doctorName}?`, sub: 'Reach out and the clinic will get back to you.', label: 'Get in touch', href: waDigits ? `https://wa.me/${waDigits}` : '/#lead_form', external: !!waDigits },
+    articles: { heading: 'More health resources', sub: `Read more articles from ${doctorName}.`, label: 'Read relevant articles', href: '/blog', external: false },
+    booking: { heading: 'Ready to book an appointment?', sub: `Consult with ${doctorName}.`, label: 'Book an appointment', href: '/#booking_form', external: false },
+  };
+  const cta = CTA_MAP[article.ctaType || 'none'] || null;
+
   // Fill {{doctor_name}} / {{city}} tokens used in modular blog copy.
   const vars = { doctor_name: doctorName || '', city: article.location?.city || doctor.city || '' };
   const fill = (t) => String(t || '').replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, k) => (vars[k] != null ? String(vars[k]) : ''));
@@ -263,17 +274,18 @@ export default async function DoctorBlogArticlePage({ params }) {
             </section>
           )}
 
-          {/* CTA — links back to the doctor's own site */}
-          <section className="bg-[#096b17] text-white rounded-lg p-6 text-center">
-            <h2 className="text-2xl font-bold mb-2">Ready to book an appointment?</h2>
-            <p className="mb-4 opacity-90">Consult with {doctorName}.</p>
-            <Link
-              href="/"
-              className="inline-block bg-white text-[#096b17] hover:bg-gray-100 font-semibold px-6 py-3 rounded-lg transition-colors"
-            >
-              Book an appointment
-            </Link>
-          </section>
+          {/* End-of-article CTA — only when the doctor chose one at publish time. */}
+          {cta && (
+            <section className="bg-[#096b17] text-white rounded-lg p-6 text-center">
+              <h2 className="text-2xl font-bold mb-2">{cta.heading}</h2>
+              <p className="mb-4 opacity-90">{cta.sub}</p>
+              {cta.external ? (
+                <a href={cta.href} target="_blank" rel="noopener noreferrer" className="inline-block bg-white text-[#096b17] hover:bg-gray-100 font-semibold px-6 py-3 rounded-lg transition-colors">{cta.label}</a>
+              ) : (
+                <Link href={cta.href} className="inline-block bg-white text-[#096b17] hover:bg-gray-100 font-semibold px-6 py-3 rounded-lg transition-colors">{cta.label}</Link>
+              )}
+            </section>
+          )}
         </div>
 
         <div className="mt-8 pt-8 border-t border-gray-200">

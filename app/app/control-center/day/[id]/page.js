@@ -53,6 +53,9 @@ function DayInner() {
   const [imagePrompt, setImagePrompt] = useState(''); // optional custom image brief
   const [confirmFinish, setConfirmFinish] = useState(false);
   const [primaryAction, setPrimaryAction] = useState(null); // { type, label, url }
+  const [showPublishModal, setShowPublishModal] = useState(false); // CTA + image chooser
+  const [pubCta, setPubCta] = useState('none');
+  const [promptCopied, setPromptCopied] = useState(false);
   const started = useRef(false);
   const primaryTreatmentRef = useRef(''); // treatment this day is about (for staleness check)
 
@@ -194,20 +197,24 @@ function DayInner() {
     } catch { window.open(image.url, '_blank'); }
   };
 
-  const pushBlog = async () => {
+  const pushBlog = async (ctaType = 'none') => {
     if (publish === 'saving' || !content.trim()) return;
     setPublish('saving'); setErr('');
     try {
       const d = await fetch('/api/practice-os/actions/publish-blog', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        // Attach the image the doctor generated here + the day this came from, so
-        // re-pushing/regenerating this day updates the same article (no duplicates).
-        body: JSON.stringify({ text: content, imageUrl: image?.url || '', missionId }),
+        // Attach the image the doctor added + the chosen CTA + the day this came
+        // from, so re-pushing/regenerating this day updates the same article.
+        body: JSON.stringify({ text: content, imageUrl: image?.url || '', missionId, cta: ctaType }),
       }).then((r) => r.json());
-      if (d.success) setPublish({ url: d.url, id: d.id, title: d.title }); // opens the confirmation modal
+      if (d.success) { setShowPublishModal(false); setPublish({ url: d.url, id: d.id, title: d.title }); } // opens the confirmation modal
       else { setPublish(null); setErr(d.error || 'Could not publish.'); }
     } catch { setPublish(null); setErr('Could not publish.'); }
   };
+
+  // A ready-to-copy AI image prompt for the publish dialog (image gen is manual —
+  // the doctor pastes this into their own image tool, then adds the result).
+  const suggestedImagePrompt = `Warm, professional editorial photograph for a patient-education article titled "${(mission?.title || content.split('\n').find((l) => l.trim())?.replace(/[#*>_`]/g, '').trim() || 'this topic').slice(0, 90)}". A real, welcoming Indian clinic setting with natural light; calm and reassuring; focus on trust and care. No text, no logos, no graphic or surgical imagery.`;
 
   // Ask for confirmation first — finishing a task is irreversible (it closes).
   const requestFinish = () => {
@@ -359,7 +366,7 @@ function DayInner() {
         <div className="flex flex-wrap gap-2.5 mt-4 items-center">
           <button onClick={copy} disabled={!content.trim() || finishing} className="pos-card px-4 py-2.5 text-[14px] font-medium" style={{ opacity: content.trim() ? 1 : 0.5 }}>{copied ? 'Copied ✓' : 'Copy'}</button>
           {(!primaryAction || primaryAction.type === 'blog') ? (
-            <button onClick={pushBlog} disabled={publish === 'saving' || !content.trim() || finishing} className="pos-action" style={{ background: 'var(--green)' }}>{publish === 'saving' ? 'Publishing…' : 'Push as blog page'}</button>
+            <button onClick={() => { setPubCta('none'); setShowPublishModal(true); }} disabled={publish === 'saving' || !content.trim() || finishing} className="pos-action" style={{ background: 'var(--green)' }}>{publish === 'saving' ? 'Publishing…' : 'Push as blog page'}</button>
           ) : (
             <a
               href={primaryAction.url || undefined}
@@ -427,6 +434,51 @@ function DayInner() {
           </div>
         )}
       </div>
+
+      {/* Publish options — choose a CTA + add an image before publishing. */}
+      {showPublishModal && (
+        <div className="fixed inset-0 z-[85] flex items-center justify-center p-4" style={{ background: 'rgba(16,26,19,.5)' }} onClick={() => setShowPublishModal(false)}>
+          <div className="pos-card w-full max-w-[460px] p-6 max-h-[88vh] overflow-y-auto" style={{ background: 'var(--card)' }} onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink)' }}>Publish this blog page</h3>
+            <p className="text-[13px] mt-1 mb-4" style={{ color: 'var(--muted)' }}>Choose the call-to-action at the end of the article, and add an image.</p>
+
+            <p className="pos-label mb-2" style={{ color: 'var(--green)' }}>Call to action</p>
+            <div className="flex flex-col gap-2 mb-5">
+              {[
+                ['none', 'No CTA', 'Nothing at the end of the article'],
+                ['contact', 'Get in touch', 'Links to your WhatsApp / enquiry form'],
+                ['articles', 'Read relevant articles', 'Links to your other articles'],
+                ['booking', 'Book an appointment', 'Links to your booking section'],
+              ].map(([val, label, sub]) => (
+                <label key={val} className="flex items-start gap-2.5 rounded-lg px-3 py-2 cursor-pointer" style={{ border: '1px solid ' + (pubCta === val ? 'var(--green)' : 'var(--rule-soft)'), background: pubCta === val ? 'rgba(9,107,23,.06)' : 'transparent' }}>
+                  <input type="radio" name="pub-cta" checked={pubCta === val} onChange={() => setPubCta(val)} className="mt-1" />
+                  <span><span className="text-[14px] font-medium" style={{ color: 'var(--ink)' }}>{label}</span><span className="block text-[12px]" style={{ color: 'var(--muted)' }}>{sub}</span></span>
+                </label>
+              ))}
+            </div>
+
+            <p className="pos-label mb-2" style={{ color: 'var(--green)' }}>Image</p>
+            {image?.url ? (
+              <div className="mb-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={image.url} alt="" className="rounded-lg w-full max-w-[280px]" style={{ border: '1px solid var(--rule)' }} />
+                <p className="text-[12px] mt-1" style={{ color: 'var(--muted)' }}>This image will be the featured image.</p>
+              </div>
+            ) : (
+              <div className="mb-2 rounded-lg p-3" style={{ background: 'var(--paper)', border: '1px solid var(--rule-soft)' }}>
+                <p className="text-[12.5px] mb-2" style={{ color: 'var(--muted)' }}>No image yet. Copy this prompt into your image tool (ChatGPT, Gemini, etc.), generate a picture, then add it from the “Image for this post” box, and publish again.</p>
+                <div className="text-[12.5px] rounded-md p-2.5 font-mono" style={{ background: 'var(--card)', border: '1px solid var(--rule-soft)', color: 'var(--ink)', whiteSpace: 'pre-wrap' }}>{suggestedImagePrompt}</div>
+                <button onClick={() => { try { navigator.clipboard?.writeText(suggestedImagePrompt); setPromptCopied(true); setTimeout(() => setPromptCopied(false), 1500); } catch { /* ignore */ } }} className="pos-card px-3 py-1.5 text-[13px] font-medium mt-2">{promptCopied ? 'Copied ✓' : 'Copy prompt'}</button>
+              </div>
+            )}
+
+            <div className="flex gap-2.5 mt-4 items-center">
+              <button onClick={() => pushBlog(pubCta)} disabled={publish === 'saving'} className="pos-action" style={{ background: 'var(--green)' }}>{publish === 'saving' ? 'Publishing…' : 'Publish page'}</button>
+              <button onClick={() => setShowPublishModal(false)} className="pos-link text-[13px]" style={{ color: 'var(--muted)' }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Push-as-blog confirmation — stays open until the doctor closes it. */}
       {publish && typeof publish === 'object' && publish.url && (

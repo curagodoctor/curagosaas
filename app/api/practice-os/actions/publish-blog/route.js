@@ -8,8 +8,11 @@ import { parseArticleFromMarkdown } from '@/lib/practice-os/parseArticle';
 import { BLOG_RULES } from '@/lib/practice-os/contentRules';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 import { syncBlogLinksToProfile } from '@/lib/practice-os/blogLinks';
+import { primaryBaseUrl } from '@/lib/primaryDomain';
 import BlogArticle from '@/models/BlogArticle';
 import Doctor from '@/models/Doctor';
+
+const CTA_TYPES = new Set(['none', 'contact', 'articles', 'booking']);
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -22,9 +25,10 @@ export async function POST(request) {
     const doctor = await requirePracticeOsDoctor(request);
     await connectDB();
     await assertAiAccess(doctor._id);
-    const { text, imageUrl, missionId } = await request.json();
+    const { text, imageUrl, missionId, cta } = await request.json();
     if (!text || !text.trim()) return NextResponse.json({ success: false, error: 'Nothing to publish.' }, { status: 400 });
     const providedImage = /^https?:\/\//i.test(String(imageUrl || '').trim()) ? String(imageUrl).trim() : '';
+    const ctaType = CTA_TYPES.has(cta) ? cta : 'none';
     // A day produces exactly ONE article: if this day already published one,
     // we UPDATE it in place (below) instead of creating a near-duplicate.
     const sourceMissionId = /^[a-f0-9]{24}$/i.test(String(missionId || '')) ? String(missionId) : null;
@@ -79,7 +83,7 @@ export async function POST(request) {
       if (await BlogArticle.findOne({ slug }).select('_id').lean()) slug = `${slug}-${Date.now().toString(36).slice(-4)}`;
     }
 
-    const doc = await Doctor.findById(doctor._id).select('subdomain displayName name specialization').lean();
+    const doc = await Doctor.findById(doctor._id).select('subdomain customDomain customDomainVerified displayName name specialization').lean();
     const fieldsToSet = {
       doctorId: doctor._id,
       title,
@@ -90,6 +94,7 @@ export async function POST(request) {
       author: { name: doc?.displayName || doc?.name || '', designation: doc?.specialization || '' },
       blocks,
       faqSection: faqs.length ? { heading: 'FAQs: Clear Answers for Patients', faqs } : undefined,
+      ctaType,
       status: 'published',
       publishedAt: new Date(),
       ...(sourceMissionId ? { sourceMissionId } : {}),
@@ -125,7 +130,9 @@ export async function POST(request) {
       });
     }
 
-    const url = doc?.subdomain ? `https://${doc.subdomain}.curago.in/blog/${slug}` : `/blog/${slug}`;
+    // Live URL on the doctor's PRIMARY domain (verified custom domain else subdomain).
+    const site = primaryBaseUrl(doc);
+    const url = site ? `${site}/blog/${slug}` : `/blog/${slug}`;
     return NextResponse.json({ success: true, id: String(article._id), url, slug, title: article.title, creditsRemaining: remaining });
   } catch (error) {
     if (error.message === 'Unauthorized') return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });

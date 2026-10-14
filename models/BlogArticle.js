@@ -169,6 +169,13 @@ const blogArticleSchema = new mongoose.Schema({
   },
 
   // Publishing & Status
+  // Call-to-action shown at the end of the public article. Default 'none' — the
+  // doctor chooses it when publishing (No CTA / Get in touch / Read articles / Book).
+  ctaType: {
+    type: String,
+    enum: ['none', 'contact', 'articles', 'booking'],
+    default: 'none',
+  },
   status: {
     type: String,
     enum: ['draft', 'scheduled', 'published', 'archived'],
