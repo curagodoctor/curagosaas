@@ -43,6 +43,10 @@
     {
       "path": "/api/cron/practice-os-daily-tasks",
       "schedule": "*/30 4-8 * * *"
+    },
+    {
+      "path": "/api/cron/practice-os-trend-content",
+      "schedule": "30 9 * * *"
     }
   ]
 }

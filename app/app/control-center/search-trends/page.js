@@ -29,6 +29,14 @@ function weekRange(weekStart) {
 
 export default function SearchTrendsPage() {
   const [state, setState] = useState({ loading: true });
+  const [topics, setTopics] = useState([]);
+
+  const loadTopics = useCallback(async () => {
+    try {
+      const d = await (await fetch('/api/practice-os/trend-topics', { credentials: 'include' })).json();
+      if (d.success) setTopics(d.topics || []);
+    } catch { /* ignore */ }
+  }, []);
 
   const load = useCallback(async () => {
     setState((s) => ({ ...s, loading: true }));
@@ -40,7 +48,12 @@ export default function SearchTrendsPage() {
       setState({ loading: false, success: false, error: 'Could not load search trends.' });
     }
   }, []);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); loadTopics(); }, [load, loadTopics]);
+
+  const dismiss = useCallback(async (id) => {
+    setTopics((ts) => ts.map((t) => (t.id === id ? { ...t, status: 'dismissed' } : t)));
+    try { await fetch('/api/practice-os/trend-topics', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ topicId: id, action: 'dismiss' }) }); } catch { /* ignore */ }
+  }, []);
 
   const { loading, status, report } = state;
   const grouped = {};
@@ -119,8 +132,30 @@ export default function SearchTrendsPage() {
               </section>
             )}
 
-            {/* Suggested topics */}
-            {report.suggestedTopics?.length > 0 && (
+            {/* Content topics for you — the actionable, deduped pipeline output.
+                Falls back to the generic suggestions until the weekly job runs. */}
+            {topics.filter((t) => t.status !== 'dismissed').length > 0 ? (
+              <section className="rounded-xl p-6" style={{ background: 'var(--orange-soft, rgba(242,106,27,.06))', border: '1px solid rgba(242,106,27,.2)' }}>
+                <h2 className="text-[11px] font-mono uppercase tracking-[0.11em] mb-1" style={{ color: 'var(--orange)' }}>Topics for you</h2>
+                <p className="text-[12.5px] mb-3" style={{ color: 'var(--muted)' }}>Drawn from this week’s searches and matched against what you’ve already published. Fresh ones are written automatically as drafts — dismiss any you don’t want.</p>
+                <ul className="flex flex-col gap-2.5">
+                  {topics.filter((t) => t.status !== 'dismissed').map((t) => (
+                    <li key={t.id} className="flex items-start gap-2.5 text-[14.5px]">
+                      <span className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: t.status === 'produced' ? 'var(--green)' : t.status === 'covered' ? 'var(--muted)' : 'var(--orange)' }} />
+                      <span className="flex-1" style={{ color: t.status === 'covered' ? 'var(--muted)' : 'var(--ink)' }}>
+                        {t.title}
+                        {t.status === 'queued' && <span className="text-[12px] ml-2" style={{ color: 'var(--orange)' }}>· queued</span>}
+                        {t.status === 'produced' && (t.blog ? <a href="/admin/dashboard/blog-articles" className="text-[12px] ml-2 font-semibold" style={{ color: 'var(--green)' }}>· draft ready →</a> : <span className="text-[12px] ml-2" style={{ color: 'var(--green)' }}>· drafted</span>)}
+                        {t.status === 'covered' && <span className="text-[12px] ml-2" style={{ color: 'var(--muted)' }}>· already covered{t.coveredBy ? ` (${t.coveredBy})` : ''}</span>}
+                      </span>
+                      {(t.status === 'queued' || t.status === 'covered') && (
+                        <button onClick={() => dismiss(t.id)} className="text-[12px] shrink-0" style={{ color: 'var(--muted)' }} title="Dismiss">✕</button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : report.suggestedTopics?.length > 0 && (
               <section className="rounded-xl p-6" style={{ background: 'var(--orange-soft, rgba(242,106,27,.06))', border: '1px solid rgba(242,106,27,.2)' }}>
                 <h2 className="text-[11px] font-mono uppercase tracking-[0.11em] mb-3" style={{ color: 'var(--orange)' }}>Worth writing about</h2>
                 <ul className="flex flex-col gap-2">
