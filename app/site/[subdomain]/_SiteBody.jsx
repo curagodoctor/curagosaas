@@ -245,25 +245,32 @@ export default async function SiteBody({ doctor, bookingPage }) {
     .filter((s) => !['header', 'footer'].includes(s.type))
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-  // Hydrate a visible clinic_info section that the builder left empty with the
-  // doctor's verified Clinic records — so the public page shows real local
-  // name/address/phone/hours (matching the JSON-LD), instead of silently hiding
-  // the NAP. Only fills when there's nothing set and real clinics exist.
+  // Auto-populate visible contact info (clinic_info + footer) from the doctor's
+  // VERIFIED Clinic/contact data when the builder left it empty — so the public
+  // page always shows the real address/phone (matching the JSON-LD), never a blank
+  // or a placeholder. Only fills gaps; never overrides what the doctor set.
   try {
-    const needsNap = contentSections.some((s) => s.type === 'clinic_info' && !(Array.isArray(s.config?.clinics) && s.config.clinics.length));
-    if (needsNap) {
-      const clinics = await Clinic.find({ doctorId: doctorData._id, isActive: true })
-        .sort({ isPrimary: -1, sortOrder: 1, createdAt: 1 }).lean();
-      const cards = clinics.map(clinicToCard).filter((c) => c.name || c.address || c.phone);
-      if (cards.length) {
-        for (const s of contentSections) {
-          if (s.type === 'clinic_info' && !(Array.isArray(s.config?.clinics) && s.config.clinics.length)) {
-            s.config = { ...(s.config || {}), clinics: cards };
-          }
+    const clinics = await Clinic.find({ doctorId: doctorData._id, isActive: true })
+      .sort({ isPrimary: -1, sortOrder: 1, createdAt: 1 }).lean();
+    const cards = clinics.map(clinicToCard).filter((c) => c.name || c.address || c.phone);
+    const primary = cards[0] || null;
+
+    if (cards.length) {
+      for (const s of contentSections) {
+        if (s.type === 'clinic_info' && !(Array.isArray(s.config?.clinics) && s.config.clinics.length)) {
+          s.config = { ...(s.config || {}), clinics: cards };
         }
       }
     }
-  } catch { /* best-effort — never break the page over NAP hydration */ }
+    // Footer address / phone / email.
+    const fc = sharedFooter.config || {};
+    const addr = fc.address || primary?.address || '';
+    const phone = fc.phone || primary?.phone || doctorData.whatsappNumber || doctorData.phone || '';
+    const email = fc.email || doctorData.email || '';
+    if (addr !== (fc.address || '') || phone !== (fc.phone || '') || email !== (fc.email || '')) {
+      sharedFooter.config = { ...fc, address: addr, phone, email };
+    }
+  } catch { /* best-effort — never break the page over contact hydration */ }
 
   // Unique anchor/DOM ids per content section (first of a type keeps the clean
   // type for nav anchors; duplicates get a numbered suffix).
