@@ -135,6 +135,10 @@ export default async function SiteBody({ doctor, bookingPage }) {
   // navbar. Without this, creating a new page never appears in the nav (the
   // section-based nav only links to anchors within the current page).
   let pageNavLinks = [];
+  // The homepage's own "Nav label" renames its "Home" nav item (the homepage is
+  // reached via the logo, so its displayName can't be a separate link — instead
+  // it relabels the Home anchor so the field actually takes effect).
+  let homeNavLabel = '';
   // The home page owns the SHARED header + footer for the whole site, so branding
   // (logo, nav, footer) is identical on every page — sub-pages no longer each
   // carry their own divergent header/footer.
@@ -148,6 +152,7 @@ export default async function SiteBody({ doctor, bookingPage }) {
     // reachable via the logo, so we DON'T add a redundant self-link for it.
     // Only the doctor's OTHER (secondary) pages become cross-page nav links.
     const homepageId = pages[0]?._id ? String(pages[0]._id) : null;
+    homeNavLabel = (pages[0]?.showInNavbar !== false && pages[0]?.displayName) ? String(pages[0].displayName).trim() : '';
     pageNavLinks = pages
       .filter((p) => p.showInNavbar && String(p._id) !== homepageId)
       .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
@@ -238,6 +243,16 @@ export default async function SiteBody({ doctor, bookingPage }) {
   };
   let sharedHeader = homeSections.find((s) => s.type === 'header' && s.visible !== false) || DEFAULT_HEADER;
   const sharedFooter = homeSections.find((s) => s.type === 'footer' && s.visible !== false) || DEFAULT_FOOTER;
+  // Apply the homepage's own Nav label to the "Home" anchor (hero/banner), so the
+  // field a doctor sets in Page Settings actually renames that nav item.
+  if (homeNavLabel) {
+    const cfg = sharedHeader.config || {};
+    const auto = cfg.autoNavConfig || {};
+    sharedHeader = {
+      ...sharedHeader,
+      config: { ...cfg, autoNavConfig: { ...auto, customLabels: { ...(auto.customLabels || {}), hero_carousel: homeNavLabel, banner_image: homeNavLabel } } },
+    };
+  }
   // Free tier (no booking): hide a header CTA that points at the booking form, so
   // there's no dead "Book Appointment" button once the booking section is stripped.
   if (!bookingEnabled) {
