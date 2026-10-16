@@ -19,14 +19,17 @@ export default function GallerySection({ sectionId, title = "Gallery", subtitle,
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {list.map((it, i) => {
             const isVideo = it.type === "video";
-            const embed = isVideo ? youtubeEmbed(it.url) : null;
+            const isGs = typeof it.url === "string" && it.url.startsWith("gs://");
+            const embed = isVideo && !isGs ? youtubeEmbed(it.url) : null;
+            // Uploaded videos (gs://) stream same-origin via the signed-URL redirect.
+            const videoSrc = isGs ? `/api/site/media?ref=${encodeURIComponent(it.url)}` : it.url;
             return (
               <figure key={i} className="rounded-xl overflow-hidden bg-white shadow-sm">
                 {isVideo ? (
                   embed ? (
-                    <div className="aspect-video"><iframe src={embed} title={it.alt || it.caption || "Video"} className="w-full h-full" allow="acceleronmeter; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>
+                    <div className="aspect-video"><iframe src={embed} title={it.alt || it.caption || "Video"} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>
                   ) : (
-                    <video src={it.url} controls playsInline className="w-full aspect-video object-cover bg-black" aria-label={it.alt || it.caption || "Video"} />
+                    <video src={videoSrc} controls playsInline preload="metadata" className="w-full aspect-video object-cover bg-black" aria-label={it.alt || it.caption || "Video"} />
                   )
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element
