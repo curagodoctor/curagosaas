@@ -41,6 +41,8 @@ import BookingFormSection from '@/components/booking-page/sections/BookingFormSe
 import LeadFormSection from '@/components/booking-page/sections/LeadFormSection';
 import ClinicInfoSection from '@/components/booking-page/sections/ClinicInfoSection';
 import ProfessionalFeesSection from '@/components/booking-page/sections/ProfessionalFeesSection';
+import AwardsSection from '@/components/booking-page/sections/AwardsSection';
+import PublicationsSection from '@/components/booking-page/sections/PublicationsSection';
 import FooterSection from '@/components/booking-page/sections/FooterSection';
 import WhatsAppStickyButton from '@/components/booking-page/sections/WhatsAppStickyButton';
 import BookNowStickyButton from '@/components/booking-page/sections/BookNowStickyButton';
@@ -92,6 +94,10 @@ function renderSection(section, doctor, index, allSections = [], extraNavLinks =
       return <ClinicInfoSection {...props} />;
     case 'professional_fees':
       return <ProfessionalFeesSection {...props} />;
+    case 'awards':
+      return <AwardsSection {...props} />;
+    case 'publications':
+      return <PublicationsSection {...props} />;
     case 'footer':
       return <FooterSection {...props} />;
     case 'faq_chatbot':

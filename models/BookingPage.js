@@ -23,7 +23,11 @@ const SectionSchema = new mongoose.Schema({
       'professional_fees',
       'footer',
       'whatsapp_sticky',
-      'book_now_sticky'
+      'book_now_sticky',
+      'awards',
+      'publications',
+      'milestones',
+      'gallery'
     ],
   },
   order: {

@@ -26,6 +26,8 @@ import WhatsAppStickyButtonConfig from "@/components/admin/booking-pages/config-
 import BookNowStickyButtonConfig from "@/components/admin/booking-pages/config-forms/BookNowStickyButtonConfig";
 import ProfessionalFeesConfig from "@/components/admin/booking-pages/config-forms/ProfessionalFeesConfig";
 import ChatbotConfig from "@/components/admin/booking-pages/config-forms/ChatbotConfig";
+import AwardsConfig from "@/components/admin/booking-pages/config-forms/AwardsConfig";
+import PublicationsConfig from "@/components/admin/booking-pages/config-forms/PublicationsConfig";
 import ThemeSelector from "@/components/admin/booking-pages/ThemeSelector";
 
 // Section type definitions with metadata and SVG icons
@@ -325,6 +327,32 @@ const SECTION_TYPES = [
       currency: "₹",
       backgroundColor: "white",
     },
+  },
+  {
+    type: "awards",
+    name: "Awards & Recognition",
+    navName: "Awards",
+    navGroup: "Info",
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8a4 4 0 100 8 4 4 0 000-8z M8.5 14.5L7 21l5-3 5 3-1.5-6.5" />
+      </svg>
+    ),
+    description: "Awards with photo, title & description",
+    defaultConfig: { title: "Awards & Recognition", subtitle: "", items: [] },
+  },
+  {
+    type: "publications",
+    name: "Publications",
+    navName: "Publications",
+    navGroup: "Info",
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+      </svg>
+    ),
+    description: "List of papers with links",
+    defaultConfig: { title: "Publications", subtitle: "", items: [] },
   },
   {
     type: "footer",
@@ -1105,6 +1133,8 @@ export default function PageBuilderEditor() {
                   lead_form: LeadFormConfig,
                   clinic_info: ClinicInfoConfig,
                   professional_fees: ProfessionalFeesConfig,
+                  awards: AwardsConfig,
+                  publications: PublicationsConfig,
                   footer: FooterConfig,
                   whatsapp_sticky: WhatsAppStickyButtonConfig,
                   book_now_sticky: BookNowStickyButtonConfig,

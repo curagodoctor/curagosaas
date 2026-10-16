@@ -17,6 +17,8 @@ import FooterSection from './sections/FooterSection';
 import WhatsAppStickyButton from './sections/WhatsAppStickyButton';
 import BookNowStickyButton from './sections/BookNowStickyButton';
 import ProfessionalFeesSection from './sections/ProfessionalFeesSection';
+import AwardsSection from './sections/AwardsSection';
+import PublicationsSection from './sections/PublicationsSection';
 import FAQChatbot from '@/components/FAQChatbot';
 
 const SECTION_COMPONENTS = {
@@ -38,6 +40,8 @@ const SECTION_COMPONENTS = {
   whatsapp_sticky: WhatsAppStickyButton,
   book_now_sticky: BookNowStickyButton,
   professional_fees: ProfessionalFeesSection,
+  awards: AwardsSection,
+  publications: PublicationsSection,
   faq_chatbot: FAQChatbot,
 };
 
