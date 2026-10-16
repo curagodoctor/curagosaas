@@ -7,8 +7,10 @@ import { WEBSITE_RULES } from '@/lib/practice-os/contentRules';
 import { getDoctorProfileFields } from '@/lib/practice-os/profile';
 import BookingPage from '@/models/BookingPage';
 import Doctor from '@/models/Doctor';
+import Clinic from '@/models/Clinic';
 import PracticeOsProfile from '@/models/practice-os/PracticeOsProfile';
 import { buildDefaultSections } from '@/lib/defaultTemplate';
+import { buildSiteTitle, buildMetaDescription, clinicToCard, buildPrivacyPolicy, buildTerms } from '@/lib/practice-os/siteMeta';
 
 // Curated placeholder hero images (brand-coloured, neutral) used when a doctor
 // skips the optional landscape photos — so the site still generates with a clean
@@ -184,6 +186,30 @@ export async function POST(request) {
       }
     }
 
+    // Auto-fill contact details from VERIFIED data (never invented): clinic NAP,
+    // phone, WhatsApp, and footer address/phone/email.
+    const clinics = await Clinic.find({ doctorId: doctor._id, isActive: true })
+      .sort({ isPrimary: -1, sortOrder: 1, createdAt: 1 }).lean();
+    const clinicCards = clinics.map(clinicToCard).filter((c) => c.name || c.address || c.phone);
+    const primaryClinic = clinicCards[0] || null;
+    const waNumber = doc?.whatsappNumber || '';
+    const contactPhone = primaryClinic?.phone || doc?.phone || doc?.whatsappNumber || '';
+    for (const s of generated) {
+      if (s.type === 'whatsapp_sticky' && waNumber && !s.config.phoneNumber) s.config.phoneNumber = waNumber;
+      if (s.type === 'clinic_info' && clinicCards.length && !(Array.isArray(s.config.clinics) && s.config.clinics.length)) s.config.clinics = clinicCards;
+      if (s.type === 'footer') {
+        if (primaryClinic?.address && !s.config.address) s.config.address = primaryClinic.address;
+        if (contactPhone && !s.config.phone) s.config.phone = contactPhone;
+        if (doc?.email && !s.config.email) s.config.email = doc.email;
+      }
+    }
+
+    // Auto-generated page title + meta description from verified data.
+    const autoTitle = buildSiteTitle(doc?.displayName || doc?.name, fields.specialty || doc?.specialization, fields.city || doc?.city);
+    const autoMeta = (g.metaDescription && String(g.metaDescription).trim())
+      ? String(g.metaDescription).slice(0, 300)
+      : buildMetaDescription({ name: doc?.displayName || doc?.name, specialty: fields.specialty || doc?.specialization, city: fields.city || doc?.city, tagline: g.tagline });
+
     const now = new Date();
     let page = await BookingPage.findOne({ doctorId: doctor._id, slug: 'home' });
     let mode;
@@ -191,11 +217,10 @@ export async function POST(request) {
     if (!page) {
       // No page yet → generate and push LIVE immediately (Content Block 6).
       page = new BookingPage({
-        doctorId: doctor._id, slug: 'home', title: `${doc?.displayName || doc?.name || 'My'} — Clinic`,
+        doctorId: doctor._id, slug: 'home', title: autoTitle,
         status: 'published', sections: generated, createdBy: 'ai',
-        aiGeneratedAt: now,
+        metaDescription: autoMeta, aiGeneratedAt: now,
       });
-      if (g.metaDescription) page.metaDescription = String(g.metaDescription).slice(0, 300);
       page.markModified('sections');
       await page.save();
       mode = 'live';
@@ -209,11 +234,31 @@ export async function POST(request) {
       // Mark that AI has now generated for this page so subsequent builds are
       // metered (the seeded scaffold's first AI build is the free one).
       page.aiGeneratedAt = now;
+      // Upgrade the title/meta when they're empty or the old auto-default — never
+      // clobber a title the doctor customised.
+      if (!page.title || /(—|-)\s*clinic\s*$/i.test(page.title)) page.title = autoTitle;
+      if (!page.metaDescription) page.metaDescription = autoMeta;
       page.markModified('draftSections');
       page.markModified('versions');
       await page.save();
       mode = 'draft';
     }
+
+    // Auto-generate boilerplate Privacy + Terms pages once (never overwrite existing).
+    try {
+      const legal = [
+        { slug: 'privacy', title: 'Privacy Policy', text: buildPrivacyPolicy({ clinicName: doc?.clinicName || primaryClinic?.name, doctorName: doc?.displayName || doc?.name, city: fields.city || doc?.city, email: doc?.email, phone: contactPhone }) },
+        { slug: 'terms', title: 'Terms of Use', text: buildTerms({ clinicName: doc?.clinicName || primaryClinic?.name, doctorName: doc?.displayName || doc?.name, city: fields.city || doc?.city }) },
+      ];
+      for (const L of legal) {
+        const exists = await BookingPage.findOne({ doctorId: doctor._id, slug: L.slug }).select('_id').lean();
+        if (exists) continue;
+        await BookingPage.create({
+          doctorId: doctor._id, slug: L.slug, title: L.title, status: 'published', createdBy: 'ai', showInNavbar: false,
+          sections: [{ type: 'custom_text', order: 1, visible: true, config: { title: L.title, content: L.text, maxWidth: 'medium', padding: 'large' } }],
+        });
+      }
+    } catch (e) { console.error('[generate-site legal]', e.message); }
 
     // Charge one credit now that generation succeeded — except the free first build.
     const remaining = firstBuild
