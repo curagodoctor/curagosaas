@@ -28,6 +28,8 @@ import ProfessionalFeesConfig from "@/components/admin/booking-pages/config-form
 import ChatbotConfig from "@/components/admin/booking-pages/config-forms/ChatbotConfig";
 import AwardsConfig from "@/components/admin/booking-pages/config-forms/AwardsConfig";
 import PublicationsConfig from "@/components/admin/booking-pages/config-forms/PublicationsConfig";
+import MilestonesConfig from "@/components/admin/booking-pages/config-forms/MilestonesConfig";
+import GalleryConfig from "@/components/admin/booking-pages/config-forms/GalleryConfig";
 import ThemeSelector from "@/components/admin/booking-pages/ThemeSelector";
 
 // Section type definitions with metadata and SVG icons
@@ -353,6 +355,32 @@ const SECTION_TYPES = [
     ),
     description: "List of papers with links",
     defaultConfig: { title: "Publications", subtitle: "", items: [] },
+  },
+  {
+    type: "milestones",
+    name: "Milestones / Roadmap",
+    navName: "Journey",
+    navGroup: "About",
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+    description: "A timeline of your journey (AI-assisted)",
+    defaultConfig: { title: "Our Journey", subtitle: "", items: [] },
+  },
+  {
+    type: "gallery",
+    name: "Gallery",
+    navName: "Gallery",
+    navGroup: "About",
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    ),
+    description: "Photos & videos with alt text",
+    defaultConfig: { title: "Gallery", subtitle: "", items: [] },
   },
   {
     type: "footer",
@@ -1135,6 +1163,8 @@ export default function PageBuilderEditor() {
                   professional_fees: ProfessionalFeesConfig,
                   awards: AwardsConfig,
                   publications: PublicationsConfig,
+                  milestones: MilestonesConfig,
+                  gallery: GalleryConfig,
                   footer: FooterConfig,
                   whatsapp_sticky: WhatsAppStickyButtonConfig,
                   book_now_sticky: BookNowStickyButtonConfig,

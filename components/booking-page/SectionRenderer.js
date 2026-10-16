@@ -19,6 +19,8 @@ import BookNowStickyButton from './sections/BookNowStickyButton';
 import ProfessionalFeesSection from './sections/ProfessionalFeesSection';
 import AwardsSection from './sections/AwardsSection';
 import PublicationsSection from './sections/PublicationsSection';
+import MilestonesSection from './sections/MilestonesSection';
+import GallerySection from './sections/GallerySection';
 import FAQChatbot from '@/components/FAQChatbot';
 
 const SECTION_COMPONENTS = {
@@ -42,6 +44,8 @@ const SECTION_COMPONENTS = {
   professional_fees: ProfessionalFeesSection,
   awards: AwardsSection,
   publications: PublicationsSection,
+  milestones: MilestonesSection,
+  gallery: GallerySection,
   faq_chatbot: FAQChatbot,
 };
 

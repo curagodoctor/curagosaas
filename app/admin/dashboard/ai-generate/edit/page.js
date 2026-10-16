@@ -25,6 +25,8 @@ import BookNowStickyButtonConfig from '@/components/admin/booking-pages/config-f
 import ChatbotConfig from '@/components/admin/booking-pages/config-forms/ChatbotConfig';
 import AwardsConfig from '@/components/admin/booking-pages/config-forms/AwardsConfig';
 import PublicationsConfig from '@/components/admin/booking-pages/config-forms/PublicationsConfig';
+import MilestonesConfig from '@/components/admin/booking-pages/config-forms/MilestonesConfig';
+import GalleryConfig from '@/components/admin/booking-pages/config-forms/GalleryConfig';
 
 const CONFIG_FORMS = {
   header: HeaderConfig, hero_carousel: HeroCarouselConfig, banner_image: BannerImageConfig,
@@ -33,14 +35,14 @@ const CONFIG_FORMS = {
   custom_text: CustomTextConfig, cta_button: CTAButtonConfig, booking_form: BookingFormConfig,
   clinic_info: ClinicInfoConfig, professional_fees: ProfessionalFeesConfig, footer: FooterConfig,
   whatsapp_sticky: WhatsAppStickyButtonConfig, book_now_sticky: BookNowStickyButtonConfig, faq_chatbot: ChatbotConfig,
-  awards: AwardsConfig, publications: PublicationsConfig,
+  awards: AwardsConfig, publications: PublicationsConfig, milestones: MilestonesConfig, gallery: GalleryConfig,
 };
 const SECTION_LABELS = {
   header: 'Header', hero_carousel: 'Hero', banner_image: 'Banner', doctor_profile: 'About', benefits_list: 'Services',
   testimonials: 'Testimonials', faqs: 'FAQs', location_map: 'Location', disease_icons_scroll: 'Conditions',
   custom_text: 'Text', cta_button: 'Call to action', booking_form: 'Booking form', clinic_info: 'Clinic info',
   professional_fees: 'Fees', footer: 'Footer', whatsapp_sticky: 'WhatsApp button', book_now_sticky: 'Book Now button', faq_chatbot: 'FAQ chatbot',
-  awards: 'Awards', publications: 'Publications',
+  awards: 'Awards', publications: 'Publications', milestones: 'Milestones', gallery: 'Gallery',
 };
 const label = (t) => SECTION_LABELS[t] || (t || 'section').replace(/_/g, ' ');
 
