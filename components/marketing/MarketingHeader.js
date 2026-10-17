@@ -16,7 +16,7 @@ export default function MarketingHeader() {
         </Link>
         <nav style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
           <Link href="/" style={link}>Home</Link>
-          <Link href="/store" style={link}>Store</Link>
+          <Link href="/library" style={link}>Library</Link>
           <Link href="/rank-check" style={link}>Free ranking check</Link>
           <Link href="/login" style={{ ...link, color: '#096B17', fontWeight: 600 }}>Login</Link>
           <Link href="/signup" style={{ background: '#F26A1B', color: '#fff', padding: '8px 16px', borderRadius: 8, fontWeight: 600, textDecoration: 'none', fontSize: 14.5 }}>Sign up</Link>

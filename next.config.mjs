@@ -28,6 +28,7 @@ const nextConfig = {
   // 301-redirect the old URLs so existing links / bookmarks keep working.
   async redirects() {
     return [
+      { source: '/store', destination: '/library', permanent: true },
       { source: '/app/zero-to-practice-builder', destination: '/app/control-center', permanent: true },
       { source: '/app/zero-to-practice-builder/:path*', destination: '/app/control-center/:path*', permanent: true },
     ];

@@ -109,7 +109,7 @@ export default function StorePage() {
       <MarketingHeader />
       <div style={{ maxWidth: 1080, margin: '0 auto', padding: '40px 20px 80px' }}>
         <div style={{ textAlign: 'center', marginBottom: 44 }}>
-          <p style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: GREEN, fontWeight: 700 }}>CuraGo Store</p>
+          <p style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: GREEN, fontWeight: 700 }}>CuraGo Library</p>
           <h1 style={{ fontSize: 'clamp(30px,4vw,46px)', fontWeight: 600, color: '#101A13', letterSpacing: '-0.025em', margin: '8px 0 10px' }}>Books &amp; courses for your practice</h1>
           <p style={{ fontSize: 16.5, color: '#5E6B5F', maxWidth: 560, margin: '0 auto', lineHeight: 1.6 }}>Buy once, read and watch securely from your CuraGo account — your library, always yours.</p>
           {loggedIn && <Link href="/app/control-center/library" style={{ display: 'inline-block', marginTop: 14, color: GREEN, fontWeight: 600, fontSize: 14 }}>Go to my library →</Link>}
@@ -118,7 +118,7 @@ export default function StorePage() {
         {err && <div style={{ maxWidth: 520, margin: '0 auto 24px', background: 'rgba(242,106,27,.08)', border: '1px solid rgba(242,106,27,.3)', color: '#101A13', padding: 12, borderRadius: 10, fontSize: 14 }}>{err}</div>}
 
         {loading ? (
-          <p style={{ textAlign: 'center', color: '#5E6B5F' }}>Loading the store…</p>
+          <p style={{ textAlign: 'center', color: '#5E6B5F' }}>Loading the library…</p>
         ) : products.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#5E6B5F' }}>No products are available yet. Check back soon.</p>
         ) : (

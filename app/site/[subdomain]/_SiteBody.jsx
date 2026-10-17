@@ -299,6 +299,17 @@ export default async function SiteBody({ doctor, bookingPage }) {
     }
   } catch { /* best-effort — never break the page over contact hydration */ }
 
+  // Strip the portrait profile photo if it ended up in the hero carousel on an
+  // older generated site — the hero is for wide clinic photos, not the headshot.
+  if (doctorData.profileImage) {
+    for (const s of contentSections) {
+      if (s.type === 'hero_carousel' && Array.isArray(s.config?.images)) {
+        const imgs = s.config.images.filter((im) => (typeof im === 'string' ? im : im?.url) !== doctorData.profileImage);
+        if (imgs.length !== s.config.images.length) s.config = { ...s.config, images: imgs };
+      }
+    }
+  }
+
   // Unique anchor/DOM ids per content section (first of a type keeps the clean
   // type for nav anchors; duplicates get a numbered suffix).
   const anchorCounts = {};

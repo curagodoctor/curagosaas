@@ -622,7 +622,7 @@ const BODY = `<nav class="nav">
     <a href="#system" data-closenav="1">How to work on Google</a>
     <a href="#offer" data-closenav="1">How CuraGo helps</a>
     <a href="/rank-check" data-closenav="1">Free ranking check</a>
-    <a href="/store" data-closenav="1">Store</a>
+    <a href="/library" data-closenav="1">Library</a>
     <button class="btn btn-white navbtn navlinks-cta" data-login="1">Login</button>
     <button class="btn btn-orange navbtn navlinks-cta" data-start="1">Sign up</button>
   </div>
