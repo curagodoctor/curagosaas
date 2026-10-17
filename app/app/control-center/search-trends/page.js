@@ -27,6 +27,19 @@ function weekRange(weekStart) {
   return `${f(s)} – ${f(e)}`;
 }
 
+// Per-topic actions: turn a trend topic into content via the compose flow.
+function ComposeButtons({ idea }) {
+  const types = [['blog', 'Blog page'], ['gbp', 'GBP post'], ['service', 'Service'], ['product', 'Product']];
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-1.5">
+      {types.map(([t, l]) => (
+        <Link key={t} href={`/app/control-center/compose?idea=${encodeURIComponent(idea)}&type=${t}`}
+          className="text-[11.5px] px-2 py-0.5 rounded-md hover:opacity-80" style={{ border: '1px solid rgba(9,107,23,.25)', color: 'var(--green)', background: 'var(--card)' }}>{l}</Link>
+      ))}
+    </div>
+  );
+}
+
 export default function SearchTrendsPage() {
   const [state, setState] = useState({ loading: true });
   const [topics, setTopics] = useState([]);
@@ -142,12 +155,15 @@ export default function SearchTrendsPage() {
                   {topics.filter((t) => t.status !== 'dismissed').map((t) => (
                     <li key={t.id} className="flex items-start gap-2.5 text-[14.5px]">
                       <span className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: t.status === 'produced' ? 'var(--green)' : t.status === 'covered' ? 'var(--muted)' : 'var(--orange)' }} />
-                      <span className="flex-1" style={{ color: t.status === 'covered' ? 'var(--muted)' : 'var(--ink)' }}>
-                        {t.title}
-                        {t.status === 'queued' && <span className="text-[12px] ml-2" style={{ color: 'var(--orange)' }}>· queued</span>}
-                        {t.status === 'produced' && (t.blog ? <a href="/admin/dashboard/blog-articles" className="text-[12px] ml-2 font-semibold" style={{ color: 'var(--green)' }}>· draft ready →</a> : <span className="text-[12px] ml-2" style={{ color: 'var(--green)' }}>· drafted</span>)}
-                        {t.status === 'covered' && <span className="text-[12px] ml-2" style={{ color: 'var(--muted)' }}>· already covered{t.coveredBy ? ` (${t.coveredBy})` : ''}</span>}
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        <span style={{ color: t.status === 'covered' ? 'var(--muted)' : 'var(--ink)' }}>
+                          {t.title}
+                          {t.status === 'queued' && <span className="text-[12px] ml-2" style={{ color: 'var(--orange)' }}>· queued</span>}
+                          {t.status === 'produced' && (t.blog ? <a href="/admin/dashboard/blog-articles" className="text-[12px] ml-2 font-semibold" style={{ color: 'var(--green)' }}>· draft ready →</a> : <span className="text-[12px] ml-2" style={{ color: 'var(--green)' }}>· drafted</span>)}
+                          {t.status === 'covered' && <span className="text-[12px] ml-2" style={{ color: 'var(--muted)' }}>· already covered{t.coveredBy ? ` (${t.coveredBy})` : ''}</span>}
+                        </span>
+                        <ComposeButtons idea={t.title} />
+                      </div>
                       {(t.status === 'queued' || t.status === 'covered') && (
                         <button onClick={() => dismiss(t.id)} className="text-[12px] shrink-0" style={{ color: 'var(--muted)' }} title="Dismiss">✕</button>
                       )}
@@ -162,7 +178,7 @@ export default function SearchTrendsPage() {
                   {report.suggestedTopics.map((t, i) => (
                     <li key={i} className="flex items-start gap-2.5 text-[14.5px]" style={{ color: 'var(--ink)' }}>
                       <span className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: 'var(--orange)' }} />
-                      <span>{t}</span>
+                      <div className="flex-1 min-w-0"><span>{t}</span><ComposeButtons idea={t} /></div>
                     </li>
                   ))}
                 </ul>
